@@ -12,14 +12,15 @@ import {
 import { CURRENT_USER } from "@/data/kusqa";
 import { motion } from "framer-motion";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof Compass; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/app", label: "Inicio", icon: Compass, exact: true },
   { to: "/app/mapa", label: "Mapa de misiones", icon: Map },
   { to: "/app/crear", label: "Crear proyecto", icon: Plus },
   { to: "/app/progreso", label: "Mi expedición", icon: Trophy },
   { to: "/app/notificaciones", label: "Notificaciones", icon: Bell },
   { to: "/app/perfil", label: "Perfil", icon: User },
-] as const;
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const state = useRouterState();
