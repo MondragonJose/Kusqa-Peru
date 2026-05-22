@@ -11,6 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppProgresoRouteImport } from './routes/app.progreso'
+import { Route as AppPerfilRouteImport } from './routes/app.perfil'
+import { Route as AppNotificacionesRouteImport } from './routes/app.notificaciones'
+import { Route as AppMapaRouteImport } from './routes/app.mapa'
+import { Route as AppCrearRouteImport } from './routes/app.crear'
+import { Route as AppMisionMissionIdRouteImport } from './routes/app.mision.$missionId'
 
 const AppRoute = AppRouteImport.update({
   id: '/app',
@@ -22,31 +29,113 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProgresoRoute = AppProgresoRouteImport.update({
+  id: '/progreso',
+  path: '/progreso',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMapaRoute = AppMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrearRoute = AppCrearRouteImport.update({
+  id: '/crear',
+  path: '/crear',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMisionMissionIdRoute = AppMisionMissionIdRouteImport.update({
+  id: '/mision/$missionId',
+  path: '/mision/$missionId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/app/crear': typeof AppCrearRoute
+  '/app/mapa': typeof AppMapaRoute
+  '/app/notificaciones': typeof AppNotificacionesRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/progreso': typeof AppProgresoRoute
+  '/app/': typeof AppIndexRoute
+  '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app/crear': typeof AppCrearRoute
+  '/app/mapa': typeof AppMapaRoute
+  '/app/notificaciones': typeof AppNotificacionesRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/progreso': typeof AppProgresoRoute
+  '/app': typeof AppIndexRoute
+  '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
+  '/app/crear': typeof AppCrearRoute
+  '/app/mapa': typeof AppMapaRoute
+  '/app/notificaciones': typeof AppNotificacionesRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/progreso': typeof AppProgresoRoute
+  '/app/': typeof AppIndexRoute
+  '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/crear'
+    | '/app/mapa'
+    | '/app/notificaciones'
+    | '/app/perfil'
+    | '/app/progreso'
+    | '/app/'
+    | '/app/mision/$missionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app'
-  id: '__root__' | '/' | '/app'
+  to:
+    | '/'
+    | '/app/crear'
+    | '/app/mapa'
+    | '/app/notificaciones'
+    | '/app/perfil'
+    | '/app/progreso'
+    | '/app'
+    | '/app/mision/$missionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/crear'
+    | '/app/mapa'
+    | '/app/notificaciones'
+    | '/app/perfil'
+    | '/app/progreso'
+    | '/app/'
+    | '/app/mision/$missionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,13 +154,94 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/progreso': {
+      id: '/app/progreso'
+      path: '/progreso'
+      fullPath: '/app/progreso'
+      preLoaderRoute: typeof AppProgresoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/perfil': {
+      id: '/app/perfil'
+      path: '/perfil'
+      fullPath: '/app/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notificaciones': {
+      id: '/app/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/app/notificaciones'
+      preLoaderRoute: typeof AppNotificacionesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/mapa': {
+      id: '/app/mapa'
+      path: '/mapa'
+      fullPath: '/app/mapa'
+      preLoaderRoute: typeof AppMapaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/crear': {
+      id: '/app/crear'
+      path: '/crear'
+      fullPath: '/app/crear'
+      preLoaderRoute: typeof AppCrearRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/mision/$missionId': {
+      id: '/app/mision/$missionId'
+      path: '/mision/$missionId'
+      fullPath: '/app/mision/$missionId'
+      preLoaderRoute: typeof AppMisionMissionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppCrearRoute: typeof AppCrearRoute
+  AppMapaRoute: typeof AppMapaRoute
+  AppNotificacionesRoute: typeof AppNotificacionesRoute
+  AppPerfilRoute: typeof AppPerfilRoute
+  AppProgresoRoute: typeof AppProgresoRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppMisionMissionIdRoute: typeof AppMisionMissionIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCrearRoute: AppCrearRoute,
+  AppMapaRoute: AppMapaRoute,
+  AppNotificacionesRoute: AppNotificacionesRoute,
+  AppPerfilRoute: AppPerfilRoute,
+  AppProgresoRoute: AppProgresoRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppMisionMissionIdRoute: AppMisionMissionIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
