@@ -16,7 +16,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 function Notifications() {
-  const unread = NOTIFICATIONS.filter((n) => n.unread).length;
+  const unread = NOTIFICATIONS.filter((n) => !n.read).length;
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-end justify-between">
@@ -55,7 +55,7 @@ function Notifications() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.04 }}
             className={`group rounded-2xl border p-4 flex gap-4 transition-smooth hover:shadow-card cursor-pointer ${
-              n.unread
+              !n.read
                 ? "bg-card border-accent/30 shadow-soft"
                 : "bg-card/60 border-border/60"
             }`}
@@ -66,10 +66,10 @@ function Notifications() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <div className="font-semibold">{n.title}</div>
-                {n.unread && <span className="h-2 w-2 rounded-full bg-accent" />}
+                {!n.read && <span className="h-2 w-2 rounded-full bg-accent" />}
               </div>
               <div className="text-sm text-muted-foreground">{n.body}</div>
-              <div className="text-xs text-muted-foreground mt-1">{n.time}</div>
+              <div className="text-xs text-muted-foreground mt-1">{n.timestamp}</div>
             </div>
             <button className="opacity-0 group-hover:opacity-100 transition-opacity rounded-lg px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-foreground hover:text-background self-center">
               Ver

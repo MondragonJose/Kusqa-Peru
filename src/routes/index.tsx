@@ -11,14 +11,66 @@ import {
   Waves,
   Trees,
 } from "lucide-react";
+import { JSX } from "react/jsx-runtime";
+
+// 1. AÑADIMOS LOS IMPORTS NECESARIOS
+import { useEffect, useState } from "react";
+// IMPORTANTE: Ajusta esta ruta según dónde esté tu supabase.ts (ej. "../supabase", "../utils/supabase", etc.)
+import { supabase } from "../lib/supabase"; 
+
+// 2. PEGAMOS EL COMPONENTE DE DIAGNÓSTICO (Con tus colores)
+export function SupabaseDiagnostic() {
+  const [status, setStatus] = useState<{ loading: boolean; text: string; data: any[] }>({
+    loading: true,
+    text: 'Probando conexión...',
+    data: []
+  });
+
+  useEffect(() => {
+    async function testConnection() {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        console.log('[Supabase Test] user:', authData?.user ?? null);
+
+        const { data, error } = await supabase
+          .from('missions')
+          .select('id, title, status, current_progress')
+          .limit(1);
+
+        if (error) throw error;
+
+        console.log('[Supabase Test] ¡Lectura OK!', data);
+        setStatus({
+          loading: false,
+          text: data?.length === 0 
+            ? 'Conectado, pero no hay filas (o RLS las bloquea silenciosamente).' 
+            : 'Conexión y lectura OK',
+          data: data ?? []
+        });
+      } catch (err: any) {
+        console.error('[Supabase Test] Error:', err);
+        setStatus({ loading: false, text: `Error: ${err.message}`, data: [] });
+      }
+    }
+    testConnection();
+  }, []);
+
+  return (
+    <div style={{ padding: '1rem', backgroundColor: 'rgb(23,43,69)', color: '#ffffff', borderRadius: '8px', fontFamily: 'system-ui, sans-serif', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <h3 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Diagnóstico de Supabase</h3>
+      <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{status.text}</p>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-function Landing() {
+function Landing(): JSX.Element {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+
       {/* Nav */}
       <header className="fixed top-0 inset-x-0 z-50">
         <div className="mx-auto max-w-7xl px-5 lg:px-8 mt-4">

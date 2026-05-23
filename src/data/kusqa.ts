@@ -1,24 +1,6 @@
 // KUSQA mock data — shared across pages
-export type Region = "costa" | "sierra" | "selva";
-
-export type Mission = {
-  id: string;
-  title: string;
-  description: string;
-  district: string;
-  region: Region;
-  category: string;
-  xp: number;
-  participants: number;
-  spotsLeft: number;
-  date: string;
-  distanceKm: number;
-  impact: string;
-  difficulty: "Suave" | "Andina" | "Cumbre";
-  organizer: { name: string; avatar: string };
-  coords: { x: number; y: number }; // for visual map (0-100)
-  emoji: string;
-};
+// Single source of truth for all development/prototype data
+import type { Region, Mission, Badge, Notification } from "@/types";
 
 export const MISSIONS: Mission[] = [
   {
@@ -37,7 +19,7 @@ export const MISSIONS: Mission[] = [
     impact: "24m² de mural · 6 cuadras renovadas",
     difficulty: "Suave",
     organizer: { name: "Colectivo Pez Azul", avatar: "🎨" },
-    coords: { x: 18, y: 62 },
+    coords: { lat: -12.1492, lng: -77.0222 },
     emoji: "🎨",
   },
   {
@@ -56,7 +38,7 @@ export const MISSIONS: Mission[] = [
     impact: "500 árboles · 1.2 ha restauradas",
     difficulty: "Andina",
     organizer: { name: "Raíces del Ande", avatar: "🌱" },
-    coords: { x: 52, y: 48 },
+    coords: { lat: -13.3914, lng: -72.0468 },
     emoji: "🌱",
   },
   {
@@ -75,7 +57,7 @@ export const MISSIONS: Mission[] = [
     impact: "800kg de plástico retirado",
     difficulty: "Cumbre",
     organizer: { name: "Amazonía Viva", avatar: "🛶" },
-    coords: { x: 78, y: 32 },
+    coords: { lat: -3.7452, lng: -73.2516 },
     emoji: "🛶",
   },
   {
@@ -94,7 +76,7 @@ export const MISSIONS: Mission[] = [
     impact: "60 escolares formados",
     difficulty: "Suave",
     organizer: { name: "CodeNorte", avatar: "💻" },
-    coords: { x: 22, y: 32 },
+    coords: { lat: -8.1119, lng: -79.0287 },
     emoji: "💻",
   },
   {
@@ -113,7 +95,7 @@ export const MISSIONS: Mission[] = [
     impact: "300 desayunos · 70 familias",
     difficulty: "Andina",
     organizer: { name: "Manos Wayra", avatar: "🍲" },
-    coords: { x: 58, y: 78 },
+    coords: { lat: -15.8402, lng: -70.0219 },
     emoji: "🍲",
   },
   {
@@ -132,8 +114,44 @@ export const MISSIONS: Mission[] = [
     impact: "30 personas mayores acompañadas",
     difficulty: "Suave",
     organizer: { name: "Casa Abuelo", avatar: "🌼" },
-    coords: { x: 19, y: 58 },
+    coords: { lat: -12.1225, lng: -77.0280 },
     emoji: "🌼",
+  },
+  {
+    id: "lima-salud",
+    title: "Campaña de salud mental en SJL",
+    description: "Jornada de sensibilización sobre salud mental con psicólogos voluntarios. Habrá talleres, charlas y tienda de recursos.",
+    district: "San Juan de Lurigancho",
+    region: "costa",
+    category: "Salud",
+    xp: 250,
+    participants: 89,
+    spotsLeft: 51,
+    date: "Jue 19 jun · 14:00",
+    distanceKm: 0,
+    impact: "500+ personas alcanzadas",
+    difficulty: "Suave",
+    organizer: { name: "Salud Pública SJL", avatar: "💚" },
+    coords: { lat: -12.0463, lng: -77.0312 },
+    emoji: "💚",
+  },
+  {
+    id: "puno-cultura",
+    title: "Festival de música tradicional andina",
+    description: "Documenta y promociona la música quechua y aimara con artistas locales de Puno. Oportunidad para aprender instrumentos ancestrales.",
+    district: "Puno",
+    region: "sierra",
+    category: "Arte & cultura",
+    xp: 420,
+    participants: 150,
+    spotsLeft: 35,
+    date: "Vie 27 jun · 18:00",
+    distanceKm: 0,
+    impact: "1000+ músicos conectados",
+    difficulty: "Andina",
+    organizer: { name: "Cultura Andes", avatar: "🎵" },
+    coords: { lat: -15.8402, lng: -70.0219 },
+    emoji: "🎵",
   },
 ];
 
@@ -158,14 +176,6 @@ export const REGION_META: Record<Region, { name: string; gradient: string; color
   },
 };
 
-export type Badge = {
-  id: string;
-  name: string;
-  emoji: string;
-  region: Region | "todas";
-  earned: boolean;
-  description: string;
-};
 
 export const BADGES: Badge[] = [
   { id: "1", name: "Primer paso", emoji: "🌅", region: "todas", earned: true, description: "Tu primera misión completada" },
@@ -203,11 +213,11 @@ export const CURRENT_USER = {
   peopleImpacted: 612,
 };
 
-export const NOTIFICATIONS = [
-  { id: "1", type: "badge", title: "Nueva insignia desbloqueada", body: "Mentor — enseñaste a 10 personas", time: "hace 2h", emoji: "🎓", unread: true },
-  { id: "2", type: "mission", title: "Tu misión empieza mañana", body: "Mural colectivo en Barranco · 9:00", time: "hace 5h", emoji: "🎨", unread: true },
-  { id: "3", type: "social", title: "Andrés se unió a tu proyecto", body: "Clases de código para escolares", time: "hace 1d", emoji: "👋", unread: true },
-  { id: "4", type: "level", title: "¡Subiste a nivel 4!", body: "Ahora eres Guía del valle", time: "hace 2d", emoji: "⛰️", unread: false },
-  { id: "5", type: "community", title: "Tu distrito ganó el reto semanal", body: "Barranco lidera con 1,240 horas", time: "hace 3d", emoji: "🏆", unread: false },
-  { id: "6", type: "mission", title: "Cupos casi llenos", body: "Reforestación en el valle sagrado — quedan 4", time: "hace 4d", emoji: "🌱", unread: false },
+export const NOTIFICATIONS: Notification[] = [
+  { id: "1", type: "badge", title: "Nueva insignia desbloqueada", body: "Mentor — enseñaste a 10 personas", timestamp: "hace 2h", emoji: "🎓", read: false },
+  { id: "2", type: "mission", title: "Tu misión empieza mañana", body: "Mural colectivo en Barranco · 9:00", timestamp: "hace 5h", emoji: "🎨", read: false },
+  { id: "3", type: "social", title: "Andrés se unió a tu proyecto", body: "Clases de código para escolares", timestamp: "hace 1d", emoji: "👋", read: false },
+  { id: "4", type: "level", title: "¡Subiste a nivel 4!", body: "Ahora eres Guía del valle", timestamp: "hace 2d", emoji: "⛰️", read: true },
+  { id: "5", type: "community", title: "Tu distrito ganó el reto semanal", body: "Barranco lidera con 1,240 horas", timestamp: "hace 3d", emoji: "🏆", read: true },
+  { id: "6", type: "mission", title: "Cupos casi llenos", body: "Reforestación en el valle sagrado — quedan 4", timestamp: "hace 4d", emoji: "🌱", read: true },
 ];

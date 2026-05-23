@@ -274,4 +274,29 @@
     background-size: 200% 100%;
     animation: shimmer 2.5s linear infinite;
   }
+
+  /* Slow compass spin for analytics section */
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+  /* Hide scrollbars on filter pill rows */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Civic card entry animation */
+  @keyframes civic-in {
+    0% { opacity: 0; transform: translateY(8px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-civic-in { animation: civic-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Glow pulse for active mission pins */
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 8px 2px oklch(0.7 0.18 45 / 0.3); }
+    50% { box-shadow: 0 0 20px 6px oklch(0.7 0.18 45 / 0.6); }
+  }
+  .animate-glow-pulse { animation: glow-pulse 2.8s ease-in-out infinite; }
 }

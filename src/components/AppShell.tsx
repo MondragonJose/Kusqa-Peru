@@ -9,7 +9,7 @@ import {
   Sparkles,
   Search,
 } from "lucide-react";
-import { CURRENT_USER } from "@/data/kusqa";
+import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { motion } from "framer-motion";
 
 type NavItem = { to: string; label: string; icon: typeof Compass; exact?: boolean };
@@ -25,6 +25,8 @@ const NAV: NavItem[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const state = useRouterState();
   const path = state.location.pathname;
+  const currentUser = useCurrentUser();
+  const { progressPct } = useUserXpProgress();
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -78,12 +80,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-gradient-sunrise grid place-items-center text-xl shadow-soft">
-                {CURRENT_USER.avatar}
+                {currentUser.avatar}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm truncate">{CURRENT_USER.name}</div>
+                <div className="font-semibold text-sm truncate">{currentUser.name}</div>
                 <div className="text-xs text-muted-foreground truncate">
-                  Nivel {CURRENT_USER.level} · {CURRENT_USER.xp.toLocaleString()} XP
+                  Nivel {currentUser.level} · {currentUser.xp.toLocaleString()} XP
                 </div>
               </div>
               <Sparkles className="h-4 w-4 text-accent" />
@@ -91,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
               <div
                 className="h-full bg-gradient-sunrise"
-                style={{ width: `${((CURRENT_USER.xp - 3500) / (6500 - 3500)) * 100}%` }}
+                style={{ width: `${progressPct}%` }}
               />
             </div>
           </Link>
@@ -115,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-sunrise text-white text-xs font-semibold shadow-soft">
               <span>🔥</span>
-              <span>Racha {CURRENT_USER.streak} días</span>
+              <span>Racha {currentUser.streak} días</span>
             </div>
             <Link
               to="/app/notificaciones"

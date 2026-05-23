@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Sparkles, MapPin, Users, Camera, Tag } from "lucide-react";
+import { getPlaceSuggestions, type PlaceSuggestion } from "@/services/googleMaps";
 
 export const Route = createFileRoute("/app/crear")({
   component: CreateProject,
@@ -24,6 +25,43 @@ function CreateProject() {
   const [district, setDistrict] = useState("Barranco, Lima");
   const [region, setRegion] = useState<"costa" | "sierra" | "selva">("costa");
   const [team, setTeam] = useState(15);
+  
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const autocompleteContainerRef = useRef<HTMLDivElement>(null);
+
+  // Autocomplete fetch effect
+  useEffect(() => {
+    let isMounted = true;
+    const query = district.split(",")[0].trim();
+    if (query.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      const results = await getPlaceSuggestions(query);
+      if (isMounted) {
+        setSuggestions(results);
+      }
+    }, 400);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(delayDebounce);
+    };
+  }, [district]);
+
+  // Click outside autocomplete dropdown list
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (autocompleteContainerRef.current && !autocompleteContainerRef.current.contains(event.target as Node)) {
+        setSuggestions([]);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -125,13 +163,33 @@ function CreateProject() {
                   ))}
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-6 relative" ref={autocompleteContainerRef}>
                   <label className="text-sm font-semibold">Distrito</label>
                   <input
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                    placeholder="Busca y selecciona un distrito en Perú..."
                   />
+                  {suggestions.length > 0 && (
+                    <div className="absolute top-[108%] left-0 right-0 bg-card border border-border/40 rounded-xl shadow-lift overflow-hidden z-50">
+                      {suggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setDistrict(s.description);
+                            setRegion(s.region);
+                            setCoords(s.coords);
+                            setSuggestions([]);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs text-foreground hover:bg-secondary/60 active:bg-secondary border-b border-border/10 last:border-b-0 cursor-pointer transition-colors"
+                        >
+                          {s.description}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
