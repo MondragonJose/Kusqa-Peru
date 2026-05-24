@@ -1,8 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, Sparkles, MapPin, Users, Camera, Tag } from "lucide-react";
-import { getPlaceSuggestions, type PlaceSuggestion } from "@/services/googleMaps";
+import { ArrowRight, ArrowLeft, Check, Sparkles, MapPin, Users, Camera, Tag, X, AlertTriangle } from "lucide-react";
+import { getPlaceSuggestions, type PlaceSuggestion, PERU_LOCAL_PLACES } from "@/services/googleMaps";
+import { useAutocomplete } from "@/hooks/useAutocomplete";
+import { useCreateProposal } from "@/features/proposals";
+import type { ProposalResult } from "@/features/proposals";
+import { supabase } from "@/lib/supabase";
+import { useCurrentUser } from "@/features/auth";
+import { toast } from "sonner";
+import { calculateMapDistance } from "@/utils/map";
 
 export const Route = createFileRoute("/app/crear")({
   component: CreateProject,
@@ -19,49 +26,201 @@ const STEPS = [
 const CATS = ["Medio ambiente", "Educación", "Arte & cultura", "Comunidad", "Salud", "Tecnología"];
 
 function CreateProject() {
+  const navigate = useNavigate();
+  const currentUser = useCurrentUser();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState("Medio ambiente");
-  const [district, setDistrict] = useState("Barranco, Lima");
-  const [region, setRegion] = useState<"costa" | "sierra" | "selva">("costa");
+  const [district, setDistrict] = useState(currentUser?.district || "");
+  const [region, setRegion] = useState<"costa" | "sierra" | "selva">((currentUser?.region as "costa" | "sierra" | "selva") || "costa");
   const [team, setTeam] = useState(15);
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [flowState, setFlowState] = useState<"idle" | "uploading_images" | "saving" | "success" | "partial_success" | "error">("idle");
   
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const autocompleteContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Image upload state
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
-  // Autocomplete fetch effect
-  useEffect(() => {
-    let isMounted = true;
-    const query = district.split(",")[0].trim();
-    if (query.length < 2) {
-      setSuggestions([]);
+  const createProposal = useCreateProposal();
+
+  const {
+    suggestions,
+    containerRef: autocompleteContainerRef,
+    clearSuggestions,
+  } = useAutocomplete<PlaceSuggestion>({
+    query: district.split(",")[0].trim(),
+    fetcher: getPlaceSuggestions,
+    delay: 400,
+  });
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate file types
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const validFiles = files.filter(f => validTypes.includes(f.type));
+
+    if (validFiles.length !== files.length) {
+      toast.error("Formato no válido", {
+        description: "Solo se permiten imágenes (JPEG, PNG, WebP, GIF)",
+      });
       return;
     }
 
-    const delayDebounce = setTimeout(async () => {
-      const results = await getPlaceSuggestions(query);
-      if (isMounted) {
-        setSuggestions(results);
+    // Validate file sizes (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    const sizeValidFiles = validFiles.filter(f => f.size <= maxSize);
+
+    if (sizeValidFiles.length !== validFiles.length) {
+      toast.error("Archivo demasiado grande", {
+        description: "Algunas imágenes exceden el límite de 5MB",
+      });
+      return;
+    }
+
+    // Create previews
+    const previews = sizeValidFiles.map(file => URL.createObjectURL(file));
+    setImageFiles(prev => [...prev, ...sizeValidFiles]);
+    setImagePreviews(prev => [...prev, ...previews]);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (imageFiles.length === 0) return [];
+
+    console.log("[KUSQA STORAGE TRACE] Uploading images:", imageFiles.length);
+    setIsUploadingImages(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("No authenticated user for image upload");
       }
-    }, 400);
+      const userId = user.id;
 
-    return () => {
-      isMounted = false;
-      clearTimeout(delayDebounce);
-    };
-  }, [district]);
+      const uploadPromises = imageFiles.map(async (file, index) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}/${Date.now()}-${index}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-  // Click outside autocomplete dropdown list
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (autocompleteContainerRef.current && !autocompleteContainerRef.current.contains(event.target as Node)) {
-        setSuggestions([]);
+        const { data, error } = await supabase.storage
+          .from('proposal-images')
+          .upload(filePath, file);
+
+        if (error) {
+          console.error("[KUSQA STORAGE TRACE] Error uploading image:", error);
+          throw error;
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('proposal-images')
+          .getPublicUrl(filePath);
+
+        console.log("[KUSQA STORAGE TRACE] Image uploaded:", publicUrl);
+        return publicUrl;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      console.log("[KUSQA STORAGE TRACE] All images uploaded successfully");
+      return urls;
+    } catch (error) {
+      console.error("[KUSQA STORAGE TRACE] Error uploading images:", error);
+      throw error;
+    } finally {
+      setIsUploadingImages(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!title.trim()) {
+      toast.error("Título requerido", {
+        description: "Por favor ingresa un título para tu misión",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const warnings: string[] = [];
+
+    // Validación coords vs distrito (warning UX, no bloqueo)
+    if (coords && district) {
+      const districtName = district.split(",")[0].trim().toLowerCase();
+      const matchedPlace = PERU_LOCAL_PLACES.find(p =>
+        p.district.toLowerCase().includes(districtName) ||
+        districtName.includes(p.district.toLowerCase())
+      );
+
+      if (matchedPlace) {
+        const distance = calculateMapDistance(coords, matchedPlace.coords);
+        if (distance > 50) {
+          warnings.push(`Las coordenadas parecen estar a ${distance.toFixed(0)} km del distrito seleccionado. Verifica la ubicación.`);
+        }
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    // STEP 1: Upload images — BEST-EFFORT, never blocks proposal creation
+    setFlowState("uploading_images");
+    let imageUrls: string[] = [];
+    try {
+      imageUrls = await uploadImages();
+    } catch (storageError) {
+      warnings.push("Las imágenes no se pudieron subir");
+      console.warn("[KUSQA STORAGE TRACE] Image upload failed — continuing without images:", storageError);
+    }
+
+    // STEP 2: Create proposal — CRITICAL PATH (returns ProposalResult, never throws)
+    setFlowState("saving");
+    const dto = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      category: cat,
+      district: district.trim(),
+      region,
+      teamSize: team,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
+      images: imageUrls,
+    };
+
+    console.log("[KUSQA PROPOSAL TRACE] UI → mutation with DTO:", JSON.stringify(dto, null, 2));
+    const result = await createProposal.mutateAsync(dto);
+
+    // STEP 3: Handle deterministic result
+    if (result.status === "error") {
+      setFlowState("error");
+      console.error("[KUSQA PROPOSAL TRACE] Proposal creation failed:", result.error);
+      toast.error("Error al publicar", {
+        description: result.error || "Por favor intenta nuevamente",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Success or partial_success
+    if (warnings.length > 0) {
+      setFlowState("partial_success");
+      console.log("[KUSQA PROPOSAL TRACE] Proposal created with warnings:", warnings);
+    } else {
+      setFlowState("success");
+      console.log("[KUSQA PROPOSAL TRACE] Proposal created successfully, id:", result.data.id);
+    }
+
+    setIsSubmitting(false);
+    navigate({ to: "/app" });
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -94,68 +253,80 @@ function CreateProject() {
                 {done ? <Check className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-1 flex-1 rounded-full ${done ? "bg-jungle" : "bg-secondary"}`} />
+                <div className={`h-[2px] w-full rounded transition-all duration-500 ${done ? "bg-jungle" : "bg-border/60"}`} />
               )}
             </div>
           );
         })}
       </div>
 
-      <div className="rounded-3xl bg-card border border-border/60 shadow-card p-7 lg:p-10 min-h-[440px]">
+      {/* Steps Content */}
+      <div className="bg-card border border-border/40 rounded-3xl p-6 md:p-8 shadow-lift mb-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
           >
             {step === 1 && (
-              <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">Paso 1</div>
-                <h2 className="font-display font-bold text-3xl mt-2">¿Cuál es tu idea?</h2>
-                <p className="text-muted-foreground mt-2">En una frase, qué quieres lograr con tu comunidad.</p>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej: Convertir el parque en una biblioteca al aire libre"
-                  className="mt-6 w-full rounded-2xl border border-border bg-surface px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
-                />
-                <div className="mt-6">
-                  <div className="text-sm font-semibold mb-3">Elige una categoría</div>
-                  <div className="flex flex-wrap gap-2">
-                    {CATS.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setCat(c)}
-                        className={`px-4 py-2 rounded-full text-sm border transition-smooth ${
-                          cat === c
-                            ? "bg-foreground text-background border-foreground"
-                            : "bg-surface border-border hover:bg-secondary"
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display font-bold text-xl">¿De qué trata tu expedición cívica?</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Dale un nombre que inspire acción y selecciona su causa principal.</p>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold">Nombre de la misión</label>
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                      placeholder="Ej: Reforestación del acantilado en Barranco..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold">Causa principal</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mt-2">
+                      {CATS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setCat(c)}
+                          className={`px-4 py-3 rounded-xl border text-xs font-bold text-center transition-smooth cursor-pointer ${
+                            cat === c
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-border/60 bg-secondary/30 hover:bg-secondary/60 text-muted-foreground"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {step === 2 && (
-              <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">Paso 2</div>
-                <h2 className="font-display font-bold text-3xl mt-2">¿Dónde ocurrirá?</h2>
-                <p className="text-muted-foreground mt-2">Tu misión aparecerá brillando en el mapa de la región.</p>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display font-bold text-xl">¿Dónde ocurrirá la acción?</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Busca el distrito. Identificaremos la región geográfica para tu insignia territorial.</p>
+                </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {(["costa", "sierra", "selva"] as const).map((r) => (
                     <button
                       key={r}
+                      type="button"
                       onClick={() => setRegion(r)}
-                      className={`relative aspect-[3/4] rounded-2xl text-white p-5 overflow-hidden transition-smooth ${
-                        r === "costa" ? "bg-gradient-coast" : r === "sierra" ? "bg-gradient-andes" : "bg-gradient-jungle"
-                      } ${region === r ? "ring-4 ring-accent scale-[1.03]" : "opacity-80 hover:opacity-100"}`}
+                      className={`relative aspect-[4/3] rounded-2xl border p-4 text-left flex flex-col justify-between transition-smooth overflow-hidden cursor-pointer ${
+                        region === r
+                          ? "border-accent bg-accent/5 text-accent shadow-soft"
+                          : "border-border/60 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground"
+                      }`}
                     >
                       <div className="text-3xl mb-auto">{r === "costa" ? "🌊" : r === "sierra" ? "⛰️" : "🌿"}</div>
                       <div className="absolute bottom-4 left-4 font-display font-bold capitalize">{r}</div>
@@ -163,7 +334,7 @@ function CreateProject() {
                   ))}
                 </div>
 
-                <div className="mt-6 relative" ref={autocompleteContainerRef}>
+                <div className="relative" ref={autocompleteContainerRef}>
                   <label className="text-sm font-semibold">Distrito</label>
                   <input
                     value={district}
@@ -181,7 +352,7 @@ function CreateProject() {
                             setDistrict(s.description);
                             setRegion(s.region);
                             setCoords(s.coords);
-                            setSuggestions([]);
+                            clearSuggestions();
                           }}
                           className="w-full text-left px-4 py-3 text-xs text-foreground hover:bg-secondary/60 active:bg-secondary border-b border-border/10 last:border-b-0 cursor-pointer transition-colors"
                         >
@@ -228,13 +399,68 @@ function CreateProject() {
                 <p className="text-muted-foreground mt-2">Cuenta más sobre tu misión.</p>
                 <textarea
                   rows={5}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe en pocas líneas qué van a hacer, qué necesitan y qué impacto buscas."
                   className="mt-6 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
                 />
-                <div className="mt-4 rounded-2xl border-2 border-dashed border-border p-6 text-center hover:bg-secondary/40 transition-colors cursor-pointer">
-                  <Camera className="h-7 w-7 mx-auto text-muted-foreground" />
-                  <div className="mt-2 font-semibold text-sm">Agrega una foto inspiradora</div>
-                  <div className="text-xs text-muted-foreground">PNG o JPG, hasta 5MB</div>
+                
+                {/* Image Upload */}
+                <div className="mt-4">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className={`rounded-2xl border-2 border-dashed border-border p-6 text-center hover:bg-secondary/40 transition-colors cursor-pointer block ${imagePreviews.length > 0 ? 'hidden' : ''}`}
+                  >
+                    <Camera className="h-7 w-7 mx-auto text-muted-foreground" />
+                    <div className="mt-2 font-semibold text-sm">Agrega fotos inspiradoras</div>
+                    <div className="text-xs text-muted-foreground">PNG o JPG, hasta 5MB</div>
+                  </label>
+
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3 mt-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-border">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {imagePreviews.length < 5 && (
+                        <label
+                          htmlFor="image-upload"
+                          className="aspect-square rounded-xl border-2 border-dashed border-border flex items-center justify-center hover:bg-secondary/40 transition-colors cursor-pointer"
+                        >
+                          <div className="text-center">
+                            <Camera className="h-6 w-6 mx-auto text-muted-foreground" />
+                            <div className="text-xs text-muted-foreground mt-1">Agregar más</div>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                  )}
+
+                  {isUploadingImages && (
+                    <div className="mt-3 text-center text-xs text-muted-foreground">
+                      Subiendo imágenes...
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -271,10 +497,11 @@ function CreateProject() {
           <ArrowLeft className="h-4 w-4" /> Atrás
         </button>
         <button
-          onClick={() => setStep((s) => Math.min(STEPS.length, s + 1))}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3 font-semibold shadow-glow hover:scale-[1.02] transition-smooth"
+          onClick={step === STEPS.length ? handlePublish : () => setStep((s) => Math.min(STEPS.length, s + 1))}
+          disabled={isSubmitting}
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3 font-semibold shadow-glow hover:scale-[1.02] transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {step === STEPS.length ? "Publicar misión" : "Continuar"} <ArrowRight className="h-4 w-4" />
+          {flowState === "uploading_images" ? "Subiendo imágenes..." : flowState === "saving" ? "Guardando propuesta..." : isSubmitting ? "Publicando..." : step === STEPS.length ? "Publicar misión" : "Continuar"} <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>

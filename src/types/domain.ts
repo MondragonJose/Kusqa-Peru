@@ -46,6 +46,7 @@ export type Mission = {
   organizer: MissionOrganizer;
   coords: MapCoords;
   emoji: string;
+  status?: "proposed" | "active" | "completed";
 };
 
 /** Badge o medalla ganada */
@@ -67,6 +68,28 @@ export type Notification = {
   timestamp: string; // Unified: single time field (e.g. "hace 2h")
   read: boolean; // Unified: single read/unread field (true = already read)
   emoji?: string;
+};
+
+/** Progreso territorial del usuario (tabla user_progress) */
+export type UserTerritoryProgress = {
+  userId: string;
+  communityPoints: number;
+  totalMissionsCompleted: number;
+  lastActivityAt: string;
+};
+
+/** Estado de participación usuario–misión (tabla user_missions) */
+export type UserMissionStatus = "in_progress" | "completed";
+
+/** Relación usuario–misión con misión de dominio validada */
+export type UserMission = {
+  id: string;
+  userId: string;
+  missionId: string;
+  status: UserMissionStatus;
+  completedAt: string | null;
+  xpEarned: number | null;
+  mission: Mission;
 };
 
 /** Información del usuario en un perfil */

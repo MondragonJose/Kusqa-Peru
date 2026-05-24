@@ -27,8 +27,21 @@ export function mapCoordsToPercent(coords: MapCoords): { left: string; top: stri
  */
 export function getClosestRegion(coords: MapCoords): "costa" | "sierra" | "selva" {
   // Aproximación simple para el Perú
-  if (coords.lng < -76.5) return "costa"; // Costa oeste
-  if (coords.lat > -6.0) return "selva";   // Selva norte/oriente
+  if (coords.lng < -76.5) {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA REGION TRACE] coords:", coords, "→ costa (lng < -76.5)");
+    }
+    return "costa"; // Costa oeste
+  }
+  if (coords.lat > -6.0) {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA REGION TRACE] coords:", coords, "→ selva (lat > -6.0)");
+    }
+    return "selva";   // Selva norte/oriente
+  }
+  if (import.meta.env.DEV) {
+    console.log("[KUSQA REGION TRACE] coords:", coords, "→ sierra (default)");
+  }
   return "sierra";                         // Andes / Sierra centro y sur
 }
 

@@ -399,3 +399,39 @@ export async function getUserMissions(userId: string): Promise<Mission[]> {
     throw error;
   }
 }
+
+/**
+ * Usuario completa una misión
+ * Actualiza registro en mission_participants a status 'completed'
+ */
+export async function completeMission(missionId: string, userId: string): Promise<boolean> {
+  try {
+    logDev(
+      `[services/missions] User ${userId} completing mission ${missionId}...`
+    );
+
+    // Primero validar que existe la misión
+    const mission = await getMissionById(missionId);
+    if (!mission) {
+      throw new Error("Mission not found");
+    }
+
+    // Actualizar mission_participants a status 'completed'
+    const { error } = await supabase
+      .from("mission_participants")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("mission_id", missionId)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("[services/missions] Supabase error:", error);
+      throw new Error(`Failed to complete mission: ${error.message}`);
+    }
+
+    logDev(`[services/missions] User ${userId} completed mission ${missionId}`);
+    return true;
+  } catch (error) {
+    console.error("[services/missions] Exception in completeMission:", error);
+    throw error;
+  }
+}

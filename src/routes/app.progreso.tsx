@@ -1,172 +1,131 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { CURRENT_USER, BADGES, LEVELS, REGION_META } from "@/data/kusqa";
-import { Lock, Sparkles } from "lucide-react";
+import { useCurrentUser } from "@/features/auth";
+import { CivicRouteMap, useProgression } from "@/features/progression";
+import { BadgeGrid, CIVIC_BADGES } from "@/features/badges";
+import { DistrictLeaderboard } from "@/features/community";
+import { Award, Sparkles, TrendingUp } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app/progreso")({
   component: Progress,
 });
 
 function Progress() {
+  const user = useCurrentUser();
+  const { currentStage, nextStage, progressPct, xpToNextStage } = useProgression();
+  const earnedBadgesCount = CIVIC_BADGES.filter((b) => b.earned).length;
+
+  if (!user) return null;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* Hero */}
+    <div className="max-w-6xl mx-auto space-y-12 pb-12">
+      {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-andes p-8 lg:p-12 text-white shadow-lift">
-        <div className="absolute inset-0 bg-mesh opacity-40" />
-        <div className="relative grid lg:grid-cols-[1fr_auto] gap-6 items-center">
+        <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
+        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="relative grid lg:grid-cols-[1fr_auto] gap-8 items-center">
           <div>
-            <div className="text-xs uppercase tracking-widest text-sun font-semibold">Mi expedición</div>
-            <h1 className="font-display font-bold text-4xl lg:text-5xl mt-2 leading-tight">
-              Guía del valle
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-xs uppercase tracking-widest text-sun font-bold border border-white/10">
+              <TrendingUp className="h-3 w-3" /> Mi expedición cívica
+            </div>
+            <h1 className="font-display font-black text-4xl lg:text-5xl mt-4 leading-none tracking-tight">
+              {currentStage.name}
             </h1>
-            <p className="text-white/70 mt-3 max-w-lg">
-              Estás cruzando el corazón de los Andes. A {(6500 - CURRENT_USER.xp).toLocaleString()} XP llegas a la altura del{" "}
-              <span className="text-sun font-semibold">Explorador</span>.
+            <p className="text-white/85 mt-3 max-w-lg text-sm lg:text-base leading-relaxed">
+              {currentStage.narrative}
+              {nextStage && (
+                <span className="block mt-3 text-white/70 text-xs bg-black/10 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-white/5 max-w-md">
+                  Te faltan <strong className="text-sun font-bold">{xpToNextStage.toLocaleString()} XP</strong> para llegar a <strong className="text-white font-bold">{nextStage.name}</strong> ({nextStage.region === "cumbre" ? "Cima Nacional" : `Región ${nextStage.region.charAt(0).toUpperCase() + nextStage.region.slice(1)}`}).
+                </span>
+              )}
             </p>
-            <div className="mt-6 max-w-md">
-              <div className="flex justify-between text-xs mb-1.5">
-                <span>{CURRENT_USER.xp.toLocaleString()} XP</span>
-                <span className="text-white/60">6,500 XP</span>
+            
+            {/* Progress bar */}
+            <div className="mt-8 max-w-md">
+              <div className="flex justify-between text-xs font-semibold mb-2">
+                <span>{user.xp.toLocaleString()} XP acumulados</span>
+                <span className="text-white/70">{nextStage ? `${nextStage.xpFrom.toLocaleString()} XP` : "Máximo alcanzado"}</span>
               </div>
-              <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-3 rounded-full bg-white/15 overflow-hidden border border-white/5 p-[1px]">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${((CURRENT_USER.xp - 3500) / (6500 - 3500)) * 100}%` }}
+                  animate={{ width: `${progressPct}%` }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
-                  className="h-full bg-gradient-sunrise relative"
+                  className="h-full bg-gradient-sunrise rounded-full relative"
                 >
                   <div className="absolute inset-0 shimmer" />
                 </motion.div>
               </div>
             </div>
           </div>
+
+          {/* Quick Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { v: CURRENT_USER.rank, l: "Ranking" },
-              { v: CURRENT_USER.streak, l: "Racha" },
-              { v: BADGES.filter((b) => b.earned).length, l: "Insignias" },
+              { v: `#${user.rank}`, l: "Ranking" },
+              { v: `${user.streak}d`, l: "Racha" },
+              { v: earnedBadgesCount, l: "Insignias" },
             ].map((s) => (
-              <div key={s.l} className="rounded-2xl bg-white/10 backdrop-blur px-4 py-3 text-center min-w-[88px]">
-                <div className="font-display font-bold text-2xl">{s.v}</div>
-                <div className="text-[10px] uppercase tracking-widest text-white/70">{s.l}</div>
+              <div key={s.l} className="rounded-2xl bg-white/10 backdrop-blur-md px-4 py-4 text-center min-w-[94px] border border-white/10 shadow-sm">
+                <div className="font-display font-black text-2xl tracking-tight text-white">{s.v}</div>
+                <div className="text-[9px] uppercase tracking-widest text-white/70 font-semibold mt-1">{s.l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Journey path */}
-      <section>
-        <h2 className="font-display font-bold text-2xl">Tu ruta por el Perú</h2>
-        <p className="text-sm text-muted-foreground">Inspirada en el Qhapaq Ñan, cada nivel desbloquea un nuevo paisaje.</p>
-
-        <div className="relative mt-8">
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
-            <path
-              d="M 60 150 Q 200 30 350 130 T 650 70 T 940 140"
-              stroke="oklch(0.85 0.05 80)"
-              strokeWidth="2.5"
-              strokeDasharray="5 8"
-              fill="none"
-            />
-          </svg>
-          <div className="relative grid grid-cols-3 md:grid-cols-7 gap-3">
-            {LEVELS.map((l) => {
-              const reached = CURRENT_USER.level >= l.level;
-              const current = CURRENT_USER.level === l.level;
-              const meta = REGION_META[l.region];
-              return (
-                <motion.div
-                  key={l.level}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: l.level * 0.06 }}
-                  className="relative flex flex-col items-center"
-                >
-                  <div
-                    className={`aspect-square w-full max-w-[110px] rounded-2xl grid place-items-center text-3xl shadow-card relative ${
-                      current
-                        ? "bg-gradient-sunrise text-white shadow-glow ring-4 ring-accent/30"
-                        : reached
-                          ? `${meta.gradient} text-white`
-                          : "bg-secondary text-muted-foreground"
-                    }`}
-                  >
-                    {reached ? (l.level === 1 ? "🚶" : l.level === 2 ? "🏘️" : l.level === 3 ? "🌱" : l.level === 4 ? "⛰️" : l.level === 5 ? "🧭" : l.level === 6 ? "🛶" : "🏆") : <Lock className="h-5 w-5" />}
-                    {current && <span className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse-ring" />}
-                  </div>
-                  <div className="mt-3 text-center">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Nivel {l.level}</div>
-                    <div className={`font-semibold text-sm ${current ? "text-accent" : ""}`}>{l.name}</div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+      {/* Journey Map Section */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display font-black text-2xl tracking-tight text-foreground">Tu Ruta por el Perú</h2>
+          <p className="text-sm text-muted-foreground">Inspirada en el Qhapaq Ñan y el espíritu de servicio colectivo.</p>
+        </div>
+        <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-sm overflow-hidden relative">
+          <CivicRouteMap userXp={user.xp} />
         </div>
       </section>
 
-      {/* Badges */}
-      <section>
-        <div className="flex items-end justify-between mb-4">
+      {/* Badges Section */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between">
           <div>
-            <h2 className="font-display font-bold text-2xl">Insignias</h2>
-            <p className="text-sm text-muted-foreground">Cada gesto deja huella en tu colección.</p>
-          </div>
-          <div className="text-sm font-semibold text-muted-foreground">
-            {BADGES.filter((b) => b.earned).length} de {BADGES.length}
+            <h2 className="font-display font-black text-2xl tracking-tight text-foreground flex items-center gap-2">
+              <Award className="h-6 w-6 text-accent animate-pulse" /> Colección de Insignias
+            </h2>
+            <p className="text-sm text-muted-foreground">Cada acción cívica deja una marca de identidad en tu historia.</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {BADGES.map((b, i) => (
-            <motion.div
-              key={b.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.04 }}
-              className={`rounded-2xl p-5 text-center transition-smooth ${
-                b.earned
-                  ? "bg-card border border-border/60 shadow-soft hover:shadow-card hover:-translate-y-1"
-                  : "bg-secondary/40 border border-dashed border-border"
-              }`}
-            >
-              <div className={`text-5xl ${b.earned ? "" : "grayscale opacity-40"}`}>{b.emoji}</div>
-              <div className={`mt-3 font-display font-semibold ${b.earned ? "" : "text-muted-foreground"}`}>
-                {b.name}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">{b.description}</div>
-              {b.earned && (
-                <div className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-accent">
-                  <Sparkles className="h-3 w-3" /> Desbloqueada
-                </div>
-              )}
-            </motion.div>
-          ))}
+        <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-sm">
+          <BadgeGrid badges={CIVIC_BADGES} />
         </div>
       </section>
 
-      {/* Leaderboard */}
-      <section className="rounded-2xl bg-card border border-border/60 p-6 shadow-soft">
-        <h2 className="font-display font-bold text-2xl mb-4">Ranking del mes · Barranco</h2>
-        <div className="divide-y divide-border/60">
-          {[
-            { p: 1, n: "Sayri Ccama", d: "Cusco", xp: 6420, e: "🌱" },
-            { p: 2, n: "Joaquín Ríos", d: "Iquitos", xp: 5980, e: "🛶" },
-            { p: 3, n: "Lucía Herrera", d: "Trujillo", xp: 5310, e: "💻" },
-            { p: 127, n: CURRENT_USER.name, d: CURRENT_USER.district, xp: CURRENT_USER.xp, e: CURRENT_USER.avatar, me: true },
-          ].map((u) => (
-            <div key={u.p} className={`flex items-center gap-4 py-3 ${u.me ? "bg-gradient-sunrise/10 -mx-3 px-3 rounded-xl" : ""}`}>
-              <div className={`w-8 text-center font-display font-bold ${u.p <= 3 ? "text-accent" : "text-muted-foreground"}`}>
-                {u.p <= 3 ? ["🥇", "🥈", "🥉"][u.p - 1] : `#${u.p}`}
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-secondary grid place-items-center text-lg">{u.e}</div>
-              <div className="flex-1">
-                <div className="font-semibold text-sm">{u.n} {u.me && <span className="text-accent">(tú)</span>}</div>
-                <div className="text-xs text-muted-foreground">{u.d}</div>
-              </div>
-              <div className="font-display font-bold">{u.xp.toLocaleString()} XP</div>
+      {/* Territorial Competition Leaderboard */}
+      <section className="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
+        <div className="space-y-4">
+          <h2 className="font-display font-black text-2xl tracking-tight text-foreground">Expediciones Activas</h2>
+          <p className="text-sm text-muted-foreground">
+            Únete a otros jóvenes de tu región. La racha colectiva de tu distrito te impulsa a seguir sumando XP e impacto real.
+          </p>
+          
+          <div className="rounded-3xl border border-dashed border-border p-8 text-center bg-muted/20">
+            <div className="h-12 w-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-6 w-6" />
             </div>
-          ))}
+            <h3 className="font-bold text-base text-foreground mb-1">¿Listo para expandir tu huella?</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
+              El distrito de <strong className="text-primary">{user.district}</strong> necesita líderes como tú. Explora el mapa de misiones cercanas y suma horas.
+            </p>
+            <Link to="/app/mapa" className="inline-block bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-4 py-2 rounded-xl text-xs shadow-sm hover:shadow transition-all duration-300">
+              Ver Misiones en el Mapa
+            </Link>
+          </div>
+        </div>
+        
+        <div>
+          <DistrictLeaderboard sortBy="hours" />
         </div>
       </section>
     </div>

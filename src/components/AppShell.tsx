@@ -28,6 +28,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const currentUser = useCurrentUser();
   const { progressPct } = useUserXpProgress();
 
+  // Fallback seguro si currentUser es null (profile no creado aún)
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando tu perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background relative">
       {/* Ambient background */}
@@ -65,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="h-4.5 w-4.5" size={18} />
                   <span>{item.label}</span>
-                  {item.to === "/app/notificaciones" && (
+                  {item.to === "/app/notificaciones" && (currentUser.missionsDone ?? 0) > 0 && (
                     <span className="ml-auto h-2 w-2 rounded-full bg-accent animate-pulse" />
                   )}
                 </Link>
@@ -112,8 +124,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 placeholder="Buscar misiones, distritos, líderes…"
-                className="w-full rounded-xl border border-border/60 bg-surface/60 backdrop-blur pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                disabled
+                className="w-full rounded-xl border border-border/60 bg-surface/60 backdrop-blur pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
               />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60 font-medium">
+                Próximamente
+              </span>
             </div>
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-sunrise text-white text-xs font-semibold shadow-soft">
               <span>🔥</span>
@@ -124,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="relative h-9 w-9 grid place-items-center rounded-xl border border-border/60 hover:bg-secondary transition-smooth"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
+              {(currentUser.missionsDone ?? 0) > 0 && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />}
             </Link>
           </header>
 
@@ -141,16 +157,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Bottom nav - mobile */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-40 glass-strong rounded-2xl shadow-lift px-2 py-2 flex justify-between">
-        {NAV.slice(0, 5).map((item) => {
+      <nav className="lg:hidden fixed bottom-4 left-4 right-4 z-40 glass-strong rounded-2xl shadow-lift px-3 py-3 flex justify-between safe-area-bottom pb-[env(safe-area-inset-bottom)] pb-6">
+        {[...NAV.slice(0, 4), NAV[5]].map((item) => {
           const active = item.exact ? path === item.to : path.startsWith(item.to);
           const Icon = item.icon;
           return (
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-medium transition-smooth ${
-                active ? "text-accent" : "text-muted-foreground"
+              className={`flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 text-[10px] font-medium transition-smooth min-w-[48px] min-h-[48px] justify-center ${
+                active ? "text-accent bg-accent/10" : "text-muted-foreground"
               }`}
             >
               <Icon className="h-5 w-5" />

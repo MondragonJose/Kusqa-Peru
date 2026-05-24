@@ -1,13 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { missionRepository } from "@/services/missionRepository";
+import { missionCatalogQueryOptions, missionDetailQueryOptions } from "@/features/auth/queryOptions";
 
-export const missionKeys = {
-  all: ["missions"] as const,
+export { missionKeys } from "@/lib/queryKeys";
+
+type UseMissionOptions = {
+  enabled?: boolean;
 };
 
 export function useMissions() {
+  const query = useQuery(missionCatalogQueryOptions());
+
+  if (import.meta.env.DEV && query.data) {
+    console.log("[KUSQA MISSION TRACE] useMissions: Retrieved", query.data.length, "missions from cache/network");
+  }
+
+  return query;
+}
+
+export function useMission(missionId: string, options?: UseMissionOptions) {
+  const enabled = (options?.enabled ?? true) && missionId.length > 0;
+
   return useQuery({
-    queryKey: missionKeys.all,
-    queryFn: () => missionRepository.findAll(),
+    ...missionDetailQueryOptions(missionId),
+    enabled,
   });
 }

@@ -15,6 +15,7 @@ export type UserLocationState = {
 
 export type MapFilterState = {
   region: Region | "todas";
+  district: string | "todas";
   category: MissionCategory | "todas";
   difficulty: MissionDifficulty | "todas";
   searchQuery: string;

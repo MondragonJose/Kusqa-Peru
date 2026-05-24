@@ -1,12 +1,48 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { MapPin, Sparkles, ArrowRight, Users, TrendingUp, Clock, Heart, ShieldCheck, Compass, CompassIcon } from "lucide-react";
+import { useMemo } from "react";
+import { MapPin, Sparkles, ArrowRight, Users, TrendingUp, Heart, Compass, CompassIcon, RefreshCw } from "lucide-react";
 import { REGION_META } from "@/data/kusqa";
 import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { useProgression } from "@/features/progression";
 import { CommunityPulse } from "@/features/community";
 import { useMissions } from "@/hooks/useMissions";
-import type { Region } from "@/types";
+import { useAllProposals } from "@/features/proposals";
+import { Onboarding } from "@/components/Onboarding";
+import type { Region, Mission, MissionCategory, MissionDifficulty } from "@/types";
+import type { Proposal } from "@/services/proposalContract";
+import { useQueryClient } from "@tanstack/react-query";
+import { missionKeys } from "@/lib/queryKeys";
+import { formatRelativeDate } from "@/utils/date";
+import { getCategoryMetadata } from "@/constants/categoryMetadata";
+import { CivicEntity, isMission, isProposal } from "@/types/entity";
+import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
+
+// Helper para renderizar metadata contextual simple en cards
+function renderCategoryMetadata(category: MissionCategory) {
+  const meta = getCategoryMetadata(category);
+  // Para beta, mostrar solo el primer field relevante
+  const field = meta.fields[0];
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/80 font-medium">
+      <span>{field.icon}</span>
+      <span>{field.label}: {field.defaultValue}</span>
+    </div>
+  );
+}
+
+// Helper para renderizar badge de entityType
+function renderEntityTypeBadge(entity: CivicEntity) {
+  if (isProposal(entity)) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-[8px] font-bold text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30">
+        <span>🏛️</span>
+        <span>Propuesta</span>
+      </span>
+    );
+  }
+  return null;
+}
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -14,65 +50,243 @@ export const Route = createFileRoute("/app/")({
 
 function Dashboard() {
   const { data: missions = [] } = useMissions();
-  const featured = missions.slice(0, 3);
-  const nearby = missions.filter((m) => m.region === "costa");
+  const { data: proposals = [] } = useAllProposals(); // Sin filtro de status para incluir pending
   const currentUser = useCurrentUser();
   const { progressPct } = useUserXpProgress();
   const { currentStage, nextStage, xpToNextStage } = useProgression();
+  const queryClient = useQueryClient();
 
-  // Territorial scrollable targets
-  const territories = [
-    {
-      id: "valle-sagrado",
-      name: "Valle Sagrado & Cusco",
-      region: "sierra" as Region,
-      energy: 92,
-      activeMissionsCount: 8,
-      leadCategory: "Medio ambiente",
-      quote: "Sembrando agua y reforestando las cuencas de los abuelos.",
-      imageEmoji: "🏔️",
-      link: "/app/mapa"
-    },
-    {
-      id: "barranco",
-      name: "Barranco & Miraflores",
-      region: "costa" as Region,
-      energy: 88,
-      activeMissionsCount: 5,
-      leadCategory: "Arte & cultura",
-      quote: "Rescatando la memoria visual y comunitaria en el litoral.",
-      imageEmoji: "🌊",
-      link: "/app/mapa"
-    },
-    {
-      id: "iquitos",
-      name: "Iquitos Río Itaya",
-      region: "selva" as Region,
-      energy: 76,
-      activeMissionsCount: 4,
-      leadCategory: "Comunidad",
-      quote: "Uniendo brigadas fluviales para limpiar nuestros ríos sagrados.",
-      imageEmoji: "🌿",
-      link: "/app/mapa"
-    },
-    {
-      id: "puno",
-      name: "Puno Lago Titicaca",
-      region: "sierra" as Region,
-      energy: 52,
-      activeMissionsCount: 3,
-      leadCategory: "Educación",
-      quote: "Tejiendo saberes ancestrales con herramientas digitales.",
-      imageEmoji: "🌾",
-      link: "/app/mapa"
+  const handleRefreshMissions = () => {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA MISSION TRACE] Manual cache refresh triggered");
+      queryClient.invalidateQueries({ queryKey: missionKeys.all });
     }
+  };
+
+  // Merge missions + proposals como CivicEntity unificado
+  const allEntities = useMemo<CivicEntity[]>(() => {
+    const missionEntities = missions.map(missionToEntity);
+    const proposalEntities = proposals.flatMap((p) => {
+      const entity = proposalToEntity(p);
+      return entity ? [entity] : [];
+    });
+    const merged = [...missionEntities, ...proposalEntities];
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ENTITY TRACE] Dashboard merge:", missionEntities.length, "missions +", proposalEntities.length, "proposals =", merged.length, "total entities");
+    }
+    return merged;
+  }, [missions, proposals]);
+
+  // Balanced mission selection: prioritize territorial diversity, then internal diversity within regions
+  const featured = (() => {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA MISSION TRACE] Dashboard: Total missions before featured selection:", allEntities.length);
+    }
+
+    if (allEntities.length === 0) return [];
+
+    const byRegion: Record<string, CivicEntity[]> = {};
+    allEntities.forEach(m => {
+      if (!byRegion[m.region]) byRegion[m.region] = [];
+      byRegion[m.region].push(m);
+    });
+
+    const regionCount = Object.keys(byRegion).length;
+
+    // If missions are spread across multiple regions: take one from each, then fill
+    if (regionCount >= 2) {
+      const selected: CivicEntity[] = [];
+      ["sierra", "costa", "selva"].forEach(region => {
+        const pool = byRegion[region];
+        if (pool && pool.length > 0) selected.push(pool[0]);
+      });
+      const remaining = allEntities.filter(m => !selected.includes(m));
+      selected.push(...remaining.slice(0, 3 - selected.length));
+      const final = selected.slice(0, 3);
+
+      if (import.meta.env.DEV) {
+        const hidden = allEntities.filter(m => !final.includes(m));
+        console.log("[KUSQA ENTITY TRACE] Dashboard: Featured selection (multi-region):", final.length, "selected");
+        console.log("[KUSQA ENTITY TRACE] Dashboard: Featured hidden:", hidden.length, "entities (slice limit 3)");
+        hidden.forEach(m => {
+          console.log("[KUSQA ENTITY TRACE] Hidden from featured:", {
+            id: m.id,
+            title: m.title,
+            region: m.region,
+            entityType: m.entityType,
+            hiddenReason: "slice limit (max 3 featured)",
+          });
+        });
+      }
+
+      return final;
+    }
+
+    // If all missions are in one region: distribute by category/district for internal diversity
+    const singleRegion = Object.keys(byRegion)[0] as Region;
+    const pool = byRegion[singleRegion];
+
+    if (pool.length <= 3) {
+      if (import.meta.env.DEV) {
+        console.log("[KUSQA MISSION TRACE] Dashboard: Featured selection (single region, <=3):", pool.length, "all selected");
+      }
+      return pool.slice(0, 3);
+    }
+
+    // Group by category to pick diverse missions
+    const byCategory: Record<string, CivicEntity[]> = {};
+    pool.forEach(m => {
+      if (!byCategory[m.category]) byCategory[m.category] = [];
+      byCategory[m.category].push(m);
+    });
+
+    const categories = Object.keys(byCategory);
+    const selected: CivicEntity[] = [];
+
+    // Take one from each category until we have 3
+    for (const cat of categories) {
+      if (selected.length >= 3) break;
+      selected.push(byCategory[cat][0]);
+    }
+
+    // Fill remaining slots with any missions not yet selected
+    const remaining = pool.filter(m => !selected.includes(m));
+    selected.push(...remaining.slice(0, 3 - selected.length));
+
+    const final = selected.slice(0, 3);
+
+    if (import.meta.env.DEV) {
+      const hidden = pool.filter(m => !final.includes(m));
+      console.log("[KUSQA ENTITY TRACE] Dashboard: Featured selection (single region):", final.length, "selected");
+      console.log("[KUSQA ENTITY TRACE] Dashboard: Featured hidden:", hidden.length, "entities (slice limit 3)");
+      hidden.forEach(m => {
+        console.log("[KUSQA ENTITY TRACE] Hidden from featured:", {
+          id: m.id,
+          title: m.title,
+          region: m.region,
+          category: m.category,
+          entityType: m.entityType,
+          hiddenReason: "slice limit (max 3 featured)",
+        });
+      });
+    }
+
+    return final;
+  })();
+
+  if (import.meta.env.DEV) {
+    console.log("[KUSQA MISSION TRACE] Dashboard: Featured selection:", featured.length, "missions (hidden:", allEntities.length - featured.length, ")");
+  }
+
+  const userRegion = currentUser?.region as Region | undefined;
+  const nearbyRaw = userRegion ? allEntities.filter((m) => m.region === userRegion) : allEntities.slice(0, 2);
+  const nearby = nearbyRaw.length > 0 ? nearbyRaw : allEntities.slice(0, 2);
+
+  if (import.meta.env.DEV) {
+    console.log("[KUSQA ENTITY TRACE] Dashboard: Nearby selection (userRegion:", userRegion, "):", nearby.length, "entities (hidden:", allEntities.length - nearby.length, ")");
+    const hiddenNearby = allEntities.filter(m => !nearby.includes(m));
+    if (hiddenNearby.length > 0) {
+      console.log("[KUSQA ENTITY TRACE] Dashboard: Nearby hidden entities:");
+      hiddenNearby.forEach(m => {
+        const reason = userRegion
+          ? `region filter (entity.region=${m.region}, userRegion=${userRegion})`
+          : "slice limit (max 2 nearby)";
+        console.log("[KUSQA ENTITY TRACE] Hidden from nearby:", {
+          id: m.id,
+          title: m.title,
+          region: m.region,
+          entityType: m.entityType,
+          hiddenReason: reason,
+        });
+      });
+    }
+  }
+
+  // Adaptive feed: show more proposals when missions are scarce
+  const feedItems = (() => {
+    const missionCount = Math.min(allEntities.length, 3);
+    const feed = allEntities.slice(0, missionCount);
+
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ENTITY TRACE] Dashboard: Feed selection:", feed.length, "entities (hidden:", allEntities.length - missionCount, ")");
+      const hiddenFeed = allEntities.slice(missionCount);
+      if (hiddenFeed.length > 0) {
+        console.log("[KUSQA ENTITY TRACE] Dashboard: Feed hidden entities:");
+        hiddenFeed.forEach(m => {
+          console.log("[KUSQA ENTITY TRACE] Hidden from feed:", {
+            id: m.id,
+            title: m.title,
+            region: m.region,
+            entityType: m.entityType,
+            hiddenReason: `slice limit (max ${missionCount} entities in feed)`,
+          });
+        });
+      }
+    }
+
+    return feed;
+  })();
+
+  // Real stats derived from actual mission data
+  const activeDistricts = new Set(allEntities.map((m) => m.district)).size;
+  const totalParticipants = allEntities.reduce((acc, m) => acc + m.participants, 0);
+  const totalHoursRaw = Math.round(totalParticipants * 3.5);
+  const totalHoursLabel = totalHoursRaw >= 1000
+    ? `${(totalHoursRaw / 1000).toFixed(1)}K`
+    : `${totalHoursRaw}`;
+
+  if (import.meta.env.DEV) {
+    const visibleInDashboard = new Set([...featured, ...nearby, ...feedItems]).size;
+    const visiblePercent = allEntities.length > 0 ? ((visibleInDashboard / allEntities.length) * 100).toFixed(1) : "0";
+    const missionCount = allEntities.filter(e => e.entityType === "mission").length;
+    const proposalCount = allEntities.filter(e => e.entityType === "proposal").length;
+    console.log("[KUSQA ENTITY TRACE] Dashboard visibility summary:", visibleInDashboard, "unique entities visible of", allEntities.length, "total (" + visiblePercent + "% visible)");
+    console.log("[KUSQA ENTITY TRACE] Entity breakdown:", missionCount, "missions +", proposalCount, "proposals");
+  }
+
+  // Territorial scrollable targets — always 3, derived from real missions
+  const buildTerritory = (
+    region: Region,
+    id: string,
+    name: string,
+    fallbackQuote: string,
+    fallbackCategory: string,
+    emoji: string
+  ) => {
+    const pool = allEntities.filter(m => m.region === region);
+    const counts: Record<string, number> = {};
+    pool.forEach(m => { counts[m.category] = (counts[m.category] || 0) + 1; });
+    const leadCategory = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallbackCategory;
+    const preview = pool[0] ?? null;
+    return { id, name, region, activeMissionsCount: pool.length, leadCategory, preview, imageEmoji: emoji, quote: fallbackQuote, link: "/app/mapa" };
+  };
+
+  const territories = [
+    buildTerritory("sierra", "valle-sagrado", "Sierra & Andes",  "Sembrando agua y reforestando las cuencas de los abuelos.", "Medio ambiente", "🏔️"),
+    buildTerritory("costa",  "barranco",      "Lima & Costa",    "Rescatando la memoria visual y comunitaria en el litoral.",  "Arte & cultura",  "🌊"),
+    buildTerritory("selva",  "selva",         "Amazonía & Selva","Uniendo brigadas fluviales para limpiar nuestros ríos sagrados.", "Comunidad",  "🌿"),
   ];
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto pb-16">
-      
+    <>
+      <Onboarding onComplete={() => {}} />
+      {import.meta.env.DEV && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={handleRefreshMissions}
+            className="flex items-center gap-2 px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-500 text-xs font-bold hover:bg-yellow-500/30 transition-all"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refrescar misiones
+          </button>
+        </div>
+      )}
+      <div className="space-y-6 sm:space-y-8 max-w-6xl mx-auto pb-24 lg:pb-16 relative">
+        {/* Slight trail line for expedition feel */}
+        <div className="absolute left-8 top-24 bottom-24 w-px bg-gradient-to-b from-transparent via-border/30 to-transparent hidden lg:block" />
+
       {/* Cinematic Hero Section — "Portal de Expedición" */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-stone-950 text-white p-8 sm:p-12 shadow-2xl border border-white/10">
+      <section className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-stone-950 text-white p-6 sm:p-8 lg:p-12 shadow-2xl border border-white/10">
         {/* Animated Qhapaq Ñan Background Line Motifs */}
         <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
         <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -125,10 +339,10 @@ function Dashboard() {
           {/* Large Territorial Statistics */}
           <div className="grid grid-cols-2 gap-3 p-4 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
             {[
-              { label: "distritos activos", value: "12", desc: "Red comunitaria", color: "text-amber-400" },
-              { label: "expediciones", value: "24", desc: "Misiones en curso", color: "text-sky-400" },
-              { label: "jóvenes activos", value: "445", desc: "Movilizados hoy", color: "text-rose-400" },
-              { label: "horas cívicas", value: "1.8K", desc: "Impacto total", color: "text-emerald-400" },
+              { label: "distritos activos", value: activeDistricts > 0 ? String(activeDistricts) : "—", desc: "Red comunitaria", color: "text-amber-400" },
+              { label: "expediciones", value: missions.length > 0 ? String(missions.length) : "—", desc: "Misiones en curso", color: "text-sky-400" },
+              { label: "exploradores", value: totalParticipants > 0 ? totalParticipants.toLocaleString() : "—", desc: "En todo el Perú", color: "text-rose-400" },
+              { label: "horas cívicas", value: totalHoursRaw > 0 ? totalHoursLabel : "—", desc: "Impacto colectivo", color: "text-emerald-400" },
             ].map((s, idx) => (
               <div key={idx} className="p-3 bg-stone-900/60 rounded-2xl border border-white/5 text-center">
                 <div className={`font-display font-black text-2xl ${s.color}`}>{s.value}</div>
@@ -141,7 +355,10 @@ function Dashboard() {
       </section>
 
       {/* Territorios en Movimiento — Horizontally scrollable expedition cards */}
-      <section className="space-y-4">
+      <section className="space-y-4 relative">
+        {/* activeMissionsCount is derived from real missions */}
+        {/* Small connection dot */}
+        <div className="absolute -left-4 top-8 w-2 h-2 rounded-full bg-accent/50 hidden lg:block" />
         <div className="flex items-end justify-between px-1">
           <div>
             <h2 className="font-display font-black text-xl sm:text-2xl tracking-tight text-foreground flex items-center gap-2">
@@ -154,14 +371,33 @@ function Dashboard() {
           </Link>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
           {territories.map((t) => {
             const meta = REGION_META[t.region];
             return (
-              <div 
+              <motion.div
                 key={t.id}
-                className="w-[280px] sm:w-[320px] shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden hover:shadow-lift transition-all duration-300 flex flex-col justify-between"
+                whileHover={{ y: -4 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="w-[260px] sm:w-[280px] md:w-[320px] shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden hover:shadow-lift transition-all duration-300 flex flex-col justify-between relative"
               >
+                {/* Subtle pulse for active territories */}
+                {t.activeMissionsCount > 0 && (
+                  <motion.div
+                    className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400"
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [1, 0.5, 1],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                )}
                 {/* Visual Header */}
                 <div className={`h-24 ${meta.gradient} text-white p-4 relative`}>
                   <div className="absolute inset-0 bg-mesh opacity-20" />
@@ -180,30 +416,33 @@ function Dashboard() {
 
                 {/* Body Details */}
                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                  <p className="text-xs text-muted-foreground italic leading-relaxed">
-                    "{t.quote}"
-                  </p>
+                  {t.preview ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl shrink-0">{t.preview.emoji}</span>
+                      <p className="text-xs text-foreground/80 font-semibold leading-snug line-clamp-2">{t.preview.title}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">"{t.quote}"</p>
+                  )}
                   
                   <div className="space-y-2 pt-2 border-t border-border/40">
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span className="font-semibold">Misiones activas</span>
-                      <span className="font-extrabold text-foreground">{t.activeMissionsCount}</span>
-                    </div>
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                       <span className="font-semibold">Causa principal</span>
                       <span className="font-extrabold text-primary">{t.leadCategory}</span>
                     </div>
-                    
-                    {/* Energy Bar */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-[9px] font-bold text-muted-foreground">
-                        <span>Energía Cívica</span>
-                        <span className="text-accent">{t.energy}/100</span>
+                        <span>Actividad territorial</span>
+                        <span className={t.activeMissionsCount > 0 ? "text-emerald-500" : "text-muted-foreground/50"}>
+                          {t.activeMissionsCount > 0 ? `${t.activeMissionsCount} misión${t.activeMissionsCount !== 1 ? "es" : ""}` : "Próximamente"}
+                        </span>
                       </div>
                       <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div 
+                        <motion.div
                           className="h-full bg-gradient-sunrise"
-                          style={{ width: `${t.energy}%` }}
+                          initial={{ width: 0 }}
+                          animate={{ width: t.activeMissionsCount > 0 ? `${Math.min(100, t.activeMissionsCount * 20)}%` : "3%" }}
+                          transition={{ duration: 1, ease: "easeOut" }}
                         />
                       </div>
                     </div>
@@ -212,40 +451,52 @@ function Dashboard() {
 
                 {/* Footer CTA */}
                 <div className="px-4 pb-4 pt-1">
-                  <Link 
+                  <Link
                     to={t.link}
                     className="w-full inline-flex justify-center items-center py-2.5 rounded-xl bg-secondary hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors text-[10px] font-black uppercase tracking-wider text-foreground"
                   >
                     Ingresar al Territorio
                   </Link>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </section>
 
       {/* Featured Recommendations */}
-      <section className="space-y-4">
+      <section className="space-y-4 relative">
+        {/* Small connection dot */}
+        <div className="absolute -left-4 top-8 w-2 h-2 rounded-full bg-primary/50 hidden lg:block" />
         <div>
-          <h2 className="font-display font-black text-xl sm:text-2xl tracking-tight text-foreground">Historias Recomendadas para ti</h2>
+          <h2 className="font-display font-black text-xl sm:text-2xl tracking-tight text-foreground">Actividad en tu Territorio</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Expediciones locales y de alto impacto cívico.</p>
         </div>
         
         <div className="grid md:grid-cols-3 gap-4">
-          {featured.map((m, i) => {
-            const meta = REGION_META[m.region];
+          {featured.length === 0 ? (
+            <div className="md:col-span-3 rounded-3xl border border-dashed border-border p-10 text-center">
+              <div className="text-4xl mb-3">🌱</div>
+              <p className="text-sm text-muted-foreground font-medium">El territorio está cobrando vida.</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Sé el primero en crear una iniciativa en tu distrito.</p>
+              <Link to="/app/mapa" className="inline-flex items-center gap-2 mt-4 text-xs font-black uppercase tracking-wider text-primary hover:underline">
+                Explorar el mapa <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          ) : featured.map((m, i) => {
+            const meta = REGION_META[m.region as Region] || REGION_META.costa;
             return (
               <motion.div
                 key={m.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4 }}
                 transition={{ delay: i * 0.06 }}
               >
                 <Link
                   to="/app/mision/$missionId"
                   params={{ missionId: m.id }}
-                  className="group block rounded-3xl bg-card border border-border/80 overflow-hidden hover:shadow-lift hover:-translate-y-1 transition-all duration-300"
+                  className="group block rounded-3xl bg-card border border-border/80 overflow-hidden hover:shadow-lift transition-all duration-300"
                 >
                   <div className={`h-36 ${meta.gradient} relative grid place-items-center text-5xl`}>
                     <div className="absolute inset-0 bg-mesh opacity-20 pointer-events-none" />
@@ -258,12 +509,16 @@ function Dashboard() {
                     </span>
                   </div>
                   <div className="p-5">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-primary/75" /> {m.district}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground font-semibold">
+                        <MapPin className="h-3.5 w-3.5 text-primary/75" /> {m.district}
+                      </div>
+                      {renderEntityTypeBadge(m)}
                     </div>
                     <div className="font-display font-bold text-base mt-2 group-hover:text-primary transition-colors line-clamp-1">
                       {m.title}
                     </div>
+                    {renderCategoryMetadata(m.category)}
                     <div className="mt-4 flex items-center justify-between text-xs border-t border-border/40 pt-3">
                       <span className="text-muted-foreground/90 font-medium inline-flex items-center gap-1">
                         <Users className="h-3.5 w-3.5 text-emerald-500" /> {m.participants} participantes
@@ -279,7 +534,9 @@ function Dashboard() {
       </section>
 
       {/* Two columns: progress + community pulse */}
-      <section className="grid lg:grid-cols-3 gap-6">
+      <section className="grid lg:grid-cols-3 gap-6 relative">
+        {/* Small connection dot */}
+        <div className="absolute -left-4 top-8 w-2 h-2 rounded-full bg-emerald-500/50 hidden lg:block" />
         {/* Progression Mini-Widget */}
         <div className="lg:col-span-2 rounded-3xl border border-border/80 bg-card p-6 shadow-sm overflow-hidden relative flex flex-col justify-between">
           <div className="absolute -right-12 -bottom-12 w-36 h-36 rounded-full bg-purple-500/5 blur-2xl pointer-events-none" />
@@ -302,7 +559,7 @@ function Dashboard() {
             
             <div className="mt-6">
               <div className="flex justify-between text-xs font-semibold text-muted-foreground mb-2">
-                <span>{currentUser.xp.toLocaleString()} XP</span>
+                <span>{currentUser?.xp?.toLocaleString() || "0"} XP</span>
                 <span>{nextStage ? `${nextStage.xpFrom.toLocaleString()} XP` : "Máximo"}</span>
               </div>
               <div className="h-3 rounded-full bg-secondary overflow-hidden p-[1px] border border-border/30">
@@ -325,9 +582,9 @@ function Dashboard() {
 
           <div className="mt-6 grid grid-cols-3 gap-3 border-t border-border/40 pt-4">
             {[
-              { l: "Impacto", v: currentUser.peopleImpacted ? `${currentUser.peopleImpacted}+` : "0", i: "❤️", textCol: "text-rose-500" },
-              { l: "Territorios", v: "4 distritos", i: "📍", textCol: "text-sky-500" },
-              { l: "Red Cívica", v: "12 aliados", i: "🤝", textCol: "text-purple-500" },
+              { l: "Impacto", v: currentUser?.peopleImpacted ? `${currentUser.peopleImpacted}+` : "0", i: "❤️", textCol: "text-rose-500" },
+              { l: "Territorios", v: activeDistricts > 0 ? `${activeDistricts} distrito${activeDistricts !== 1 ? "s" : ""}` : "—", i: "📍", textCol: "text-sky-500" },
+              { l: "Expediciones", v: missions.length > 0 ? String(missions.length) : "—", i: "�", textCol: "text-purple-500" },
             ].map((s) => (
               <div key={s.l} className="rounded-xl bg-secondary/50 border border-border/20 p-2.5 text-center">
                 <div className="text-base">{s.i}</div>
@@ -340,47 +597,62 @@ function Dashboard() {
 
         {/* Live Community Pulse Widget */}
         <div className="lg:col-span-1 bg-card rounded-3xl overflow-hidden shadow-sm">
-          <CommunityPulse limit={2} showDetails={false} />
+          <CommunityPulse limit={2} showDetails={false} missions={allEntities} />
         </div>
       </section>
 
       {/* Activity Feed and Near Map */}
       <section className="grid lg:grid-cols-3 gap-6">
-        {/* Civic Activity Feed */}
+        {/* Civic Activity Feed — derived from real missions */}
         <div className="lg:col-span-2 space-y-4">
           <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-            <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Movimiento Reciente en vivo
+            <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Actividad en el Territorio
           </h2>
           <div className="rounded-3xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-sm">
-            {[
-              { who: "Sayri Ccama", what: "completó reforestación en Chinchero", emoji: "🌱", time: "hace 1h", dist: "Urubamba", status: "verificado" },
-              { who: "Joaquín Ríos", what: "se unió a clases de código para escolares", emoji: "💻", time: "hace 3h", dist: "Trujillo", status: "en curso" },
-              { who: "Lucía Herrera", what: "desbloqueó insignia 'Mentor'", emoji: "🎓", time: "hace 5h", dist: "Barranco", status: "verificado" },
-              { who: "Camila Díaz", what: "organizó tardes con nuestros abuelos", emoji: "🌼", time: "ayer", dist: "Barranco", status: "verificado" },
-            ].map((a, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
-                <div className="h-11 w-11 rounded-2xl bg-secondary grid place-items-center text-xl shrink-0 border border-border/30">
-                  {a.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-foreground flex flex-wrap items-center gap-1.5">
-                    <span className="font-bold text-foreground/90">{a.who}</span>{" "}
-                    <span className="text-stone-500 dark:text-stone-400">{a.what}</span>
-                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border tracking-wide uppercase ${
-                      a.status === "verificado" 
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30" 
-                        : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/30"
-                    }`}>
-                      {a.status}
-                    </span>
+            {feedItems.length > 0 ? (
+              feedItems.map((item) => {
+                const isMissionEntity = isMission(item);
+                const isProposalEntity = isProposal(item);
+                return (
+                <div key={item.id} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
+                  <div className="h-11 w-11 rounded-2xl bg-secondary grid place-items-center text-xl shrink-0 border border-border/30">
+                    {item.emoji || "🗺️"}
                   </div>
-                  <div className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium flex items-center gap-1">
-                    <MapPin className="h-3 w-3 opacity-60" /> {a.dist} <span className="opacity-45">•</span> <Clock className="h-3 w-3 opacity-60" /> {a.time}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-foreground flex flex-wrap items-center gap-1.5">
+                      <span className="font-bold text-foreground/90 truncate max-w-[200px]">{item.title}</span>
+                      {isProposalEntity && (
+                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 tracking-wide uppercase">
+                          Propuesta
+                        </span>
+                      )}
+                      {isMissionEntity && (
+                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 tracking-wide uppercase">
+                          Misión
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium flex items-center gap-1">
+                      <MapPin className="h-3 w-3 opacity-60" /> {item.district}
+                      <span className="opacity-45">•</span>
+                      <span>{formatRelativeDate(item.date)}</span>
+                      {isMissionEntity && <><span className="opacity-45">•</span>
+                      <Users className="h-3 w-3 opacity-60" /> {item.participants} exploradores activos</>}
+                      {isProposalEntity && <><span className="opacity-45">•</span>
+                      <span className="text-violet-600 dark:text-violet-400">Nueva iniciativa</span></>}
+                    </div>
                   </div>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
                 </div>
-                <TrendingUp className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+                );
+              })
+            ) : (
+              <div className="p-8 text-center">
+                <div className="text-3xl mb-3">🌱</div>
+                <p className="text-sm text-muted-foreground font-medium">El territorio está cobrando vida.</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Explora el mapa para descubrir iniciativas activas.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -390,7 +662,15 @@ function Dashboard() {
             <Heart className="h-5 w-5 text-rose-500 animate-pulse" /> Cerca de ti
           </h2>
           <div className="space-y-3">
-            {nearby.slice(0, 2).map((m) => (
+            {nearby.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-border p-6 text-center">
+                <div className="text-2xl mb-2">�️</div>
+                <p className="text-xs text-muted-foreground font-medium">Explora el mapa para descubrir misiones en otros distritos.</p>
+                <Link to="/app/mapa" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-accent hover:underline">
+                  Ver mapa <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            ) : nearby.slice(0, 2).map((m) => (
               <Link
                 key={m.id}
                 to="/app/mision/$missionId"
@@ -408,7 +688,7 @@ function Dashboard() {
                     <div className="text-xs text-stone-500 font-semibold mt-0.5 flex items-center gap-1.5">
                       <span>{m.distanceKm} km</span>
                       <span className="opacity-45">•</span>
-                      <span>{m.date}</span>
+                      <span>{formatRelativeDate(m.date)}</span>
                     </div>
                   </div>
                 </div>
@@ -422,5 +702,6 @@ function Dashboard() {
         </div>
       </section>
     </div>
+    </>
   );
 }

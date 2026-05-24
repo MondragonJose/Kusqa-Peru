@@ -143,6 +143,18 @@
                    radial-gradient(circle at 85% 20%, oklch(0.55 0.18 320 / 0.3), transparent 50%),
                    radial-gradient(circle at 50% 90%, oklch(0.62 0.18 200 / 0.28), transparent 55%);
 
+  /* Terrain gradients — richer, narrative-specific */
+  --gradient-terrain-costa: linear-gradient(160deg, oklch(0.9 0.08 80) 0%, oklch(0.82 0.12 55) 40%, oklch(0.72 0.14 220) 100%);
+  --gradient-terrain-sierra: linear-gradient(160deg, oklch(0.6 0.08 55) 0%, oklch(0.45 0.12 45) 45%, oklch(0.35 0.12 280) 100%);
+  --gradient-terrain-selva: linear-gradient(160deg, oklch(0.75 0.16 140) 0%, oklch(0.55 0.18 160) 50%, oklch(0.42 0.14 175) 100%);
+  --gradient-cumbre: linear-gradient(160deg, oklch(0.82 0.1 80) 0%, oklch(0.62 0.15 45) 35%, oklch(0.38 0.08 280) 70%, oklch(0.22 0.06 285) 100%);
+
+  /* Badge rarity shadows */
+  --shadow-rarity-comun: 0 0 0 0 transparent;
+  --shadow-rarity-raro: 0 0 16px 2px oklch(0.72 0.14 220 / 0.4);
+  --shadow-rarity-epico: 0 0 24px 4px oklch(0.55 0.22 295 / 0.5);
+  --shadow-rarity-legendario: 0 0 32px 6px oklch(0.78 0.18 75 / 0.6), 0 0 60px 12px oklch(0.7 0.18 45 / 0.3);
+
   --shadow-glow: 0 20px 60px -20px oklch(0.7 0.18 45 / 0.45);
   --shadow-card: 0 10px 30px -12px oklch(0.18 0.03 285 / 0.18);
   --shadow-soft: 0 4px 16px -6px oklch(0.18 0.03 285 / 0.1);
@@ -299,4 +311,89 @@
     50% { box-shadow: 0 0 20px 6px oklch(0.7 0.18 45 / 0.6); }
   }
   .animate-glow-pulse { animation: glow-pulse 2.8s ease-in-out infinite; }
+
+  /* Subtle breathing for "alive" civic elements */
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.018); opacity: 0.92; }
+  }
+  .animate-breathe { animation: breathe 4s ease-in-out infinite; }
+
+  /* Civic presence fade-in for community signals */
+  @keyframes presence-in {
+    0% { opacity: 0; transform: translateX(-6px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  .animate-presence-in { animation: presence-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Gentle wander for ambient blobs */
+  @keyframes wander {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(12px, -8px) scale(1.05); }
+    66% { transform: translate(-8px, 10px) scale(0.97); }
+  }
+  .animate-wander { animation: wander 12s ease-in-out infinite; }
+
+  /* Terrain gradient utilities */
+  .bg-gradient-terrain-costa { background-image: var(--gradient-terrain-costa); }
+  .bg-gradient-terrain-sierra { background-image: var(--gradient-terrain-sierra); }
+  .bg-gradient-terrain-selva { background-image: var(--gradient-terrain-selva); }
+  .bg-gradient-cumbre { background-image: var(--gradient-cumbre); }
+
+  /* Badge rarity glow utilities */
+  .badge-rarity-comun { box-shadow: var(--shadow-rarity-comun); }
+  .badge-rarity-raro { box-shadow: var(--shadow-rarity-raro); }
+  .badge-rarity-epico { box-shadow: var(--shadow-rarity-epico); }
+  .badge-rarity-legendario { box-shadow: var(--shadow-rarity-legendario); }
+
+  /* Civic route path styling */
+  .civic-route-connector {
+    stroke: oklch(0.85 0.06 75);
+    stroke-dasharray: 6 10;
+    fill: none;
+    stroke-linecap: round;
+  }
+  .civic-route-connector-active {
+    stroke: oklch(0.7 0.18 45);
+    stroke-dasharray: none;
+  }
+
+  /* KUSQA Custom Warm Territorial Map Filter Vibe (sepia and brightness adjusted for high cartographic clarity) */
+  .kusqa-territorial-map .leaflet-tile-container img {
+    filter: sepia(18%) saturate(102%) hue-rotate(-6deg) contrast(99%) brightness(101%);
+    transition: filter 0.8s ease-in-out;
+  }
+
+  .kusqa-territorial-map.dark-map .leaflet-tile-container img {
+    filter: brightness(0.8) contrast(1.1) saturate(95%) hue-rotate(8deg) sepia(10%);
+  }
+
+  /* Full screen Spotify Wrapped celebration mesh background */
+  .kusqa-celebration-mesh {
+    background-image: radial-gradient(circle at 10% 20%, oklch(0.78 0.17 75 / 0.45), transparent 45%),
+                      radial-gradient(circle at 90% 10%, oklch(0.55 0.18 320 / 0.4), transparent 50%),
+                      radial-gradient(circle at 50% 80%, oklch(0.62 0.18 200 / 0.42), transparent 55%),
+                      linear-gradient(to bottom, oklch(0.22 0.035 285) 0%, oklch(0.12 0.035 285) 100%);
+  }
+
+  /* Animated neon path glow for Qhapaq Ñan */
+  .animate-path-flow {
+    stroke-dasharray: 8 12;
+    animation: path-flow 25s linear infinite;
+  }
+  @keyframes path-flow {
+    to {
+      stroke-dashoffset: -1000;
+    }
+  }
+
+  /* Glowing gold keyframes for territorial footprints */
+  @keyframes foot-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px oklch(0.78 0.17 75 / 0.3)); }
+    50% { filter: drop-shadow(0 0 12px oklch(0.78 0.18 75 / 0.75)); }
+  }
+  .animate-foot-glow {
+    animation: foot-glow 3s ease-in-out infinite;
+  }
 }
+

@@ -117,7 +117,7 @@ export function CivicAnalytics({ missions, userCoords, onSelectMission }: CivicA
             ))
           ) : (
             <div className="text-center py-4 text-xs text-muted-foreground">
-              No hay datos analíticos para la selección actual.
+              Explora el mapa para ver el impacto cívico en cada territorio.
             </div>
           )}
         </div>

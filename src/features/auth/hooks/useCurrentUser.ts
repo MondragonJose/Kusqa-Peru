@@ -1,54 +1,81 @@
 /**
- * useCurrentUser — Auth Preparation Hook
- *
- * CURRENT BEHAVIOR: Returns the static mock CURRENT_USER.
- * FUTURE BEHAVIOR: Will return the authenticated Supabase session user.
- *
- * This hook exists to create a migration-safe boundary.
- * When Supabase Auth is integrated, ONLY this file changes.
- * All consumers of useCurrentUser() require zero refactoring.
- *
- * @see src/features/auth/README.md for migration guide
+ * useCurrentUser — Auth boundary for domain User.
+ * Live: Supabase Auth + profiles (+ user_progress for stats).
+ * NO fallbacks to mock - returns null if no authenticated user.
  */
-import { CURRENT_USER } from "@/data/kusqa";
+
+import { useQuery } from "@tanstack/react-query";
+import { LEVELS } from "@/constants/gamification";
+import { userCurrentQueryOptions, userSessionQueryOptions } from "@/features/auth/queryOptions";
 import type { User } from "@/types";
+import { useUserProgress } from "./useUserProgress";
 
 /**
- * Returns the current authenticated user.
- * Currently backed by static mock data.
- * Will be replaced with Supabase session data during auth integration.
+ * Returns the current user for UI (null if not authenticated).
  */
-export function useCurrentUser(): User {
-  // TODO(auth-agent): Replace with:
-  // const { data: { user } } = useSupabaseAuth();
-  // return mapSupabaseUserToKusqaUser(user);
-  return CURRENT_USER;
+export function useCurrentUser(): User | null {
+  const { data: user } = useQuery({
+    ...userCurrentQueryOptions(),
+    retry: false,
+  });
+
+  return user ?? null;
 }
 
 /**
  * Returns whether the user is authenticated.
- * Currently always true (mock).
- * Will return false for unauthenticated users after auth integration.
  */
 export function useIsAuthenticated(): boolean {
-  // TODO(auth-agent): Replace with actual session check
-  return true;
+  const { data: userId, isSuccess } = useQuery({
+    ...userSessionQueryOptions(),
+    retry: false,
+  });
+
+  return isSuccess && !!userId;
 }
 
 /**
- * Returns the current user's XP progress toward the next level.
- * Derived from useCurrentUser() for convenience.
+ * XP progress toward the next level from domain User + LEVELS config.
  */
-export function useUserXpProgress(): { currentXp: number; fromXp: number; toXp: number; progressPct: number } {
+export function useUserXpProgress(): {
+  currentXp: number;
+  fromXp: number;
+  toXp: number;
+  progressPct: number;
+} {
   const user = useCurrentUser();
-  // Level 4 thresholds from LEVELS constant
-  // TODO(auth-agent): Derive dynamically from LEVELS[user.level]
-  const fromXp = 3500;
-  const toXp = 6500;
+  const territoryProgress = useUserProgress();
+
+  // Fallback seguro si user es null (profile no creado aún)
+  if (!user) {
+    return {
+      currentXp: 0,
+      fromXp: 0,
+      toXp: 100,
+      progressPct: 0,
+    };
+  }
+
+  const userWithProgress: User = {
+    ...user,
+    missionsDone: territoryProgress.totalMissionsCompleted,
+    peopleImpacted: territoryProgress.communityPoints,
+  };
+
+  const currentLevel =
+    LEVELS.find((l) => userWithProgress.xp >= l.from && userWithProgress.xp < l.to) ?? LEVELS[0];
+  const nextLevel = LEVELS.find((l) => l.level === currentLevel.level + 1) ?? currentLevel;
+  const fromXp = currentLevel.from;
+  const toXp = nextLevel.from;
+  const range = toXp - fromXp;
+
   return {
-    currentXp: user.xp,
+    currentXp: userWithProgress.xp,
     fromXp,
     toXp,
-    progressPct: Math.min(100, Math.max(0, ((user.xp - fromXp) / (toXp - fromXp)) * 100)),
+    progressPct:
+      range > 0
+        ? Math.min(100, Math.max(0, ((userWithProgress.xp - fromXp) / range) * 100))
+        : 100,
   };
 }

@@ -8,7 +8,7 @@ export type PlaceSuggestion = {
 };
 
 // Extensa base de datos local de distritos peruanos para fallback sin internet o sin API Key
-const PERU_LOCAL_PLACES: PlaceSuggestion[] = [
+export const PERU_LOCAL_PLACES: PlaceSuggestion[] = [
   // Lima (Costa)
   { description: "Barranco, Lima", district: "Barranco", region: "costa", coords: { lat: -12.1492, lng: -77.0222 } },
   { description: "Miraflores, Lima", district: "Miraflores", region: "costa", coords: { lat: -12.1225, lng: -77.0280 } },

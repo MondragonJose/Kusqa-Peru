@@ -1,16 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Filter, Search, Sparkles, Navigation, RefreshCw, Activity, Flame, Award } from "lucide-react";
-import { MISSIONS, REGION_META } from "@/data/kusqa";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { MapPin, Filter, Search, Sparkles, Navigation, RefreshCw, Activity, Award } from "lucide-react";
+import { REGION_META } from "@/constants/gamification";
 import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
 import { MapView } from "@/features/map/components/MapView";
 import { CivicActivityFeed } from "@/features/map/components/CivicActivityFeed";
 import { CivicAnalytics } from "@/features/map/components/CivicAnalytics";
 import { getPlaceSuggestions, type PlaceSuggestion } from "@/services/googleMaps";
+import { useMissions } from "@/hooks/useMissions";
+import { useAllProposals } from "@/features/proposals";
 import { Drawer } from "vaul";
-import type { MapCoords, MissionCategory, MissionDifficulty } from "@/types";
+import type { MapCoords, Mission, MissionCategory, MissionDifficulty } from "@/types";
+import type { CivicEntity } from "@/types/entity";
+import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
 
 export const Route = createFileRoute("/app/mapa")({
   component: MapPage,
@@ -19,32 +22,86 @@ export const Route = createFileRoute("/app/mapa")({
 type TabType = "misiones" | "actividad" | "analitica";
 
 function MapPage() {
+  const { data: missions = [], isLoading: missionsLoading, isError: missionsError } = useMissions();
+  const { data: proposals = [] } = useAllProposals();
   const { coords: userCoords, loading: userLocationLoading, requestUserLocation } = useUserLocation();
-  const { filters, updateFilters, resetFilters, filteredMissions } = useMissionMapFilters(MISSIONS, userCoords);
-  const [selectedId, setSelectedId] = useState<string | null>(MISSIONS[0]?.id || null);
-  
-  // Tab selector state
+
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const allMapItems = useMemo<CivicEntity[]>(() => {
+    const missionEntities = missions.map(missionToEntity);
+    const proposalEntities = proposals.flatMap((p) => {
+      const entity = proposalToEntity(p);
+      return entity ? [entity] : [];
+    });
+    const merged = [...missionEntities, ...proposalEntities];
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ENTITY TRACE] Map merge:", missionEntities.length, "missions +", proposalEntities.length, "proposals =", merged.length, "total entities");
+    }
+    return merged;
+  }, [missions, proposals]);
+
+  const { filters, updateFilters, resetFilters, filteredMissions, availableRegions, availableCategories, availableDifficulties, availableDistricts } = useMissionMapFilters(allMapItems, userCoords);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("misiones");
-  
-  // Geocoding Autocomplete states
   const [autocompleteInput, setAutocompleteInput] = useState("");
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [focalCoords, setFocalCoords] = useState<MapCoords | null>(null);
   const autocompleteContainerRef = useRef<HTMLDivElement>(null);
-
-  // Mobile Bottom Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Sync active mission selection
   const activeMission = filteredMissions.find((m) => m.id === selectedId) || filteredMissions[0] || null;
 
-  // Handle selected mission click (opens drawer on mobile)
-  const handleSelectMission = (id: string) => {
+  useEffect(() => {
+    if (filteredMissions.length === 0) {
+      setSelectedId(null);
+      return;
+    }
+    const selectionValid =
+      selectedId !== null && filteredMissions.some((m) => m.id === selectedId);
+    if (!selectionValid) {
+      setSelectedId(filteredMissions[0].id);
+    }
+  }, [filteredMissions, selectedId]);
+
+  const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setIsDrawerOpen(true);
     }
-  };
+  }, []);
+
+  // Conditional returns AFTER all hooks
+  if (missionsLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-12 w-64 bg-muted rounded-2xl" />
+          <div className="h-16 w-full bg-muted rounded-2xl" />
+          <div className="h-[500px] w-full bg-muted rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (missionsError) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="rounded-3xl bg-destructive/10 border border-destructive/20 p-8 text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className="font-display font-black text-lg text-foreground mb-2">Error al cargar misiones</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            No pudimos cargar las misiones del atlas territorial. Por favor intenta nuevamente.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black hover:scale-[1.02] transition-all"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch Place Autocomplete suggestions when input changes
   useEffect(() => {
@@ -104,6 +161,12 @@ function MapPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Visualiza las misiones juveniles, el calor de la participación y el impacto en tiempo real.
           </p>
+          {missionsLoading && (
+            <p className="text-xs text-muted-foreground mt-1 font-medium">Cargando misiones del territorio…</p>
+          )}
+          {missionsError && (
+            <p className="text-xs text-destructive mt-1 font-medium">No se pudieron cargar las misiones.</p>
+          )}
         </div>
 
         {/* User GPS indicator */}
@@ -132,6 +195,37 @@ function MapPage() {
 
       {/* Advanced Filter Bar & Places Autocomplete */}
       <div className="glass rounded-3xl p-4 md:p-5 border border-border/40 shadow-soft space-y-4">
+        {/* HIERARCHY STEP 1: Cerca de ti (Proximity) — Prominent when GPS is active */}
+        {userCoords && (
+          <div className="flex items-center gap-3 pb-3 border-b border-border/20">
+            <div className="flex items-center gap-2 text-accent font-semibold text-xs">
+              <Navigation className="h-4 w-4 fill-accent animate-pulse" />
+              <span>Tu territorio está en movimiento</span>
+            </div>
+            <div className="flex-1 flex items-center gap-2 bg-secondary/30 border border-border/30 rounded-xl px-3 py-1.5">
+              <span className="text-muted-foreground text-[11px] font-medium">Radio:</span>
+              <input
+                type="range"
+                min="5"
+                max="100"
+                step="5"
+                value={filters.proximityRadiusKm || 50}
+                onChange={(e) => updateFilters({ proximityRadiusKm: parseInt(e.target.value) })}
+                className="w-20 accent-accent"
+              />
+              <span className="font-semibold text-foreground text-xs">{filters.proximityRadiusKm ? `${filters.proximityRadiusKm} km` : "50 km"}</span>
+              {filters.proximityRadiusKm !== null && (
+                <button
+                  onClick={() => updateFilters({ proximityRadiusKm: null })}
+                  className="text-[10px] text-accent hover:underline font-bold"
+                >
+                  Ver todo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Places Autocomplete Search */}
           <div ref={autocompleteContainerRef} className="relative md:col-span-6 z-30">
@@ -167,95 +261,64 @@ function MapPage() {
             )}
           </div>
 
-          {/* Region selector Pills */}
+          {/* HIERARCHY STEP 2: Distritos — Dynamic based on real activity */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 md:col-span-6 justify-start md:justify-end no-scrollbar">
             <button
               onClick={() => {
-                updateFilters({ region: "todas" });
+                updateFilters({ district: "todas", region: "todas" });
                 setAutocompleteInput("");
               }}
               className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer ${
-                filters.region === "todas"
+                filters.district === "todas"
                   ? "bg-foreground text-background border-foreground shadow-sm"
                   : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
               }`}
             >
               Todo el Perú
             </button>
-            {(["costa", "sierra", "selva"] as const).map((r) => (
+            {availableDistricts.slice(0, 6).map(({ district, count }) => (
               <button
-                key={r}
-                onClick={() => updateFilters({ region: r })}
-                className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer ${
-                  filters.region === r
-                    ? `${REGION_META[r].chipBg} border-current shadow-sm font-extrabold`
+                key={district}
+                onClick={() => {
+                  updateFilters({ district });
+                }}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+                  filters.district === district
+                    ? "bg-foreground text-background border-foreground shadow-sm"
                     : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                 }`}
               >
-                {REGION_META[r].name}
+                <span>{district}</span>
+                <span className="text-[8px] opacity-60">({count})</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Dropdowns row */}
+        {/* HIERARCHY STEP 3: Categorías — Dynamic based on available missions */}
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/20 text-xs">
-          <div className="flex items-center gap-1.5 text-muted-foreground font-semibold">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filtros avanzados:</span>
-          </div>
-
-          {/* Category Dropdown */}
           <select
             value={filters.category}
             onChange={(e) => updateFilters({ category: e.target.value as MissionCategory | "todas" })}
-            className="bg-secondary/30 border border-border/30 rounded-xl px-3 py-1.5 font-medium text-foreground focus:outline-none focus:border-accent/40"
+            className="bg-secondary/30 border border-border/30 rounded-xl px-3 py-2 font-medium text-foreground focus:outline-none focus:border-accent/40 min-h-[40px]"
           >
             <option value="todas">Todas las causas</option>
-            <option value="Medio ambiente">Medio ambiente</option>
-            <option value="Educación">Educación</option>
-            <option value="Arte & cultura">Arte & cultura</option>
-            <option value="Comunidad">Comunidad</option>
-            <option value="Salud">Salud</option>
-            <option value="Tecnología">Tecnología</option>
+            {availableCategories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
 
-          {/* Difficulty Dropdown */}
+          {/* Difficulty Dropdown — Simplified */}
           <select
             value={filters.difficulty}
             onChange={(e) => updateFilters({ difficulty: e.target.value as MissionDifficulty | "todas" })}
-            className="bg-secondary/30 border border-border/30 rounded-xl px-3 py-1.5 font-medium text-foreground focus:outline-none focus:border-accent/40"
+            className="bg-secondary/30 border border-border/30 rounded-xl px-3 py-2 font-medium text-foreground focus:outline-none focus:border-accent/40 min-h-[40px]"
           >
             <option value="todas">Cualquier dificultad</option>
-            <option value="Suave">Suave</option>
-            <option value="Andina">Andina</option>
-            <option value="Cumbre">Cumbre</option>
+            {availableDifficulties.map((diff) => (
+              <option key={diff} value={diff}>{diff}</option>
+            ))}
           </select>
-
-          {/* Proximity Slider (if GPS is active) */}
-          {userCoords && (
-            <div className="flex items-center gap-2 bg-secondary/30 border border-border/30 rounded-xl px-3 py-1">
-              <span className="text-muted-foreground font-medium">Cerca de mí:</span>
-              <input
-                type="range"
-                min="5"
-                max="100"
-                step="5"
-                value={filters.proximityRadiusKm || 100}
-                onChange={(e) => updateFilters({ proximityRadiusKm: parseInt(e.target.value) })}
-                className="w-16 accent-accent"
-              />
-              <span className="font-semibold text-foreground">{filters.proximityRadiusKm ? `${filters.proximityRadiusKm} km` : "Todo"}</span>
-              {filters.proximityRadiusKm !== null && (
-                <button
-                  onClick={() => updateFilters({ proximityRadiusKm: null })}
-                  className="text-[10px] text-accent hover:underline font-bold ml-1"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Reset Filters button */}
           {(filters.category !== "todas" || filters.difficulty !== "todas" || filters.region !== "todas" || filters.searchQuery !== "" || filters.proximityRadiusKm !== null) && (
@@ -267,7 +330,7 @@ function MapPage() {
               }}
               className="text-xs font-bold text-accent hover:underline cursor-pointer ml-auto"
             >
-              Restablecer todo
+              Limpiar filtros
             </button>
           )}
         </div>
@@ -276,7 +339,7 @@ function MapPage() {
       {/* Main Map & Interactive Sidebar Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-5 items-stretch">
         {/* Dynamic Leaflet Map with focal coords support */}
-        <div className="h-[450px] md:h-[550px] lg:h-[640px] w-full">
+        <div className="h-[50vh] md:h-[550px] lg:h-[640px] w-full min-h-[400px]">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeMission?.id || null}
@@ -386,12 +449,19 @@ function MapPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1 rounded-3xl border border-dashed border-border/60 p-8 text-center flex flex-col items-center justify-center bg-secondary/10">
-                    <div className="text-xl mb-2 select-none">🔍</div>
-                    <h3 className="font-display font-bold text-xs text-foreground">Sin misiones</h3>
-                    <p className="text-[11px] text-muted-foreground mt-1 max-w-[200px]">
-                      Prueba a buscar otro distrito peruano.
+                  <div className="flex-1 rounded-3xl border border-dashed border-border/60 p-8 text-center flex flex-col items-center justify-center bg-secondary/10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-aurora opacity-5" />
+                    <div className="text-4xl mb-3 select-none animate-float-slow">�️</div>
+                    <h3 className="font-display font-bold text-sm text-foreground relative z-10">Este territorio está en exploración</h3>
+                    <p className="text-[11px] text-muted-foreground mt-2 max-w-[220px] leading-relaxed relative z-10">
+                      Aún no hay misiones registradas aquí. Prueba buscar otro distrito peruano o explora las regiones activas.
                     </p>
+                    <button
+                      onClick={() => updateFilters({ district: "todas", region: "todas" })}
+                      className="mt-4 text-xs font-bold text-accent hover:underline relative z-10"
+                    >
+                      Ver todo el Perú
+                    </button>
                   </div>
                 )}
               </div>

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppProgresoRouteImport } from './routes/app.progreso'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppNotificacionesRouteImport } from './routes/app.notificaciones'
@@ -33,6 +34,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppProgresoRoute = AppProgresoRouteImport.update({
   id: '/progreso',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/app/notificaciones': typeof AppNotificacionesRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/progreso': typeof AppProgresoRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/app/notificaciones': typeof AppNotificacionesRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/progreso': typeof AppProgresoRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/app/notificaciones': typeof AppNotificacionesRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/progreso': typeof AppProgresoRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/app/notificaciones'
     | '/app/perfil'
     | '/app/progreso'
+    | '/auth/callback'
     | '/app/'
     | '/app/mision/$missionId'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/app/notificaciones'
     | '/app/perfil'
     | '/app/progreso'
+    | '/auth/callback'
     | '/app'
     | '/app/mision/$missionId'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/app/notificaciones'
     | '/app/perfil'
     | '/app/progreso'
+    | '/auth/callback'
     | '/app/'
     | '/app/mision/$missionId'
   fileRoutesById: FileRoutesById
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -160,6 +173,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/progreso': {
       id: '/app/progreso'
@@ -231,6 +251,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
