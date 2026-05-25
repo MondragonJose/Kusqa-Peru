@@ -6,7 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// TanStack Start SSR configuration for Vercel deployment
+// Force Vercel preset to override Cloudflare default from Lovable wrapper
 export default defineConfig({
   tanstackStart: {
     server: {
