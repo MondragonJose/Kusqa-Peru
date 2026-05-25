@@ -6,7 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// Force Vercel preset to override Cloudflare default from Lovable wrapper
+// Force Vercel preset without custom entry point to let TanStack Start generate correct handler
 export default defineConfig({
   tanstackStart: {
     server: {
