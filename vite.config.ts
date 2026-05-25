@@ -6,11 +6,11 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// Force Vercel preset without custom entry point to let TanStack Start generate correct handler
+// Use Cloudflare preset for Wrangler deployment
 export default defineConfig({
   tanstackStart: {
     server: {
-      preset: "vercel",
+      preset: "cloudflare",
     },
   },
 });
