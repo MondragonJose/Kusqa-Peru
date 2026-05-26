@@ -9,16 +9,28 @@ import { validateEnv } from "./env";
  * Configurado con persistencia de sesión para OAuth
  */
 
-const env = validateEnv();
+let _supabase: ReturnType<typeof createClient<Database>> | undefined;
 
-export const supabase = createClient<Database>(
-  env.VITE_SUPABASE_URL,
-  env.VITE_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
+export function getSupabaseClient() {
+  if (!_supabase) {
+    const env = validateEnv();
+    _supabase = createClient<Database>(
+      env.VITE_SUPABASE_URL,
+      env.VITE_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      }
+    );
   }
-);
+  return _supabase;
+}
+
+export const supabase = new Proxy({} as ReturnType<typeof createClient<Database>>, {
+  get(_target, prop) {
+    return (getSupabaseClient() as any)[prop];
+  },
+});

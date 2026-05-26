@@ -77,7 +77,11 @@ export default async function handler(req, res) {
 `,
 );
 
-// 4. Node.js serverless function config
+// 4. Mark function directory as ESM so Node.js 22 can load handler.js and server.js correctly.
+//    Without this, Node.js treats .js files as CommonJS → SyntaxError on 'import' → 500 crash.
+writeFileSync(`${FUNC}/package.json`, JSON.stringify({ type: "module" }, null, 2));
+
+// 5. Node.js serverless function config
 writeFileSync(
   `${FUNC}/.vc-config.json`,
   JSON.stringify(
@@ -94,7 +98,7 @@ writeFileSync(
   ),
 );
 
-// 5. Vercel routing config (Build Output API v3)
+// 6. Vercel routing config (Build Output API v3)
 writeFileSync(
   `${OUTPUT}/config.json`,
   JSON.stringify(
