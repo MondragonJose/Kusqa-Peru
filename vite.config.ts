@@ -11,4 +11,8 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  ssr: {
+    // Force h3/h3-v2 to be bundled in SSR (not available in Vercel function runtime)
+    noExternal: ["h3", "h3-v2"],
+  },
 });
