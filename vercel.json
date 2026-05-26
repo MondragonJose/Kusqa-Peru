@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "nodejs": "22.x"
+}
