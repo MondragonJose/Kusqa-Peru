@@ -16,9 +16,18 @@ dist-ssr
 .nitro
 *.local
 
-# Wrangler / Cloudflare
+# Wrangler / Cloudflare — not used with Vercel deploy
 .wrangler/
 .dev.vars
+wrangler.json
+wrangler.jsonc
+
+# Bun lockfile — Vercel CI uses npm (package-lock.json)
+bun.lock
+bun.lockb
+
+# Vercel build output
+.vercel
 
 # Editor directories and files
 .vscode/*
@@ -32,3 +41,4 @@ dist-ssr
 *.sw?
 .aider*
 .env
+*.bat

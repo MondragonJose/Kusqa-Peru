@@ -11,6 +11,9 @@ const MISSION_ID_SCHEMA = z.string().uuid();
 export async function resolveAuthoritativeMissionXp(missionId: string): Promise<number> {
   MISSION_ID_SCHEMA.parse(missionId);
   const mission = await missionRepository.findById(missionId);
+  if (!mission) {
+    throw new Error(`Mission not found: ${missionId}`);
+  }
   if (mission.xp < 0) {
     throw new Error(`Invalid mission XP reward: ${missionId}`);
   }

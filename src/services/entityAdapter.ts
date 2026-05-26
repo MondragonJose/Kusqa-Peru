@@ -13,7 +13,7 @@
  */
 
 import type { Proposal } from "@/services/proposalContract";
-import type { Mission, MissionCategory, MissionDifficulty } from "@/types/domain";
+import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { CivicEntity, ProposalAsEntity } from "@/types/entity";
 
 /**

@@ -10,9 +10,10 @@ import type { UserProgression, ProgressionStage, StageStatus } from "../types";
 
 export function useProgression(): UserProgression {
   const user = useCurrentUser();
+  const xp = user?.xp ?? 0;
 
   return useMemo(() => {
-    const currentStage = getStageByXp(user.xp);
+    const currentStage = getStageByXp(xp);
     const stageIndex = CIVIC_ROUTE.findIndex((s) => s.level === currentStage.level);
 
     const nextStage: ProgressionStage | null =
@@ -20,13 +21,13 @@ export function useProgression(): UserProgression {
 
     const previousStages = CIVIC_ROUTE.slice(0, stageIndex);
 
-    const xpInStage = user.xp - currentStage.xpFrom;
+    const xpInStage = xp - currentStage.xpFrom;
     const stageRange = currentStage.xpTo - currentStage.xpFrom;
     const progressPct = Math.min(100, Math.max(0, (xpInStage / stageRange) * 100));
-    const xpToNextStage = nextStage ? currentStage.xpTo - user.xp : 0;
+    const xpToNextStage = nextStage ? currentStage.xpTo - xp : 0;
 
     const status: StageStatus =
-      user.xp >= currentStage.xpTo ? "completed" : "current";
+      xp >= currentStage.xpTo ? "completed" : "current";
 
     return {
       currentStage,
@@ -37,7 +38,7 @@ export function useProgression(): UserProgression {
       xpToNextStage,
       status,
     };
-  }, [user.xp]);
+  }, [xp]);
 }
 
 /**

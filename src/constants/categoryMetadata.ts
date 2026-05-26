@@ -78,6 +78,17 @@ export const CATEGORY_METADATA: Record<MissionCategory, CategoryMetadata> = {
     impactLabel: "Atenciones brindadas",
     unit: "atenciones",
   },
+  "Tecnología": {
+    icon: "💻",
+    color: "text-cyan-500",
+    gradient: "from-cyan-400 to-blue-500",
+    fields: [
+      { key: "participants", label: "Participantes", icon: "👥", defaultValue: "10" },
+      { key: "hours", label: "Horas", icon: "⏱️", defaultValue: "2" },
+    ],
+    impactLabel: "Personas capacitadas",
+    unit: "personas",
+  },
 };
 
 export function getCategoryMetadata(category: MissionCategory): CategoryMetadata {

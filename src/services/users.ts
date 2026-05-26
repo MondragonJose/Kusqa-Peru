@@ -8,7 +8,7 @@
  */
 
 import type { User, UserProfile, Badge } from "@/types";
-import { CURRENT_USER, BADGES } from "@/constants";
+import { CURRENT_USER, BADGES } from "@/data/kusqa";
 
 /**
  * Obtiene el usuario actual (sessión activa)

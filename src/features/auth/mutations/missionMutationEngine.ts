@@ -653,7 +653,8 @@ export async function runMissionWrite<TResult>(
   }
 
   return runInMissionLane(queryClient, writeContext, () =>
-    executeWrite(queryClient, {
+    executeWrite({
+      queryClient,
       kind,
       writeContext,
       signature,
@@ -743,6 +744,8 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
   ) {
     const queryClient = useQueryClient();
     const requiresAuth = config.requiresAuth !== false;
+    // Typed alias to access lifecycle call-through delegates intentionally omitted from the public API
+    const callThrough = options as UseMutationOptions<TOutput, TError, TInput, MutationWriteContext> | undefined;
 
     return useMutation<TOutput, TError, TInput, MutationWriteContext>({
       ...options,
@@ -788,7 +791,7 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
             }
           }
 
-          const extra = options?.onMutate ? await options.onMutate(input) : undefined;
+          const extra = callThrough?.onMutate ? await (callThrough.onMutate as (v: TInput) => Promise<unknown>)(input) : undefined;
           return {
             snapshot,
             writeContext,
@@ -819,7 +822,7 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
             error instanceof Error ? error : new Error(String(error))
           );
         }
-        options?.onError?.(error, input, context, meta);
+        callThrough?.onError?.(error, input, context, meta);
       },
       onSuccess: (output, input, context, meta) => {
         if (!context?.deduped) {
@@ -827,13 +830,13 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
           const scope = config.invalidate?.(input, output, context?.userId);
           if (scope) reconcileCache(queryClient, scope, "schedule");
         }
-        options?.onSuccess?.(output, input, context, meta);
+        callThrough?.onSuccess?.(output, input, context, meta);
       },
       onSettled: (_data, error, input, context, meta) => {
         if (context?.writeSignature && !error) {
           endInflightWrite(queryClient, context.writeSignature, "success");
         }
-        options?.onSettled?.(_data, error, input, context, meta);
+        callThrough?.onSettled?.(_data, error, input, context, meta);
       },
     });
   };
