@@ -30,17 +30,71 @@ mkdirSync(FUNC, { recursive: true });
 // 1. Static assets (client JS/CSS) — served directly by Vercel's CDN
 cpSync("dist/client/assets", `${OUTPUT}/static/assets`, { recursive: true });
 
-// 2. Edge Function — server.js + all server-side chunks
+// 2. Server bundle — server.js + all server-side chunks
 cpSync("dist/server/server.js", `${FUNC}/server.js`);
 cpSync("dist/server/assets", `${FUNC}/assets`, { recursive: true });
 
-// 3. Edge Function config
+// 3. Node.js handler adapter (bridges IncomingMessage/ServerResponse → Web Fetch API)
+//    Root cause for NOT using Edge: server bundle references node:async_hooks
+//    (used by TanStack Start's SSR context tracking), which is unsupported in Edge Runtime.
 writeFileSync(
-  `${FUNC}/.vc-config.json`,
-  JSON.stringify({ runtime: "edge", entrypoint: "server.js" }, null, 2),
+  `${FUNC}/handler.js`,
+  `import server from './server.js';
+import { Readable } from 'node:stream';
+
+export default async function handler(req, res) {
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+  let url;
+  try { url = new URL(req.url, \`\${proto}://\${host}\`); }
+  catch { url = new URL('/', \`\${proto}://\${host}\`); }
+
+  const headers = new Headers();
+  for (const [key, val] of Object.entries(req.headers)) {
+    if (val != null) headers.append(key, Array.isArray(val) ? val.join(', ') : String(val));
+  }
+
+  const method = req.method.toUpperCase();
+  const hasBody = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+
+  const request = new Request(url.toString(), {
+    method,
+    headers,
+    ...(hasBody ? { body: Readable.toWeb(req), duplex: 'half' } : {}),
+  });
+
+  const response = await server.fetch(request, {}, {});
+
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+
+  if (response.body) {
+    Readable.fromWeb(response.body).pipe(res);
+  } else {
+    res.end();
+  }
+}
+`,
 );
 
-// 4. Vercel routing config (Build Output API v3)
+// 4. Node.js serverless function config
+writeFileSync(
+  `${FUNC}/.vc-config.json`,
+  JSON.stringify(
+    {
+      runtime: "nodejs22.x",
+      handler: "handler.js",
+      launcherType: "Nodejs",
+      shouldAddHelpers: false,
+      shouldAddSourceMapSupport: false,
+      supportsResponseStreaming: true,
+    },
+    null,
+    2,
+  ),
+);
+
+// 5. Vercel routing config (Build Output API v3)
 writeFileSync(
   `${OUTPUT}/config.json`,
   JSON.stringify(
