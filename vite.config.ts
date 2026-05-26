@@ -11,18 +11,4 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
-  ssr: {
-    // Bundle SSR runtime dependencies that are not available in Vercel function
-    // These are the transitive deps of @tanstack/start-server-core and router-core
-    // that Vite would otherwise externalize but aren't copied to Vercel runtime
-    noExternal: [
-      // h3 (Vercel http adapter)
-      "h3",
-      "h3-v2",
-      "rou3",      // h3 dependency
-      "srvx",      // h3 dependency
-      // TanStack router/start
-      "seroval",   // router-core dependency for SSR serialization
-    ],
-  },
 });
