@@ -6,10 +6,13 @@ import { validateEnv } from "./env";
  * Cliente de Supabase
  * Inicializa con validación de env vars
  * Disponible para usar en services
- * Configurado con persistencia de sesión para OAuth
+ * Configurado con persistencia de sesión para OAuth en cliente
+ * Durante SSR (Node.js): persistSession deshabilitado (no existe localStorage)
  */
 
 let _supabase: ReturnType<typeof createClient<Database>> | undefined;
+
+const isSSR = typeof window === "undefined";
 
 export function getSupabaseClient() {
   if (!_supabase) {
@@ -19,9 +22,9 @@ export function getSupabaseClient() {
       env.VITE_SUPABASE_ANON_KEY,
       {
         auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
+          persistSession: !isSSR,
+          autoRefreshToken: !isSSR,
+          detectSessionInUrl: !isSSR,
         },
       }
     );

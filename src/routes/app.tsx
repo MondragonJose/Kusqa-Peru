@@ -4,6 +4,12 @@ import { MissionRealtimeSync } from "@/components/MissionRealtimeSync";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: async ({ location }) => {
+    // Skip auth validation during SSR (no session exists on server)
+    if (typeof window === "undefined") {
+      if (import.meta.env.DEV) console.log("[KUSQA ROUTE GUARD TRACE] /app beforeLoad SSR: skipping auth check");
+      return;
+    }
+
     if (import.meta.env.DEV) console.log("[KUSQA ROUTE GUARD TRACE] /app beforeLoad:", { path: location.pathname });
 
     const { supabase } = await import("@/lib/supabase");
