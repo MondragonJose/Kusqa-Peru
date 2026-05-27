@@ -435,7 +435,7 @@ export function MapView({
     <div className="relative w-full h-full min-h-[480px] md:min-h-[580px] lg:min-h-[660px] rounded-[2rem] overflow-hidden shadow-2xl border border-border/40 flex flex-col lg:flex-row-reverse">
       
       {/* MAP LAYER CONTAINER */}
-      <div className="flex-1 relative h-[380px] lg:h-auto">
+      <div className="flex-1 relative h-[75dvh] lg:h-auto">
         <div ref={containerRef} className={`w-full h-full bg-secondary/10 z-0 kusqa-territorial-map${mapStyle === 'dark' ? ' dark-map' : ''}`} />
 
         {/* Loading Overlay */}

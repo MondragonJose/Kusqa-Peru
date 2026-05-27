@@ -57,12 +57,14 @@ export const Route = createFileRoute("/app/")({
 });
 
 function Dashboard() {
-  const { data: missions = [] } = useMissions();
-  const { data: proposals = [] } = useAllProposals(); // Sin filtro de status para incluir pending
+  const { data: missions = [], isLoading: missionsLoading } = useMissions();
+  const { data: proposals = [], isLoading: proposalsLoading } = useAllProposals(); // Sin filtro de status para incluir pending
   const currentUser = useCurrentUser();
   const { progressPct } = useUserXpProgress();
   const { currentStage, nextStage, xpToNextStage } = useProgression();
   const queryClient = useQueryClient();
+
+  const isLoading = missionsLoading || proposalsLoading;
 
   const handleRefreshMissions = () => {
     if (import.meta.env.DEV) {
@@ -132,31 +134,49 @@ function Dashboard() {
         <div className="absolute left-8 top-24 bottom-24 w-px bg-gradient-to-b from-transparent via-border/30 to-transparent hidden lg:block" />
 
       {/* P0 FIX: Hero reducido - CTA dominante, estadísticas movidas a sección secundaria */}
-      <section className="relative overflow-hidden rounded-2xl bg-stone-950 text-white p-6 sm:p-8 shadow-2xl border border-white/10">
-        <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
-        <div className="relative space-y-4 sm:space-y-6">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-amber-300 border border-white/5">
-              <Compass className="h-3 w-3" /> Misiones abiertas
-            </span>
-            <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05] mt-3">
-              Participa en misiones <br/>
-              <span className="bg-clip-text text-transparent bg-gradient-sunrise">reales en tu territorio.</span>
-            </h1>
-            <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed mt-2">
-              Únete a expediciones cívicas, conecta con jóvenes de todo el Perú y genera impacto visible.
-            </p>
+      {/* P0 FIX: Skeleton hero estable para first paint */}
+      {isLoading ? (
+        <section className="relative overflow-hidden rounded-2xl bg-stone-950 text-white p-6 sm:p-8 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
+          <div className="relative space-y-4 sm:space-y-6">
+            <div className="space-y-3">
+              <div className="h-6 w-32 bg-white/10 rounded-full animate-pulse" />
+              <div className="h-10 sm:h-12 w-3/4 bg-white/10 rounded-lg animate-pulse" />
+              <div className="h-4 w-full max-w-xl bg-white/10 rounded animate-pulse" />
+            </div>
+            <div className="flex gap-3">
+              <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse" />
+              <div className="h-10 w-32 bg-white/10 rounded-xl animate-pulse" />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/app/mapa" className={`inline-flex items-center gap-2 ${conventions.button.primary}`}>
-              Explorar misiones <MapPin className={iconSize.md} />
-            </Link>
-            <Link to="/app/crear" className={`inline-flex items-center gap-2 ${conventions.button.secondary}`}>
-              Crear proyecto
-            </Link>
+        </section>
+      ) : (
+        <section className="relative overflow-hidden rounded-2xl bg-stone-950 text-white p-6 sm:p-8 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
+          <div className="relative space-y-4 sm:space-y-6">
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-amber-300 border border-white/5">
+                <Compass className="h-3 w-3" /> Misiones abiertas
+              </span>
+              <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05] mt-3">
+                Participa en misiones <br/>
+                <span className="bg-clip-text text-transparent bg-gradient-sunrise">reales en tu territorio.</span>
+              </h1>
+              <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed mt-2">
+                Únete a expediciones cívicas, conecta con jóvenes de todo el Perú y genera impacto visible.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/app/mapa" className={`inline-flex items-center gap-2 ${conventions.button.primary}`}>
+                Explorar misiones <MapPin className={iconSize.md} />
+              </Link>
+              <Link to="/app/crear" className={`inline-flex items-center gap-2 ${conventions.button.secondary}`}>
+                Crear proyecto
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Territorios en Movimiento — Horizontally scrollable expedition cards */}
       <section className="space-y-4 relative">
@@ -175,8 +195,22 @@ function Dashboard() {
           </Link>
         </div>
 
-        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
-          {territories.map((t) => {
+        {isLoading ? (
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="w-[260px] sm:w-[280px] md:w-[320px] shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm">
+                <div className="h-24 bg-secondary animate-pulse" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 w-3/4 bg-secondary rounded animate-pulse" />
+                  <div className="h-3 w-full bg-secondary rounded animate-pulse" />
+                  <div className="h-3 w-1/2 bg-secondary rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
+            {territories.map((t) => {
             const meta = REGION_META[t.region];
             return (
               <motion.div
@@ -266,6 +300,7 @@ function Dashboard() {
             );
           })}
         </div>
+        )}
       </section>
 
       {/* Featured Recommendations */}
@@ -278,7 +313,19 @@ function Dashboard() {
         </div>
         
         <div className="grid md:grid-cols-3 gap-3 sm:gap-4">
-          {featured.length === 0 ? (
+          {isLoading ? (
+            <>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-3xl bg-card border border-border/80 overflow-hidden shadow-sm">
+                  <div className="h-36 bg-secondary animate-pulse" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 w-3/4 bg-secondary rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-secondary rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : featured.length === 0 ? (
             <div className="md:col-span-3 rounded-3xl border border-dashed border-border p-10 text-center">
               <div className="text-4xl mb-3">🗺️</div>
               <p className="text-sm text-muted-foreground font-medium">Explorando el territorio</p>

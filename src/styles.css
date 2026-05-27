@@ -136,7 +136,7 @@
   /* Gradients & effects */
   /* Restaurado gradient-sunrise como color de identidad juvenil - P0 FIX REVERSED */
   --gradient-sunrise: linear-gradient(135deg, oklch(0.78 0.17 75) 0%, oklch(0.7 0.18 45) 45%, oklch(0.55 0.18 15) 100%);
-  --gradient-andes: linear-gradient(135deg, oklch(0.55 0.16 295) 0%, oklch(0.32 0.13 280) 60%, oklch(0.22 0.08 270) 100%);
+  --gradient-andes: linear-gradient(135deg, oklch(0.65 0.12 45) 0%, oklch(0.45 0.14 35) 60%, oklch(0.32 0.10 30) 100%);
   --gradient-coast: linear-gradient(135deg, oklch(0.82 0.1 200) 0%, oklch(0.62 0.16 220) 100%);
   --gradient-jungle: linear-gradient(135deg, oklch(0.78 0.14 140) 0%, oklch(0.5 0.16 160) 100%);
 

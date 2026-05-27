@@ -15,7 +15,7 @@ import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { userRepository } from "@/services/userRepository";
 import { useQueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/lib/queryKeys";
-import { REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/regionThemes";
+import { REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/gamification";
 
 export const Route = createFileRoute("/app/perfil")({
   component: Profile,
