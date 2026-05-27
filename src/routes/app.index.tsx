@@ -401,8 +401,8 @@ function Dashboard() {
               return (
               <Link
                 key={item.id}
-                to={isMissionEntity ? "/app/mision/$missionId" : "/app/crear"}
-                params={isMissionEntity ? { missionId: item.id } : undefined}
+                to="/app/mision/$missionId"
+                params={{ missionId: item.id }}
                 className="flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-secondary/30 transition-colors"
               >
                 <div className="h-10 lg:h-11 w-10 lg:w-11 rounded-2xl bg-secondary grid place-items-center text-lg lg:text-xl shrink-0 border border-border/30">

@@ -27,7 +27,7 @@ function getStageStatus(stage: ProgressionStage, userXp: number): StageStatus {
 // Landscape zone boundaries (0-1 normalized across 7 stages)
 const LANDSCAPE_ZONES = [
   { label: "🌊 Costa", color: "#C4962A", textColor: "text-amber-700", from: 0, to: 0.28 },
-  { label: "⛰️ Sierra", color: "#6B4F8E", textColor: "text-purple-700", from: 0.29, to: 0.57 },
+  { label: "⛰️ Sierra", color: "#C47A2A", textColor: "text-orange-800", from: 0.29, to: 0.57 },
   { label: "🌿 Selva", color: "#2D7A4A", textColor: "text-emerald-700", from: 0.58, to: 0.86 },
   { label: "🏔️ Cumbre", color: "#C4962A", textColor: "text-amber-600", from: 0.87, to: 1 },
 ];

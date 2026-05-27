@@ -37,9 +37,9 @@ const REGION_THEMES: Record<Region, { gradient: string; text: string; bgLight: s
   },
   sierra: {
     gradient: "bg-gradient-andes",
-    text: "text-purple-700 dark:text-purple-400",
-    bgLight: "bg-purple-50 dark:bg-purple-900/20",
-    border: "border-purple-200 dark:border-purple-800/40"
+    text: "text-orange-800 dark:text-orange-400",
+    bgLight: "bg-orange-50 dark:bg-orange-900/20",
+    border: "border-orange-200 dark:border-orange-800/40"
   },
   selva: {
     gradient: "bg-gradient-jungle",

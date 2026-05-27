@@ -8,6 +8,8 @@ import { MissionStoryModal } from "@/features/missions";
 import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
+import { useProposal } from "@/features/proposals";
+import { CivicEntity, isMission, isProposal } from "@/types/entity";
 import type { Region } from "@/types";
 import { formatRelativeDate } from "@/utils/date";
 
@@ -24,9 +26,9 @@ const REGION_THEMES: Record<Region, { gradient: string; text: string; bgLight: s
   },
   sierra: {
     gradient: "bg-gradient-andes",
-    text: "text-purple-700 dark:text-purple-400",
-    bgLight: "bg-purple-50 dark:bg-purple-900/20",
-    border: "border-purple-200 dark:border-purple-800/40"
+    text: "text-orange-800 dark:text-orange-400",
+    bgLight: "bg-orange-50 dark:bg-orange-950/20",
+    border: "border-orange-200 dark:border-orange-800/40"
   },
   selva: {
     gradient: "bg-gradient-jungle",
@@ -38,8 +40,17 @@ const REGION_THEMES: Record<Region, { gradient: string; text: string; bgLight: s
 
 function MissionDetail() {
   const { missionId } = useParams({ from: "/app/mision/$missionId" });
-  const { data: m, isLoading, isError, error } = useMission(missionId);
+  const { data: mission, isLoading: missionLoading, isError: missionError } = useMission(missionId);
+  const { data: proposal, isLoading: proposalLoading, isError: proposalError } = useProposal(missionId);
   const { data: allMissions = [] } = useMissions();
+
+  // Determine if entity is mission or proposal
+  const isMissionEntity = !missionError && mission;
+  const isProposalEntity = !proposalError && proposal;
+  const isLoading = missionLoading || proposalLoading;
+  const isError = missionError && proposalError;
+  const error = missionError || proposalError;
+  const entity = isMissionEntity ? mission : proposal;
 
   const currentUser = useCurrentUser();
   const joinMutation = useJoinUserMission();
@@ -75,11 +86,11 @@ function MissionDetail() {
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
 
   const similarMissions = useMemo(() => {
-    if (!m) return [];
+    if (!entity) return [];
     return allMissions
-      .filter((x) => x.id !== m.id && (x.region === m.region || x.category === m.category))
+      .filter((x) => x.id !== entity.id && (x.region === entity.region || x.category === entity.category))
       .slice(0, 2);
-  }, [m, allMissions]);
+  }, [entity, allMissions]);
 
   const handleOpenMissionStory = (id: string) => {
     setSelectedStoryId(id);
@@ -107,21 +118,21 @@ function MissionDetail() {
     );
   }
 
-  if (isError || !m) {
+  if (isError || !entity) {
     return (
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
         <Link to="/app" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-semibold">
           <ArrowLeft className="h-4 w-4" /> Volver al inicio
         </Link>
         <p className="text-sm text-destructive font-medium">
-          {error instanceof Error ? error.message : "No se pudo cargar la misión."}
+          {error && typeof error === 'object' && 'message' in error ? (error as Error).message : "No se pudo cargar la misión."}
         </p>
       </div>
     );
   }
 
-  const meta = REGION_META[m.region];
-  const theme = REGION_THEMES[m.region] || REGION_THEMES.sierra;
+  const meta = REGION_META[entity.region];
+  const theme = REGION_THEMES[entity.region] || REGION_THEMES.sierra;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-24 lg:pb-12">
@@ -166,28 +177,28 @@ function MissionDetail() {
         <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
-            <div className="text-7xl select-none filter drop-shadow-sm">{m.emoji}</div>
+            <div className="text-7xl select-none filter drop-shadow-sm">{entity.emoji}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
-                {meta.name} · {m.category}
+                {meta.name} · {entity.category}
               </div>
               <div className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-black px-3.5 py-1 rounded-md border ${
-                m.status === 'active' 
+                entity.status === 'active' 
                   ? 'bg-emerald-500/20 border-emerald-400/30 text-emerald-100' 
-                  : m.status === 'completed'
+                  : entity.status === 'completed'
                   ? 'bg-blue-500/20 border-blue-400/30 text-blue-100'
                   : 'bg-amber-500/20 border-amber-400/30 text-amber-100'
               }`}>
-                {m.status === 'active' ? 'Activa' : m.status === 'completed' ? 'Completada' : 'Propuesta'}
+                {entity.status === 'active' ? 'Activa' : entity.status === 'completed' ? 'Completada' : 'Propuesta'}
               </div>
             </div>
             <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-6xl mt-2 sm:mt-3 leading-[1.05] tracking-tight">
-              {m.title}
+              {entity.title}
             </h1>
             <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-0.5 text-xs sm:text-xs opacity-90 font-medium">
-              <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {m.district}</span>
-              <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(m.date)}</span>
-              <span className="hidden sm:inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {m.participants} participantes</span>
+              <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {entity.district}</span>
+              <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(entity.date)}</span>
+              <span className="hidden sm:inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {entity.participants} participantes</span>
             </div>
             {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
             <div className="mt-4 sm:mt-6">
@@ -250,7 +261,7 @@ function MissionDetail() {
         <div className="space-y-6">
           <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6 space-y-3">
             <h2 className="font-display font-black text-xl text-foreground">La Misión Territorial</h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">{m.description}</p>
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">{entity.description}</p>
           </section>
 
           {/* Why this matters */}
@@ -259,7 +270,7 @@ function MissionDetail() {
               <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
-              Esta acción fortalece el tejido comunitario en {m.district}, generando impacto visible en {m.impact || 'el entorno local'}. Al participar, contribuyes a construir una ciudad más participativa y consciente.
+              Esta acción fortalece el tejido comunitario en {entity.district}, generando impacto visible en {entity.impact || 'el entorno local'}. Al participar, contribuyes a construir una ciudad más participativa y consciente.
             </p>
           </section>
 
@@ -293,7 +304,7 @@ function MissionDetail() {
 
           {/* Participants group */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
-            <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({m.participants})</h2>
+            <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({entity.participants})</h2>
             <div className="flex flex-wrap gap-2">
               {["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"].map((e, i) => (
                 <div key={i} className="h-11 w-11 rounded-xl bg-secondary/80 hover:bg-secondary grid place-items-center text-lg hover:scale-110 transition-all select-none border border-border/10 cursor-default">
@@ -301,7 +312,7 @@ function MissionDetail() {
                 </div>
               ))}
               <div className="h-11 px-4 rounded-xl bg-secondary/80 grid place-items-center text-xs font-black text-muted-foreground border border-border/10">
-                +{Math.max(0, m.participants - 10)} más
+                +{Math.max(0, entity.participants - 10)} más
               </div>
             </div>
           </section>
@@ -372,10 +383,10 @@ function MissionDetail() {
             <div className="h-px bg-border/60" />
 
             <div className="space-y-3 text-xs">
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Dificultad</span><span className="font-bold text-foreground">{m.difficulty}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Cupos libres</span><span className="font-bold text-accent">{m.spotsLeft}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organizador</span><span className="font-bold text-foreground">{m.organizer.name}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Impacto</span><span className="font-bold text-stone-700 dark:text-stone-300 text-right">{m.impact}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Dificultad</span><span className="font-bold text-foreground">{entity?.difficulty || 'N/A'}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Cupos libres</span><span className="font-bold text-accent">{entity?.spotsLeft || 0}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organizador</span><span className="font-bold text-foreground">{entity?.organizer?.name || 'N/A'}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Impacto</span><span className="font-bold text-stone-700 dark:text-stone-300 text-right">{entity?.impact || 'N/A'}</span></div>
             </div>
 
             <div className="space-y-2 pt-2">

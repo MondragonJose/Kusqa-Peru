@@ -206,7 +206,7 @@ function MapPage() {
       {/* Main Map & Interactive Sidebar Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-3 lg:gap-5 items-stretch">
         {/* Dynamic Leaflet Map with focal coords support */}
-        <div className="h-[65vh] md:h-[60vh] lg:h-[640px] w-full min-h-[450px]">
+        <div className="h-[75dvh] md:h-[70dvh] lg:h-[640px] w-full min-h-[450px] order-1 lg:order-1">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeMission?.id || null}
@@ -218,7 +218,7 @@ function MapPage() {
         </div>
 
         {/* P1 FIX: Eliminar tabs - sidebar siempre muestra misión seleccionada */}
-        <div className="flex flex-col gap-2 lg:gap-4 min-h-[500px]">
+        <div className="flex flex-col gap-2 lg:gap-4 min-h-[300px] lg:min-h-[500px] max-h-[40dvh] lg:max-h-none order-2 lg:order-2">
           <div className="flex-1 flex flex-col h-full">
             {activeMission ? (
               <div className="flex-1 rounded-3xl bg-card border border-border/50 overflow-hidden shadow-card flex flex-col justify-between">
