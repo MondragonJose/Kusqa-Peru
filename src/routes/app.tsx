@@ -39,9 +39,13 @@ function AppRouteComponent() {
     if (import.meta.env.DEV) {
       console.log("[KUSQA ROUTE APP] Unauthenticated state: redirecting to /");
     }
+    // Solo pasar redirect param si no es /app mismo para evitar loop
+    // Si usuario intentó acceder a /app directamente, no crear loop
+    const currentPath = location.pathname;
+    const shouldRedirect = currentPath !== "/app" && currentPath !== "/app/";
     throw redirect({
       to: "/",
-      search: { redirect: location.href },
+      search: { redirect: shouldRedirect ? location.href : "" },
     });
   }
 

@@ -61,12 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("[KUSQA AUTH TRACE] AuthProvider: Initializing secured session bootstrap");
     }
     let mounted = true;
+    let bootstrapComplete = false;
 
     // 1. Bootstrap inicial: restaurar sesión desde Supabase/localStorage
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
+
         if (!mounted) return;
 
         if (initialSession) {
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) {
           // Bootstrap completado → authState pasa a "authenticated" o "unauthenticated"
+          bootstrapComplete = true;
           setLoading(false);
         }
       }
@@ -97,7 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 2. Listener pasivo: cambios en tiempo real (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (!mounted) return;
-      
+
+      // Solo procesar eventos después de que bootstrap inicial complete
+      // Evita race condition entre initializeAuth y onAuthStateChange
+      if (!bootstrapComplete) {
+        if (import.meta.env.DEV) {
+          console.log(`[KUSQA AUTH TRACE] Ignoring auth event during bootstrap: ${event}`);
+        }
+        return;
+      }
+
       if (import.meta.env.DEV) {
         console.log(`[KUSQA AUTH TRACE] Auth state changed: ${event}`, {
           userId: currentSession?.user?.id,
@@ -106,9 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      
-      // Asegurar que loading se apague si se recibe un evento antes de que termine initializeAuth
-      setLoading(false);
     });
 
     return () => {

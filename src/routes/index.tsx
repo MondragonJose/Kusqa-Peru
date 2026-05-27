@@ -181,14 +181,22 @@ function Landing(): JSX.Element {
   const { loginWithGoogle } = useOAuthLogin();
   const { state, isAuthenticated, isReady } = useAuthState();
   const search = useSearch({ from: "/" });
+  const hasRedirected = useRef(false);
 
   // Centralized post-auth navigation decision
   // Landing is the single source of truth for routing after auth
   useEffect(() => {
-    if (isAuthenticated && isReady) {
+    // Only redirect if explicitly coming from auth callback (has redirect param)
+    // Avoid redirect loop when user manually navigates to /
+    if (isAuthenticated && isReady && search.redirect && !hasRedirected.current) {
+      hasRedirected.current = true;
       // Safe redirect validation: only allow internal paths
       const safeRedirect = search.redirect?.startsWith("/") ? search.redirect : "/app";
-      throw redirect({ to: safeRedirect });
+      // Small delay to ensure component render completes before redirect
+      // Prevents "This page didn't load" error during auth transition
+      setTimeout(() => {
+        window.location.href = safeRedirect;
+      }, 100);
     }
   }, [isAuthenticated, isReady, search.redirect]);
 
