@@ -1,13 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallbackPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
 });
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/auth/callback" });
   // useRef evita que el efecto se ejecute doble en React StrictMode de forma innecesaria
   const processing = useRef(false);
 
@@ -34,7 +38,9 @@ function AuthCallbackPage() {
       if (data.session) {
         if (import.meta.env.DEV) console.log("[KUSQA AUTH TRACE] Session found immediately:", data.session.user.id);
         window.location.hash = "";
-        navigate({ to: "/app" });
+        // Simplified: always navigate to landing with redirect param
+        // Landing will decide final destination based on auth state
+        navigate({ to: "/", search: { redirect: search.redirect } });
         return;
       }
 
@@ -53,7 +59,9 @@ function AuthCallbackPage() {
           if (timeoutId) clearTimeout(timeoutId);
           if (processing.current) {
             window.location.hash = "";
-            navigate({ to: "/app" });
+            // Simplified: always navigate to landing with redirect param
+            // Landing will decide final destination based on auth state
+            navigate({ to: "/", search: { redirect: search.redirect } });
           }
         }
       });

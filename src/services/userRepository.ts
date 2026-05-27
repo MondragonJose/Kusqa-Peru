@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import type { Region, User, UserTerritoryProgress } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { z } from "zod";
+import { inferRegionFromDistrict } from "@/domain/territorial";
 
 type DbProfile = Database["public"]["Tables"]["profiles"]["Row"];
 type DbUserProgress = Database["public"]["Tables"]["user_progress"]["Row"];
@@ -47,28 +48,7 @@ function parseUserProgressRow(row: DbUserProgress): DbUserProgress {
   return row;
 }
 
-function inferRegionFromDistrict(district: string | null): Region {
-  if (!district) return "costa";
-  const normalized = district.toLowerCase();
-  if (
-    normalized.includes("cusco") ||
-    normalized.includes("puno") ||
-    normalized.includes("chinchero") ||
-    normalized.includes("andes") ||
-    normalized.includes("sierra")
-  ) {
-    return "sierra";
-  }
-  if (
-    normalized.includes("iquitos") ||
-    normalized.includes("loreto") ||
-    normalized.includes("amazon") ||
-    normalized.includes("selva")
-  ) {
-    return "selva";
-  }
-  return "costa";
-}
+// P0 FIX: inferRegionFromDistrict consolidado en src/domain/territorial.ts (fuente de verdad única)
 
 function mapProfileToUser(profile: DbProfile, progress: DbUserProgress | null): User {
   const handle = profile.username.startsWith("@") ? profile.username : `@${profile.username}`;
@@ -181,10 +161,6 @@ export const userRepository = {
       return await this.findProfileByUserId(userId);
     } catch (error) {
       // Si profile no existe, crearlo automáticamente desde auth.user
-      if (import.meta.env.DEV) {
-        console.log("[KUSQA POST AUTH TRACE] Profile not found, creating from auth.user");
-      }
-      
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
         throw new Error("No auth user found");
@@ -212,10 +188,6 @@ export const userRepository = {
         throw new Error(`Failed to create profile: ${createError.message}`);
       }
 
-      if (import.meta.env.DEV) {
-        console.log("[KUSQA POST AUTH TRACE] Profile created successfully:", newProfile.id);
-      }
-
       // user_progress table may not exist — skip creation entirely
       const progress = this.getDefaultProgress(userId);
       return mapProfileToUser(parseProfileRow(newProfile), progress);
@@ -223,10 +195,6 @@ export const userRepository = {
   },
 
   async updateProfileDistrict(userId: string, district: string): Promise<void> {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA LOCATION TRACE] Updating district for user:", userId, district);
-    }
-
     const { error } = await supabase
       .from("profiles")
       .update({ district })
@@ -235,10 +203,6 @@ export const userRepository = {
     if (error) {
       console.error("[KUSQA LOCATION TRACE] Error updating district:", error);
       throw new Error(`Failed to update district: ${error.message}`);
-    }
-
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA LOCATION TRACE] District updated successfully");
     }
   },
 };

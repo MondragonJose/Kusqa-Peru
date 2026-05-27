@@ -2,7 +2,7 @@
  * User progress domain — pure business logic (no React Query, no Supabase).
  */
 
-import { CURRENT_USER } from "@/data/kusqa";
+import { CURRENT_USER } from "@/data/mockData";
 import { missionRepository } from "@/services/missionRepository";
 import { missionResolver } from "@/services/missionResolver";
 import type { UserMissionRow } from "@/services/userMissionRepository";

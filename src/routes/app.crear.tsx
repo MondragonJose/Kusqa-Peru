@@ -100,7 +100,9 @@ function CreateProject() {
   const uploadImages = async (): Promise<string[]> => {
     if (imageFiles.length === 0) return [];
 
-    console.log("[KUSQA STORAGE TRACE] Uploading images:", imageFiles.length);
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA STORAGE TRACE] Uploading images:", imageFiles.length);
+    }
     setIsUploadingImages(true);
 
     try {
@@ -120,7 +122,9 @@ function CreateProject() {
           .upload(filePath, file);
 
         if (error) {
-          console.error("[KUSQA STORAGE TRACE] Error uploading image:", error);
+          if (import.meta.env.DEV) {
+            console.error("[KUSQA STORAGE TRACE] Error uploading image:", error);
+          }
           throw error;
         }
 
@@ -129,15 +133,21 @@ function CreateProject() {
           .from('proposal-images')
           .getPublicUrl(filePath);
 
-        console.log("[KUSQA STORAGE TRACE] Image uploaded:", publicUrl);
+        if (import.meta.env.DEV) {
+          console.log("[KUSQA STORAGE TRACE] Image uploaded:", publicUrl);
+        }
         return publicUrl;
       });
 
       const urls = await Promise.all(uploadPromises);
-      console.log("[KUSQA STORAGE TRACE] All images uploaded successfully");
+      if (import.meta.env.DEV) {
+        console.log("[KUSQA STORAGE TRACE] All images uploaded successfully");
+      }
       return urls;
     } catch (error) {
-      console.error("[KUSQA STORAGE TRACE] Error uploading images:", error);
+      if (import.meta.env.DEV) {
+        console.error("[KUSQA STORAGE TRACE] Error uploading images:", error);
+      }
       throw error;
     } finally {
       setIsUploadingImages(false);
@@ -195,13 +205,17 @@ function CreateProject() {
       images: imageUrls,
     };
 
-    console.log("[KUSQA PROPOSAL TRACE] UI → mutation with DTO:", JSON.stringify(dto, null, 2));
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA PROPOSAL TRACE] UI → mutation with DTO:", JSON.stringify(dto, null, 2));
+    }
     const result = await createProposal.mutateAsync(dto);
 
     // STEP 3: Handle deterministic result
     if (result.status === "error") {
       setFlowState("error");
-      console.error("[KUSQA PROPOSAL TRACE] Proposal creation failed:", result.error);
+      if (import.meta.env.DEV) {
+        console.error("[KUSQA PROPOSAL TRACE] Proposal creation failed:", result.error);
+      }
       toast.error("Error al publicar", {
         description: result.error || "Por favor intenta nuevamente",
       });
@@ -212,10 +226,14 @@ function CreateProject() {
     // Success or partial_success
     if (warnings.length > 0) {
       setFlowState("partial_success");
-      console.log("[KUSQA PROPOSAL TRACE] Proposal created with warnings:", warnings);
+      if (import.meta.env.DEV) {
+        console.log("[KUSQA PROPOSAL TRACE] Proposal created with warnings:", warnings);
+      }
     } else {
       setFlowState("success");
-      console.log("[KUSQA PROPOSAL TRACE] Proposal created successfully, id:", result.data.id);
+      if (import.meta.env.DEV) {
+        console.log("[KUSQA PROPOSAL TRACE] Proposal created successfully, id:", result.data.id);
+      }
     }
 
     setIsSubmitting(false);
@@ -246,7 +264,7 @@ function CreateProject() {
                   done
                     ? "bg-jungle text-white"
                     : active
-                      ? "bg-gradient-sunrise text-white shadow-glow"
+                      ? "bg-primary text-white shadow-sm"
                       : "bg-secondary text-muted-foreground"
                 }`}
               >
@@ -471,7 +489,7 @@ function CreateProject() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", delay: 0.2 }}
-                  className="mx-auto h-24 w-24 rounded-3xl bg-gradient-sunrise grid place-items-center text-5xl shadow-glow"
+                  className="mx-auto h-24 w-24 rounded-3xl bg-primary grid place-items-center text-5xl shadow-sm"
                 >
                   ✨
                 </motion.div>
@@ -499,7 +517,7 @@ function CreateProject() {
         <button
           onClick={step === STEPS.length ? handlePublish : () => setStep((s) => Math.min(STEPS.length, s + 1))}
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3 font-semibold shadow-glow hover:scale-[1.02] transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-6 py-3 font-semibold shadow-sm hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {flowState === "uploading_images" ? "Subiendo imágenes..." : flowState === "saving" ? "Guardando propuesta..." : isSubmitting ? "Publicando..." : step === STEPS.length ? "Publicar misión" : "Continuar"} <ArrowRight className="h-4 w-4" />
         </button>

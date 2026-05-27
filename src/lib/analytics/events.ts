@@ -34,7 +34,9 @@ export interface AnalyticsEvent {
  */
 export function trackEvent(event: AnalyticsEvent): void {
   // TODO: Send to analytics service when integrated
-  console.log("[KUSQA ANALYTICS]", event.name, event.properties);
+  if (import.meta.env.DEV) {
+    console.log("[KUSQA ANALYTICS]", event.name, event.properties);
+  }
 }
 
 /**

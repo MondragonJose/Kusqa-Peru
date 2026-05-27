@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation, redirect, useSearch } from "@tanstack/react-router";
 import { motion, useInView } from "framer-motion";
 import {
   ArrowRight,
@@ -21,6 +21,7 @@ import { JSX } from "react/jsx-runtime";
 import { PublicMissionCard } from "@/features/missions";
 import { useMissions } from "@/hooks/useMissions";
 import { useOAuthLogin } from "@/features/auth";
+import { useAuthState } from "@/features/auth";
 import { toast } from "sonner";
 import { missionToEntity } from "@/services/entityAdapter";
 import type { Mission } from "@/types";
@@ -31,6 +32,9 @@ import type { Mission } from "@/types";
 
 export const Route = createFileRoute("/")({
   component: Landing,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,6 +179,18 @@ function PeruTerritoryDecoration() {
 function Landing(): JSX.Element {
   const { data: missions = [] } = useMissions();
   const { loginWithGoogle } = useOAuthLogin();
+  const { state, isAuthenticated, isReady } = useAuthState();
+  const search = useSearch({ from: "/" });
+
+  // Centralized post-auth navigation decision
+  // Landing is the single source of truth for routing after auth
+  useEffect(() => {
+    if (isAuthenticated && isReady) {
+      // Safe redirect validation: only allow internal paths
+      const safeRedirect = search.redirect?.startsWith("/") ? search.redirect : "/app";
+      throw redirect({ to: safeRedirect });
+    }
+  }, [isAuthenticated, isReady, search.redirect]);
 
   // Derive stats from real Supabase data
   const stats = deriveStatsFromMissions(missions);
@@ -380,12 +396,12 @@ function Landing(): JSX.Element {
               </div>
             </motion.div>
 
-            {/* Hero visual — Peru territory */}
+            {/* Hero visual — Peru territory - hidden on mobile/tablet */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, delay: 0.3 }}
-              className="hidden lg:block"
+              className="hidden xl:block"
             >
               <PeruTerritoryDecoration />
             </motion.div>
@@ -456,7 +472,7 @@ function Landing(): JSX.Element {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
             {stats.map((s: any, i: number) => (
               <motion.div
                 key={s.label}

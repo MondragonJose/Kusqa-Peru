@@ -114,10 +114,6 @@ async function resolveUserId(): Promise<string> {
 export const proposalRepository = {
 
   async createProposal(dto: CreateProposalDTO): Promise<ProposalResult> {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Repository.createProposal — raw DTO:", JSON.stringify(dto, null, 2));
-    }
-
     // STEP 1: Resolve user_id from Supabase session
     let userId: string;
     try {
@@ -126,9 +122,6 @@ export const proposalRepository = {
       const msg = e instanceof Error ? e.message : "Auth failed";
       console.error("[KUSQA PROPOSAL TRACE] Auth error:", msg);
       return { status: "error", error: msg };
-    }
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Resolved user_id:", userId);
     }
 
     // STEP 2: Normalize DTO → snake_case DB payload + apply DB-safe defaults
@@ -181,9 +174,6 @@ export const proposalRepository = {
 
     // STEP 5: Verify persistence — runtime-assert and return domain model
     const proposal = toDomain(assertDbRow(rawData));
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Proposal persisted OK, id:", proposal.id);
-    }
     return { status: "success", data: proposal };
   },
 
@@ -282,17 +272,10 @@ export const proposalRepository = {
     }
 
     const proposal = toDomain(assertDbRow(rawData));
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Proposal updated OK, id:", proposal.id);
-    }
     return { status: "success", data: proposal };
   },
 
   async deleteProposal(id: string): Promise<ProposalResult<void>> {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Repository.deleteProposal — id:", id);
-    }
-
     const { error } = await supabase
       .from("proposals")
       .delete()
@@ -303,9 +286,6 @@ export const proposalRepository = {
       return { status: "error", error: `DB error: ${error.message}` };
     }
 
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Proposal deleted OK, id:", id);
-    }
     return { status: "success", data: undefined as void };
   },
 };

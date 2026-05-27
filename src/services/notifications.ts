@@ -6,7 +6,7 @@
  */
 
 import type { Notification } from "@/types";
-import { NOTIFICATIONS as NOTIFICATIONS_MOCK } from "@/data/kusqa";
+import { NOTIFICATIONS as NOTIFICATIONS_MOCK } from "@/data/mockData";
 
 /**
  * Obtiene todas las notificaciones del usuario

@@ -7,7 +7,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { LEVELS } from "@/constants/gamification";
+import { CIVIC_ROUTE } from "@/features/progression/constants/civicRoute";
 import { userCurrentQueryOptions, userSessionQueryOptions } from "@/features/auth/queryOptions";
 import type { User } from "@/types";
 import { useUserProgress } from "./useUserProgress";
@@ -33,9 +33,13 @@ export interface AuthUserState {
  * For explicit auth state, use useCurrentUserState().
  */
 export function useCurrentUser(): User | null {
+  const { authState } = useAuth();
+  
   const { data: user } = useQuery({
     ...userCurrentQueryOptions(),
     retry: false,
+    // FIX 3: Only execute query when auth bootstrap is ready to avoid hydration mismatch
+    enabled: authState.isReady,
   });
 
   return user ?? null;
@@ -136,10 +140,10 @@ export function useUserXpProgress(): {
   };
 
   const currentLevel =
-    LEVELS.find((l) => userWithProgress.xp >= l.from && userWithProgress.xp < l.to) ?? LEVELS[0];
-  const nextLevel = LEVELS.find((l) => l.level === currentLevel.level + 1) ?? currentLevel;
-  const fromXp = currentLevel.from;
-  const toXp = nextLevel.from;
+    CIVIC_ROUTE.find((l) => userWithProgress.xp >= l.xpFrom && userWithProgress.xp < l.xpTo) ?? CIVIC_ROUTE[0];
+  const nextLevel = CIVIC_ROUTE.find((l) => l.level === currentLevel.level + 1) ?? currentLevel;
+  const fromXp = currentLevel.xpFrom;
+  const toXp = nextLevel.xpFrom;
   const range = toXp - fromXp;
 
   return {

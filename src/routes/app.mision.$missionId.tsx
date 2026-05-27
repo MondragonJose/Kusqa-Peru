@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Calendar, Users, Trophy, ArrowLeft, Share2, Heart, ShieldCheck, Compass, Sparkles } from "lucide-react";
+import { MapPin, Calendar, Users, Trophy, ArrowLeft, ArrowRight, Share2, Heart, ShieldCheck, Compass, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { REGION_META } from "@/constants/gamification";
 import { MissionStoryModal } from "@/features/missions";
@@ -99,9 +99,9 @@ function MissionDetail() {
     return (
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 w-32 bg-muted rounded-lg" />
-          <div className="h-64 bg-muted rounded-3xl" />
-          <div className="h-32 bg-muted rounded-3xl" />
+          <div className="h-8 w-32 bg-muted/50 rounded-lg" />
+          <div className="h-64 bg-muted/30 rounded-3xl border border-border/20" />
+          <div className="h-32 bg-muted/30 rounded-3xl border border-border/20" />
         </div>
       </div>
     );
@@ -160,11 +160,11 @@ function MissionDetail() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`relative overflow-hidden rounded-3xl ${meta.gradient} text-white p-6 sm:p-8 lg:p-12 shadow-lift`}
+        className={`relative overflow-hidden rounded-3xl ${meta.gradient} text-white p-4 sm:p-6 lg:p-12 shadow-glow`}
       >
         <div className="absolute inset-0 bg-mesh opacity-30 pointer-events-none" />
-        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-3xl animate-float-slow pointer-events-none" />
-        <div className="relative grid lg:grid-cols-[1fr_auto] gap-6 items-end">
+        <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
             <div className="text-7xl select-none filter drop-shadow-sm">{m.emoji}</div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -181,22 +181,50 @@ function MissionDetail() {
                 {m.status === 'active' ? 'Activa' : m.status === 'completed' ? 'Completada' : 'Propuesta'}
               </div>
             </div>
-            <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-6xl mt-3 leading-[1.05] tracking-tight">
+            <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-6xl mt-2 sm:mt-3 leading-[1.05] tracking-tight">
               {m.title}
             </h1>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs opacity-90 font-medium">
-              <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {m.district}</span>
-              <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {formatRelativeDate(m.date)}</span>
-              <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4" /> {m.participants} exploradores unidos</span>
+            <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-0.5 text-xs sm:text-xs opacity-90 font-medium">
+              <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {m.district}</span>
+              <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(m.date)}</span>
+              <span className="hidden sm:inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {m.participants} participantes</span>
+            </div>
+            {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
+            <div className="mt-4 sm:mt-6">
+              <motion.button
+                onClick={handleJoinMission}
+                disabled={alreadyJoined || joinMutation.isPending || joinMutation.isSuccess}
+                className={`inline-flex items-center gap-2 rounded-2xl bg-gradient-sunrise text-white px-6 py-3 font-black text-xs shadow-glow hover:scale-[1.02] transition-all cursor-pointer ${
+                  alreadyJoined || joinMutation.isSuccess ? "opacity-90 cursor-default" : ""
+                } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
+                whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.02 } : {}}
+                whileTap={!alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}}
+              >
+                {joinMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 rounded-full border-2 border-foreground/40 border-t-foreground animate-spin" />
+                    Uniéndote...
+                  </span>
+                ) : alreadyJoined || joinMutation.isSuccess ? (
+                  <span className="flex items-center gap-2">
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.5 }}>✨</motion.span>
+                    ¡Ya eres parte!
+                  </span>
+                ) : (
+                  <>
+                    Unirme a la misión <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </motion.button>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="hidden sm:flex gap-2">
             <button
-              onClick={() => toast("Guardado en tu bitácora.", { description: "Próximamente podrás ver tus misiones guardadas." })}
-              className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
+              onClick={() => toast("Guardado en tu bitácora.", { description: "Esta misión está en tu expedición." })}
+              className="h-10 w-10 rounded-lg bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
               title="Guardar misión"
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-4 w-4" />
             </button>
             <button
               onClick={() => {
@@ -208,10 +236,10 @@ function MissionDetail() {
                   toast("Comparte esta URL con tu red cívica.");
                 }
               }}
-              className="h-11 w-11 rounded-xl bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
+              className="h-10 w-10 rounded-lg bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
               title="Compartir misión"
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -238,7 +266,7 @@ function MissionDetail() {
           {/* Expedition timeline stages */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-5 text-foreground flex items-center gap-2">
-              <Compass className="h-5 w-5 text-accent" /> Senderos del proyecto
+              <Compass className="h-5 w-5 text-accent" /> Agenda de la misión
             </h2>
             <div className="space-y-4">
               {[
@@ -265,7 +293,7 @@ function MissionDetail() {
 
           {/* Participants group */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
-            <h2 className="font-display font-black text-xl mb-4 text-foreground">Equipo unido ({m.participants})</h2>
+            <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({m.participants})</h2>
             <div className="flex flex-wrap gap-2">
               {["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"].map((e, i) => (
                 <div key={i} className="h-11 w-11 rounded-xl bg-secondary/80 hover:bg-secondary grid place-items-center text-lg hover:scale-110 transition-all select-none border border-border/10 cursor-default">
@@ -281,7 +309,7 @@ function MissionDetail() {
           {/* Connected Misiones Similares / Otras rutas cercanas */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl text-foreground flex items-center gap-2 pl-1">
-              <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Otras rutas cercanas en {meta.name}
+              <Sparkles className="h-5 w-5 text-accent" /> Otras rutas cercanas en {meta.name}
             </h2>
 
             {similarMissions.length > 0 ? (
@@ -312,7 +340,7 @@ function MissionDetail() {
                         onClick={() => handleOpenMissionStory(sim.id)}
                         className="text-[10px] font-black uppercase tracking-wider text-accent hover:underline cursor-pointer"
                       >
-                        Ver Bitácora Histórica
+                        Ver narrativa
                       </button>
 
                       <Link
@@ -339,27 +367,14 @@ function MissionDetail() {
         {/* Sidebar */}
         <aside className="space-y-4">
           <div className="rounded-3xl bg-card border border-border/80 p-6 shadow-soft sticky top-24 space-y-5">
-            <div>
-              <div className="text-[9px] uppercase tracking-widest font-black text-stone-400">Recompensas del tramo</div>
-              <div className="mt-3 flex items-center gap-3">
-                <div className={`h-14 w-14 rounded-2xl ${meta.gradient} text-white grid place-items-center shadow-glow border border-white/10 shrink-0`}>
-                  <Trophy className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="font-display font-black text-2xl text-foreground">+{m.xp} XP</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Acreditación cívica
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* P0 FIX: Eliminada sección de XP - sistema de gamificación eliminado */}
 
             <div className="h-px bg-border/60" />
 
             <div className="space-y-3 text-xs">
               <div className="flex justify-between font-medium"><span className="text-muted-foreground">Dificultad</span><span className="font-bold text-foreground">{m.difficulty}</span></div>
               <div className="flex justify-between font-medium"><span className="text-muted-foreground">Cupos libres</span><span className="font-bold text-accent">{m.spotsLeft}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organiza</span><span className="font-bold text-foreground">{m.organizer.name}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organizador</span><span className="font-bold text-foreground">{m.organizer.name}</span></div>
               <div className="flex justify-between font-medium"><span className="text-muted-foreground">Impacto</span><span className="font-bold text-stone-700 dark:text-stone-300 text-right">{m.impact}</span></div>
             </div>
 
@@ -367,10 +382,10 @@ function MissionDetail() {
               <motion.button
                 onClick={handleJoinMission}
                 disabled={alreadyJoined || joinMutation.isPending || joinMutation.isSuccess}
-                className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow hover:scale-[1.01] transition-all cursor-pointer ${
+                className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow hover:scale-[1.02] transition-all cursor-pointer ${
                   alreadyJoined || joinMutation.isSuccess ? "opacity-90 cursor-default" : ""
                 } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
-                whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.01 } : {}}
+                whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.02 } : {}}
                 whileTap={!alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}}
               >
                 {joinMutation.isPending ? (

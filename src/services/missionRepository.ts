@@ -6,7 +6,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
-import { getClosestRegion } from "@/utils/map";
+import { inferRegionFromCoords } from "@/domain/territorial";
 import { z } from "zod";
 
 type DbMission = Database["public"]["Tables"]["missions"]["Row"];
@@ -87,7 +87,7 @@ function formatMissionDate(iso: string): string {
 
 function mapRowToMission(row: DbMission): Mission {
   const coords = { lat: row.latitude, lng: row.longitude };
-  const region = getClosestRegion(coords);
+  const region = inferRegionFromCoords(coords);
   const participants = row.current_progress ?? 0;
   const capacity = row.max_participants ?? 10;
   const spotsLeft = Math.max(0, capacity - participants);

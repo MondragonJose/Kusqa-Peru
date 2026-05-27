@@ -8,7 +8,8 @@
  */
 
 import type { User, UserProfile, Badge } from "@/types";
-import { CURRENT_USER, BADGES } from "@/data/kusqa";
+import { CURRENT_USER } from "@/data/mockData";
+import { CIVIC_BADGES } from "@/features/badges";
 
 /**
  * Obtiene el usuario actual (sessión activa)
@@ -35,7 +36,16 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   
   return {
     user,
-    badges: BADGES.filter((b) => b.earned),
+    badges: CIVIC_BADGES
+      .filter((b) => b.earned)
+      .map((b) => ({
+        id: b.id,
+        name: b.name,
+        emoji: b.emoji,
+        region: b.region === "nacional" ? "todas" : b.region,
+        earned: b.earned,
+        description: b.narrative,
+      })),
     totalMissionsCompleted: 12,
     totalImpact: "2.5 hectáreas restauradas",
   };
@@ -63,7 +73,16 @@ export async function getUserBadges(userId: string): Promise<Badge[]> {
   await new Promise((resolve) => setTimeout(resolve, 250));
   
   // En producción: buscar badges ganados del usuario
-  return BADGES.filter((b) => b.earned);
+  return CIVIC_BADGES
+    .filter((b) => b.earned)
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      emoji: b.emoji,
+      region: b.region === "nacional" ? "todas" : b.region,
+      earned: b.earned,
+      description: b.narrative,
+    }));
 }
 
 /**

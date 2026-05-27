@@ -155,48 +155,10 @@ export const MISSIONS: Mission[] = [
   },
 ];
 
-export const REGION_META: Record<Region, { name: string; gradient: string; color: string; chipBg: string }> = {
-  costa: {
-    name: "Costa",
-    gradient: "bg-gradient-coast",
-    color: "text-coast",
-    chipBg: "bg-coast/10 text-coast",
-  },
-  sierra: {
-    name: "Sierra",
-    gradient: "bg-gradient-andes",
-    color: "text-sierra",
-    chipBg: "bg-sierra/10 text-sierra",
-  },
-  selva: {
-    name: "Selva",
-    gradient: "bg-gradient-jungle",
-    color: "text-jungle",
-    chipBg: "bg-jungle/10 text-jungle",
-  },
-};
-
-
-export const BADGES: Badge[] = [
-  { id: "1", name: "Primer paso", emoji: "🌅", region: "todas", earned: true, description: "Tu primera misión completada" },
-  { id: "2", name: "Vecino activo", emoji: "🏘️", region: "costa", earned: true, description: "5 misiones en tu distrito" },
-  { id: "3", name: "Sembrador", emoji: "🌱", region: "sierra", earned: true, description: "Plantaste tu primer árbol" },
-  { id: "4", name: "Pez del Itaya", emoji: "🐟", region: "selva", earned: false, description: "Misión en la Amazonía" },
-  { id: "5", name: "Mentor", emoji: "🎓", region: "todas", earned: true, description: "Enseñaste a 10 personas" },
-  { id: "6", name: "Cumbre andina", emoji: "🏔️", region: "sierra", earned: false, description: "Llega a +4000 msnm" },
-  { id: "7", name: "Marea limpia", emoji: "🌊", region: "costa", earned: false, description: "Limpieza de playa" },
-  { id: "8", name: "Voz del barrio", emoji: "📣", region: "todas", earned: false, description: "Lidera un proyecto propio" },
-];
-
-export const LEVELS = [
-  { level: 1, name: "Caminante", from: 0, to: 500, region: "costa" as Region },
-  { level: 2, name: "Vecino", name2: "del litoral", from: 500, to: 1500, region: "costa" as Region },
-  { level: 3, name: "Sembrador", from: 1500, to: 3500, region: "sierra" as Region },
-  { level: 4, name: "Guía del valle", from: 3500, to: 6500, region: "sierra" as Region },
-  { level: 5, name: "Explorador", from: 6500, to: 10500, region: "selva" as Region },
-  { level: 6, name: "Voz del río", from: 10500, to: 16000, region: "selva" as Region },
-  { level: 7, name: "Líder Kusqa", from: 16000, to: 25000, region: "sierra" as Region },
-];
+// P0 FIX: REGION_META consolidado en src/constants/gamification.ts (fuente de verdad única)
+// P0 FIX: BADGES consolidado en src/features/badges/constants/civicBadges.ts (fuente de verdad única)
+// P0 FIX: LEVELS consolidado en src/features/progression/constants/civicRoute.ts (fuente de verdad única)
+// P0 FIX: BADGES eliminado de mockData.ts - usar CIVIC_BADGES de src/features/badges/constants/civicBadges.ts
 
 export const CURRENT_USER = {
   name: "Camila Quispe",

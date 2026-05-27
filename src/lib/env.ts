@@ -31,9 +31,13 @@ export function validateEnv(): EnvType {
       VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
     };
 
-    console.log("[env] Validating environment variables...");
+    if (import.meta.env.DEV) {
+      console.log("[env] Validating environment variables...");
+    }
     const validated = EnvSchema.parse(env);
-    console.log("[env] ✅ Environment variables valid");
+    if (import.meta.env.DEV) {
+      console.log("[env] ✅ Environment variables valid");
+    }
 
     return validated;
   } catch (error) {

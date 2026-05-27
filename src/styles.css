@@ -134,14 +134,11 @@
   --sidebar-ring: oklch(0.7 0.18 45);
 
   /* Gradients & effects */
+  /* Restaurado gradient-sunrise como color de identidad juvenil - P0 FIX REVERSED */
   --gradient-sunrise: linear-gradient(135deg, oklch(0.78 0.17 75) 0%, oklch(0.7 0.18 45) 45%, oklch(0.55 0.18 15) 100%);
   --gradient-andes: linear-gradient(135deg, oklch(0.55 0.16 295) 0%, oklch(0.32 0.13 280) 60%, oklch(0.22 0.08 270) 100%);
   --gradient-coast: linear-gradient(135deg, oklch(0.82 0.1 200) 0%, oklch(0.62 0.16 220) 100%);
   --gradient-jungle: linear-gradient(135deg, oklch(0.78 0.14 140) 0%, oklch(0.5 0.16 160) 100%);
-  --gradient-aurora: linear-gradient(135deg, oklch(0.78 0.17 75) 0%, oklch(0.65 0.2 25) 30%, oklch(0.5 0.2 320) 65%, oklch(0.4 0.16 270) 100%);
-  --gradient-mesh: radial-gradient(circle at 20% 10%, oklch(0.78 0.17 75 / 0.35), transparent 45%),
-                   radial-gradient(circle at 85% 20%, oklch(0.55 0.18 320 / 0.3), transparent 50%),
-                   radial-gradient(circle at 50% 90%, oklch(0.62 0.18 200 / 0.28), transparent 55%);
 
   /* Terrain gradients — richer, narrative-specific */
   --gradient-terrain-costa: linear-gradient(160deg, oklch(0.9 0.08 80) 0%, oklch(0.82 0.12 55) 40%, oklch(0.72 0.14 220) 100%);
@@ -149,16 +146,11 @@
   --gradient-terrain-selva: linear-gradient(160deg, oklch(0.75 0.16 140) 0%, oklch(0.55 0.18 160) 50%, oklch(0.42 0.14 175) 100%);
   --gradient-cumbre: linear-gradient(160deg, oklch(0.82 0.1 80) 0%, oklch(0.62 0.15 45) 35%, oklch(0.38 0.08 280) 70%, oklch(0.22 0.06 285) 100%);
 
-  /* Badge rarity shadows */
-  --shadow-rarity-comun: 0 0 0 0 transparent;
-  --shadow-rarity-raro: 0 0 16px 2px oklch(0.72 0.14 220 / 0.4);
-  --shadow-rarity-epico: 0 0 24px 4px oklch(0.55 0.22 295 / 0.5);
-  --shadow-rarity-legendario: 0 0 32px 6px oklch(0.78 0.18 75 / 0.6), 0 0 60px 12px oklch(0.7 0.18 45 / 0.3);
-
-  --shadow-glow: 0 20px 60px -20px oklch(0.7 0.18 45 / 0.45);
+  /* Restaurado shadow-glow contenido para jerarquía visual - P0 FIX REVERSED */
+  --shadow-glow: 0 8px 24px -8px oklch(0.7 0.18 45 / 0.25);
   --shadow-card: 0 10px 30px -12px oklch(0.18 0.03 285 / 0.18);
   --shadow-soft: 0 4px 16px -6px oklch(0.18 0.03 285 / 0.1);
-  --shadow-lift: 0 30px 80px -30px oklch(0.32 0.13 280 / 0.35);
+  --shadow-lift: 0 10px 30px -12px oklch(0.18 0.03 285 / 0.18); /* P0 FIX: Simplificado shadow-lift a shadow-card */
 
   --glass-bg: oklch(1 0 0 / 0.7);
   --glass-border: oklch(1 0 0 / 0.5);
@@ -214,25 +206,13 @@
 @layer utilities {
   .font-display { font-family: var(--font-display); }
 
+  /* Restaurado bg-gradient-sunrise para identidad visual juvenil - P0 FIX REVERSED */
   .bg-gradient-sunrise { background-image: var(--gradient-sunrise); }
   .bg-gradient-andes { background-image: var(--gradient-andes); }
   .bg-gradient-coast { background-image: var(--gradient-coast); }
   .bg-gradient-jungle { background-image: var(--gradient-jungle); }
-  .bg-gradient-aurora { background-image: var(--gradient-aurora); }
-  .bg-mesh { background-image: var(--gradient-mesh); }
 
-  .text-gradient-sunrise {
-    background: var(--gradient-sunrise);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .text-gradient-aurora {
-    background: var(--gradient-aurora);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+  /* P0 FIX: Eliminados text-gradient-sunrise y text-gradient-aurora - gradientes épicos eliminados */
 
   .glass {
     background: var(--glass-bg);
@@ -250,89 +230,17 @@
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
-  .shadow-lift { box-shadow: var(--shadow-lift); }
+  /* P0 FIX: shadow-lift reemplazado por shadow-card */
 
   .transition-smooth { transition: all 0.4s var(--transition-smooth); }
 
-  /* Animated noise grain */
-  .grain::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
-    opacity: 0.05;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-  }
-
-  @keyframes float-slow {
-    0%, 100% { transform: translateY(0) rotate(0); }
-    50% { transform: translateY(-14px) rotate(2deg); }
-  }
-  .animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-
-  @keyframes pulse-ring {
-    0% { transform: scale(0.6); opacity: 0.8; }
-    100% { transform: scale(2.2); opacity: 0; }
-  }
-  .animate-pulse-ring { animation: pulse-ring 2.4s ease-out infinite; }
-
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  .shimmer {
-    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.4), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2.5s linear infinite;
-  }
-
-  /* Slow compass spin for analytics section */
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+  /* P0 FIX: Eliminadas animaciones decorativas - float, pulse-ring, shimmer, spin-slow */
 
   /* Hide scrollbars on filter pill rows */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Civic card entry animation */
-  @keyframes civic-in {
-    0% { opacity: 0; transform: translateY(8px) scale(0.97); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .animate-civic-in { animation: civic-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-  /* Glow pulse for active mission pins */
-  @keyframes glow-pulse {
-    0%, 100% { box-shadow: 0 0 8px 2px oklch(0.7 0.18 45 / 0.3); }
-    50% { box-shadow: 0 0 20px 6px oklch(0.7 0.18 45 / 0.6); }
-  }
-  .animate-glow-pulse { animation: glow-pulse 2.8s ease-in-out infinite; }
-
-  /* Subtle breathing for "alive" civic elements */
-  @keyframes breathe {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.018); opacity: 0.92; }
-  }
-  .animate-breathe { animation: breathe 4s ease-in-out infinite; }
-
-  /* Civic presence fade-in for community signals */
-  @keyframes presence-in {
-    0% { opacity: 0; transform: translateX(-6px); }
-    100% { opacity: 1; transform: translateX(0); }
-  }
-  .animate-presence-in { animation: presence-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-  /* Gentle wander for ambient blobs */
-  @keyframes wander {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(12px, -8px) scale(1.05); }
-    66% { transform: translate(-8px, 10px) scale(0.97); }
-  }
-  .animate-wander { animation: wander 12s ease-in-out infinite; }
+  /* P0 FIX: Eliminadas animaciones decorativas - civic-in, glow-pulse, breathe, presence-in, wander */
 
   /* Terrain gradient utilities */
   .bg-gradient-terrain-costa { background-image: var(--gradient-terrain-costa); }
@@ -340,11 +248,7 @@
   .bg-gradient-terrain-selva { background-image: var(--gradient-terrain-selva); }
   .bg-gradient-cumbre { background-image: var(--gradient-cumbre); }
 
-  /* Badge rarity glow utilities */
-  .badge-rarity-comun { box-shadow: var(--shadow-rarity-comun); }
-  .badge-rarity-raro { box-shadow: var(--shadow-rarity-raro); }
-  .badge-rarity-epico { box-shadow: var(--shadow-rarity-epico); }
-  .badge-rarity-legendario { box-shadow: var(--shadow-rarity-legendario); }
+  /* P0 FIX: Eliminados badge rarity shadows - sistema de gamificación eliminado */
 
   /* Civic route path styling */
   .civic-route-connector {

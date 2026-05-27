@@ -15,28 +15,11 @@ import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { userRepository } from "@/services/userRepository";
 import { useQueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/lib/queryKeys";
+import { REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/regionThemes";
 
 export const Route = createFileRoute("/app/perfil")({
   component: Profile,
 });
-
-const THEMES: Array<{ id: Region; label: string; gradient: string; emoji: string }> = [
-  { id: "costa", label: "Costa", gradient: "bg-gradient-coast", emoji: "🌊" },
-  { id: "sierra", label: "Sierra", gradient: "bg-gradient-andes", emoji: "⛰️" },
-  { id: "selva", label: "Selva", gradient: "bg-gradient-jungle", emoji: "🌿" },
-];
-
-const REGION_BADGES = {
-  costa: "text-amber-700 bg-amber-500/10 border-amber-500/20 dark:text-amber-400",
-  sierra: "text-purple-700 bg-purple-500/10 border-purple-500/20 dark:text-purple-400",
-  selva: "text-emerald-700 bg-emerald-500/10 border-emerald-500/20 dark:text-emerald-400",
-};
-
-const REGION_NODE_GRADIENTS = {
-  costa: "bg-gradient-coast",
-  sierra: "bg-gradient-andes",
-  selva: "bg-gradient-jungle",
-};
 
 export function Profile() {
   const user = useCurrentUser();
@@ -163,10 +146,10 @@ export function Profile() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-24 lg:pb-12">
       {/* Cover / Profile Card */}
-      <section className="relative rounded-3xl overflow-hidden shadow-lift bg-card border border-border">
+      <section className="relative rounded-3xl overflow-hidden shadow-sm bg-card border border-border">
         {/* Banner with user region's gradient */}
         <div className={`h-40 sm:h-48 lg:h-64 bg-gradient-${user.region} relative`}>
-          <div className="absolute inset-0 bg-mesh opacity-40 animate-pulse-ring" />
+          <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,oklch(1_0_0/0.25),transparent)]" />
           <button
             disabled
@@ -180,7 +163,7 @@ export function Profile() {
         {/* User Info Section */}
         <div className="px-5 sm:px-6 lg:px-10 pb-6 pt-0 relative">
           <div className="flex flex-wrap gap-4 sm:gap-5 items-end -mt-12 sm:-mt-14 lg:-mt-16 mb-6">
-            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-sunrise grid place-items-center text-4xl sm:text-5xl shadow-lift border-4 border-card z-10">
+            <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-sunrise grid place-items-center text-4xl sm:text-5xl shadow-glow border-4 border-card z-10">
               {user.avatar}
             </div>
             
@@ -236,10 +219,10 @@ export function Profile() {
           {/* Stats Bar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-t border-border/60 pt-6">
             {[
-              { l: "XP Cívico", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
-              { l: "Misiones Completadas", v: user.missionsDone || 0, i: "🗺️", color: "text-sky-500" },
-              { l: "Personas Alcanzadas", v: user.peopleImpacted ? user.peopleImpacted.toLocaleString() : "0", i: "❤️", color: "text-rose-500" },
-              { l: "Horas de Contribución", v: user.hours || 0, i: "⏱️", color: "text-emerald-500" },
+              { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
+              { l: "Misiones", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
+              { l: "Regiones", v: activeRegions.length, i: "�", color: "text-accent" },
+              { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
               <div key={s.l} className="rounded-2xl bg-secondary/55 p-3 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3">
                 <span className="text-2xl sm:text-3xl filter drop-shadow-sm">{s.i}</span>
@@ -270,7 +253,7 @@ export function Profile() {
                 });
                 const sorted = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
                 if (sorted.length === 0) {
-                  return <div className="text-sm text-muted-foreground">Aún no has participado en misiones</div>;
+                  return <div className="text-sm text-muted-foreground">Sin participaciones registradas</div>;
                 }
                 return sorted.slice(0, 4).map(([category, count]: [string, number]) => {
                   const emoji = category === "Medio ambiente" ? "🌱" :
@@ -301,7 +284,7 @@ export function Profile() {
                 });
                 const sorted = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
                 if (sorted.length === 0) {
-                  return <div className="text-sm text-muted-foreground">Aún no has participado en misiones</div>;
+                  return <div className="text-sm text-muted-foreground">Sin participaciones registradas</div>;
                 }
                 return sorted.slice(0, 4).map(([district, count]: [string, number]) => (
                   <span key={district} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium">
@@ -322,7 +305,7 @@ export function Profile() {
                 const stored = localStorage.getItem("kusqa_proposal_supports");
                 const supported = stored ? new Set(JSON.parse(stored)) : new Set();
                 if (supported.size === 0) {
-                  return <div className="text-sm text-muted-foreground">Aún no has apoyado iniciativas</div>;
+                  return <div className="text-sm text-muted-foreground">Sin apoyos registrados</div>;
                 }
                 return (
                   <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
@@ -330,7 +313,7 @@ export function Profile() {
                   </div>
                 );
               } catch {
-                return <div className="text-sm text-muted-foreground">Aún no has apoyado iniciativas</div>;
+                return <div className="text-sm text-muted-foreground">Sin apoyos registrados</div>;
               }
             })()}
           </div>
@@ -344,7 +327,7 @@ export function Profile() {
           {/* Current Stage Card */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-              <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Estado de la Expedición
+              <Sparkles className="h-5 w-5 text-accent" /> Estado actual
             </h2>
             <StageCard stage={currentStage} status="current" userXp={user.xp} />
           </section>
@@ -352,9 +335,9 @@ export function Profile() {
           {/* Civic History - Timeline entries are clickable to show documentary narrative modal */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-              <Clock className="h-5 w-5 text-sky-500" /> Tu Bitácora de Impacto
+              <Clock className="h-5 w-5 text-sky-500" /> Historial
             </h2>
-            <p className="text-sm text-muted-foreground pl-1">Historial verificado de tu participación cívica en el territorio.</p>
+            <p className="text-sm text-muted-foreground pl-1">Registro de misiones completadas.</p>
 
             {completedMissions.length > 0 ? (
               <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
@@ -417,8 +400,8 @@ export function Profile() {
                         </div>
 
                         <div className="text-right shrink-0 self-center">
-                          <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">XP Ganado</div>
-                          <div className="font-display font-black text-accent text-lg">+{m.xp}</div>
+                          <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">Fecha</div>
+                          <div className="font-display font-black text-accent text-lg">{formatRelativeDate(m.date)}</div>
                         </div>
                       </div>
                     </motion.div>
@@ -427,10 +410,9 @@ export function Profile() {
               </div>
             ) : (
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
-                <div className="text-4xl mb-3">🌱</div>
-                <p className="text-sm text-muted-foreground font-medium">
-                  Tu bitácora de impacto está por comenzar. Únete a tu primera misión para empezar a construir tu historial cívico y dejar huella en tu comunidad.
-                </p>
+                <div className="text-4xl mb-3">🗺️</div>
+                <p className="text-sm text-muted-foreground font-medium">Tu recorrido territorial puede comenzar aquí</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Explora misiones cercanas y participa.</p>
                 <Link
                   to="/app/mapa"
                   className="inline-flex items-center gap-2 mt-4 text-xs font-black uppercase tracking-wider text-primary hover:underline"
@@ -446,11 +428,11 @@ export function Profile() {
         <div className="space-y-8">
           {/* Identity & Territorial Footprint */}
           <section className="rounded-3xl bg-card border border-border/80 p-6 shadow-sm relative overflow-hidden">
-            <h2 className="font-display font-black text-lg text-foreground mb-1">Huella Territorial</h2>
-            <p className="text-xs text-muted-foreground mb-4">Regiones donde has sumado impacto y presencia cívica.</p>
+            <h2 className="font-display font-black text-lg text-foreground mb-1">Participación por región</h2>
+            <p className="text-xs text-muted-foreground mb-4">Regiones donde has participado.</p>
             
             <div className="grid grid-cols-3 gap-2">
-              {THEMES.map((t) => {
+              {REGION_THEMES.map((t) => {
                 const isActive = activeRegions.includes(t.id) || user.region === t.id;
                 return (
                   <div

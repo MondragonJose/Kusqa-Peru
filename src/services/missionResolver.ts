@@ -80,9 +80,6 @@ async function resolveMission(missionId: string): Promise<Mission> {
 
 async function resolveAllMissions(): Promise<Mission[]> {
   const missions = await missionRepository.findAll();
-  if (import.meta.env.DEV) {
-    console.log("[KUSQA MISSION TRACE] resolveAllMissions: Retrieved", missions.length, "missions from Supabase");
-  }
   return missions;
 }
 

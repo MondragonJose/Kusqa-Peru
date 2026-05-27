@@ -88,16 +88,18 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
           </div>
         </div>
 
-        {/* Meta info */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {entity.district}
-          </span>
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {formatRelativeDate(entity.date)}
-          </span>
+        {/* Meta info - condensed to 2 lines */}
+        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {entity.district}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {formatRelativeDate(entity.date)}
+            </span>
+          </div>
           {isMissionEntity && (
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
@@ -105,14 +107,6 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
             </span>
           )}
         </div>
-
-        {/* Impact */}
-        {entity.impact && (
-          <p className="text-xs text-muted-foreground bg-surface/60 rounded-lg px-3 py-2 leading-relaxed">
-            <span className="text-accent font-semibold">Impacto: </span>
-            {entity.impact}
-          </p>
-        )}
 
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between pt-1">

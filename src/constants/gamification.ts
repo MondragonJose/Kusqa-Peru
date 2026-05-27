@@ -1,19 +1,9 @@
 /**
- * Configuración de gamificación: Badges, Levels, XP ranges
+ * Configuración de gamificación: Levels, XP ranges
+ * P0 FIX: BADGES consolidado en src/features/badges/constants/civicBadges.ts (fuente de verdad única)
  */
 
-import type { Badge, Level } from "@/types";
-
-export const BADGES: Badge[] = [
-  { id: "1", name: "Primer paso", emoji: "🌅", region: "todas", earned: true, description: "Tu primera misión completada" },
-  { id: "2", name: "Vecino activo", emoji: "🏘️", region: "costa", earned: true, description: "5 misiones en tu distrito" },
-  { id: "3", name: "Sembrador", emoji: "🌱", region: "sierra", earned: true, description: "Plantaste tu primer árbol" },
-  { id: "4", name: "Pez del Itaya", emoji: "🐟", region: "selva", earned: false, description: "Misión en la Amazonía" },
-  { id: "5", name: "Mentor", emoji: "🎓", region: "todas", earned: true, description: "Enseñaste a 10 personas" },
-  { id: "6", name: "Cumbre andina", emoji: "🏔️", region: "sierra", earned: false, description: "Llega a +4000 msnm" },
-  { id: "7", name: "Marea limpia", emoji: "🌊", region: "costa", earned: false, description: "Limpieza de playa" },
-  { id: "8", name: "Voz del barrio", emoji: "📣", region: "todas", earned: false, description: "Lidera un proyecto propio" },
-];
+import type { Level } from "@/types";
 
 export const LEVELS: Level[] = [
   { level: 1, name: "Caminante", from: 0, to: 500, region: "costa" },
