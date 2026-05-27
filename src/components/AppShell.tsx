@@ -16,9 +16,12 @@ import { ErrorBoundary } from "./ErrorBoundary";
 type NavItem = { to: string; label: string; labelMobile: string; icon: typeof Compass; exact?: boolean };
 // P1 FIX: Reducir navegación a 3 items core - eliminar "Crear" y "Notificaciones"
 // P0 FIX: Labels mobile explícitos para evitar truncamiento técnico
+// P0 FIX: Añadir "Crear" como tab central para acceso directo a creación de proyectos
+// P0 FIX: Label más explícito "Crear proyecto" para reforzar core value de la app
 const NAV: NavItem[] = [
   { to: "/app", label: "Inicio", labelMobile: "Inicio", icon: Compass, exact: true },
   { to: "/app/mapa", label: "Mapa", labelMobile: "Mapa", icon: Map },
+  { to: "/app/crear", label: "Crear proyecto", labelMobile: "Crear", icon: Plus },
   { to: "/app/perfil", label: "Perfil", labelMobile: "Mi perfil", icon: User },
 ];
 

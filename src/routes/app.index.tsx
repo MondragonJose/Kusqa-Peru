@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { useMemo } from "react";
-import { MapPin, Sparkles, ArrowRight, Users, TrendingUp, Heart, Compass, CompassIcon, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMemo, useState } from "react";
+import { MapPin, Sparkles, ArrowRight, Users, TrendingUp, Heart, Compass, CompassIcon, RefreshCw, X } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
 import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { useProgression } from "@/features/progression";
@@ -17,12 +17,12 @@ import { formatRelativeDate } from "@/utils/date";
 import { getCategoryMetadata } from "@/constants/categoryMetadata";
 import { CivicEntity, isMission, isProposal } from "@/types/entity";
 import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
-import { 
-  selectFeaturedMissions, 
-  selectNearbyMissions, 
-  selectFeedItems, 
-  buildTerritory, 
-  calculateEntityStats 
+import {
+  selectFeaturedMissions,
+  selectNearbyMissions,
+  selectFeedItems,
+  buildTerritory,
+  calculateEntityStats
 } from "@/domain/missionSelection";
 import { conventions, iconSize } from "@/design";
 
@@ -62,6 +62,7 @@ function Dashboard() {
   const currentUser = useCurrentUser();
   const { progressPct } = useUserXpProgress();
   const { currentStage, nextStage, xpToNextStage } = useProgression();
+  const [selectedEntity, setSelectedEntity] = useState<CivicEntity | null>(null);
   const queryClient = useQueryClient();
 
   const isLoading = missionsLoading || proposalsLoading;
@@ -390,6 +391,7 @@ function Dashboard() {
 
       {/* P1 FIX: Unificar feeds - solo un feed "Misiones en tu territorio" */}
       <section className="space-y-3 sm:space-y-4">
+        <p className="text-xs text-muted-foreground pl-1">Selecciona una misión para ver detalles o crea tu propio proyecto</p>
         <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
           <Sparkles className="h-5 w-5 text-accent" /> Misiones en tu territorio
         </h2>
@@ -399,11 +401,10 @@ function Dashboard() {
               const isMissionEntity = isMission(item);
               const isProposalEntity = isProposal(item);
               return (
-              <Link
+              <button
                 key={item.id}
-                to="/app/mision/$missionId"
-                params={{ missionId: item.id }}
-                className="flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-secondary/30 transition-colors"
+                onClick={() => setSelectedEntity(item)}
+                className="flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-secondary/30 transition-colors w-full text-left"
               >
                 <div className="h-10 lg:h-11 w-10 lg:w-11 rounded-2xl bg-secondary grid place-items-center text-lg lg:text-xl shrink-0 border border-border/30">
                   {item.emoji || "🗺️"}
@@ -433,7 +434,7 @@ function Dashboard() {
                   </div>
                 </div>
                 <ArrowRight className="hidden sm:block h-3.5 lg:h-4 w-3.5 lg:w-4 text-muted-foreground/60 flex-shrink-0" />
-              </Link>
+              </button>
               );
             })
           ) : (
@@ -445,6 +446,67 @@ function Dashboard() {
           )}
         </div>
       </section>
+
+      {/* Bottom Sheet para detalle de entidad */}
+      <AnimatePresence>
+        {selectedEntity && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEntity(null)}
+              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+            />
+            {/* Bottom Sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card rounded-t-3xl border-t border-border/60 shadow-2xl max-h-[80vh] overflow-y-auto"
+            >
+              <div className="p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-2xl border border-border/30">
+                      {selectedEntity.emoji || "🗺️"}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{selectedEntity.title}</h3>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {selectedEntity.district}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedEntity(null)}
+                    className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{selectedEntity.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Users className="h-3 w-3" />
+                    <span>{selectedEntity.participants} participantes</span>
+                  </div>
+                  <Link
+                    to="/app/mision/$missionId"
+                    params={{ missionId: selectedEntity.id }}
+                    onClick={() => setSelectedEntity(null)}
+                    className="block w-full text-center py-3 rounded-xl bg-gradient-sunrise text-white font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    Ver detalles completos
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
     </>
   );

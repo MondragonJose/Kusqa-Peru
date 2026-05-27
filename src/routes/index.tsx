@@ -186,9 +186,11 @@ function Landing(): JSX.Element {
   // Centralized post-auth navigation decision
   // Landing is the single source of truth for routing after auth
   useEffect(() => {
-    // Only redirect if explicitly coming from auth callback (has redirect param)
-    // Avoid redirect loop when user manually navigates to /
-    if (isAuthenticated && isReady && search.redirect && !hasRedirected.current) {
+    // Redirect authenticated users to /app
+    // Two scenarios:
+    // 1. Coming from auth callback with redirect param → use that destination
+    // 2. Logged in from landing page → redirect to /app by default
+    if (isAuthenticated && isReady && !hasRedirected.current) {
       hasRedirected.current = true;
       // Safe redirect validation: only allow internal paths
       const safeRedirect = search.redirect?.startsWith("/") ? search.redirect : "/app";
@@ -312,12 +314,11 @@ function Landing(): JSX.Element {
       </header>
 
       {/* ── HERO — Cinematic expedition portal ── */}
-      <section className="relative pt-36 pb-28 lg:pt-44 lg:pb-36 px-5 lg:px-8 overflow-hidden">
+      <section className="relative pt-24 pb-16 lg:pt-44 lg:pb-36 px-5 lg:px-8 overflow-hidden">
         {/* Ambient layers */}
         <div className="absolute inset-0 bg-mesh opacity-80" />
-        <div className="absolute top-16 -right-28 h-[520px] w-[520px] rounded-full bg-gradient-sunrise opacity-25 blur-3xl animate-float-slow" />
-        <div className="absolute bottom-0 -left-40 h-[420px] w-[420px] rounded-full bg-gradient-andes opacity-25 blur-3xl animate-float-slow" style={{ animationDelay: "2.5s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[600px] rounded-full bg-gradient-jungle opacity-10 blur-3xl" />
+        <div className="absolute top-16 -right-28 h-[520px] w-[520px] rounded-full bg-gradient-sunrise opacity-15 blur-3xl animate-float-slow" />
+        <div className="absolute bottom-0 -left-40 h-[420px] w-[420px] rounded-full bg-gradient-andes opacity-15 blur-3xl animate-float-slow" style={{ animationDelay: "2.5s" }} />
 
         {/* Qhapaq Ñan background SVG trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -361,31 +362,31 @@ function Landing(): JSX.Element {
               </motion.div>
 
               <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-[4.5rem] leading-[1.1] sm:leading-[1.0] lg:leading-[0.95] tracking-tight">
-                Tu participación<br />
-                <span className="text-gradient-aurora">cambia el Perú.</span>
+                Crea proyectos cívicos<br />
+                <span className="text-gradient-aurora">en tu distrito.</span>
               </h1>
 
               <p className="mt-3 sm:mt-4 lg:mt-6 text-sm sm:text-base lg:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                KUSQA transforma la acción invisible en impacto visible. Cada misión que realizas deja una huella real en tu comunidad.
+                KUSQA conecta jóvenes que quieren transformar su entorno. Cada proyecto que creas deja una huella real en tu comunidad.
               </p>
 
               <p className="mt-2 sm:mt-3 lg:mt-3 text-xs sm:text-sm lg:text-base text-muted-foreground/80 max-w-lg leading-relaxed italic">
-                Como el Qhapaq Ñan conectaba pueblos, KUSQA conecta generaciones.
+                Explora misiones activas o crea tu propio proyecto en todo el Perú.
               </p>
 
-              <div className="mt-6 lg:mt-9 flex flex-wrap gap-2 lg:gap-3">
+              <div className="mt-6 lg:mt-9 flex flex-wrap items-center gap-2 lg:gap-3">
                 <button
                   onClick={loginWithGoogle}
                   className="group inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-smooth"
                 >
-                  Mi expedición
+                  Crear proyecto
                   <ArrowRight className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <a
                   href="#expediciones"
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 backdrop-blur px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold hover:bg-surface transition-smooth"
                 >
-                  Ver <MapPin className="h-3 lg:h-4 w-3 lg:w-4" />
+                  Explorar mapa <MapPin className="h-3 lg:h-4 w-3 lg:w-4" />
                 </a>
               </div>
 
@@ -458,7 +459,7 @@ function Landing(): JSX.Element {
 
       {/* ── CIVIC OBSERVATORY ── */}
       <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-andes opacity-[0.97]" />
+        <div className="absolute inset-0 bg-gradient-sunrise opacity-[0.97]" />
         <div className="absolute inset-0 bg-mesh opacity-30" />
 
         <div className="relative mx-auto max-w-7xl text-white">
@@ -555,11 +556,11 @@ function Landing(): JSX.Element {
             {/* Region selector visual */}
             <div className="relative">
               <div className="absolute -inset-6 bg-gradient-aurora opacity-20 blur-3xl rounded-3xl" />
-              <div className="relative glass-strong rounded-3xl p-4 sm:p-6 shadow-lift">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-4">
+              <div className="relative glass-strong rounded-3xl p-3 sm:p-6 shadow-lift">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3 sm:mb-4">
                   Elige tu paisaje
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                   {[
                     { name: "Costa", icon: Waves, gradient: "bg-gradient-coast", desc: "Surcos del mar", active: 38 },
                     { name: "Sierra", icon: Mountain, gradient: "bg-gradient-andes", desc: "Rutas del Ande", active: 45 },
@@ -568,11 +569,11 @@ function Landing(): JSX.Element {
                     <motion.div
                       key={r.name}
                       whileHover={{ scale: 1.03 }}
-                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-4 sm:p-5 aspect-[3/4] sm:aspect-[3/4] text-white shadow-card cursor-pointer flex flex-col`}
+                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-3 sm:p-5 aspect-[4/3] sm:aspect-[3/4] text-white shadow-card cursor-pointer flex flex-col`}
                     >
                       {/* Subtle activity pulse */}
                       <motion.div
-                        className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-white/60"
+                        className="absolute top-2 right-2 sm:top-3 sm:right-3 w-1.5 h-1.5 rounded-full bg-white/60"
                         animate={{
                           scale: [1, 1.8, 1],
                           opacity: [0.6, 0.3, 0.6],
@@ -583,18 +584,18 @@ function Landing(): JSX.Element {
                           ease: "easeInOut",
                         }}
                       />
-                      <r.icon className="h-5 w-5 sm:h-6 sm:w-6 mb-auto" />
+                      <r.icon className="h-4 w-4 sm:h-6 sm:w-6 mb-auto" />
                       <div className="mt-auto">
-                        <div className="font-display font-bold text-lg sm:text-xl leading-tight">{r.name}</div>
-                        <div className="text-xs opacity-80 mt-1">{r.desc}</div>
-                        <div className="text-[10px] mt-1.5 opacity-60">{r.active} misiones</div>
+                        <div className="font-display font-bold text-sm sm:text-xl leading-tight">{r.name}</div>
+                        <div className="text-[10px] sm:text-xs opacity-80 mt-0.5 sm:mt-1">{r.desc}</div>
+                        <div className="text-[9px] sm:text-[10px] mt-1 sm:mt-1.5 opacity-60">{r.active} misiones</div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-4 sm:mt-5 rounded-2xl bg-secondary p-3 sm:p-4 flex items-start sm:items-center gap-3">
-                  <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5 sm:mt-0" />
-                  <div className="text-xs sm:text-sm leading-snug">
+                <div className="mt-3 sm:mt-5 rounded-2xl bg-secondary p-2 sm:p-4 flex items-start sm:items-center gap-2 sm:gap-3">
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-accent shrink-0 mt-0.5 sm:mt-0" />
+                  <div className="text-[10px] sm:text-sm leading-snug">
                     Personaliza tu avatar y fondo con la identidad de tu distrito.
                   </div>
                 </div>
@@ -687,7 +688,7 @@ function Landing(): JSX.Element {
 
           {/* Path */}
           <div className="mt-14 relative">
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 300" fill="none" preserveAspectRatio="none">
+            <svg className="absolute inset-0 w-full h-full hidden md:block" viewBox="0 0 1000 300" fill="none" preserveAspectRatio="none">
               <path
                 d="M 50 240 Q 200 50 400 180 T 750 90 T 950 200"
                 stroke="url(#g1)"
@@ -702,7 +703,7 @@ function Landing(): JSX.Element {
                 </linearGradient>
               </defs>
             </svg>
-            <div className="relative grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="relative grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
               {[
                 { lvl: 1, name: "Caminante", emoji: "🚶", active: true },
                 { lvl: 2, name: "Vecino", emoji: "🏘️", active: true },
@@ -712,7 +713,7 @@ function Landing(): JSX.Element {
               ].map((s) => (
                 <div key={s.lvl} className="relative">
                   <div
-                    className={`aspect-square rounded-2xl grid place-items-center text-4xl ${
+                    className={`aspect-square rounded-2xl grid place-items-center text-3xl sm:text-4xl ${
                       s.current
                         ? "bg-gradient-sunrise shadow-glow ring-4 ring-white/30"
                         : s.active
@@ -725,11 +726,11 @@ function Landing(): JSX.Element {
                       <span className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse-ring" />
                     )}
                   </div>
-                  <div className="mt-3 text-center">
-                    <div className="text-[10px] uppercase tracking-widest text-white/50">
+                  <div className="mt-2 sm:mt-3 text-center">
+                    <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/50">
                       Nivel {s.lvl}
                     </div>
-                    <div className="font-semibold text-sm">{s.name}</div>
+                    <div className="font-semibold text-xs sm:text-sm">{s.name}</div>
                   </div>
                 </div>
               ))}
@@ -885,7 +886,7 @@ function Landing(): JSX.Element {
             </nav>
           </div>
           <div className="mt-6 text-xs text-muted-foreground/60">
-            © 2025 KUSQA · Hecho con propósito en Perú 🇵🇪
+            © 2026 KUSQA · Hecho con propósito en Perú 🇵🇪
           </div>
         </div>
       </footer>

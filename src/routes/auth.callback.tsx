@@ -31,7 +31,7 @@ function AuthCallbackPage() {
 
       if (error) {
         if (import.meta.env.DEV) console.error("[KUSQA AUTH TRACE] Error getting session:", error);
-        navigate({ to: "/", search: { error: "auth_failed" } });
+        window.location.href = "/?error=auth_failed";
         return;
       }
 
@@ -40,7 +40,8 @@ function AuthCallbackPage() {
         window.location.hash = "";
         // Simplified: always navigate to landing with redirect param
         // Landing will decide final destination based on auth state
-        navigate({ to: "/", search: { redirect: search.redirect } });
+        // Default to /app if no specific redirect provided
+        navigate({ to: "/", search: { redirect: search.redirect || "/app" } });
         return;
       }
 
@@ -49,7 +50,7 @@ function AuthCallbackPage() {
       // 2. Timeout fallback para Safari iOS edge case (10s)
       timeoutId = setTimeout(() => {
         if (import.meta.env.DEV) console.error("[KUSQA AUTH TRACE] Auth callback timeout - no session received");
-        navigate({ to: "/", search: { error: "auth_timeout" } });
+        window.location.href = "/?error=auth_timeout";
       }, 10000);
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

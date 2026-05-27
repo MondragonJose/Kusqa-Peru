@@ -17,7 +17,7 @@ type HeatmapLayerOptions = {
 /** Region to CSS color mapping for heatmap circles */
 const REGION_HEAT_COLORS: Record<string, string> = {
   costa: "#C4962A", // warm coastal gold
-  sierra: "#7B5FA0", // Sierra warm violet
+  sierra: "#C47A2A", // Sierra earth tone
   selva: "#2D7A4A", // selva green
 };
 

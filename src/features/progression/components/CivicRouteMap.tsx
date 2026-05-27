@@ -92,8 +92,8 @@ export function CivicRouteMap({ userXp, compact = false }: CivicRouteMapProps) {
             <linearGradient id="route-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#C4962A" stopOpacity="0.9" />
               <stop offset="28%" stopColor="#9B7A1A" stopOpacity="0.8" />
-              <stop offset="44%" stopColor="#6B4F8E" stopOpacity="0.9" />
-              <stop offset="57%" stopColor="#4E3A6C" stopOpacity="0.8" />
+              <stop offset="44%" stopColor="#C47A2A" stopOpacity="0.9" />
+              <stop offset="57%" stopColor="#9B7A1A" stopOpacity="0.8" />
               <stop offset="72%" stopColor="#2D7A4A" stopOpacity="0.9" />
               <stop offset="87%" stopColor="#1E5C37" stopOpacity="0.8" />
               <stop offset="100%" stopColor="#C4962A" stopOpacity="0.95" />

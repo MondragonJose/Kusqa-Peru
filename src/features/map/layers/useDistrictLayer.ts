@@ -14,7 +14,7 @@ type DistrictLayerOptions = {
 
 const TERRITORIAL_COLORS = {
   costa: { stroke: '#C4962A', fill: '#D4A832', glow: 'rgba(196,150,42,0.25)' },
-  sierra: { stroke: '#6B4F8E', fill: '#7B5FA0', glow: 'rgba(107,79,142,0.25)' },
+  sierra: { stroke: '#C47A2A', fill: '#D4A832', glow: 'rgba(196,122,42,0.25)' },
   selva: { stroke: '#2D7A4A', fill: '#3A8F5A', glow: 'rgba(45,122,74,0.25)' },
 };
 
