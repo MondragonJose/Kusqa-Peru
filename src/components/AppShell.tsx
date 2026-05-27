@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { motion } from "framer-motion";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 type NavItem = { to: string; label: string; icon: typeof Compass; exact?: boolean };
 const NAV: NavItem[] = [
@@ -41,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 bg-mesh opacity-60" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_right,oklch(0.78_0.17_75/0.2),transparent_50%)]" />
@@ -112,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main */}
-        <main className="flex-1 min-w-0 pb-24 lg:pb-8">
+        <main className="flex-1 min-w-0 pb-20 lg:pb-8">
           {/* Top bar */}
           <header className="sticky top-0 z-20 glass border-b border-border/60 px-5 lg:px-10 py-3 flex items-center gap-3">
             <Link to="/" className="lg:hidden flex items-center gap-2">
@@ -144,20 +145,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </header>
 
-          <motion.div
-            key={path}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="px-5 lg:px-10 py-6 lg:py-8"
-          >
-            {children}
-          </motion.div>
+          <ErrorBoundary>
+            <motion.div
+              key={path}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="px-5 lg:px-10 py-6 lg:py-8"
+            >
+              {children}
+            </motion.div>
+          </ErrorBoundary>
         </main>
       </div>
 
       {/* Bottom nav - mobile */}
-      <nav className="lg:hidden fixed bottom-4 left-4 right-4 z-40 glass-strong rounded-2xl shadow-lift px-3 py-3 flex justify-between safe-area-bottom pb-[env(safe-area-inset-bottom)] pb-6">
+      <nav className="lg:hidden fixed bottom-0 left-4 right-4 z-40 glass-strong rounded-2xl shadow-lift px-3 py-3 flex justify-between safe-area-bottom pb-[env(safe-area-inset-bottom)] pb-6">
         {[...NAV.slice(0, 4), NAV[5]].map((item) => {
           const active = item.exact ? path === item.to : path.startsWith(item.to);
           const Icon = item.icon;

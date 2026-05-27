@@ -52,7 +52,7 @@ export function BadgeGrid({ badges, showNarrative = true }: BadgeGridProps) {
   const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
-    <div>
+    <div className="overflow-hidden">
       {/* Header */}
       <div className="flex items-end justify-between mb-4">
         <div>

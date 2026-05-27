@@ -1,19 +1,37 @@
 /**
- * AuthProvider — Bootstrap de sesión Supabase (Optimizado)
- * Maneja de forma segura el inicio de sesión único, estados de carga y cambios de auth.
+ * AuthProvider — Bootstrap de sesión Supabase + State Machine
+ * 
+ * Responsabilidad única:
+ * - Restaurar sesión desde Supabase en cold start
+ * - Escuchar cambios de estado en tiempo real
+ * - Exponer estado centralizado vía authState machine
+ * 
+ * NO debe contener lógica de validación de rutas (eso es responsabilidad del componente).
  */
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Session, User } from "@supabase/supabase-js";
+import { deriveAuthState, type AuthStateSnapshot } from "./authStateMachine";
 
 interface AuthContextType {
+  /** Estado derivado de la máquina de estados */
+  authState: AuthStateSnapshot;
+  /** Sesión cruda (para casos especiales que necesiten tokens) */
   session: Session | null;
+  /** Usuario de la sesión */
   user: User | null;
+  /** @deprecated Use authState.state === 'initializing' */
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
+  authState: {
+    state: "initializing",
+    user: null,
+    session: null,
+    isReady: false,
+  },
   session: null,
   user: null,
   loading: true,
@@ -24,12 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Debug log for auth state changes
+  // Derivar estado centralizado desde sesión + loading
+  const authState = deriveAuthState(session, loading, user);
+
+  // Debug log para rastrear transiciones de estado
   useEffect(() => {
     if (import.meta.env.DEV) {
-      console.log("[KUSQA AUTH TRACE] AuthProvider state:", { loading, userId: user?.id, hasSession: !!session });
+      console.log("[KUSQA AUTH TRACE] AuthProvider state machine:", {
+        state: authState.state,
+        isReady: authState.isReady,
+        userId: authState.user?.id,
+      });
     }
-  }, [loading, user, session]);
+  }, [authState.state, authState.isReady]);
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -37,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let mounted = true;
 
-    // 1. Ejecutar la carga inicial de la sesión de manera aislada
+    // 1. Bootstrap inicial: restaurar sesión desde Supabase/localStorage
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
@@ -46,20 +71,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (initialSession) {
           if (import.meta.env.DEV) {
-            console.log("[KUSQA AUTH TRACE] Initial session resolved:", initialSession.user.id);
+            console.log("[KUSQA AUTH TRACE] Session restored from storage:", initialSession.user.id);
           }
           setSession(initialSession);
           setUser(initialSession.user);
         } else {
           if (import.meta.env.DEV) {
-            console.log("[KUSQA AUTH TRACE] No initial session found");
+            console.log("[KUSQA AUTH TRACE] No session in storage (new user or logged out)");
           }
         }
       } catch (error) {
-        if (import.meta.env.DEV) console.error("[KUSQA AUTH TRACE] Error bootstrapping auth session:", error);
+        if (import.meta.env.DEV) {
+          console.error("[KUSQA AUTH TRACE] Error during session bootstrap:", error);
+        }
       } finally {
         if (mounted) {
-          // El estado de carga inicial SOLO se apaga cuando termina de revisar la sesión local
+          // Bootstrap completado → authState pasa a "authenticated" o "unauthenticated"
           setLoading(false);
         }
       }
@@ -67,17 +94,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initializeAuth();
 
-    // 2. Escuchar de forma pasiva eventos en tiempo real (login, logout, token refrescado)
+    // 2. Listener pasivo: cambios en tiempo real (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (!mounted) return;
+      
       if (import.meta.env.DEV) {
-        console.log(`[KUSQA AUTH TRACE] Auth state changed event: ${event}`, currentSession?.user?.id);
+        console.log(`[KUSQA AUTH TRACE] Auth state changed: ${event}`, {
+          userId: currentSession?.user?.id,
+        });
       }
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
-      // Respaldo por si ocurre un evento de login reactivo antes de que termine el bootstrap inicial
+      // Asegurar que loading se apague si se recibe un evento antes de que termine initializeAuth
       setLoading(false);
     });
 
@@ -88,7 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading }}>
+    <AuthContext.Provider
+      value={{
+        authState,
+        session,
+        user,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -100,4 +137,29 @@ export function useAuth() {
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
+}
+
+/**
+ * Hook único para acceder al estado centralizado de autenticación
+ * 
+ * Reemplaza múltiples checks dispersos de:
+ * - if (!user) 
+ * - if (loading)
+ * - if (!session)
+ * 
+ * Retorna una interfaz consistente para routing y componentes
+ */
+export function useAuthState() {
+  const { authState, user } = useAuth();
+  
+  return {
+    state: authState.state,
+    isAuthenticated: authState.state === "authenticated",
+    isInitializing: authState.state === "initializing",
+    isUnauthenticated: authState.state === "unauthenticated",
+    isReady: authState.isReady,
+    user: authState.user,
+    /** @deprecated Use state directly or isAuthenticated predicate */
+    isLoading: authState.state === "initializing",
+  };
 }

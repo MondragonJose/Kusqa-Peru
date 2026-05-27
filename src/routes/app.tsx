@@ -1,15 +1,29 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { MissionRealtimeSync } from "@/components/MissionRealtimeSync";
-import { useAuth } from "@/features/auth/AuthProvider";
+import { useAuthState } from "@/features/auth";
 
+/**
+ * /app route — Requiere autenticación
+ * 
+ * Usa el estado centralizado para:
+ * 1. Esperar bootstrap de sesión (initializing)
+ * 2. Validar autenticación sin race conditions
+ * 3. Redirigir si no autenticado (después de que isReady = true)
+ */
 function AppRouteComponent() {
-  const { session, loading } = useAuth();
+  const { state, isReady, user } = useAuthState();
   const location = useLocation();
 
-  // Waiting for session to load from AuthProvider
-  if (loading) {
-    if (import.meta.env.DEV) console.log("[KUSQA ROUTE GUARD TRACE] /app component: loading session...");
+  if (import.meta.env.DEV) {
+    console.log("[KUSQA ROUTE APP] State machine check:", { state, isReady, userId: user?.id });
+  }
+
+  // Estado 1: initializing → Mostrar loading (AuthProvider restaurando sesión)
+  if (state === "initializing") {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ROUTE APP] Initializing state: waiting for session bootstrap");
+    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -20,23 +34,35 @@ function AppRouteComponent() {
     );
   }
 
-  // Session check after AuthProvider initialization completes
-  if (!session) {
-    if (import.meta.env.DEV) console.log("[KUSQA ROUTE GUARD TRACE] /app component: no session, redirecting to /");
+  // Estado 2: unauthenticated → Redirigir a login (solo después de isReady)
+  if (state === "unauthenticated" && isReady) {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ROUTE APP] Unauthenticated state: redirecting to /");
+    }
     throw redirect({
       to: "/",
       search: { redirect: location.href },
     });
   }
 
-  if (import.meta.env.DEV) console.log("[KUSQA ROUTE GUARD TRACE] /app component: authenticated", { userId: session.user?.id });
+  // Estado 3: authenticated → Renderizar app
+  if (state === "authenticated") {
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA ROUTE APP] Authenticated state: rendering app", { userId: user?.id });
+    }
+    return (
+      <AppShell>
+        <MissionRealtimeSync />
+        <Outlet />
+      </AppShell>
+    );
+  }
 
-  return (
-    <AppShell>
-      <MissionRealtimeSync />
-      <Outlet />
-    </AppShell>
-  );
+  // Fallback defensivo (no debería ocurrir)
+  if (import.meta.env.DEV) {
+    console.warn("[KUSQA ROUTE APP] Unexpected state:", state);
+  }
+  return null;
 }
 
 export const Route = createFileRoute("/app")({

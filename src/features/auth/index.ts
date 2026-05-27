@@ -1,7 +1,10 @@
 export {
   useCurrentUser,
+  useCurrentUserState,
   useIsAuthenticated,
   useUserXpProgress,
+  type AuthUserStatus,
+  type AuthUserState,
 } from "./hooks/useCurrentUser";
 export { useOAuthLogin } from "./hooks/useOAuthLogin";
 export { useLogout } from "./hooks/useLogout";
@@ -18,6 +21,19 @@ export {
   useCreateMission,
   useJoinUserMission,
 } from "./hooks/useUserMissionMutations";
+
+// Auth state machine exports
+export {
+  deriveAuthState,
+  isAuthenticated as isAuthStateAuthenticated,
+  isInitializing as isAuthStateInitializing,
+  isUnauthenticated as isAuthStateUnauthenticated,
+  type AuthState,
+  type AuthStateSnapshot,
+} from "./authStateMachine";
+
+// Auth provider and hooks
+export { AuthProvider, useAuth, useAuthState } from "./AuthProvider";
 export { useMutationCoordinator, useMissionWriteRunner } from "./hooks/useMutationCoordinator";
 export {
   useMissionMutationKindStatus,

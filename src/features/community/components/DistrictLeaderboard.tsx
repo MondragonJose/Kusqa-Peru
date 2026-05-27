@@ -163,7 +163,7 @@ export function DistrictLeaderboard({ sortBy = "hours" }: DistrictLeaderboardPro
       </div>
 
       {/* Footer footer-note */}
-      <div className="mt-5 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1.5 border-t border-border/40 pt-4 pl-1">
+      <div className="mt-5 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1.5 border-t border-border/40 pt-4">
         <Award className="h-3.5 w-3.5 text-amber-500" />
         <span>Los 3 primeros distritos ganan un reto regional comunitario al fin del mes.</span>
       </div>

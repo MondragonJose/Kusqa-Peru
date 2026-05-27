@@ -61,7 +61,7 @@ function Progress() {
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { v: `#${user.rank}`, l: "Ranking" },
               { v: `${user.streak}d`, l: "Racha" },

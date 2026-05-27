@@ -235,7 +235,7 @@ function CreateProject() {
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
         {STEPS.map((s, i) => {
           const done = step > s.n;
           const active = step === s.n;

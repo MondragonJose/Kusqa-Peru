@@ -268,7 +268,7 @@ function MapPage() {
                 updateFilters({ district: "todas", region: "todas" });
                 setAutocompleteInput("");
               }}
-              className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer max-w-[120px] truncate ${
                 filters.district === "todas"
                   ? "bg-foreground text-background border-foreground shadow-sm"
                   : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
@@ -282,7 +282,7 @@ function MapPage() {
                 onClick={() => {
                   updateFilters({ district });
                 }}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 max-w-[120px] truncate ${
                   filters.district === district
                     ? "bg-foreground text-background border-foreground shadow-sm"
                     : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
