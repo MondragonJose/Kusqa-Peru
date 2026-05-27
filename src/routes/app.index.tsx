@@ -602,10 +602,10 @@ function Dashboard() {
       </section>
 
       {/* Activity Feed and Near Map */}
-      <section className="grid lg:grid-cols-3 gap-6">
+      <section className="grid lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Civic Activity Feed — derived from real missions */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
+        <div className="lg:col-span-2 space-y-3 lg:space-y-4">
+          <h2 className="font-display font-black text-lg lg:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
             <Sparkles className="h-5 w-5 text-accent animate-pulse" /> Actividad en el Territorio
           </h2>
           <div className="rounded-3xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-sm">
@@ -614,35 +614,35 @@ function Dashboard() {
                 const isMissionEntity = isMission(item);
                 const isProposalEntity = isProposal(item);
                 return (
-                <div key={item.id} className="flex items-center gap-4 p-4 hover:bg-secondary/30 transition-colors">
-                  <div className="h-11 w-11 rounded-2xl bg-secondary grid place-items-center text-xl shrink-0 border border-border/30">
+                <div key={item.id} className="flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-secondary/30 transition-colors">
+                  <div className="h-10 lg:h-11 w-10 lg:w-11 rounded-2xl bg-secondary grid place-items-center text-lg lg:text-xl shrink-0 border border-border/30">
                     {item.emoji || "🗺️"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-foreground flex flex-wrap items-center gap-1.5">
-                      <span className="font-bold text-foreground/90 truncate max-w-[200px]">{item.title}</span>
+                    <div className="text-xs lg:text-sm text-foreground flex flex-wrap items-center gap-1">
+                      <span className="font-bold text-foreground/90 truncate">{item.title}</span>
                       {isProposalEntity && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 tracking-wide uppercase">
+                        <span className="text-[7px] lg:text-[8px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 tracking-wide uppercase whitespace-nowrap">
                           Propuesta
                         </span>
                       )}
                       {isMissionEntity && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 tracking-wide uppercase">
+                        <span className="text-[7px] lg:text-[8px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 tracking-wide uppercase whitespace-nowrap">
                           Misión
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-muted-foreground/80 mt-0.5 font-medium flex items-center gap-1">
-                      <MapPin className="h-3 w-3 opacity-60" /> {item.district}
+                    <div className="text-[9px] lg:text-[10px] text-muted-foreground/80 mt-1 lg:mt-0.5 font-medium flex flex-wrap items-center gap-1">
+                      <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3 opacity-60" /> <span className="truncate">{item.district}</span>
                       <span className="opacity-45">•</span>
-                      <span>{formatRelativeDate(item.date)}</span>
+                      <span className="truncate">{formatRelativeDate(item.date)}</span>
                       {isMissionEntity && <><span className="opacity-45">•</span>
-                      <Users className="h-3 w-3 opacity-60" /> {item.participants} exploradores activos</>}
+                      <Users className="h-2.5 lg:h-3 w-2.5 lg:w-3 opacity-60" /> <span className="truncate">{item.participants} activos</span></>}
                       {isProposalEntity && <><span className="opacity-45">•</span>
-                      <span className="text-violet-600 dark:text-violet-400">Nueva iniciativa</span></>}
+                      <span className="text-violet-600 dark:text-violet-400 truncate">Nueva</span></>}
                     </div>
                   </div>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground/60 flex-shrink-0" />
+                  <TrendingUp className="hidden sm:block h-3.5 lg:h-4 w-3.5 lg:w-4 text-muted-foreground/60 flex-shrink-0" />
                 </div>
                 );
               })
@@ -657,15 +657,15 @@ function Dashboard() {
         </div>
 
         {/* Nearby Mini Slider */}
-        <div className="lg:col-span-1 space-y-4">
-          <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
+        <div className="lg:col-span-1 space-y-3 lg:space-y-4">
+          <h2 className="font-display font-black text-lg lg:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
             <Heart className="h-5 w-5 text-rose-500 animate-pulse" /> Cerca de ti
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2 lg:space-y-3">
             {nearby.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border p-6 text-center">
-                <div className="text-2xl mb-2">�️</div>
-                <p className="text-xs text-muted-foreground font-medium">Explora el mapa para descubrir misiones en otros distritos.</p>
+              <div className="rounded-3xl border border-dashed border-border p-4 lg:p-6 text-center">
+                <div className="text-xl lg:text-2xl mb-2">🗺️</div>
+                <p className="text-xs lg:text-sm text-muted-foreground font-medium">Explora el mapa para descubrir misiones en otros distritos.</p>
                 <Link to="/app/mapa" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-accent hover:underline">
                   Ver mapa <ArrowRight className="h-3 w-3" />
                 </Link>
@@ -675,26 +675,26 @@ function Dashboard() {
                 key={m.id}
                 to="/app/mision/$missionId"
                 params={{ missionId: m.id }}
-                className="block rounded-3xl bg-card border border-border/80 p-5 hover:shadow-sm hover:border-border transition-all duration-300 group"
+                className="block rounded-3xl bg-card border border-border/80 p-4 lg:p-5 hover:shadow-sm hover:border-border transition-all duration-300 group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-2xl bg-gradient-coast grid place-items-center text-2xl shrink-0 border border-white/5">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="h-10 lg:h-12 w-10 lg:w-12 rounded-2xl bg-gradient-coast grid place-items-center text-xl lg:text-2xl shrink-0 border border-white/5">
                     {m.emoji}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                    <div className="font-bold text-xs lg:text-sm text-foreground group-hover:text-primary transition-colors truncate">
                       {m.title}
                     </div>
-                    <div className="text-xs text-stone-500 font-semibold mt-0.5 flex items-center gap-1.5">
+                    <div className="text-[10px] lg:text-xs text-stone-500 font-semibold mt-0.5 flex items-center gap-1 flex-wrap">
                       <span>{m.distanceKm} km</span>
                       <span className="opacity-45">•</span>
                       <span>{formatRelativeDate(m.date)}</span>
                     </div>
                   </div>
                 </div>
-                <div className="mt-3.5 flex items-center justify-between text-xs border-t border-border/40 pt-3">
-                  <span className="font-bold text-accent">+{m.xp} XP</span>
-                  <span className="text-muted-foreground/80 font-medium">{m.spotsLeft} cupos restantes</span>
+                <div className="mt-2.5 lg:mt-3.5 flex items-center justify-between text-xs border-t border-border/40 pt-2 lg:pt-3 gap-2">
+                  <span className="font-bold text-accent truncate">+{m.xp} XP</span>
+                  <span className="text-muted-foreground/80 font-medium text-right truncate">{m.spotsLeft} cupos</span>
                 </div>
               </Link>
             ))}

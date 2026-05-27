@@ -318,7 +318,7 @@ function Landing(): JSX.Element {
         </div>
 
         <div className="relative mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
@@ -329,52 +329,52 @@ function Landing(): JSX.Element {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
-                className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium text-foreground/80 mb-7 shadow-soft relative overflow-hidden"
+                className="inline-flex items-center gap-2 rounded-full glass px-3 lg:px-4 py-1.5 text-[10px] lg:text-xs font-medium text-foreground/80 mb-4 lg:mb-7 shadow-soft relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-sunrise opacity-5 animate-pulse" />
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                <span className="relative z-10">Movimiento vivo · 124 distritos activos en este momento</span>
+                <span className="relative z-10 truncate">Movimiento vivo · 124 activos</span>
               </motion.div>
 
-              <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-[4.5rem] leading-[0.95] tracking-tight">
+              <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-[4.5rem] leading-[1.1] sm:leading-[1.0] lg:leading-[0.95] tracking-tight">
                 Tu participación<br />
                 <span className="text-gradient-aurora">cambia el Perú.</span>
               </h1>
 
-              <p className="mt-6 text-lg lg:text-xl text-muted-foreground max-w-xl leading-relaxed">
-                KUSQA transforma la acción invisible en impacto visible. Cada misión que realizas deja una huella real en tu comunidad — desde tu cuadra hasta los Andes y la Amazonía.
+              <p className="mt-3 sm:mt-4 lg:mt-6 text-sm sm:text-base lg:text-lg text-muted-foreground max-w-xl leading-relaxed">
+                KUSQA transforma la acción invisible en impacto visible. Cada misión que realizas deja una huella real en tu comunidad.
               </p>
 
-              <p className="mt-3 text-base text-muted-foreground/80 max-w-lg leading-relaxed italic">
-                Como el Qhapaq Ñan conectaba pueblos, KUSQA conecta generaciones para construir un país más participativo.
+              <p className="mt-2 sm:mt-3 lg:mt-3 text-xs sm:text-sm lg:text-base text-muted-foreground/80 max-w-lg leading-relaxed italic">
+                Como el Qhapaq Ñan conectaba pueblos, KUSQA conecta generaciones.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-6 lg:mt-9 flex flex-wrap gap-2 lg:gap-3">
                 <button
                   onClick={loginWithGoogle}
-                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3.5 text-base font-semibold shadow-glow hover:scale-[1.02] transition-smooth"
+                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-smooth"
                 >
-                  Iniciar mi expedición
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  Mi expedición
+                  <ArrowRight className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <a
                   href="#expediciones"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 backdrop-blur px-6 py-3.5 text-base font-semibold hover:bg-surface transition-smooth"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 backdrop-blur px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold hover:bg-surface transition-smooth"
                 >
-                  Ver expediciones <MapPin className="h-4 w-4" />
+                  Ver <MapPin className="h-3 lg:h-4 w-3 lg:w-4" />
                 </a>
               </div>
 
               {/* Mini stats row */}
-              <div className="mt-12 flex flex-wrap gap-x-10 gap-y-4">
+              <div className="hidden sm:flex mt-8 lg:mt-12 flex-wrap gap-x-6 lg:gap-x-10 gap-y-3">
                 {[
                   { k: "18,420", v: "jóvenes activos" },
-                  { k: "1,260+", v: "misiones completadas" },
-                  { k: "24 regiones", v: "del Perú" },
+                  { k: "1,260+", v: "misiones" },
+                  { k: "24", v: "regiones" },
                 ].map((s) => (
                   <div key={s.v}>
-                    <div className="font-display text-3xl font-bold">{s.k}</div>
-                    <div className="text-sm text-muted-foreground">{s.v}</div>
+                    <div className="font-display text-2xl lg:text-3xl font-bold">{s.k}</div>
+                    <div className="text-xs lg:text-sm text-muted-foreground">{s.v}</div>
                   </div>
                 ))}
               </div>
@@ -392,7 +392,7 @@ function Landing(): JSX.Element {
           </div>
 
           {/* Floating expedition cards */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
+          <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 max-w-5xl">
             {[
               { emoji: "🎨", title: "Mural colectivo", place: "Barranco · Lima", xp: 320, rotate: "-rotate-2", gradient: "from-accent/20 to-sun/20", region: "Costa" },
               { emoji: "🌱", title: "Reforestación", place: "Chinchero · Cusco", xp: 540, rotate: "rotate-1", gradient: "from-jungle/20 to-sierra/20", region: "Sierra" },
@@ -404,24 +404,24 @@ function Landing(): JSX.Element {
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{ scale: 1.02, y: -4 }}
                 transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
-                className={`glass-strong rounded-2xl p-5 shadow-card hover:shadow-lift transition-smooth ${c.rotate} hover:rotate-0 cursor-pointer`}
+                className={`glass-strong rounded-2xl p-4 lg:p-5 shadow-card hover:shadow-lift transition-smooth ${c.rotate} hover:rotate-0 cursor-pointer`}
               >
-                <div className={`h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-5xl mb-4`}>
+                <div className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}>
                   {c.emoji}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="text-[9px] uppercase tracking-widest font-semibold text-accent">{c.region}</span>
+                <div className="flex items-center gap-1 text-[8px] lg:text-xs text-muted-foreground mb-2">
+                  <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">{c.region}</span>
                   <span>·</span>
-                  <MapPin className="h-3 w-3" /> {c.place}
+                  <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" /> <span className="truncate">{c.place}</span>
                 </div>
-                <div className="font-display font-semibold mt-1">{c.title}</div>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs px-2 py-1 rounded-full bg-secondary font-medium">
+                <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">{c.title}</div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
                     +{c.xp} XP
                   </span>
                   <button
                     onClick={loginWithGoogle}
-                    className="text-xs text-accent font-semibold hover:gap-2 flex items-center gap-1 transition-all"
+                    className="text-[8px] lg:text-xs text-accent font-semibold hover:gap-2 flex items-center gap-1 transition-all"
                   >
                     Únete <ChevronRight className="h-3 w-3" />
                   </button>
@@ -531,11 +531,11 @@ function Landing(): JSX.Element {
             {/* Region selector visual */}
             <div className="relative">
               <div className="absolute -inset-6 bg-gradient-aurora opacity-20 blur-3xl rounded-3xl" />
-              <div className="relative glass-strong rounded-3xl p-6 shadow-lift">
+              <div className="relative glass-strong rounded-3xl p-4 sm:p-6 shadow-lift">
                 <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-4">
                   Elige tu paisaje
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { name: "Costa", icon: Waves, gradient: "bg-gradient-coast", desc: "Surcos del mar", active: 38 },
                     { name: "Sierra", icon: Mountain, gradient: "bg-gradient-andes", desc: "Rutas del Ande", active: 45 },
@@ -544,7 +544,7 @@ function Landing(): JSX.Element {
                     <motion.div
                       key={r.name}
                       whileHover={{ scale: 1.03 }}
-                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-5 aspect-[3/4] text-white shadow-card cursor-pointer`}
+                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-4 sm:p-5 aspect-[3/4] sm:aspect-[3/4] text-white shadow-card cursor-pointer flex flex-col`}
                     >
                       {/* Subtle activity pulse */}
                       <motion.div
@@ -559,18 +559,18 @@ function Landing(): JSX.Element {
                           ease: "easeInOut",
                         }}
                       />
-                      <r.icon className="h-6 w-6 mb-auto" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <div className="font-display font-bold text-xl">{r.name}</div>
-                        <div className="text-xs opacity-80">{r.desc}</div>
-                        <div className="text-[10px] mt-1 opacity-60">{r.active} misiones activas</div>
+                      <r.icon className="h-5 w-5 sm:h-6 sm:w-6 mb-auto" />
+                      <div className="mt-auto">
+                        <div className="font-display font-bold text-lg sm:text-xl leading-tight">{r.name}</div>
+                        <div className="text-xs opacity-80 mt-1">{r.desc}</div>
+                        <div className="text-[10px] mt-1.5 opacity-60">{r.active} misiones</div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-                <div className="mt-5 rounded-2xl bg-secondary p-4 flex items-center gap-3">
-                  <Sparkles className="h-5 w-5 text-accent shrink-0" />
-                  <div className="text-sm">
+                <div className="mt-4 sm:mt-5 rounded-2xl bg-secondary p-3 sm:p-4 flex items-start sm:items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5 sm:mt-0" />
+                  <div className="text-xs sm:text-sm leading-snug">
                     Personaliza tu avatar y fondo con la identidad de tu distrito.
                   </div>
                 </div>
