@@ -277,7 +277,7 @@ function MissionDetail() {
           {/* Expedition timeline stages */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-5 text-foreground flex items-center gap-2">
-              <Compass className="h-5 w-5 text-accent" /> Agenda de la misión
+              <Compass className="h-5 w-5 text-accent" /> Itinerario sugerido
             </h2>
             <div className="space-y-4">
               {[

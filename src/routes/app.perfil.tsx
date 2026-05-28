@@ -15,7 +15,7 @@ import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { userRepository } from "@/services/userRepository";
 import { useQueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/lib/queryKeys";
-import { REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/gamification";
+import { REGION_META, REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/gamification";
 
 export const Route = createFileRoute("/app/perfil")({
   component: Profile,
@@ -148,7 +148,7 @@ export function Profile() {
       {/* Cover / Profile Card */}
       <section className="relative rounded-3xl overflow-hidden shadow-sm bg-card border border-border">
         {/* Banner with user region's gradient */}
-        <div className={`h-40 sm:h-48 lg:h-64 bg-gradient-${user.region} relative`}>
+        <div className={`h-40 sm:h-48 lg:h-64 ${REGION_META[user.region]?.gradient || "bg-gradient-coast"} relative`}>
           <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,oklch(1_0_0/0.25),transparent)]" />
         </div>
@@ -214,13 +214,13 @@ export function Profile() {
             {[
               { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
               { l: "Misiones", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
-              { l: "Regiones", v: activeRegions.length, i: "�", color: "text-accent" },
+              { l: "Regiones", v: activeRegions.length, i: "🏔️", color: "text-accent" },
               { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
               <div key={s.l} className="rounded-2xl bg-secondary/55 p-3 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3">
                 <span className="text-2xl sm:text-3xl filter drop-shadow-sm">{s.i}</span>
                 <div>
-                  <div className="font-display font-black text-lg sm:text-xl text-foreground leading-none">{s.v}</div>
+                  <div className="font-display font-black text-lg sm:text-xl text-foreground leading-none truncate">{s.v}</div>
                   <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{s.l}</div>
                 </div>
               </div>

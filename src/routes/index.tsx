@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Star,
 } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { JSX } from "react/jsx-runtime";
 import { PublicMissionCard } from "@/features/missions";
 import { useMissions } from "@/hooks/useMissions";
@@ -96,8 +96,7 @@ function StatCounter({ icon: Icon, label, value, suffix, color }: { icon: any; l
       <div className={`h-12 w-12 rounded-2xl glass grid place-items-center ${color} shadow-soft mb-1`}>
         <Icon className="h-5 w-5" />
       </div>
-      {/* Si también quieres que los números grandes sean blancos, cambia ${color} por text-white en la línea de abajo */}
-      <div className={`font-display text-4xl lg:text-5xl font-bold ${color}`}>
+      <div className="font-display text-4xl lg:text-5xl font-bold text-white">
         {count.toLocaleString("es-PE")}{suffix}
       </div>
       {/* AQUÍ ESTÁ EL CAMBIO: text-white/90 en lugar de text-muted-foreground */}
@@ -204,6 +203,15 @@ function Landing(): JSX.Element {
 
   // Derive stats from real Supabase data
   const stats = deriveStatsFromMissions(missions);
+
+  // Derive mission counts by region for "Elige tu paisaje" cards
+  const missionsByRegion = useMemo(() => {
+    const counts: Record<string, number> = {};
+    missions.forEach(m => {
+      counts[m.region] = (counts[m.region] || 0) + 1;
+    });
+    return counts;
+  }, [missions]);
 
   // Show error toast if callback failed
   useEffect(() => {
@@ -459,8 +467,8 @@ function Landing(): JSX.Element {
 
       {/* ── CIVIC OBSERVATORY ── */}
       <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-sunrise opacity-[0.97]" />
-        <div className="absolute inset-0 bg-mesh opacity-30" />
+        <div className="absolute inset-0 bg-gradient-sunrise opacity-85" />
+        <div className="absolute inset-0 bg-mesh opacity-15" />
 
         <div className="relative mx-auto max-w-7xl text-white">
           <motion.div
@@ -560,16 +568,16 @@ function Landing(): JSX.Element {
                 <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3 sm:mb-4">
                   Elige tu paisaje
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3">
                   {[
-                    { name: "Costa", icon: Waves, gradient: "bg-gradient-coast", desc: "Surcos del mar", active: 38 },
-                    { name: "Sierra", icon: Mountain, gradient: "bg-gradient-andes", desc: "Rutas del Ande", active: 45 },
-                    { name: "Selva", icon: Trees, gradient: "bg-gradient-jungle", desc: "Corazón verde", active: 31 },
+                    { name: "Costa", icon: Waves, gradient: "bg-gradient-coast", desc: "Surcos del mar", active: missionsByRegion["costa"] || 0 },
+                    { name: "Sierra", icon: Mountain, gradient: "bg-gradient-andes", desc: "Rutas del Ande", active: missionsByRegion["sierra"] || 0 },
+                    { name: "Selva", icon: Trees, gradient: "bg-gradient-jungle", desc: "Corazón verde", active: missionsByRegion["selva"] || 0 },
                   ].map((r) => (
                     <motion.div
                       key={r.name}
                       whileHover={{ scale: 1.03 }}
-                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-3 sm:p-5 aspect-[4/3] sm:aspect-[3/4] text-white shadow-card cursor-pointer flex flex-col`}
+                      className={`relative overflow-hidden rounded-2xl ${r.gradient} p-4 sm:p-5 aspect-[16/9] sm:aspect-[3/4] text-white shadow-card cursor-pointer flex flex-col`}
                     >
                       {/* Subtle activity pulse */}
                       <motion.div
@@ -584,11 +592,11 @@ function Landing(): JSX.Element {
                           ease: "easeInOut",
                         }}
                       />
-                      <r.icon className="h-4 w-4 sm:h-6 sm:w-6 mb-auto" />
+                      <r.icon className="h-5 w-5 sm:h-6 sm:w-6 mb-auto" />
                       <div className="mt-auto">
-                        <div className="font-display font-bold text-sm sm:text-xl leading-tight">{r.name}</div>
-                        <div className="text-[10px] sm:text-xs opacity-80 mt-0.5 sm:mt-1">{r.desc}</div>
-                        <div className="text-[9px] sm:text-[10px] mt-1 sm:mt-1.5 opacity-60">{r.active} misiones</div>
+                        <div className="font-display font-bold text-base sm:text-xl leading-tight">{r.name}</div>
+                        <div className="text-[10px] sm:text-xs opacity-80 mt-1">{r.desc}</div>
+                        <div className="text-[9px] sm:text-[10px] mt-1.5 opacity-60">{r.active} misiones</div>
                       </div>
                     </motion.div>
                   ))}
@@ -669,8 +677,8 @@ function Landing(): JSX.Element {
 
       {/* ── QHAPAQ ÑAN PROGRESSION ── */}
       <section id="territorio" className="px-5 lg:px-8 py-24 relative">
-        <div className="absolute inset-0 bg-gradient-andes opacity-95" />
-        <div className="absolute inset-0 bg-mesh opacity-40" />
+        <div className="absolute inset-0 bg-gradient-andes opacity-80" />
+        <div className="absolute inset-0 bg-mesh opacity-20" />
         <div className="relative mx-auto max-w-7xl text-white">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-widest text-sun font-semibold">

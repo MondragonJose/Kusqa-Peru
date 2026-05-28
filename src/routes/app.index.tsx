@@ -154,19 +154,26 @@ function Dashboard() {
       ) : (
         <section className="relative overflow-hidden rounded-2xl bg-stone-950 text-white p-6 sm:p-8 shadow-2xl border border-white/10">
           <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
+          {/* Ambient gradient blobs — visual bridge from landing hero */}
+          <div className="absolute -top-20 -right-20 h-[300px] w-[300px] rounded-full bg-gradient-sunrise opacity-20 blur-3xl animate-float-slow" />
+          <div className="absolute -bottom-20 -left-20 h-[250px] w-[250px] rounded-full bg-gradient-andes opacity-15 blur-3xl animate-float-slow" style={{ animationDelay: "2s" }} />
           <div className="relative space-y-4 sm:space-y-6">
-            <div>
+            <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-amber-300 border border-white/5">
                 <Compass className="h-3 w-3" /> Misiones abiertas
               </span>
-              <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05] mt-3">
-                Participa en misiones <br/>
-                <span className="bg-clip-text text-transparent bg-gradient-sunrise">reales en tu territorio.</span>
-              </h1>
-              <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed mt-2">
-                Únete a expediciones cívicas, conecta con jóvenes de todo el Perú y genera impacto visible.
-              </p>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-amber-300/80 border border-white/5">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Movimiento vivo
+              </span>
             </div>
+            <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05]">
+              Participa en misiones <br/>
+              <span className="bg-clip-text text-transparent bg-gradient-sunrise">reales en tu territorio.</span>
+            </h1>
+            <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed">
+              Únete a expediciones cívicas, conecta con jóvenes de todo el Perú y genera impacto visible.
+            </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/app/mapa" className={`inline-flex items-center gap-2 ${conventions.button.primary}`}>
                 Explorar misiones <MapPin className={iconSize.md} />
@@ -308,13 +315,12 @@ function Dashboard() {
       {/* Estos widgets compiten con contenido de misiones y aumentan carga cognitiva */}
       {/* Progress movido a página /app/progreso, Community Pulse eliminado */}
 
-      {/* P1 FIX: Unificar feeds - solo un feed "Misiones en tu territorio" */}
-      <section className="space-y-3 sm:space-y-4">
-        <p className="text-xs text-muted-foreground pl-1">Selecciona una misión para ver detalles o crea tu propio proyecto</p>
+      {/* Actividad reciente — unified feed, simplified */}
+      <section className="space-y-2">
         <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-          <Sparkles className="h-5 w-5 text-accent" /> Misiones en tu territorio
+          <Sparkles className="h-5 w-5 text-accent" /> Actividad reciente
         </h2>
-        <div className="rounded-3xl border border-border/80 bg-card overflow-hidden divide-y divide-border/60 shadow-sm">
+        <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
           {feedItems.length > 0 ? (
             feedItems.map((item) => {
               const isMissionEntity = isMission(item);
@@ -323,44 +329,32 @@ function Dashboard() {
               <button
                 key={item.id}
                 onClick={() => setSelectedEntity(item)}
-                className="flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-secondary/30 transition-colors w-full text-left"
+                className="flex items-start gap-2.5 lg:gap-3 p-2.5 lg:p-3 hover:bg-secondary/30 transition-colors w-full text-left"
               >
-                <div className="h-10 lg:h-11 w-10 lg:w-11 rounded-2xl bg-secondary grid place-items-center text-lg lg:text-xl shrink-0 border border-border/30">
+                <div className="h-9 lg:h-10 w-9 lg:w-10 rounded-xl bg-secondary grid place-items-center text-base lg:text-lg shrink-0 border border-border/30">
                   {item.emoji || "🗺️"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs lg:text-sm text-foreground flex flex-wrap items-center gap-1">
-                    <span className="font-bold text-foreground/90 truncate">{item.title}</span>
-                    {isProposalEntity && (
-                      <span className="text-[7px] lg:text-[8px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 tracking-wide uppercase whitespace-nowrap">
-                        Propuesta
-                      </span>
-                    )}
-                    {isMissionEntity && (
-                      <span className="text-[7px] lg:text-[8px] font-bold px-1 lg:px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 tracking-wide uppercase whitespace-nowrap">
-                        Misión
-                      </span>
-                    )}
+                  <div className="text-xs lg:text-sm text-foreground font-bold truncate flex items-center gap-1">
+                    {item.title}
+                    {isProposalEntity && <span className="text-[8px] text-violet-500 font-semibold shrink-0">(propuesta)</span>}
                   </div>
-                  <div className="text-[9px] lg:text-[10px] text-muted-foreground/80 mt-1 lg:mt-0.5 font-medium flex flex-wrap items-center gap-1">
-                    <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3 opacity-60" /> <span className="truncate">{item.district}</span>
+                  <div className="text-[9px] lg:text-[10px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
+                    <MapPin className="h-2.5 w-2.5 opacity-60" /> <span className="truncate">{item.district}</span>
                     <span className="opacity-45">•</span>
                     <span className="truncate">{formatRelativeDate(item.date)}</span>
                     {isMissionEntity && <><span className="opacity-45">•</span>
-                    <Users className="h-2.5 lg:h-3 w-2.5 lg:w-3 opacity-60" /> <span className="truncate">{item.participants} activos</span></>}
-                    {isProposalEntity && <><span className="opacity-45">•</span>
-                    <span className="text-violet-600 dark:text-violet-400 truncate">Nueva</span></>}
+                    <Users className="h-2.5 w-2.5 opacity-60" /> <span>{item.participants}</span></>}
                   </div>
                 </div>
-                <ArrowRight className="hidden sm:block h-3.5 lg:h-4 w-3.5 lg:w-4 text-muted-foreground/60 flex-shrink-0" />
               </button>
               );
             })
           ) : (
-            <div className="p-8 text-center">
-              <div className="text-3xl mb-3">🗺️</div>
+            <div className="p-6 text-center">
+              <div className="text-2xl mb-2">🗺️</div>
               <p className="text-sm text-muted-foreground font-medium">Explorando el territorio</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Descubre misiones activas en el mapa.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Descubre misiones activas en el mapa.</p>
             </div>
           )}
         </div>

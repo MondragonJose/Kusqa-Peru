@@ -22,7 +22,7 @@ export const REGION_META = {
   },
   sierra: {
     name: "Sierra",
-    gradient: "bg-gradient-mountain",
+    gradient: "bg-gradient-andes",
     color: "text-sierra",
     chipBg: "bg-sierra/10 text-sierra",
     emoji: "⛰️",

@@ -106,8 +106,8 @@ function MapPage() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-2 lg:gap-4">
         <div>
-          <h1 className="font-display font-bold text-2xl md:text-3xl tracking-tight text-foreground flex items-center gap-2">
-            Atlas Territorial <Sparkles className="h-5 md:h-6 w-5 md:w-6 text-accent" />
+          <h1 className="font-display font-bold text-xl md:text-3xl tracking-tight text-foreground flex items-center gap-2">
+            Atlas Territorial <Sparkles className="h-4 md:h-6 w-4 md:w-6 text-accent" />
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5 lg:mt-1">
             Explora misiones activas en todo el Perú.
@@ -145,7 +145,7 @@ function MapPage() {
       </div>
 
       {/* P0 FIX: Filtros simplificados - solo search + categoría. Eliminar GPS, autocomplete, difficulty */}
-      <div className="glass rounded-3xl p-3 lg:p-5 border border-border/40 shadow-soft space-y-3">
+      <div className="glass rounded-3xl p-2 lg:p-5 border border-border/40 shadow-soft space-y-2 lg:space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Search simple por distrito */}
           <div className="relative">
@@ -300,7 +300,7 @@ function MapPage() {
       </div>
 
       {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer */}
-      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["148px", "85vh"]}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
           <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">

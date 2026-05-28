@@ -145,6 +145,7 @@
   --gradient-terrain-sierra: linear-gradient(160deg, oklch(0.6 0.08 55) 0%, oklch(0.45 0.12 45) 45%, oklch(0.35 0.12 280) 100%);
   --gradient-terrain-selva: linear-gradient(160deg, oklch(0.75 0.16 140) 0%, oklch(0.55 0.18 160) 50%, oklch(0.42 0.14 175) 100%);
   --gradient-cumbre: linear-gradient(160deg, oklch(0.82 0.1 80) 0%, oklch(0.62 0.15 45) 35%, oklch(0.38 0.08 280) 70%, oklch(0.22 0.06 285) 100%);
+  --gradient-aurora: linear-gradient(135deg, oklch(0.55 0.18 300), oklch(0.65 0.14 200), oklch(0.7 0.12 160));
 
   /* Restaurado shadow-glow contenido para jerarquía visual - P0 FIX REVERSED */
   --shadow-glow: 0 8px 24px -8px oklch(0.7 0.18 45 / 0.25);
@@ -211,6 +212,7 @@
   .bg-gradient-andes { background-image: var(--gradient-andes); }
   .bg-gradient-coast { background-image: var(--gradient-coast); }
   .bg-gradient-jungle { background-image: var(--gradient-jungle); }
+  .bg-gradient-aurora { background-image: var(--gradient-aurora); }
 
   .text-gradient-sunrise, .text-gradient-aurora {
     background: var(--gradient-sunrise);
@@ -246,6 +248,14 @@
   }
   .animate-wander {
     animation: wander 14s ease-in-out infinite;
+  }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float-slow {
+    animation: float-slow 5s ease-in-out infinite;
   }
 
   /* Hide scrollbars on filter pill rows */
