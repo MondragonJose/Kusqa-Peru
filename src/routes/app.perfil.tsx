@@ -151,13 +151,6 @@ export function Profile() {
         <div className={`h-40 sm:h-48 lg:h-64 bg-gradient-${user.region} relative`}>
           <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,oklch(1_0_0/0.25),transparent)]" />
-          <button
-            disabled
-            className="absolute top-4 right-4 inline-flex items-center gap-2 rounded-xl glass-strong px-3.5 py-2 text-xs font-bold text-white/50 border border-white/10 shadow-sm cursor-not-allowed"
-            title="[KUSQA DEAD UI TRACE] Funcionalidad de personalización de portada pendiente"
-          >
-            <Pencil className="h-3.5 w-3.5" /> Personalizar Portada
-          </button>
         </div>
 
         {/* User Info Section */}

@@ -72,9 +72,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.to}
                   to={item.to}
                   className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-smooth ${
-                    active
-                      ? "bg-foreground text-background font-semibold shadow-soft"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    item.to === "/app/crear"
+                      ? "bg-gradient-sunrise text-white font-semibold shadow-glow hover:opacity-90"
+                      : active
+                        ? "bg-foreground text-background font-semibold shadow-soft"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                 >
                   <Icon className="h-4.5 w-4.5" size={18} />
@@ -159,7 +161,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={`flex flex-col items-center gap-1.5 rounded-xl px-4 py-3 text-[10px] font-medium transition-smooth min-w-[48px] min-h-[48px] justify-center ${
-                  active ? "text-accent bg-accent/10" : "text-muted-foreground"
+                  item.to === "/app/crear"
+                    ? "bg-gradient-sunrise text-white shadow-glow"
+                    : active
+                      ? "text-accent bg-accent/10"
+                      : "text-muted-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" />
