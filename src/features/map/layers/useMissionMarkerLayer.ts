@@ -68,21 +68,21 @@ export function renderMissionMarkers({
     });
 
     const popupHtml = `
-      <div class="p-3 text-xs w-64 font-sans">
-        <div class="flex items-start justify-between gap-2 pb-2 border-b border-border/40">
+      <div class="p-2.5 text-xs w-56 font-sans">
+        <div class="flex items-start justify-between gap-1.5 pb-1.5 border-b border-border/40">
           <div class="flex-1 min-w-0">
             <div class="font-bold text-foreground text-sm truncate leading-tight">${mission.title}</div>
             <div class="text-[9px] text-muted-foreground mt-0.5 flex items-center gap-1">
               <span>📍</span> ${mission.district}
             </div>
           </div>
-          <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
+          <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
         </div>
-        <div class="flex items-center gap-2 mt-3">
-          <a href="/app/mision/${mission.id}" class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white py-2 text-[9px] font-bold hover:opacity-90 transition-all">
+        <div class="flex items-center gap-1.5 mt-2">
+          <a href="/app/mision/${mission.id}" class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white py-1.5 text-[8px] font-bold hover:opacity-90 transition-all">
             Unirme
           </a>
-          <button class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-2 text-[9px] font-bold hover:bg-secondary transition-all border border-border/30">
+          <button class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30">
             Ver más →
           </button>
         </div>

@@ -24,28 +24,28 @@ export function MapControls({
         {onZoomIn && (
           <button
             onClick={onZoomIn}
-            className="p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors border-b border-border/20 flex items-center justify-center"
+            className="p-2.5 lg:p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors border-b border-border/20 flex items-center justify-center"
             title="Acercar"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
         )}
         {onZoomOut && (
           <button
             onClick={onZoomOut}
-            className="p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors border-b border-border/20 flex items-center justify-center"
+            className="p-2.5 lg:p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors border-b border-border/20 flex items-center justify-center"
             title="Alejar"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
         )}
         {onResetView && (
           <button
             onClick={onResetView}
-            className="p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors flex items-center justify-center"
+            className="p-2.5 lg:p-3 text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors flex items-center justify-center"
             title="Ver todo el Perú"
           >
-            <Compass className="h-4 w-4" />
+            <Compass className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
         )}
       </div>

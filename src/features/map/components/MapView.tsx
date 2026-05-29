@@ -438,7 +438,7 @@ export function MapView({
     <div className="relative w-full h-full min-h-[480px] md:min-h-[580px] lg:min-h-[660px] rounded-[2rem] overflow-hidden shadow-2xl border border-border/40 flex flex-col lg:flex-row-reverse">
       
       {/* MAP LAYER CONTAINER */}
-      <div className="flex-1 relative h-[75dvh] lg:h-auto">
+      <div className="flex-1 relative h-[65dvh] lg:h-auto">
         <div ref={containerRef} className={`w-full h-full bg-secondary/10 z-0 kusqa-territorial-map${mapStyle === 'dark' ? ' dark-map' : ''}`} />
 
         {/* Loading Overlay */}
@@ -473,30 +473,30 @@ export function MapView({
         {leafletLoaded && (
           <>
             {/* Top Right - Map Mode Selectors */}
-            <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 pointer-events-auto">
-              <div className="flex rounded-xl border border-border/40 bg-surface/85 shadow-soft p-1 backdrop-blur-md text-[10px] font-bold gap-1">
+            <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 pointer-events-auto">
+              <div className="flex rounded-xl border border-border/30 bg-surface/70 shadow-soft p-0.5 backdrop-blur-md text-[10px] font-bold gap-0.5">
                 {[
-                  { id: "pins", label: "Pines", icon: <MapPin className="h-3 w-3" /> },
-                  { id: "heatmap", label: "Calor", icon: <Flame className="h-3 w-3" /> },
-                  { id: "districts", label: "Distritos", icon: <Landmark className="h-3 w-3" /> },
+                  { id: "pins", label: "Pines", icon: <MapPin className="h-3.5 w-3.5" /> },
+                  { id: "heatmap", label: "Calor", icon: <Flame className="h-3.5 w-3.5" /> },
+                  { id: "districts", label: "Distritos", icon: <Landmark className="h-3.5 w-3.5" /> },
                 ].map((m) => (
                   <button
                      key={m.id}
                      onClick={() => setMapMode(m.id as MapMode)}
-                     className={`px-2 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${
+                     className={`px-1.5 py-1 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
                        mapMode === m.id ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary/40"
                      }`}
                   >
                     {m.icon}
-                    <span>{m.label}</span>
+                    <span className="hidden sm:inline sm:ml-1">{m.label}</span>
                   </button>
                 ))}
               </div>
 
               {/* Theme toggle */}
-              <div className="flex self-end rounded-lg border border-border/40 bg-surface/85 shadow-soft p-0.5 backdrop-blur-md text-[8px] font-black uppercase tracking-wider gap-0.5">
-                <button onClick={() => setMapStyle("dark")} className={`px-2 py-0.5 rounded cursor-pointer ${mapStyle === "dark" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Oscuro</button>
-                <button onClick={() => setMapStyle("light")} className={`px-2 py-0.5 rounded cursor-pointer ${mapStyle === "light" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Claro</button>
+              <div className="flex self-end rounded-lg border border-border/30 bg-surface/70 shadow-soft p-0.5 backdrop-blur-md text-[7px] font-black uppercase tracking-wider gap-0.5">
+                <button onClick={() => setMapStyle("dark")} className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "dark" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Oscuro</button>
+                <button onClick={() => setMapStyle("light")} className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "light" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Claro</button>
               </div>
             </div>
 
@@ -512,39 +512,45 @@ export function MapView({
               />
             </div>
 
-            {/* Top Center - Breadcrumb Trail Overlay */}
-            <div className="absolute top-4 left-4 z-10 pointer-events-auto flex items-center bg-surface/90 border border-border/30 rounded-2xl px-4 py-2 shadow-soft backdrop-blur-md text-xs font-semibold gap-1 select-none">
-              <button onClick={() => handleBreadcrumbClick(-1)} className="hover:text-primary transition-colors text-muted-foreground">Perú</button>
-              {activeTerritoryPath.map((node, index) => (
-                <div key={node.id} className="flex items-center gap-1">
-                  <ChevronRight className="h-3.5 w-3.5 text-stone-400" />
-                  <button
-                    onClick={() => handleBreadcrumbClick(index)}
-                    className={`hover:text-primary transition-colors ${
-                      index === activeTerritoryPath.length - 1 ? "text-foreground font-black" : "text-muted-foreground"
-                    }`}
-                  >
-                    {node.name}
-                  </button>
-                </div>
-              ))}
-            </div>
+            {/* Top Center - Breadcrumb Trail Overlay — hidden on mobile at root level */}
+            {activeTerritoryPath.length > 0 ? (
+              <div className="absolute top-3 left-3 z-10 pointer-events-auto flex items-center bg-surface/70 border border-border/30 rounded-2xl px-3 py-1.5 shadow-soft backdrop-blur-md text-[10px] font-semibold gap-1 select-none">
+                <button onClick={() => handleBreadcrumbClick(-1)} className="hover:text-primary transition-colors text-muted-foreground">Perú</button>
+                {activeTerritoryPath.map((node, index) => (
+                  <div key={node.id} className="flex items-center gap-1">
+                    <ChevronRight className="h-3 w-3 text-stone-400" />
+                    <button
+                      onClick={() => handleBreadcrumbClick(index)}
+                      className={`hover:text-primary transition-colors ${
+                        index === activeTerritoryPath.length - 1 ? "text-foreground font-black" : "text-muted-foreground"
+                      }`}
+                    >
+                      {node.name}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="hidden lg:flex absolute top-3 left-3 z-10 pointer-events-auto items-center bg-surface/70 border border-border/30 rounded-2xl px-3 py-1.5 shadow-soft backdrop-blur-md text-[10px] font-semibold gap-1 select-none">
+                <span className="text-muted-foreground">Perú</span>
+              </div>
+            )}
           </>
         )}
       </div>
 
       {/* TERRITORIAL DISCOVERY PANEL — Sidebar Explorer */}
-      <div className="w-full lg:w-[320px] bg-card border-t lg:border-t-0 lg:border-r border-border/40 shrink-0 p-5 flex flex-col justify-between z-10 max-h-[50vh] lg:max-h-none overflow-y-auto">
-        <div className="space-y-5">
+      <div className="w-full lg:w-[320px] bg-card border-t lg:border-t-0 lg:border-r border-border/40 shrink-0 p-4 lg:p-5 flex flex-col justify-between z-10 max-h-[35vh] lg:max-h-none overflow-y-auto no-scrollbar">
+        <div className="space-y-3 lg:space-y-5">
           {/* Panel Header */}
           <div>
             <span className="text-[9px] uppercase font-black tracking-widest text-accent flex items-center gap-1">
               <Zap className="h-3 w-3 fill-current animate-pulse-ring" /> Explorador Cívico
             </span>
-            <h2 className="font-display font-black text-xl text-foreground tracking-tight mt-1 leading-none">
+            <h2 className="font-display font-black text-lg lg:text-xl text-foreground tracking-tight mt-1 leading-none">
               Descubre tu territorio
             </h2>
-            <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug">
+            <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
               Explora las regiones donde jóvenes como tú están transformando comunidades.
             </p>
           </div>
@@ -635,7 +641,7 @@ export function MapView({
         </div>
 
         {/* GPS PRIVACY CONTROL — Trust & Proximity Mode */}
-        <div className="pt-4 border-t border-border/40 mt-5 space-y-2">
+        <div className="pt-3 lg:pt-4 border-t border-border/40 mt-3 lg:mt-5 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider">Ubicación GPS segura</span>
             
