@@ -326,13 +326,8 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
       `[services/missions] User ${userId} joining mission ${missionId}...`
     );
 
-    // Primero validar que existe la misión
-    const mission = await getMissionById(missionId);
-    if (!mission) {
-      throw new Error("Mission not found");
-    }
-
     // Insertar en mission_participants
+    // FK constraint on mission_id validates mission existence — no extra query needed
     const { error } = await supabase.from("mission_participants").insert([
       {
         mission_id: missionId,
@@ -342,8 +337,15 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
     ]);
 
     if (error) {
+      // Surface the actual Supabase error for RLS debugging
       console.error("[services/missions] Supabase error:", error);
-      throw new Error(`Failed to join mission: ${error.message}`);
+      if (error.code === "23503") {
+        throw new Error("La misión no existe o ya no está disponible");
+      }
+      if (error.code === "23505") {
+        throw new Error("Ya estás participando en esta misión");
+      }
+      throw new Error(error.message);
     }
 
     logDev(`[services/missions] User ${userId} joined mission ${missionId}`);

@@ -111,7 +111,7 @@ function StatCounter({ icon: Icon, label, value, suffix, color }: { icon: any; l
 // Peru SVG territorial outline — decorative, SSR-safe
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PeruTerritoryDecoration() {
+function PeruTerritoryDecoration({ costaCount = 0, sierraCount = 0, selvaCount = 0 }: { costaCount?: number; sierraCount?: number; selvaCount?: number }) {
   return (
     <div className="relative w-full max-w-[340px] mx-auto select-none pointer-events-none">
       {/* Background glow blobs */}
@@ -157,15 +157,15 @@ function PeruTerritoryDecoration() {
         </defs>
       </svg>
 
-      {/* Region floating labels */}
+      {/* Region floating labels — counts derived from real data */}
       <div className="absolute top-[22%] left-[10%] bg-gradient-coast text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow">
-        Costa · 🌊 43 misiones
+        Costa · 🌊 {costaCount} misiones
       </div>
       <div className="absolute top-[48%] right-[5%] bg-gradient-andes text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow" style={{ animationDelay: "2s" }}>
-        Sierra · ⛰️ 61 misiones
+        Sierra · ⛰️ {sierraCount} misiones
       </div>
       <div className="absolute bottom-[20%] left-[8%] bg-gradient-jungle text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow" style={{ animationDelay: "1s" }}>
-        Selva · 🌿 20 misiones
+        Selva · 🌿 {selvaCount} misiones
       </div>
     </div>
   );
@@ -366,7 +366,7 @@ function Landing(): JSX.Element {
               >
                 <div className="absolute inset-0 bg-gradient-sunrise opacity-5 animate-pulse" />
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                <span className="relative z-10 truncate">Movimiento vivo · 124 activos</span>
+                <span className="relative z-10 truncate">Movimiento vivo · {missions.length} ruta{missions.length !== 1 ? 's' : ''} activa{missions.length !== 1 ? 's' : ''}</span>
               </motion.div>
 
               <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-[4.5rem] leading-[1.1] sm:leading-[1.0] lg:leading-[0.95] tracking-tight">
@@ -398,13 +398,16 @@ function Landing(): JSX.Element {
                 </a>
               </div>
 
-              {/* Mini stats row */}
+              {/* Mini stats row — derived from real Supabase data */}
               <div className="hidden sm:flex mt-8 lg:mt-12 flex-wrap gap-x-6 lg:gap-x-10 gap-y-3">
-                {[
-                  { k: "18,420", v: "jóvenes activos" },
-                  { k: "1,260+", v: "misiones" },
-                  { k: "24", v: "regiones" },
-                ].map((s) => (
+                {(() => {
+                  const s = deriveStatsFromMissions(missions);
+                  return [
+                    { k: s[2].value.toLocaleString("es-PE"), v: s[2].label },
+                    { k: s[1].value.toLocaleString("es-PE"), v: s[1].label },
+                    { k: s[0].value.toLocaleString("es-PE"), v: s[0].label },
+                  ];
+                })().map((s) => (
                   <div key={s.v}>
                     <div className="font-display text-2xl lg:text-3xl font-bold">{s.k}</div>
                     <div className="text-xs lg:text-sm text-muted-foreground">{s.v}</div>
@@ -420,7 +423,11 @@ function Landing(): JSX.Element {
               transition={{ duration: 0.9, delay: 0.3 }}
               className="hidden xl:block"
             >
-              <PeruTerritoryDecoration />
+              <PeruTerritoryDecoration
+                costaCount={missionsByRegion["costa"] || 0}
+                sierraCount={missionsByRegion["sierra"] || 0}
+                selvaCount={missionsByRegion["selva"] || 0}
+              />
             </motion.div>
           </div>
 

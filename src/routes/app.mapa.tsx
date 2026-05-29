@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Search, Sparkles, Navigation, RefreshCw } from "lucide-react";
+import { MapPin, Search, Sparkles, Navigation, RefreshCw, ArrowRight } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
 import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
@@ -203,10 +203,10 @@ function MapPage() {
         </div>
       </div>
 
-      {/* Main Map & Interactive Sidebar Layout */}
+        {/* Main Map & Interactive Sidebar Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-3 lg:gap-5 items-stretch">
         {/* Dynamic Leaflet Map with focal coords support */}
-        <div className="h-[75dvh] md:h-[70dvh] lg:h-[640px] w-full min-h-[450px] order-1 lg:order-1">
+        <div className="relative min-h-[calc(100dvh-200px)] lg:h-[640px] w-full order-1 lg:order-1">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeMission?.id || null}
@@ -215,10 +215,40 @@ function MapPage() {
             userLocationLoading={userLocationLoading}
             onRequestUserLocation={requestUserLocation}
           />
+
+          {/* Floating mini-card — mobile: contextual mission info without losing map */}
+          {activeMission && (
+            <div
+              onClick={() => setIsDrawerOpen(true)}
+              className="lg:hidden absolute bottom-4 inset-x-4 z-30 rounded-2xl bg-surface/95 backdrop-blur-xl border border-border/50 shadow-lift overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <div className={`h-[3px] w-full ${REGION_META[activeMission.region].gradient}`} />
+              <div className="flex items-center gap-3 p-3">
+                <span className="text-2xl shrink-0">{activeMission.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-semibold text-sm text-foreground truncate leading-tight">
+                    {activeMission.title}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{activeMission.district}</span>
+                  </div>
+                </div>
+                <Link
+                  to="/app/mision/$missionId"
+                  params={{ missionId: activeMission.id }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-gradient-sunrise text-white px-3.5 py-2 text-[10px] font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Unirme <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* P1 FIX: Eliminar tabs - sidebar siempre muestra misión seleccionada */}
-        <div className="flex flex-col gap-2 lg:gap-4 min-h-[300px] lg:min-h-[500px] max-h-[40dvh] lg:max-h-none order-2 lg:order-2">
+        {/* Sidebar — hidden on mobile, drawer handles detail view */}
+        <div className="hidden lg:flex lg:flex-col gap-2 lg:gap-4 min-h-[300px] lg:min-h-[500px] max-h-[40dvh] lg:max-h-none order-2 lg:order-2">
           <div className="flex-1 flex flex-col h-full">
             {activeMission ? (
               <div className="flex-1 rounded-3xl bg-card border border-border/50 overflow-hidden shadow-card flex flex-col justify-between">
@@ -300,7 +330,7 @@ function MapPage() {
       </div>
 
       {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer — territorial destination preview */}
-      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["38%", "85vh"]}>
+      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["25%", "85vh"]}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
           <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
@@ -309,29 +339,32 @@ function MapPage() {
 
               {activeMission && (
                 <>
-                  {/* — PREVIEW — territorial destination card visible at first snap point */}
+                  {/* — PREVIEW — compact territorial card + CTA visible at 25% snap */}
                   <div className="px-5 pb-4">
-                    <div className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-5 text-white relative overflow-hidden shadow-card`}>
+                    <div className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-4 text-white relative overflow-hidden shadow-card`}>
                       <div className="absolute inset-0 bg-mesh opacity-25 pointer-events-none" />
                       <div className="relative z-10">
-                        <span className="text-5xl filter drop-shadow-md select-none">{activeMission.emoji}</span>
-                        <div className="mt-3 text-[10px] uppercase tracking-widest font-bold opacity-85">
-                          {REGION_META[activeMission.region].name} · {activeMission.category}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] uppercase tracking-widest font-bold opacity-85">
+                              {REGION_META[activeMission.region].name} · {activeMission.category}
+                            </div>
+                            <h3 className="font-display font-bold text-base mt-0.5 leading-tight truncate">{activeMission.title}</h3>
+                            <p className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
+                              <MapPin className="h-3 w-3" /> <span className="truncate">{activeMission.district}</span>
+                            </p>
+                          </div>
+                          <span className="text-3xl shrink-0 filter drop-shadow-md select-none">{activeMission.emoji}</span>
                         </div>
-                        <h3 className="font-display font-bold text-xl mt-0.5 leading-tight">{activeMission.title}</h3>
-                        <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" /> {activeMission.district}
-                        </p>
+                        <Link
+                          to="/app/mision/$missionId"
+                          params={{ missionId: activeMission.id }}
+                          className="mt-3 w-full inline-flex justify-center items-center rounded-xl bg-white/20 backdrop-blur text-white py-2.5 text-[10px] font-semibold border border-white/10 hover:bg-white/30 active:scale-[0.98] transition-all"
+                        >
+                          Unirme a la misión <span className="ml-1">→</span>
+                        </Link>
                       </div>
                     </div>
-
-                    <Link
-                      to="/app/mision/$missionId"
-                      params={{ missionId: activeMission.id }}
-                      className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white py-3.5 font-semibold text-sm shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    >
-                      Unirme a la misión
-                    </Link>
                   </div>
 
                   {/* — DETAILS — expands on drag up */}

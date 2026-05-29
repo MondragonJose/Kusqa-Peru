@@ -72,9 +72,13 @@ export function renderMissionMarkers({
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
         </div>
         <p class="text-muted-foreground line-clamp-2 leading-relaxed mb-2">${mission.description}</p>
-        <div class="flex items-center justify-between mt-2 pt-2 border-t border-border/20 text-[10px]">
-          <span class="font-semibold text-accent flex items-center gap-0.5">🔥 +${mission.xp} XP</span>
-          <span class="text-muted-foreground">${mission.district}</span>
+        <div class="flex items-center justify-between pt-2 border-t border-border/20">
+          <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+            <span>📍</span> ${mission.district}
+          </span>
+          <a href="/app/mision/${mission.id}" class="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1.5 text-[9px] font-bold shadow-sm hover:opacity-90 transition-all">
+            Unirme →
+          </a>
         </div>
       </div>
     `;

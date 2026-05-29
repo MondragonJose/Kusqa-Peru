@@ -7,12 +7,15 @@ interface CrossingOverlayProps {
   emoji: string;
   avatar: string;
   onComplete: () => void;
+  /** When true, prevents auto-dismiss — used while mutation is in flight */
+  hold?: boolean;
 }
 
-export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete }: CrossingOverlayProps) {
+export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete, hold = false }: CrossingOverlayProps) {
   const prefersReducedMotion = useReducedMotion();
   const [canDismiss, setCanDismiss] = useState(false);
   const completedRef = useRef(false);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const complete = useCallback(() => {
     if (!completedRef.current) {
@@ -26,15 +29,28 @@ export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete }: C
       completedRef.current = false;
       setCanDismiss(false);
       const dismissTimer = setTimeout(() => setCanDismiss(true), 900);
-      const autoTimer = setTimeout(complete, 2500);
+      // Only start the 2500ms auto-dismiss if not held
+      if (!hold) {
+        autoTimerRef.current = setTimeout(complete, 2500);
+      }
       return () => {
         clearTimeout(dismissTimer);
-        clearTimeout(autoTimer);
+        if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
       };
     } else {
       setCanDismiss(false);
     }
-  }, [open, complete]);
+  }, [open, complete, hold]);
+
+  // When hold is released (mutation resolved), start the auto-dismiss timer
+  useEffect(() => {
+    if (open && !hold && !completedRef.current) {
+      autoTimerRef.current = setTimeout(complete, 1200);
+    }
+    return () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    };
+  }, [open, hold, complete]);
 
   const handleDismiss = () => {
     if (canDismiss) complete();

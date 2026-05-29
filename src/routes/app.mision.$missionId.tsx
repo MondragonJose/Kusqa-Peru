@@ -485,12 +485,13 @@ function MissionDetail() {
         missionId={selectedStoryId}
       />
 
-      {/* Crossing ritual overlay */}
+      {/* Crossing ritual overlay — stays open until mutation resolves */}
       <CrossingOverlay
         open={crossingOpen}
         gradient={meta.gradient}
         emoji={entity.emoji}
         avatar={currentUser?.avatar ?? ""}
+        hold={joinMutation.isPending}
         onComplete={handleCrossingComplete}
       />
     </div>
