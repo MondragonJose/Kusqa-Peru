@@ -5,7 +5,97 @@
  * Consolidated from multiple sources to provide single source of truth.
  */
 
-import type { MapCoords, Region } from "@/types";
+import type { MapCoords, Mission, Region } from "@/types";
+
+/**
+ * SVG coordinates for known districts within the 240×360 Peru silhouette viewBox.
+ * Fallback to region center when district string doesn't match.
+ */
+const DISTRICT_SVG_COORDS: Record<string, { x: number; y: number }> = {
+  barranco: { x: 75, y: 105 },
+  miraflores: { x: 77, y: 103 },
+  sjl: { x: 80, y: 108 },
+  trujillo: { x: 60, y: 75 },
+  "cusco-dist": { x: 125, y: 165 },
+  chinchero: { x: 130, y: 158 },
+  urubamba: { x: 135, y: 155 },
+  "puno-dist": { x: 120, y: 245 },
+  "iquitos-dist": { x: 160, y: 65 },
+};
+
+const REGION_SVG_CENTER: Record<Region, { x: number; y: number }> = {
+  costa: { x: 85, y: 100 },
+  sierra: { x: 125, y: 180 },
+  selva: { x: 145, y: 275 },
+};
+
+export type ActivatedDistrict = {
+  name: string;
+  region: Region;
+  missionCount: number;
+  svgX: number;
+  svgY: number;
+};
+
+export type Footprint = {
+  visitedRegions: Region[];
+  exploredRegions: Region[];
+  activeDistricts: ActivatedDistrict[];
+  totalMissions: number;
+};
+
+function districtSvgCoords(district: string, region: Region): { x: number; y: number } {
+  const key = district.toLowerCase().trim();
+  const known = DISTRICT_SVG_COORDS[key];
+  if (known) return known;
+  const partial = Object.entries(DISTRICT_SVG_COORDS).find(([k]) => key.includes(k) || k.includes(key));
+  if (partial) return partial[1];
+  return REGION_SVG_CENTER[region];
+}
+
+/** Aggregate mission timeline into a Footprint — pure, memoizable. */
+export function computeFootprint(missions: Mission[]): Footprint {
+  const districtMap = new Map<string, { count: number; region: Region }>();
+  const regionCount = new Map<Region, number>();
+
+  for (const m of missions) {
+    const d = m.district || "unknown";
+    const cur = districtMap.get(d);
+    districtMap.set(d, { count: (cur?.count ?? 0) + 1, region: m.region });
+    regionCount.set(m.region, (regionCount.get(m.region) ?? 0) + 1);
+  }
+
+  const activeDistricts: ActivatedDistrict[] = [];
+  for (const [name, data] of districtMap) {
+    const coords = districtSvgCoords(name, data.region);
+    activeDistricts.push({
+      name,
+      region: data.region,
+      missionCount: data.count,
+      svgX: coords.x,
+      svgY: coords.y,
+    });
+  }
+
+  activeDistricts.sort((a, b) => a.region.localeCompare(b.region));
+
+  const visitedRegions: Region[] = [];
+  const exploredRegions: Region[] = [];
+  for (const [region, count] of regionCount) {
+    visitedRegions.push(region);
+    if (count >= 3) exploredRegions.push(region);
+  }
+
+  visitedRegions.sort((a, b) => a.localeCompare(b));
+  exploredRegions.sort((a, b) => a.localeCompare(b));
+
+  return {
+    visitedRegions,
+    exploredRegions,
+    activeDistricts,
+    totalMissions: missions.length,
+  };
+}
 
 /**
  * Infer region from district name using keyword matching.

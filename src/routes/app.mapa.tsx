@@ -110,7 +110,7 @@ function MapPage() {
             Atlas Territorial <Sparkles className="h-4 md:h-6 w-4 md:w-6 text-accent" />
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5 lg:mt-1">
-            Explora misiones activas en todo el Perú.
+            Rutas activas en todo el Perú.
           </p>
           {missionsLoading && (
             <p className="text-[10px] lg:text-xs text-muted-foreground mt-0.5 lg:mt-1 font-medium">Cargando…</p>
@@ -283,9 +283,9 @@ function MapPage() {
             ) : (
               <div className="flex-1 rounded-3xl border border-dashed border-border/60 p-8 text-center flex flex-col items-center justify-center bg-card">
                 <div className="text-4xl mb-3">🗺️</div>
-                <h3 className="font-display font-bold text-sm text-foreground">Sin misiones en este distrito</h3>
+                <h3 className="font-display font-bold text-sm text-foreground">Aún sin rutas activas aquí</h3>
                 <p className="text-[11px] text-muted-foreground mt-2 max-w-[220px] leading-relaxed">
-                  Explora otros distritos del Perú para encontrar misiones activas.
+                  Explora otros distritos del Perú y sé el primero en activar este territorio.
                 </p>
                 <button
                   onClick={() => updateFilters({ district: "todas", region: "todas" })}
@@ -299,73 +299,78 @@ function MapPage() {
         </div>
       </div>
 
-      {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer */}
-      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["148px", "85vh"]}>
+      {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer — territorial destination preview */}
+      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["38%", "85vh"]}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
           <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
-            <div className="p-5 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
-              <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-6 shrink-0" />
-              
+            <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
+              <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
+
               {activeMission && (
-                <div className="space-y-5">
-                  <div className="flex items-start gap-4">
-                    <span className="text-5xl p-3 bg-secondary rounded-2xl leading-none select-none">{activeMission.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] uppercase font-bold text-accent tracking-wider">
-                        {activeMission.category} · {activeMission.difficulty}
-                      </div>
-                      <h3 className="font-display font-bold text-xl text-foreground mt-1">{activeMission.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <MapPin className="h-3 w-3 shrink-0" /> {activeMission.district}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground leading-relaxed pt-2 border-t border-border/10">
-                    {activeMission.description}
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { l: "Puntos XP", v: `+${activeMission.xp}` },
-                      { l: "Cupos libres", v: activeMission.spotsLeft },
-                      { l: "Dificultad", v: activeMission.difficulty },
-                    ].map((s, idx) => (
-                      <div key={idx} className="rounded-xl bg-secondary/50 border border-border/10 p-3 text-center">
-                        <div className="font-bold text-foreground text-xs">{s.v}</div>
-                        <div className="text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5">{s.l}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="rounded-xl bg-accent/5 border border-accent/15 p-4 text-xs">
-                    <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">Impacto comunitario</div>
-                    <div className="font-bold text-foreground">{activeMission.impact}</div>
-                  </div>
-
-                  {activeMission.organizer && (
-                    <div className="flex items-center gap-3 pt-3 border-t border-border/10 text-xs">
-                      <span className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-base select-none">
-                        {activeMission.organizer.avatar}
-                      </span>
-                      <div>
-                        <div className="text-[9px] text-muted-foreground">Organizador</div>
-                        <div className="font-bold text-foreground">{activeMission.organizer.name}</div>
+                <>
+                  {/* — PREVIEW — territorial destination card visible at first snap point */}
+                  <div className="px-5 pb-4">
+                    <div className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-5 text-white relative overflow-hidden shadow-card`}>
+                      <div className="absolute inset-0 bg-mesh opacity-25 pointer-events-none" />
+                      <div className="relative z-10">
+                        <span className="text-5xl filter drop-shadow-md select-none">{activeMission.emoji}</span>
+                        <div className="mt-3 text-[10px] uppercase tracking-widest font-bold opacity-85">
+                          {REGION_META[activeMission.region].name} · {activeMission.category}
+                        </div>
+                        <h3 className="font-display font-bold text-xl mt-0.5 leading-tight">{activeMission.title}</h3>
+                        <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" /> {activeMission.district}
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  <div className="pt-4 flex gap-2">
                     <Link
                       to="/app/mision/$missionId"
                       params={{ missionId: activeMission.id }}
-                      className="w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white py-3.5 font-semibold text-xs shadow-glow hover:scale-[1.02] transition-opacity"
+                      className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white py-3.5 font-semibold text-sm shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
                       Unirme a la misión
                     </Link>
                   </div>
-                </div>
+
+                  {/* — DETAILS — expands on drag up */}
+                  <div className="px-5 pb-6 space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed pt-4 border-t border-border/10">
+                      {activeMission.description}
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { l: "Puntos XP", v: `+${activeMission.xp}` },
+                        { l: "Cupos libres", v: activeMission.spotsLeft },
+                        { l: "Dificultad", v: activeMission.difficulty },
+                      ].map((s, idx) => (
+                        <div key={idx} className="rounded-xl bg-secondary/50 border border-border/10 p-3 text-center">
+                          <div className="font-bold text-foreground text-xs">{s.v}</div>
+                          <div className="text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5">{s.l}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-xl bg-accent/5 border border-accent/15 p-4 text-sm">
+                      <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">Impacto comunitario</div>
+                      <div className="font-bold text-foreground">{activeMission.impact}</div>
+                    </div>
+
+                    {activeMission.organizer && (
+                      <div className="flex items-center gap-3 pt-3 border-t border-border/10 text-xs">
+                        <span className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-base select-none">
+                          {activeMission.organizer.avatar}
+                        </span>
+                        <div>
+                          <div className="text-[9px] text-muted-foreground">Organizador</div>
+                          <div className="font-bold text-foreground">{activeMission.organizer.name}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </Drawer.Content>

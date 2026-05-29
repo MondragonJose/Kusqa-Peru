@@ -836,7 +836,7 @@ function Landing(): JSX.Element {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="px-5 lg:px-8 pb-24">
+      <section id="comienza" className="px-5 lg:px-8 pb-24">
         <div className="mx-auto max-w-7xl">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-sunrise p-10 lg:p-16 text-center text-white shadow-lift">
             <div className="absolute inset-0 bg-mesh opacity-30" />
@@ -889,8 +889,8 @@ function Landing(): JSX.Element {
               <a href="#movimiento" className="hover:text-foreground transition-colors">Manifiesto</a>
               <a href="#expediciones" className="hover:text-foreground transition-colors">Expediciones</a>
               <a href="#voces" className="hover:text-foreground transition-colors">Voces</a>
-              <a href="#" className="hover:text-foreground transition-colors">Aliados</a>
-              <a href="#" className="hover:text-foreground transition-colors">Contacto</a>
+              <a href="#movimiento" className="hover:text-foreground transition-colors">Aliados</a>
+              <a href="#comienza" className="hover:text-foreground transition-colors">Contacto</a>
             </nav>
           </div>
           <div className="mt-6 text-xs text-muted-foreground/60">

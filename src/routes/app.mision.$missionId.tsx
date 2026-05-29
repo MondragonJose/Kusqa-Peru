@@ -1,15 +1,15 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Calendar, Users, Trophy, ArrowLeft, ArrowRight, Share2, Heart, ShieldCheck, Compass, Sparkles } from "lucide-react";
+import { MapPin, Calendar, Users, ArrowLeft, ArrowRight, Share2, Heart, Compass, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { CrossingOverlay } from "@/components/CrossingOverlay";
 import { REGION_META } from "@/constants/gamification";
 import { MissionStoryModal } from "@/features/missions";
 import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
-import { CivicEntity, isMission, isProposal } from "@/types/entity";
 import type { Region } from "@/types";
 import { formatRelativeDate } from "@/utils/date";
 
@@ -54,36 +54,45 @@ function MissionDetail() {
 
   const currentUser = useCurrentUser();
   const joinMutation = useJoinUserMission();
-  const didFireSuccess = useRef(false);
   const didFireError = useRef(false);
-
-  useEffect(() => {
-    if (joinMutation.isSuccess && !didFireSuccess.current) {
-      didFireSuccess.current = true;
-      toast.success("¡Te has unido a la misión!", {
-        description: "Tu expedición cívica ha comenzado. Revisa tu bitácora de impacto.",
-      });
-    }
-  }, [joinMutation.isSuccess]);
-
-  useEffect(() => {
-    if (joinMutation.isError && !didFireError.current) {
-      didFireError.current = true;
-      const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
-      if (msg.includes("duplicate") || msg.includes("already")) {
-        toast.info("Ya formas parte de esta misión.");
-      } else {
-        toast.error("No se pudo unir a la misión. Intenta de nuevo.");
-      }
-    }
-    if (!joinMutation.isError) didFireError.current = false;
-  }, [joinMutation.isError, joinMutation.error]);
+  const joiningRef = useRef(false);
 
   const { data: timeline } = useProfileMissionTimeline();
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
 
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [crossingOpen, setCrossingOpen] = useState(false);
+  const [heroInView, setHeroInView] = useState(true);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useRef(
+    typeof window !== "undefined"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ).current;
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroInView(entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (joinMutation.isError && !didFireError.current && !crossingOpen) {
+      didFireError.current = true;
+      const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
+      if (msg.includes("duplicate") || msg.includes("already")) {
+        toast.info("Ya estás en esta ruta.");
+      } else {
+        toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
+      }
+    }
+    if (!joinMutation.isError) didFireError.current = false;
+  }, [joinMutation.isError, joinMutation.error, crossingOpen]);
 
   const similarMissions = useMemo(() => {
     if (!entity) return [];
@@ -98,12 +107,31 @@ function MissionDetail() {
   };
 
   const handleJoinMission = () => {
+    if (joiningRef.current) return;
     if (!currentUser) {
-      toast.error("Debes iniciar sesión para unirte a una misión.");
+      toast.error("Debes iniciar sesión para iniciar una ruta.");
       return;
     }
     if (alreadyJoined || joinMutation.isSuccess) return;
+    joiningRef.current = true;
+    setCrossingOpen(true);
     joinMutation.mutate({ missionId });
+  };
+
+  const handleCrossingComplete = () => {
+    joiningRef.current = false;
+    setCrossingOpen(false);
+    if (joinMutation.isError) {
+      didFireError.current = true;
+      const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
+      setTimeout(() => {
+        if (msg.includes("duplicate") || msg.includes("already")) {
+          toast.info("Ya estás en esta ruta.");
+        } else {
+          toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
+        }
+      }, 200);
+    }
   };
 
   if (isLoading) {
@@ -154,26 +182,32 @@ function MissionDetail() {
           {joinMutation.isPending ? (
             <span className="flex items-center gap-2">
               <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              Uniéndote...
+              Ingresando...
             </span>
           ) : alreadyJoined || joinMutation.isSuccess ? (
-            <span className="flex items-center gap-2">
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.5 }}>✨</motion.span>
-              ¡Ya eres parte!
-            </span>
+            <span className="flex items-center gap-2">✨ Estás en ruta</span>
           ) : (
-            "Unirme a la misión"
+            "Iniciar ruta"
           )}
         </motion.button>
       </div>
 
       {/* Hero */}
       <motion.div
+        ref={heroRef}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         className={`relative overflow-hidden rounded-3xl ${meta.gradient} text-white p-4 sm:p-6 lg:p-12 shadow-glow`}
       >
         <div className="absolute inset-0 bg-mesh opacity-30 pointer-events-none" />
+        {/* Pre-click breathing — the territory feels alive when in view */}
+        {heroInView && !prefersReducedMotion && (
+          <motion.div
+            className={`absolute inset-0 ${meta.gradient} pointer-events-none`}
+            animate={{ opacity: [0, 0.03, 0] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
         <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
@@ -214,16 +248,13 @@ function MissionDetail() {
                 {joinMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 rounded-full border-2 border-foreground/40 border-t-foreground animate-spin" />
-                    Uniéndote...
+                    Ingresando...
                   </span>
                 ) : alreadyJoined || joinMutation.isSuccess ? (
-                  <span className="flex items-center gap-2">
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.5 }}>✨</motion.span>
-                    ¡Ya eres parte!
-                  </span>
+                  <span className="flex items-center gap-2">✨ Ya estás en ruta</span>
                 ) : (
                   <>
-                    Unirme a la misión <ArrowRight className="h-4 w-4" />
+                    Iniciar ruta <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </motion.button>
@@ -269,9 +300,9 @@ function MissionDetail() {
             <h2 className="font-display font-black text-xl mb-3 text-foreground flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
-              Esta acción fortalece el tejido comunitario en {entity.district}, generando impacto visible en {entity.impact || 'el entorno local'}. Al participar, contribuyes a construir una ciudad más participativa y consciente.
-            </p>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
+                Esta ruta fortalece el tejido comunitario en {entity.district}, generando impacto visible en {entity.impact || 'el entorno local'}. Cada persona que se suma deja una huella real en su territorio.
+              </p>
           </section>
 
           {/* Expedition timeline stages */}
@@ -300,21 +331,39 @@ function MissionDetail() {
                 </div>
               ))}
             </div>
+            <p className="text-[10px] text-muted-foreground/60 mt-4 italic">Los horarios son referenciales — la ruta final se coordina con el grupo.</p>
           </section>
 
-          {/* Participants group */}
+          {/* Participants group — count-based, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({entity.participants})</h2>
-            <div className="flex flex-wrap gap-2">
-              {["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"].map((e, i) => (
-                <div key={i} className="h-11 w-11 rounded-xl bg-secondary/80 hover:bg-secondary grid place-items-center text-lg hover:scale-110 transition-all select-none border border-border/10 cursor-default">
-                  {e}
-                </div>
-              ))}
-              <div className="h-11 px-4 rounded-xl bg-secondary/80 grid place-items-center text-xs font-black text-muted-foreground border border-border/10">
-                +{Math.max(0, entity.participants - 10)} más
+            {entity.participants > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  const pool = ["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"];
+                  const show = Math.max(1, Math.min(entity.participants, pool.length));
+                  const remaining = entity.participants - show;
+                  return (
+                    <>
+                      {pool.slice(0, show).map((e, i) => (
+                        <div key={i} className="h-11 w-11 rounded-xl bg-secondary/80 hover:bg-secondary grid place-items-center text-lg hover:scale-110 transition-all select-none border border-border/10 cursor-default">
+                          {e}
+                        </div>
+                      ))}
+                      {remaining > 0 && (
+                        <div className="h-11 px-4 rounded-xl bg-secondary/80 grid place-items-center text-xs font-black text-muted-foreground border border-border/10">
+                          +{remaining} más
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
-            </div>
+            ) : (
+              <div className="text-sm text-muted-foreground font-medium bg-secondary/30 rounded-2xl p-4 text-center">
+                Sé el primero en unirte a esta ruta.
+              </div>
+            )}
           </section>
 
           {/* Connected Misiones Similares / Otras rutas cercanas */}
@@ -333,7 +382,7 @@ function MissionDetail() {
                     <div className="flex items-start justify-between">
                       <span className="text-3xl p-2 bg-secondary rounded-xl leading-none select-none">{sim.emoji}</span>
                       <span className="text-[8px] uppercase tracking-widest font-black bg-secondary px-2 py-0.5 rounded border border-border/20 text-muted-foreground">
-                        Actividad
+                        Ruta
                       </span>
                     </div>
 
@@ -368,7 +417,7 @@ function MissionDetail() {
             ) : (
               <div className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6 text-center`}>
                 <p className="text-sm text-muted-foreground font-medium">
-                  Eres el primero en explorar esta zona de {meta.name}. Pronto habrá más acciones comunitarias aquí.
+                  Sé el pionero de esta ruta en {meta.name}. El territorio se activa con quienes se suman.
                 </p>
               </div>
             )}
@@ -402,19 +451,27 @@ function MissionDetail() {
                 {joinMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    Uniéndote...
+                    Ingresando...
                   </span>
                 ) : alreadyJoined || joinMutation.isSuccess ? (
-                  <span className="flex items-center gap-2">
-                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.5 }}>✨</motion.span>
-                    ¡Ya eres parte de esta misión!
-                  </span>
+                  <span className="flex items-center gap-2">✨ Ya estás en ruta</span>
                 ) : (
-                  "Unirme a la misión"
+                  "Iniciar ruta"
                 )}
               </motion.button>
-              <button className="w-full rounded-2xl border border-border px-4 py-3 text-xs font-black uppercase tracking-wider hover:bg-secondary/40 transition-colors cursor-pointer">
-                Invitar amigos
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: entity.title, url: window.location.href });
+                  } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                      toast.success("Enlace copiado", { description: "Comparte esta ruta con tu comunidad." });
+                    });
+                  }
+                }}
+                className="w-full rounded-2xl border border-border px-4 py-3 text-xs font-black uppercase tracking-wider hover:bg-secondary/40 transition-colors cursor-pointer"
+              >
+                Compartir ruta
               </button>
             </div>
           </div>
@@ -426,6 +483,15 @@ function MissionDetail() {
         isOpen={storyOpen}
         onClose={() => setStoryOpen(false)}
         missionId={selectedStoryId}
+      />
+
+      {/* Crossing ritual overlay */}
+      <CrossingOverlay
+        open={crossingOpen}
+        gradient={meta.gradient}
+        emoji={entity.emoji}
+        avatar={currentUser?.avatar ?? ""}
+        onComplete={handleCrossingComplete}
       />
     </div>
   );

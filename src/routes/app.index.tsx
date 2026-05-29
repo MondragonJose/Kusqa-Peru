@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { MapPin, Sparkles, ArrowRight, Users, TrendingUp, Heart, Compass, CompassIcon, RefreshCw, X } from "lucide-react";
+import { MapPin, Sparkles, ArrowRight, Users, Compass, CompassIcon, RefreshCw } from "lucide-react";
+import { Drawer } from "vaul";
 import { REGION_META } from "@/constants/gamification";
 import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { useProgression } from "@/features/progression";
@@ -9,6 +10,8 @@ import { useProgression } from "@/features/progression";
 import { useMissions } from "@/hooks/useMissions";
 import { useAllProposals } from "@/features/proposals";
 import { Onboarding } from "@/components/Onboarding";
+import { TerritorialFootprint } from "@/components/TerritorialFootprint";
+import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import type { Region, Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Proposal } from "@/services/proposalContract";
 import { useQueryClient } from "@tanstack/react-query";
@@ -65,6 +68,7 @@ function Dashboard() {
   const [selectedEntity, setSelectedEntity] = useState<CivicEntity | null>(null);
   const queryClient = useQueryClient();
 
+  const { data: timeline, isLoading: timelineLoading } = useProfileMissionTimeline();
   const isLoading = missionsLoading || proposalsLoading;
 
   const handleRefreshMissions = () => {
@@ -168,11 +172,11 @@ function Dashboard() {
               </span>
             </div>
             <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05]">
-              Participa en misiones <br/>
-              <span className="bg-clip-text text-transparent bg-gradient-sunrise">reales en tu territorio.</span>
+              Tu territorio <br/>
+              <span className="bg-clip-text text-transparent bg-gradient-sunrise">está en movimiento.</span>
             </h1>
             <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed">
-              Únete a expediciones cívicas, conecta con jóvenes de todo el Perú y genera impacto visible.
+              Jóvenes de todo el Perú ya están transformando sus distritos. Descubre las rutas activas cerca de ti.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/app/mapa" className={`inline-flex items-center gap-2 ${conventions.button.primary}`}>
@@ -185,6 +189,31 @@ function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* Tu huella en el territorio — footprint section */}
+      <section className="relative rounded-2xl bg-card border border-border/80 p-5 sm:p-7">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          <div className="shrink-0">
+            {timelineLoading ? (
+              <div className="w-[120px] h-[180px] bg-secondary/50 rounded-xl animate-pulse" />
+            ) : (
+              <TerritorialFootprint missions={timeline?.missions ?? []} compact />
+            )}
+          </div>
+          <div className="text-center sm:text-left">
+            <h2 className="font-display font-black text-lg sm:text-xl text-foreground tracking-tight flex items-center justify-center sm:justify-start gap-2">
+              <span className="text-lg">🦶</span> Tu huella en el territorio
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium leading-relaxed max-w-sm">
+              {timelineLoading
+                ? "Cargando tu huella..."
+                : (timeline?.missions?.length ?? 0) > 0
+                  ? "Cada misión deja una marca en el mapa. Las rutas que has recorrido ya son parte de tu memoria territorial."
+                  : "Explora misiones para comenzar a dejar tu huella en el territorio."}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Territorios en Movimiento — Horizontally scrollable expedition cards */}
       <section className="space-y-4 relative">
@@ -199,7 +228,7 @@ function Dashboard() {
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Explora expediciones activas en cada territorio del Perú.</p>
           </div>
           <Link to="/app/mapa" className="text-xs uppercase tracking-wider text-primary font-bold hover:underline inline-flex items-center gap-1">
-            Ir al mapa <ArrowRight className="h-3.5 w-3.5" />
+            Explorar territorio <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -299,9 +328,9 @@ function Dashboard() {
                 <div className="px-4 pb-4 pt-1">
                   <Link
                     to={t.link}
-                    className="w-full inline-flex justify-center items-center py-2.5 rounded-xl bg-secondary hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors text-[10px] font-black uppercase tracking-wider text-foreground"
+                    className="w-full inline-flex justify-center items-center py-2.5 rounded-xl bg-gradient-sunrise text-white hover:opacity-90 transition-all text-[10px] font-black uppercase tracking-wider shadow-sm"
                   >
-                    Explorar
+                    Explorar ruta
                   </Link>
                 </div>
               </motion.div>
@@ -315,16 +344,15 @@ function Dashboard() {
       {/* Estos widgets compiten con contenido de misiones y aumentan carga cognitiva */}
       {/* Progress movido a página /app/progreso, Community Pulse eliminado */}
 
-      {/* Actividad reciente — unified feed, simplified */}
+      {/* En movimiento — unified feed, simplified */}
       <section className="space-y-2">
         <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-          <Sparkles className="h-5 w-5 text-accent" /> Actividad reciente
+          <Sparkles className="h-5 w-5 text-accent" /> En movimiento
         </h2>
         <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
           {feedItems.length > 0 ? (
             feedItems.map((item) => {
               const isMissionEntity = isMission(item);
-              const isProposalEntity = isProposal(item);
               return (
               <button
                 key={item.id}
@@ -337,7 +365,6 @@ function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs lg:text-sm text-foreground font-bold truncate flex items-center gap-1">
                     {item.title}
-                    {isProposalEntity && <span className="text-[8px] text-violet-500 font-semibold shrink-0">(propuesta)</span>}
                   </div>
                   <div className="text-[9px] lg:text-[10px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
                     <MapPin className="h-2.5 w-2.5 opacity-60" /> <span className="truncate">{item.district}</span>
@@ -353,73 +380,69 @@ function Dashboard() {
           ) : (
             <div className="p-6 text-center">
               <div className="text-2xl mb-2">🗺️</div>
-              <p className="text-sm text-muted-foreground font-medium">Explorando el territorio</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Descubre misiones activas en el mapa.</p>
+              <p className="text-sm text-muted-foreground font-medium">Tu territorio está en calma</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Explora el mapa y activa nuevas rutas.</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Bottom Sheet para detalle de entidad */}
-      <AnimatePresence>
-        {selectedEntity && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedEntity(null)}
-              className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-            />
-            {/* Bottom Sheet */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card rounded-t-3xl border-t border-border/60 shadow-2xl max-h-[80vh] overflow-y-auto"
-            >
-              <div className="p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-2xl border border-border/30">
-                      {selectedEntity.emoji || "🗺️"}
+      {/* Vaul Drawer — feed entity preview with territorial gradient card */}
+      <Drawer.Root open={selectedEntity !== null} onOpenChange={(open) => { if (!open) setSelectedEntity(null); }} snapPoints={["38%", "85vh"]}>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
+          <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
+            <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
+              <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
+
+              {selectedEntity && (() => {
+                const meta = REGION_META[selectedEntity.region];
+                return (
+                  <>
+                    {/* — PREVIEW — territorial destination card visible at first snap point */}
+                    <div className="px-5 pb-4">
+                      <div className={`rounded-2xl ${meta.gradient} p-5 text-white relative overflow-hidden shadow-card`}>
+                        <div className="absolute inset-0 bg-mesh opacity-25 pointer-events-none" />
+                        <div className="relative z-10">
+                          <span className="text-5xl filter drop-shadow-md select-none">{selectedEntity.emoji}</span>
+                          <div className="mt-3 text-[10px] uppercase tracking-widest font-bold opacity-85">
+                            {meta.name} · {selectedEntity.category}
+                          </div>
+                          <h3 className="font-display font-bold text-xl mt-0.5 leading-tight">{selectedEntity.title}</h3>
+                          <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" /> {selectedEntity.district}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Link
+                        to="/app/mision/$missionId"
+                        params={{ missionId: selectedEntity.id }}
+                        onClick={() => setSelectedEntity(null)}
+                        className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white py-3.5 font-semibold text-sm shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      >
+                        Explorar ruta
+                      </Link>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{selectedEntity.title}</h3>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {selectedEntity.district}
+
+                    {/* — DETAILS — expands on drag up */}
+                    <div className="px-5 pb-6 space-y-4">
+                      <p className="text-sm text-muted-foreground leading-relaxed pt-4 border-t border-border/10">
+                        {selectedEntity.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{selectedEntity.participants} personas en esta ruta</span>
                       </div>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedEntity(null)}
-                    className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{selectedEntity.description}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    <span>{selectedEntity.participants} participantes</span>
-                  </div>
-                  <Link
-                    to="/app/mision/$missionId"
-                    params={{ missionId: selectedEntity.id }}
-                    onClick={() => setSelectedEntity(null)}
-                    className="block w-full text-center py-3 rounded-xl bg-gradient-sunrise text-white font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    Ver detalles completos
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  </>
+                );
+              })()}
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </div>
     </>
   );

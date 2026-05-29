@@ -166,7 +166,7 @@ export function Profile() {
                   {user.name}
                 </h1>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${REGION_BADGES[user.region]}`}>
-                  Expedición {user.region}
+                  {REGION_META[user.region].emoji} {REGION_META[user.region].name}
                 </span>
                 
                 {/* Civic Trust Reputation Badge */}
@@ -195,7 +195,7 @@ export function Profile() {
 
               {/* Bio / Interests */}
               <div className="mt-3 text-sm text-muted-foreground/80 leading-relaxed max-w-2xl">
-                Explorador cívico comprometido con transformar la participación invisible en impacto visible. Me interesa fortalecer el tejido comunitario a través de acciones territoriales concretas.
+                A pie por mi territorio, conectando con mi gente y construyendo comunidad.
               </div>
             </div>
 
@@ -209,17 +209,19 @@ export function Profile() {
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-t border-border/60 pt-6">
+          {/* Stats Bar — with territorial gradient accent */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-t border-border/60 pt-6 relative">
+            <div className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region].gradient}`} />
             {[
               { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
-              { l: "Misiones", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
+              { l: "Rutas", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
               { l: "Regiones", v: activeRegions.length, i: "🏔️", color: "text-accent" },
               { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
-              <div key={s.l} className="rounded-2xl bg-secondary/55 p-3 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3">
-                <span className="text-2xl sm:text-3xl filter drop-shadow-sm">{s.i}</span>
-                <div>
+              <div key={s.l} className="rounded-2xl bg-secondary/55 p-3 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+                <div className={`absolute inset-0 opacity-[0.04] ${REGION_META[user.region].gradient}`} />
+                <span className="text-2xl sm:text-3xl filter drop-shadow-sm relative">{s.i}</span>
+                <div className="relative">
                   <div className="font-display font-black text-lg sm:text-xl text-foreground leading-none truncate">{s.v}</div>
                   <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{s.l}</div>
                 </div>
@@ -232,12 +234,12 @@ export function Profile() {
       {/* Community Impact Section */}
       <section className="space-y-4">
         <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-          <Heart className="h-5 w-5 text-rose-500" /> Tu Impacto Comunitario
+          <Heart className="h-5 w-5 text-rose-500" /> Huella en el territorio
         </h2>
         <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm">
           {/* Categories */}
           <div className="p-5 border-b border-border/40">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Categorías de participación</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Causas activas</div>
             <div className="flex flex-wrap gap-2">
               {(() => {
                 const categoryCounts: Record<string, number> = {};
@@ -246,7 +248,7 @@ export function Profile() {
                 });
                 const sorted = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
                 if (sorted.length === 0) {
-                  return <div className="text-sm text-muted-foreground">Sin participaciones registradas</div>;
+                  return <div className="text-sm text-muted-foreground">Aún sin participación</div>;
                 }
                 return sorted.slice(0, 4).map(([category, count]: [string, number]) => {
                   const emoji = category === "Medio ambiente" ? "🌱" :
@@ -268,7 +270,7 @@ export function Profile() {
 
           {/* Districts */}
           <div className="p-5 border-b border-border/40">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Distritos de participación</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Distritos recorridos</div>
             <div className="flex flex-wrap gap-2">
               {(() => {
                 const districtCounts: Record<string, number> = {};
@@ -277,7 +279,7 @@ export function Profile() {
                 });
                 const sorted = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
                 if (sorted.length === 0) {
-                  return <div className="text-sm text-muted-foreground">Sin participaciones registradas</div>;
+                  return <div className="text-sm text-muted-foreground">Aún sin participación</div>;
                 }
                 return sorted.slice(0, 4).map(([district, count]: [string, number]) => (
                   <span key={district} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium">
@@ -292,13 +294,13 @@ export function Profile() {
 
           {/* Supported Proposals */}
           <div className="p-5">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Iniciativas apoyadas</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Iniciativas que apoyas</div>
             {(() => {
               try {
                 const stored = localStorage.getItem("kusqa_proposal_supports");
                 const supported = stored ? new Set(JSON.parse(stored)) : new Set();
-                if (supported.size === 0) {
-                  return <div className="text-sm text-muted-foreground">Sin apoyos registrados</div>;
+                  if (supported.size === 0) {
+                    return <div className="text-sm text-muted-foreground">Aún sin apoyos</div>;
                 }
                 return (
                   <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
@@ -320,7 +322,7 @@ export function Profile() {
           {/* Current Stage Card */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-              <Sparkles className="h-5 w-5 text-accent" /> Estado actual
+              <Sparkles className="h-5 w-5 text-accent" /> Ruta actual
             </h2>
             <StageCard stage={currentStage} status="current" userXp={user.xp} />
           </section>
@@ -328,9 +330,9 @@ export function Profile() {
           {/* Civic History - Timeline entries are clickable to show documentary narrative modal */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-              <Clock className="h-5 w-5 text-sky-500" /> Historial
+              <Clock className="h-5 w-5 text-sky-500" /> Bitácora
             </h2>
-            <p className="text-sm text-muted-foreground pl-1">Registro de misiones completadas.</p>
+            <p className="text-sm text-muted-foreground pl-1">Tu bitácora de expediciones.</p>
 
             {completedMissions.length > 0 ? (
               <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
@@ -382,7 +384,7 @@ export function Profile() {
                           </div>
 
                           <div className="mt-3 text-xs text-muted-foreground/80 font-medium leading-relaxed">
-                            Contribuiste a {m.impact.toLowerCase()} en {m.district}, fortaleciendo el tejido comunitario.
+                            Formaste parte de una jornada de {m.category.toLowerCase()} en {m.district}.
                           </div>
 
                           <div className="mt-3 flex gap-4 text-xs text-muted-foreground/80 font-semibold">
@@ -404,8 +406,8 @@ export function Profile() {
             ) : (
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
                 <div className="text-4xl mb-3">🗺️</div>
-                <p className="text-sm text-muted-foreground font-medium">Tu recorrido territorial puede comenzar aquí</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Explora misiones cercanas y participa.</p>
+                <p className="text-sm text-muted-foreground font-medium">                El territorio te espera</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Encuentra tu primera ruta en el mapa.</p>
                 <Link
                   to="/app/mapa"
                   className="inline-flex items-center gap-2 mt-4 text-xs font-black uppercase tracking-wider text-primary hover:underline"
@@ -422,7 +424,7 @@ export function Profile() {
           {/* Identity & Territorial Footprint */}
           <section className="rounded-3xl bg-card border border-border/80 p-6 shadow-sm relative overflow-hidden">
             <h2 className="font-display font-black text-lg text-foreground mb-1">Participación por región</h2>
-            <p className="text-xs text-muted-foreground mb-4">Regiones donde has participado.</p>
+            <p className="text-xs text-muted-foreground mb-4">Tu huella en cada región.</p>
             
             <div className="grid grid-cols-3 gap-2">
               {REGION_THEMES.map((t) => {
@@ -449,7 +451,7 @@ export function Profile() {
             <div className="mt-4 p-3 rounded-2xl bg-muted/50 border border-border/40 text-[11px] text-muted-foreground font-medium flex items-center gap-2">
               <Map className="h-3.5 w-3.5 text-primary/70" />
               <span>
-                Camino activo en <strong className="text-foreground">{activeRegions.length}</strong> de las 3 grandes regiones naturales.
+                Has dejado huella en <strong className="text-foreground">{activeRegions.length}</strong> de las 3 regiones.
               </span>
             </div>
           </section>
@@ -458,13 +460,13 @@ export function Profile() {
           <section className="rounded-3xl bg-card border border-border/80 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="font-display font-black text-lg text-foreground leading-none">Insignias Destacadas</h2>
+                <h2 className="font-display font-black text-lg text-foreground leading-none">Insignias</h2>
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-1.5 block">
                   {userBadges.length} desbloqueadas
                 </span>
               </div>
               <button className="text-[10px] uppercase font-bold text-primary flex items-center gap-0.5 hover:underline">
-                Ver todas <ArrowRight className="h-3 w-3" />
+                Ver más <ArrowRight className="h-3 w-3" />
               </button>
             </div>
 
@@ -477,7 +479,7 @@ export function Profile() {
 
             {userBadges.length === 0 && (
               <div className="text-center py-6 text-xs text-muted-foreground bg-muted/30 border border-dashed border-border rounded-2xl">
-                Completa tu primera misión para desbloquear insignias.
+                Tu primera misión desbloqueará tus primeras insignias.
               </div>
             )}
           </section>
