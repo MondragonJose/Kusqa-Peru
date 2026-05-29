@@ -42,3 +42,7 @@ bun.lockb
 .aider*
 .env
 *.bat
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
