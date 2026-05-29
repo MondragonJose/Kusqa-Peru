@@ -144,7 +144,7 @@ export function Profile() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-24 lg:pb-12">
+    <div className="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-24 lg:pb-12">
       {/* Cover / Profile Card */}
       <section className="relative rounded-3xl overflow-hidden shadow-sm bg-card border border-border">
         {/* Banner with user region's gradient */}
@@ -162,7 +162,7 @@ export function Profile() {
             
             <div className="flex-1 min-w-[240px] pb-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display font-black text-3xl text-foreground tracking-tight">
+                <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">
                   {user.name}
                 </h1>
                 <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${REGION_BADGES[user.region]}`}>
@@ -218,11 +218,11 @@ export function Profile() {
               { l: "Regiones", v: activeRegions.length, i: "🏔️", color: "text-accent" },
               { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
-              <div key={s.l} className="rounded-2xl bg-secondary/55 p-3 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
+              <div key={s.l} className="rounded-2xl bg-secondary/55 p-2.5 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
                 <div className={`absolute inset-0 opacity-[0.04] ${REGION_META[user.region].gradient}`} />
-                <span className="text-2xl sm:text-3xl filter drop-shadow-sm relative">{s.i}</span>
-                <div className="relative">
-                  <div className="font-display font-black text-lg sm:text-xl text-foreground leading-none truncate">{s.v}</div>
+                <span className="text-xl sm:text-3xl filter drop-shadow-sm relative shrink-0">{s.i}</span>
+                <div className="relative min-w-0">
+                  <div className="font-display font-black text-base sm:text-xl text-foreground leading-none truncate max-w-[80px] sm:max-w-none">{s.v}</div>
                   <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{s.l}</div>
                 </div>
               </div>

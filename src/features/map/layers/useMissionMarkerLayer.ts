@@ -14,6 +14,7 @@ type MarkerLayerOptions = {
   missions: Mission[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
+  onRequestDetail?: (id: string) => void;
   markersMap: Map<string, LeafletInstance>;
 };
 
@@ -39,6 +40,7 @@ export function renderMissionMarkers({
   missions,
   selectedMissionId,
   onSelectMission,
+  onRequestDetail,
   markersMap,
 }: MarkerLayerOptions): void {
   missions.forEach((mission) => {
@@ -66,19 +68,23 @@ export function renderMissionMarkers({
     });
 
     const popupHtml = `
-      <div class="p-3 text-xs w-60 font-sans">
-        <div class="flex items-center justify-between border-b border-border/40 pb-2 mb-2">
-          <span class="font-bold text-foreground text-sm truncate">${mission.title}</span>
-          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
+      <div class="p-3 text-xs w-64 font-sans">
+        <div class="flex items-start justify-between gap-2 pb-2 border-b border-border/40">
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-foreground text-sm truncate leading-tight">${mission.title}</div>
+            <div class="text-[9px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <span>📍</span> ${mission.district}
+            </div>
+          </div>
+          <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
         </div>
-        <p class="text-muted-foreground line-clamp-2 leading-relaxed mb-2">${mission.description}</p>
-        <div class="flex items-center justify-between pt-2 border-t border-border/20">
-          <span class="text-[10px] text-muted-foreground flex items-center gap-1">
-            <span>📍</span> ${mission.district}
-          </span>
-          <a href="/app/mision/${mission.id}" class="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1.5 text-[9px] font-bold shadow-sm hover:opacity-90 transition-all">
-            Unirme →
+        <div class="flex items-center gap-2 mt-3">
+          <a href="/app/mision/${mission.id}" class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white py-2 text-[9px] font-bold hover:opacity-90 transition-all">
+            Unirme
           </a>
+          <button class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-2 text-[9px] font-bold hover:bg-secondary transition-all border border-border/30">
+            Ver más →
+          </button>
         </div>
       </div>
     `;
@@ -88,8 +94,26 @@ export function renderMissionMarkers({
       closeButton: false,
       offset: L.point(0, -10),
       className: "custom-map-popup",
+      maxWidth: 280,
     });
     marker.on("click", () => onSelectMission(mission.id));
+
+    // Wire up the "Ver más" button inside the popup to open drawer
+    if (onRequestDetail) {
+      marker.on("popupopen", () => {
+        const popup: any = marker.getPopup();
+        const popupEl: HTMLElement | null = popup?.getElement();
+        if (!popupEl) return;
+        const btn: HTMLElement | null = popupEl.querySelector(".kusqa-detail-btn");
+        if (btn) {
+          btn.onclick = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRequestDetail(mission.id);
+          };
+        }
+      });
+    }
 
     clusterGroup.addLayer(marker);
     markersMap.set(mission.id, marker);

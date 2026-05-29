@@ -27,6 +27,7 @@ type MapViewProps = {
   missions: CivicEntity[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
+  onRequestDetail?: (id: string) => void;
   userCoords: MapCoords | null;
   userLocationLoading: boolean;
   onRequestUserLocation: () => void;
@@ -40,6 +41,7 @@ export function MapView({
   missions,
   selectedMissionId,
   onSelectMission,
+  onRequestDetail,
   userCoords,
   userLocationLoading,
   onRequestUserLocation,
@@ -240,6 +242,7 @@ export function MapView({
         missions: territoryMissions,
         selectedMissionId,
         onSelectMission,
+        onRequestDetail,
         markersMap: markersMapRef.current,
       });
     }

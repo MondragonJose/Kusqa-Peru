@@ -58,9 +58,12 @@ function MapPage() {
 
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      setIsDrawerOpen(true);
-    }
+    // No auto-open drawer on mobile — Leaflet popup handles quick info + CTA
+  }, []);
+
+  const handleRequestDetail = useCallback((id: string) => {
+    setSelectedId(id);
+    setIsDrawerOpen(true);
   }, []);
 
   // Conditional returns AFTER all hooks
@@ -103,82 +106,65 @@ function MapPage() {
 
   return (
     <div className="space-y-3 lg:space-y-5 max-w-7xl mx-auto px-3 md:px-6 py-1 lg:py-2">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-2 lg:gap-4">
-        <div>
-          <h1 className="font-display font-bold text-xl md:text-3xl tracking-tight text-foreground flex items-center gap-2">
-            Atlas Territorial <Sparkles className="h-4 md:h-6 w-4 md:w-6 text-accent" />
-          </h1>
-          <p className="text-xs md:text-sm text-muted-foreground mt-0.5 lg:mt-1">
-            Rutas activas en todo el Perú.
-          </p>
-          {missionsLoading && (
-            <p className="text-[10px] lg:text-xs text-muted-foreground mt-0.5 lg:mt-1 font-medium">Cargando…</p>
-          )}
-          {missionsError && (
-            <p className="text-[10px] lg:text-xs text-destructive mt-0.5 lg:mt-1 font-medium">Error</p>
-          )}
-        </div>
-
-        {/* User GPS indicator */}
+      {/* Header section — compact on mobile, full on desktop */}
+      <div className="flex items-center justify-between gap-2 lg:gap-4">
+        <h1 className="font-display font-bold text-lg lg:text-3xl tracking-tight text-foreground">
+          Atlas Territorial
+        </h1>
         <div className="flex items-center gap-2">
+          {/* GPS indicator — icon-only on mobile, label on desktop */}
           {userLocationLoading ? (
-            <div className="glass rounded-full px-2.5 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs text-muted-foreground flex items-center gap-1.5">
-              <RefreshCw className={`${iconSize.sm} text-accent`} />
-              <span className="hidden sm:inline">Ubicando…</span>
+            <div className="glass rounded-full p-1.5 lg:px-3 lg:py-1 text-muted-foreground flex items-center gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-accent" />
+              <span className="hidden lg:inline text-xs">Ubicando…</span>
             </div>
           ) : userCoords ? (
-            <div className="glass border-accent/20 rounded-full px-2.5 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs text-accent font-semibold flex items-center gap-1">
-              <Navigation className={`${iconSize.sm} fill-accent`} />
-              <span className="hidden sm:inline">Ubicación</span>
+            <div className="glass border-accent/20 rounded-full p-1.5 lg:px-3 lg:py-1 text-accent flex items-center gap-1">
+              <Navigation className="h-3.5 w-3.5 lg:h-4 lg:w-4 fill-accent" />
+              <span className="hidden lg:inline text-xs font-semibold">Ubicación</span>
             </div>
           ) : (
             <button
               onClick={requestUserLocation}
-              className="glass hover:bg-secondary/60 active:bg-secondary transition-colors rounded-full px-2.5 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs text-muted-foreground flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="glass hover:bg-secondary/60 active:bg-secondary transition-colors rounded-full p-1.5 lg:px-3 lg:py-1 text-muted-foreground cursor-pointer shadow-sm"
             >
-              <Navigation className={iconSize.sm} />
-              <span className="hidden sm:inline">Usar ubicación</span>
+              <Navigation className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
             </button>
           )}
         </div>
       </div>
 
-      {/* P0 FIX: Filtros simplificados - solo search + categoría. Eliminar GPS, autocomplete, difficulty */}
-      <div className="glass rounded-3xl p-2 lg:p-5 border border-border/40 shadow-soft space-y-2 lg:space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Search simple por distrito */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={filters.searchQuery}
-              onChange={(e) => updateFilters({ searchQuery: e.target.value })}
-              placeholder="Buscar distrito..."
-              className="w-full bg-secondary/40 border border-border/30 rounded-2xl pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
-            />
-          </div>
-
-          {/* Filtro por categoría */}
-          <select
-            value={filters.category}
-            onChange={(e) => updateFilters({ category: e.target.value as MissionCategory | "todas" })}
-            className="bg-secondary/40 border border-border/30 rounded-2xl px-4 py-2.5 font-medium text-foreground focus:outline-none focus:border-accent/40 text-sm"
-          >
-            <option value="todas">Todas las causas</option>
-            {availableCategories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+      {/* Filters — compact row on mobile, full panel on desktop */}
+      <div className="flex items-center gap-2 lg:gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={filters.searchQuery}
+            onChange={(e) => updateFilters({ searchQuery: e.target.value })}
+            placeholder="Buscar distrito..."
+            className="w-full bg-secondary/40 border border-border/30 rounded-full pl-9 pr-3 py-2 lg:py-2.5 text-xs lg:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
+          />
         </div>
 
-        {/* Quick district buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        {/* Category select */}
+        <select
+          value={filters.category}
+          onChange={(e) => updateFilters({ category: e.target.value as MissionCategory | "todas" })}
+          className="bg-secondary/40 border border-border/30 rounded-full px-3 py-2 lg:px-4 lg:py-2.5 text-xs lg:text-sm font-medium text-foreground focus:outline-none focus:border-accent/40 appearance-none"
+        >
+          <option value="todas">Todas</option>
+          {availableCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        {/* District buttons — desktop only */}
+        <div className="hidden lg:flex gap-2 overflow-x-auto no-scrollbar">
           <button
-            onClick={() => {
-              updateFilters({ district: "todas", region: "todas" });
-            }}
-            className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer ${
+            onClick={() => updateFilters({ district: "todas", region: "todas" })}
+            className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer shrink-0 ${
               filters.district === "todas"
                 ? "bg-foreground text-background border-foreground shadow-sm"
                 : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
@@ -190,7 +176,7 @@ function MapPage() {
             <button
               key={district}
               onClick={() => updateFilters({ district })}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 ${
+              className={`px-3 py-2 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 shrink-0 ${
                 filters.district === district
                   ? "bg-foreground text-background border-foreground shadow-sm"
                   : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
@@ -206,45 +192,16 @@ function MapPage() {
         {/* Main Map & Interactive Sidebar Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-3 lg:gap-5 items-stretch">
         {/* Dynamic Leaflet Map with focal coords support */}
-        <div className="relative min-h-[calc(100dvh-200px)] lg:h-[640px] w-full order-1 lg:order-1">
+        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full order-1 lg:order-1">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeMission?.id || null}
             onSelectMission={handleSelectMission}
+            onRequestDetail={handleRequestDetail}
             userCoords={userCoords}
             userLocationLoading={userLocationLoading}
             onRequestUserLocation={requestUserLocation}
           />
-
-          {/* Floating mini-card — mobile: contextual mission info without losing map */}
-          {activeMission && (
-            <div
-              onClick={() => setIsDrawerOpen(true)}
-              className="lg:hidden absolute bottom-4 inset-x-4 z-30 rounded-2xl bg-surface/95 backdrop-blur-xl border border-border/50 shadow-lift overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
-            >
-              <div className={`h-[3px] w-full ${REGION_META[activeMission.region].gradient}`} />
-              <div className="flex items-center gap-3 p-3">
-                <span className="text-2xl shrink-0">{activeMission.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="font-display font-semibold text-sm text-foreground truncate leading-tight">
-                    {activeMission.title}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{activeMission.district}</span>
-                  </div>
-                </div>
-                <Link
-                  to="/app/mision/$missionId"
-                  params={{ missionId: activeMission.id }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 inline-flex items-center gap-1 rounded-xl bg-gradient-sunrise text-white px-3.5 py-2 text-[10px] font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  Unirme <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Sidebar — hidden on mobile, drawer handles detail view */}
