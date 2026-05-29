@@ -3,9 +3,7 @@
  */
 
 import { CURRENT_USER } from "@/data/mockData";
-import { missionRepository } from "@/services/missionRepository";
 import { missionResolver } from "@/services/missionResolver";
-import type { UserMissionRow } from "@/services/userMissionRepository";
 import type {
   Mission,
   ProfileMissionTimelineView,
@@ -27,33 +25,6 @@ export function buildTimelineView(missions: Mission[]): ProfileMissionTimelineVi
 
 export function buildTimelineFromEnriched(enriched: UserMission[]): ProfileMissionTimelineView {
   return buildTimelineView(enriched.map((entry) => entry.mission));
-}
-
-export async function enrichRowsToUserMissions(rows: UserMissionRow[]): Promise<UserMission[]> {
-  if (rows.length === 0) {
-    return [];
-  }
-
-  const missionIds = [...new Set(rows.map((row) => row.missionId))];
-  const missions = await missionRepository.findAllByIds(missionIds);
-  const missionById = new Map(missions.map((mission) => [mission.id, mission]));
-
-  return rows.map((row) => {
-    const mission = missionById.get(row.missionId);
-    if (!mission) {
-      throw new Error(`Mission not found: ${row.missionId}`);
-    }
-
-    return {
-      id: row.id,
-      userId: row.userId,
-      missionId: row.missionId,
-      status: row.status,
-      completedAt: row.completedAt,
-      xpEarned: row.xpEarned,
-      mission,
-    };
-  });
 }
 
 /**
@@ -94,7 +65,6 @@ export function buildMockTerritoryProgress(): UserTerritoryProgressView {
 export const userProgressDomainService = {
   buildTimelineView,
   buildTimelineFromEnriched,
-  enrichRowsToUserMissions,
   enrichMissionsToUserMissions,
   buildMockProfileTimeline,
   buildMockTerritoryProgress,

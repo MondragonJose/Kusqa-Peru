@@ -1,80 +1,66 @@
-/**
- * Lightweight proposal support for beta.
- * Uses localStorage for simple tracking without backend complexity.
- * Optimistic UI with visual feedback.
- */
-
-import { useState, useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { proposalRepository } from "@/services/proposalRepository";
+import { proposalSupportKeys } from "@/lib/queryKeys";
+import { userRepository } from "@/services/userRepository";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "kusqa_proposal_supports";
-
-function getSupportedProposals(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
+export function useSupportedProposalIds() {
+  return useQuery({
+    queryKey: proposalSupportKeys.byUser("current"),
+    queryFn: async () => {
+      const userId = await userRepository.getAuthenticatedUserId();
+      if (!userId) return [];
+      return proposalRepository.getSupportedProposalIds(userId);
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 }
-
-function saveSupportedProposals(set: Set<string>) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
-  } catch (e) {
-    console.error("[KUSQA TRACE] Failed to save proposal supports:", e);
-  }
-}
-
-type SupportProposalInput = {
-  proposalId: string;
-};
 
 export function useSupportProposal() {
-  const [supported, setSupported] = useState<Set<string>>(getSupportedProposals);
-  const [isSupporting, setIsSupporting] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: supportedIds = [] } = useSupportedProposalIds();
 
-  const supportProposal = useCallback(async ({ proposalId }: SupportProposalInput) => {
-    if (isSupporting) return;
-    
-    const isAlreadySupported = supported.has(proposalId);
-    
-    if (isAlreadySupported) {
+  const supportMutation = useMutation({
+    mutationFn: (proposalId: string) => proposalRepository.supportProposal(proposalId),
+    onMutate: async (proposalId: string) => {
+      await queryClient.cancelQueries({ queryKey: proposalSupportKeys.byUser("current") });
+      const previous = queryClient.getQueryData<string[]>(proposalSupportKeys.byUser("current"));
+      queryClient.setQueryData<string[]>(proposalSupportKeys.byUser("current"), (old) =>
+        old ? [...old, proposalId] : [proposalId]
+      );
+      return { previous };
+    },
+    onError: (_err, _proposalId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(proposalSupportKeys.byUser("current"), context.previous);
+      }
+      toast.error("No se pudo apoyar la iniciativa. Intenta de nuevo.");
+    },
+    onSuccess: () => {
+      toast.success("¡Gracias por apoyar esta iniciativa!", {
+        description: "Tu apoyo ayuda a movilizar la comunidad",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.byUser("current") });
+    },
+  });
+
+  const supportProposal = async ({ proposalId }: { proposalId: string }) => {
+    if (supportMutation.isPending) return;
+    if (supportedIds.includes(proposalId)) {
       toast.info("Ya apoyaste esta iniciativa");
       return;
     }
+    supportMutation.mutate(proposalId);
+  };
 
-    setIsSupporting(true);
-
-    // Optimistic update
-    const newSupported = new Set(supported);
-    newSupported.add(proposalId);
-    setSupported(newSupported);
-    saveSupportedProposals(newSupported);
-
-    // Simulate async for UX feel
-    await new Promise(resolve => setTimeout(resolve, 600));
-
-    toast.success("¡Gracias por apoyar esta iniciativa!", {
-      description: "Tu apoyo ayuda a movilizar la comunidad",
-    });
-
-    setIsSupporting(false);
-
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA TRACE] Proposal supported:", proposalId);
-    }
-  }, [supported, isSupporting]);
-
-  const isSupported = useCallback((proposalId: string) => {
-    return supported.has(proposalId);
-  }, [supported]);
+  const isSupported = (proposalId: string) => supportedIds.includes(proposalId);
 
   return {
     supportProposal,
     isSupported,
-    isSupporting,
+    isSupporting: supportMutation.isPending,
   };
 }

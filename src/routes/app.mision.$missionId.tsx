@@ -10,7 +10,7 @@ import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
-import type { Region } from "@/types";
+import type { Mission, Region } from "@/types";
 import { formatRelativeDate } from "@/utils/date";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
@@ -85,7 +85,8 @@ function MissionDetail() {
     if (joinMutation.isError && !didFireError.current && !crossingOpen) {
       didFireError.current = true;
       const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
-      if (msg.includes("duplicate") || msg.includes("already")) {
+      const isDuplicate = msg.includes("duplicate") || msg.includes("already") || msg.includes("Ya estás");
+      if (isDuplicate) {
         toast.info("Ya estás en esta ruta.");
       } else {
         toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
@@ -125,7 +126,8 @@ function MissionDetail() {
       didFireError.current = true;
       const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
       setTimeout(() => {
-        if (msg.includes("duplicate") || msg.includes("already")) {
+        const isDuplicate = msg.includes("duplicate") || msg.includes("already") || msg.includes("Ya estás");
+        if (isDuplicate) {
           toast.info("Ya estás en esta ruta.");
         } else {
           toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
@@ -211,7 +213,7 @@ function MissionDetail() {
         <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
-            <div className="text-7xl select-none filter drop-shadow-sm">{entity.emoji}</div>
+            <div className="text-7xl select-none filter drop-shadow-sm">{(entity as Mission).emoji}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
                 {meta.name} · {entity.category}
@@ -231,8 +233,8 @@ function MissionDetail() {
             </h1>
             <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-0.5 text-xs sm:text-xs opacity-90 font-medium">
               <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {entity.district}</span>
-              <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(entity.date)}</span>
-              <span className="hidden sm:inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {entity.participants} participantes</span>
+              <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {formatRelativeDate((entity as Mission).date)}</span>
+              <span className="hidden sm:inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {(entity as Mission).participants} participantes</span>
             </div>
             {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
             <div className="mt-4 sm:mt-6">
@@ -301,7 +303,7 @@ function MissionDetail() {
               <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
             </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
-                Esta ruta fortalece el tejido comunitario en {entity.district}, generando impacto visible en {entity.impact || 'el entorno local'}. Cada persona que se suma deja una huella real en su territorio.
+                Esta ruta fortalece el tejido comunitario en {entity.district}, generando impacto visible en {(entity as Mission).impact || 'el entorno local'}. Cada persona que se suma deja una huella real en su territorio.
               </p>
           </section>
 
@@ -336,13 +338,13 @@ function MissionDetail() {
 
           {/* Participants group — count-based, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
-            <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({entity.participants})</h2>
-            {entity.participants > 0 ? (
+            <h2 className="font-display font-black text-xl mb-4 text-foreground">Participantes ({(entity as Mission).participants})</h2>
+            {(entity as Mission).participants > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {(() => {
                   const pool = ["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"];
-                  const show = Math.max(1, Math.min(entity.participants, pool.length));
-                  const remaining = entity.participants - show;
+                  const show = Math.max(1, Math.min((entity as Mission).participants, pool.length));
+                  const remaining = (entity as Mission).participants - show;
                   return (
                     <>
                       {pool.slice(0, show).map((e, i) => (
@@ -432,33 +434,13 @@ function MissionDetail() {
             <div className="h-px bg-border/60" />
 
             <div className="space-y-3 text-xs">
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Dificultad</span><span className="font-bold text-foreground">{entity?.difficulty || 'N/A'}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Cupos libres</span><span className="font-bold text-accent">{entity?.spotsLeft || 0}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organizador</span><span className="font-bold text-foreground">{entity?.organizer?.name || 'N/A'}</span></div>
-              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Impacto</span><span className="font-bold text-stone-700 dark:text-stone-300 text-right">{entity?.impact || 'N/A'}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Dificultad</span><span className="font-bold text-foreground">{(entity as Mission).difficulty || 'N/A'}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Cupos libres</span><span className="font-bold text-accent">{(entity as Mission).spotsLeft ?? 0}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Organizador</span><span className="font-bold text-foreground">{(entity as Mission).organizer?.name || 'N/A'}</span></div>
+              <div className="flex justify-between font-medium"><span className="text-muted-foreground">Impacto</span><span className="font-bold text-stone-700 dark:text-stone-300 text-right">{(entity as Mission).impact || 'N/A'}</span></div>
             </div>
 
-            <div className="space-y-2 pt-2">
-              <motion.button
-                onClick={handleJoinMission}
-                disabled={alreadyJoined || joinMutation.isPending || joinMutation.isSuccess}
-                className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow hover:scale-[1.02] transition-all cursor-pointer ${
-                  alreadyJoined || joinMutation.isSuccess ? "opacity-90 cursor-default" : ""
-                } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
-                whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.02 } : {}}
-                whileTap={!alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}}
-              >
-                {joinMutation.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    Ingresando...
-                  </span>
-                ) : alreadyJoined || joinMutation.isSuccess ? (
-                  <span className="flex items-center gap-2">✨ Ya estás en ruta</span>
-                ) : (
-                  "Iniciar ruta"
-                )}
-              </motion.button>
+            <div>
               <button
                 onClick={() => {
                   if (navigator.share) {
@@ -489,7 +471,7 @@ function MissionDetail() {
       <CrossingOverlay
         open={crossingOpen}
         gradient={meta.gradient}
-        emoji={entity.emoji}
+        emoji={(entity as Mission).emoji}
         avatar={currentUser?.avatar ?? ""}
         hold={joinMutation.isPending}
         onComplete={handleCrossingComplete}

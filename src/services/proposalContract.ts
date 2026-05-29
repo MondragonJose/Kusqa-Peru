@@ -127,6 +127,22 @@ export type ProposalResult<T = Proposal> =
   | { status: "partial_success"; data: T; warnings: string[] }
   | { status: "error"; error: string };
 
+// ─── Proposal support types ─────────────────────────────────────────────────
+
+export type DbProposalSupportRow = {
+  id: string;
+  user_id: string;
+  proposal_id: string;
+  created_at: string;
+};
+
+export type ProposalSupport = {
+  id: string;
+  userId: string;
+  proposalId: string;
+  createdAt: string;
+};
+
 // ─── DB defaults derived from SQL schema constraints ───────────────────────
 
 export const DB_DEFAULTS = {

@@ -19,6 +19,8 @@ import {
   type UpdateProposalDTO,
   type ProposalResult,
   type DbProposalRow,
+  type DbProposalSupportRow,
+  type ProposalSupport,
   type ProposalRegion,
   type ProposalStatus,
   PROPOSAL_CATEGORIES,
@@ -287,5 +289,82 @@ export const proposalRepository = {
     }
 
     return { status: "success", data: undefined as void };
+  },
+
+  // ─── Proposal supports ───────────────────────────────────────────────────
+
+  async supportProposal(proposalId: string): Promise<ProposalResult<void>> {
+    let userId: string;
+    try {
+      userId = await resolveUserId();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Auth failed";
+      return { status: "error", error: msg };
+    }
+
+    const { error } = await supabase
+      .from("proposal_supports")
+      .insert({ user_id: userId, proposal_id: proposalId });
+
+    if (error) {
+      if (error.code === "23505") {
+        return { status: "success", data: undefined as void };
+      }
+      console.error("[KUSQA PROPOSAL TRACE] Error supporting proposal:", error);
+      return { status: "error", error: `DB error: ${error.message}` };
+    }
+
+    return { status: "success", data: undefined as void };
+  },
+
+  async unsupportProposal(proposalId: string): Promise<ProposalResult<void>> {
+    let userId: string;
+    try {
+      userId = await resolveUserId();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Auth failed";
+      return { status: "error", error: msg };
+    }
+
+    const { error } = await supabase
+      .from("proposal_supports")
+      .delete()
+      .eq("user_id", userId)
+      .eq("proposal_id", proposalId);
+
+    if (error) {
+      console.error("[KUSQA PROPOSAL TRACE] Error unsupporting proposal:", error);
+      return { status: "error", error: `DB error: ${error.message}` };
+    }
+
+    return { status: "success", data: undefined as void };
+  },
+
+  async getSupportedProposalIds(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("proposal_supports")
+      .select("proposal_id")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("[KUSQA PROPOSAL TRACE] Error fetching supported proposals:", error);
+      throw new Error(`Failed to fetch supported proposals: ${error.message}`);
+    }
+
+    return (data ?? []).map((row: { proposal_id: string }) => row.proposal_id);
+  },
+
+  async getSupportCount(proposalId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from("proposal_supports")
+      .select("*", { count: "exact", head: true })
+      .eq("proposal_id", proposalId);
+
+    if (error) {
+      console.error("[KUSQA PROPOSAL TRACE] Error counting proposal supports:", error);
+      return 0;
+    }
+
+    return count ?? 0;
   },
 };

@@ -32,7 +32,7 @@ export function useLogout() {
     queryClient.clear();
     
     // Redirect a /
-    navigate({ to: "/" });
+    navigate({ to: "/", search: { redirect: undefined } });
   }, [navigate, queryClient]);
 
   return { logout };

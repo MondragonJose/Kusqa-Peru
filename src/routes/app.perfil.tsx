@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCurrentUser } from "@/features/auth";
+import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useProgression, StageCard, KusqaMomentsModal, type KusqaMomentData } from "@/features/progression";
 import { BadgeCard, CIVIC_BADGES } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
@@ -10,7 +11,8 @@ import { MissionStoryModal } from "@/features/missions";
 import { MapPin, Sparkles, Pencil, Heart, Users, Map, Clock, ArrowRight, Award, Calendar, ShieldCheck, X } from "lucide-react";
 import { formatRelativeDate } from "@/utils/date";
 import type { Region, Mission } from "@/types";
-import { getPlaceSuggestions, type PlaceSuggestion } from "@/services/googleMaps";
+import type { PlaceSuggestion } from "@/services/googleMaps";
+import { getPlaceSuggestions } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { userRepository } from "@/services/userRepository";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,8 +28,9 @@ export function Profile() {
   const { currentStage } = useProgression();
   const queryClient = useQueryClient();
 
-  // Fetch user's real missions from mission_participants
-  const [completedMissions, setCompletedMissions] = useState<Mission[]>([]);
+  const { data: timeline } = useProfileMissionTimeline();
+  const completedMissions: Mission[] = timeline?.missions ?? [];
+
   const [momentOpen, setMomentOpen] = useState(false);
   const [activeMoment, setActiveMoment] = useState<KusqaMomentData | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
@@ -45,23 +48,6 @@ export function Profile() {
     fetcher: getPlaceSuggestions,
     delay: 400,
   });
-
-  useEffect(() => {
-    const fetchUserMissions = async () => {
-      try {
-        const userId = await userRepository.getAuthenticatedUserId();
-        if (!userId) return;
-
-        const { getUserMissions } = await import("@/services/missions");
-        const missions = await getUserMissions(userId);
-        setCompletedMissions(missions);
-      } catch (e) {
-        console.warn("[KUSQA] Could not fetch user missions:", e);
-      }
-    };
-
-    fetchUserMissions();
-  }, []);
 
   // Get active badges for the user (derived after hooks)
   const userBadges = CIVIC_BADGES.filter((b) => b.earned);

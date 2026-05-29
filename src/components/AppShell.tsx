@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - desktop */}
       <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-72 flex-col gap-2 border-r border-border/60 bg-sidebar/70 backdrop-blur-xl px-5 py-6 z-30 overflow-y-auto">
-          <Link to="/" className="flex items-center gap-2.5 px-2 mb-8">
+          <Link to="/" search={{ redirect: undefined }} className="flex items-center gap-2.5 px-2 mb-8">
             <div className="relative h-9 w-9 rounded-xl bg-gradient-sunrise grid place-items-center shadow-glow">
               <span className="text-white font-bold text-lg leading-none">K</span>
             </div>
@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 pb-20 lg:pb-8 lg:ml-72 flex flex-col overflow-hidden">
           {/* Top bar */}
           <header className="flex-shrink-0 sticky top-0 z-20 glass border-b border-border/60 px-5 lg:px-10 py-3 flex items-center gap-3">
-            <Link to="/" className="lg:hidden flex items-center gap-2">
+            <Link to="/" search={{ redirect: undefined }} className="lg:hidden flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-gradient-sunrise grid place-items-center text-white font-bold">
                 K
               </div>

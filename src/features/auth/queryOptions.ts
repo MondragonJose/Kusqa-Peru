@@ -67,7 +67,7 @@ export function userMissionsAllQueryOptions(userId: string) {
     queryFn: () => userProgressQueryService.getUserMissionsEnriched(userId),
     staleTime: USER_MISSIONS_STALE_MS,
     gcTime: USER_MISSIONS_GC_MS,
-    enabled: false, // user_missions table may not exist — disable query
+    enabled: userId.length > 0,
     retry: false as const,
   };
 }
@@ -79,16 +79,18 @@ export function userMissionsCompletedEnrichedQueryOptions(userId: string) {
     queryFn: () => userProgressQueryService.getCompletedMissionsEnriched(userId),
     staleTime: USER_MISSIONS_STALE_MS,
     gcTime: USER_MISSIONS_GC_MS,
-    enabled: false, // user_missions table may not exist — disable query
+    enabled: userId.length > 0,
     retry: false as const,
   };
 }
 
 export function profileTimelineQueryOptions(scope: string, userId: string | undefined) {
-  // user_missions table may not exist — always use mock
+  const isMock = scope === "mock" || !userId;
   return {
-    queryKey: userProgressKeys.territory(scope),
-    queryFn: () => userProgressQueryService.getProfileMissionTimelineMock(),
+    queryKey: userProgressKeys.territory(isMock ? "mock" : userId),
+    queryFn: () => isMock
+      ? userProgressQueryService.getProfileMissionTimelineMock()
+      : userProgressQueryService.getProfileMissionTimeline(userId),
     staleTime: USER_PROGRESS_VIEW_STALE_MS,
     gcTime: USER_PROGRESS_VIEW_GC_MS,
     enabled: true,
@@ -96,10 +98,12 @@ export function profileTimelineQueryOptions(scope: string, userId: string | unde
 }
 
 export function territoryProgressQueryOptions(scope: string, userId: string | undefined) {
-  // user_progress table may not exist — always use mock
+  const isMock = scope === "mock" || !userId;
   return {
-    queryKey: userProgressKeys.territory(scope),
-    queryFn: () => Promise.resolve(userProgressQueryService.getTerritoryProgressMock()),
+    queryKey: userProgressKeys.territory(isMock ? "mock" : userId),
+    queryFn: () => isMock
+      ? Promise.resolve(userProgressQueryService.getTerritoryProgressMock())
+      : userProgressQueryService.getTerritoryProgress(userId),
     staleTime: USER_PROGRESS_VIEW_STALE_MS,
     gcTime: USER_PROGRESS_VIEW_GC_MS,
     enabled: true,

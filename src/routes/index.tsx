@@ -284,7 +284,7 @@ function Landing(): JSX.Element {
       <header className="fixed top-0 inset-x-0 z-50">
         <div className="mx-auto max-w-7xl px-5 lg:px-8 mt-4">
           <div className="glass-strong rounded-2xl px-4 py-3 flex items-center gap-4 shadow-soft">
-            <Link to="/" className="flex items-center gap-2.5">
+            <Link to="/" search={{ redirect: undefined }} className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-xl bg-gradient-sunrise grid place-items-center shadow-glow">
                 <span className="text-white font-bold text-lg leading-none">K</span>
               </div>
@@ -421,7 +421,7 @@ function Landing(): JSX.Element {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.9, delay: 0.3 }}
-              className="hidden xl:block"
+              className="hidden lg:block"
             >
               <PeruTerritoryDecoration
                 costaCount={missionsByRegion["costa"] || 0}

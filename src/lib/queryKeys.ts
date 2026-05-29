@@ -19,6 +19,7 @@ const NOTIFICATIONS_ROOT = "notifications" as const;
 const EVIDENCE_ROOT = "mission-evidence" as const;
 
 const PROPOSALS_ROOT = "proposals" as const;
+const PROPOSAL_SUPPORTS_ROOT = "proposal-supports" as const;
 
 
 
@@ -105,6 +106,12 @@ export const proposalKeys = {
 
   userProposals: (userId: string) => [PROPOSALS_ROOT, "user", userId] as const,
 
+};
+
+export const proposalSupportKeys = {
+  root: [PROPOSAL_SUPPORTS_ROOT] as const,
+  byUser: (userId: string) => [PROPOSAL_SUPPORTS_ROOT, "user", userId] as const,
+  byProposal: (proposalId: string) => [PROPOSAL_SUPPORTS_ROOT, "proposal", proposalId] as const,
 };
 
 

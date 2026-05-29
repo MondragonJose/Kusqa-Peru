@@ -233,9 +233,9 @@ function Dashboard() {
         </div>
 
         {isLoading ? (
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-x-visible lg:snap-none lg:pb-0">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-[260px] sm:w-[280px] md:w-[320px] shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm">
+              <div key={i} className="w-[260px] sm:w-[280px] md:w-[320px] lg:w-auto shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm">
                 <div className="h-24 bg-secondary animate-pulse" />
                 <div className="p-4 space-y-3">
                   <div className="h-4 w-3/4 bg-secondary rounded animate-pulse" />
@@ -246,7 +246,7 @@ function Dashboard() {
             ))}
           </div>
         ) : (
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-x-visible lg:snap-none lg:pb-0">
             {territories.map((t) => {
             const meta = REGION_META[t.region];
             return (
@@ -256,7 +256,7 @@ function Dashboard() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4 }}
-                className="w-[260px] sm:w-[280px] md:w-[320px] shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 flex flex-col justify-between relative"
+                className="w-[260px] sm:w-[280px] md:w-[320px] lg:w-auto shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 flex flex-col justify-between relative"
               >
                 {/* Subtle pulse for active territories */}
                 {t.activeMissionsCount > 0 && (

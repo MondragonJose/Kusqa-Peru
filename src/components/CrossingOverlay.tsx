@@ -53,11 +53,11 @@ export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete, hol
   }, [open, hold, complete]);
 
   const handleDismiss = () => {
-    if (canDismiss) complete();
+    if (canDismiss && !hold) complete();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape" && canDismiss) complete();
+    if (e.key === "Escape" && canDismiss && !hold) complete();
   };
 
   if (prefersReducedMotion) {
