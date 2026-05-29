@@ -15,6 +15,7 @@
 import type { Proposal } from "@/services/proposalContract";
 import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { CivicEntity, ProposalAsEntity } from "@/types/entity";
+import { computeLifecycleInfo } from "@/domain/lifecycle";
 
 /**
  * Category → Emoji mapping.
@@ -55,6 +56,9 @@ export function proposalToMission(proposal: Proposal): Mission | null {
     organizer: { name: "Propuesta ciudadana", avatar: "🏛️" },
     coords: { lat: proposal.latitude, lng: proposal.longitude },
     emoji: CATEGORY_EMOJI[proposal.category] ?? "📌",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   };
 }
 

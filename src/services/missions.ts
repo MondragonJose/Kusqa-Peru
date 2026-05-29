@@ -4,9 +4,13 @@
  * Conecta con Supabase para obtener datos reales
  */
 
-import type { Mission, Region, MissionCategory, MissionDifficulty, MapCoords } from "@/types";
-import type { MissionRow } from "@/types/supabase";
+import type { Mission, Region, MissionCategory, MissionDifficulty, MapCoords, UserMission, EvidenceType, CompletionState, EvidenceStatus, Evidence } from "@/types";
+import type { MissionRow, MissionParticipantRow } from "@/types/supabase";
 import { supabase } from "@/lib/supabase";
+import { computeLifecycleInfo } from "@/domain/lifecycle";
+import { deriveCompletionStateFromEvidenceStatuses } from "@/domain/evidence";
+import { evidenceRepository } from "@/services/evidenceRepository";
+import { uploadMissionEvidence, buildEvidenceStoragePath, validateEvidenceFile } from "@/services/storage/evidenceStorage";
 import { z } from "zod";
 
 const logDev = (...args: unknown[]) => {
@@ -40,6 +44,8 @@ const MissionRowSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   organizer_id: z.string(),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
   participants: z.number().nullable().optional(),
   spotsLeft: z.number().nullable().optional(),
   distanceKm: z.number().nullable().optional(),
@@ -119,15 +125,17 @@ function transformMissionRow(row: MissionRow): Mission {
     xp: row.xp,
     difficulty: mapDifficulty(row.difficulty),
     date: row.date,
-    // Valores con fallback si no existen en BD
     participants: row.participants ?? 0,
     spotsLeft: row.spotsLeft ?? 5,
     distanceKm: row.distanceKm ?? 0,
     impact: row.impact ?? "",
     coords: parseCoords(row.coords),
     emoji: row.emoji ?? "🗺️",
+    startDate: row.start_date ?? null,
+    endDate: row.end_date ?? null,
+    lifecycleInfo: computeLifecycleInfo(row.start_date, row.end_date),
     organizer: {
-      name: "Organizador", // @todo: joinear con tabla de perfiles
+      name: "Organizador",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=org",
     },
   };
@@ -321,9 +329,20 @@ export async function createMission(data: Omit<Mission, "id">): Promise<Mission>
  */
 export async function joinMission(missionId: string, userId: string): Promise<boolean> {
   try {
-    logDev(
-      `[services/missions] User ${userId} joining mission ${missionId}...`
-    );
+    logDev(`[services/missions] User ${userId} joining mission ${missionId}...`);
+
+    // Lifecycle validation: only upcoming or active missions can be joined
+    const mission = await getMissionById(missionId);
+    if (!mission) {
+      throw new Error("La misión no existe o ya no está disponible");
+    }
+    if (!mission.lifecycleInfo.isJoinable) {
+      const state = mission.lifecycleInfo.lifecycle;
+      if (state === "completed" || state === "archived") {
+        throw new Error("Esta ruta ya finalizó");
+      }
+      throw new Error("Esta ruta no está disponible para unirse");
+    }
 
     // Insertar en mission_participants
     // No status column in production — existence of row IS participation
@@ -336,7 +355,6 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
     ]);
 
     if (error) {
-      // Surface the actual Supabase error for RLS debugging
       console.error("[services/missions] Supabase error:", error);
       if (error.code === "23503") {
         throw new Error("La misión no existe o ya no está disponible");
@@ -356,19 +374,20 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
 }
 
 /**
- * Obtiene las misiones en las que el usuario participa
- * Two-step: fetch participant rows, then batch-fetch missions by ID
- * Avoids reliance on FK-based resource embedding
+ * Obtiene las misiones en las que el usuario participa — con metadatos reales de participation.
+ * Two-step: fetch ALL columns from mission_participants, then batch-fetch missions by ID.
+ * Returns UserMission[] with real joinedAt, completedAt, xpEarned from mission_participants.
  */
-export async function getUserMissions(userId: string): Promise<Mission[]> {
+export async function getUserMissions(userId: string): Promise<UserMission[]> {
   try {
     logDev(`[services/missions] Fetching missions for user ${userId}...`);
 
-    // Step 1: Get all mission IDs this user participates in
+    // Step 1: Get ALL columns from mission_participants (not just mission_id)
     const { data: participation, error: partError } = await supabase
       .from("mission_participants")
-      .select("mission_id")
-      .eq("user_id", userId);
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
     if (partError) {
       console.error("[services/missions] Error fetching participation:", partError);
@@ -398,16 +417,52 @@ export async function getUserMissions(userId: string): Promise<Mission[]> {
       return [];
     }
 
-    return missionsData
-      .map((row: unknown) => {
-        const parsed = MissionRowSchema.safeParse(row);
-        if (!parsed.success) {
-          console.error("[services/missions] Mission row failed validation:", parsed.error, row);
-          return null;
-        }
-        return transformMissionRow(parsed.data as MissionRow);
-      })
-      .filter((m: Mission | null): m is Mission => m !== null);
+    // Build mission lookup
+    const missionMap = new Map<string, Mission>();
+    for (const missionRow of missionsData) {
+      const parsed = MissionRowSchema.safeParse(missionRow);
+      if (parsed.success) {
+        const mission = transformMissionRow(parsed.data as MissionRow);
+        missionMap.set(mission.id, mission);
+      }
+    }
+
+    // Step 3: Derive completion state from evidence
+    const pendingMap = await evidenceRepository.getPendingEvidenceMap(userId, missionIds);
+
+    // Step 4: Combine participation metadata + mission details + completion state into UserMission[]
+    const result: UserMission[] = [];
+    for (const participant of participation as MissionParticipantRow[]) {
+      const mission = missionMap.get(participant.mission_id);
+      if (!mission) {
+        logDev(`[services/missions] Mission ${participant.mission_id} not found, skipping`);
+        continue;
+      }
+      const isCompleted = participant.completed_at != null;
+      const hasPending = pendingMap.get(participant.mission_id) ?? false;
+      const evidenceStatuses: EvidenceStatus[] = [];
+      if (hasPending) evidenceStatuses.push("pending");
+      if (isCompleted) evidenceStatuses.push("verified");
+
+      const completionState: CompletionState = deriveCompletionStateFromEvidenceStatuses(
+        participant.completed_at,
+        evidenceStatuses
+      );
+
+      result.push({
+        id: `${participant.mission_id}-${participant.user_id}`,
+        userId: participant.user_id,
+        missionId: participant.mission_id,
+        status: isCompleted ? "completed" : "in_progress",
+        completionState,
+        joinedAt: participant.created_at,
+        completedAt: participant.completed_at,
+        xpEarned: participant.xp_earned,
+        mission,
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error("[services/missions] Exception in getUserMissions:", error);
     return [];
@@ -417,17 +472,28 @@ export async function getUserMissions(userId: string): Promise<Mission[]> {
 /**
  * Usuario completa una misión
  * Actualiza registro en mission_participants — sets completed_at (no status column in production)
+ *
+ * @deprecated Use submitEvidence() instead. Direct completion bypasses evidence verification.
+ * Kept for backward compatibility until evidence system is fully deployed.
  */
 export async function completeMission(missionId: string, userId: string): Promise<boolean> {
   try {
-    logDev(
-      `[services/missions] User ${userId} completing mission ${missionId}...`
-    );
+    logDev(`[services/missions] User ${userId} completing mission ${missionId}...`);
 
-    // Primero validar que existe la misión
+    // Lifecycle validation: only active missions can be completed
     const mission = await getMissionById(missionId);
     if (!mission) {
       throw new Error("Mission not found");
+    }
+    if (!mission.lifecycleInfo.isCompletable) {
+      const state = mission.lifecycleInfo.lifecycle;
+      if (state === "upcoming") {
+        throw new Error("Esta ruta aún no ha comenzado");
+      }
+      if (state === "completed" || state === "archived") {
+        throw new Error("Esta ruta ya fue completada");
+      }
+      throw new Error("Esta ruta no puede completarse en este momento");
     }
 
     // Actualizar mission_participants — completed_at non-null means completed
@@ -448,4 +514,157 @@ export async function completeMission(missionId: string, userId: string): Promis
     console.error("[services/missions] Exception in completeMission:", error);
     throw error;
   }
+}
+
+/**
+ * Submit mission evidence — the canonical completion flow.
+ *
+ * For photo/mixed types: uploads file to storage, creates evidence row (pending).
+ * For text/checkpoint types: creates evidence row with description (pending).
+ *
+ * Evidence MUST be verified (by a non-self verifier) for the mission to be completed.
+ * Self-verification is forbidden at the domain layer.
+ */
+export async function submitEvidence(input: {
+  missionId: string;
+  userId: string;
+  type: EvidenceType;
+  description?: string;
+  caption?: string;
+  file?: File;
+}): Promise<Evidence> {
+  const { missionId, userId, type, description, caption, file } = input;
+
+  logDev(`[services/missions] User ${userId} submitting ${type} evidence for mission ${missionId}...`);
+
+  // Lifecycle validation: only active/ending_soon missions can be completed
+  const mission = await getMissionById(missionId);
+  if (!mission) {
+    throw new Error("Mission not found");
+  }
+  if (!mission.lifecycleInfo.isCompletable) {
+    const state = mission.lifecycleInfo.lifecycle;
+    if (state === "upcoming") throw new Error("Esta ruta aún no ha comenzado");
+    if (state === "completed" || state === "archived") throw new Error("Esta ruta ya fue completada");
+    throw new Error("Esta ruta no puede completarse en este momento");
+  }
+
+  // Check for existing pending evidence (prevent duplicate submissions)
+  const hasPending = await evidenceRepository.hasPendingEvidence(userId, missionId);
+  if (hasPending) {
+    throw new Error("Ya tienes evidencia pendiente de verificación para esta ruta");
+  }
+
+  if (type === "photo" || type === "mixed") {
+    if (!file) throw new Error("Se requiere un archivo para evidencia fotográfica");
+    validateEvidenceFile(file);
+
+    const evidenceId = crypto.randomUUID();
+    const storagePath = buildEvidenceStoragePath(userId, missionId, evidenceId, file.type);
+
+    const uploaded = await uploadMissionEvidence({
+      userId,
+      missionId,
+      evidenceId,
+      file,
+    });
+
+    return evidenceRepository.createPhotoEvidence(
+      missionId,
+      userId,
+      type,
+      evidenceId,
+      uploaded.storagePath,
+      uploaded.mimeType,
+      uploaded.byteSize,
+      { caption, description, mediaUrls: [] }
+    );
+  }
+
+  // text or checkpoint
+  return evidenceRepository.createTextEvidence(
+    missionId,
+    userId,
+    type,
+    description ?? "",
+    { caption }
+  );
+}
+
+/**
+ * Verify or reject evidence.
+ * Sets completion if evidence is verified (sets completed_at on mission_participants).
+ * Self-verification is forbidden — verified_by must differ from evidence user_id.
+ */
+export async function verifyEvidence(
+  evidenceId: string,
+  verifierId: string,
+  status: "verified" | "rejected",
+  rejectionReason?: string
+): Promise<Evidence> {
+  logDev(`[services/missions] Verifier ${verifierId} → evidence ${evidenceId} → ${status}`);
+
+  // Self-verification check (domain rule enforced at service boundary)
+  const { data: evidenceRow, error: fetchError } = await supabase
+    .from("mission_evidence")
+    .select("id, user_id, mission_id")
+    .eq("id", evidenceId)
+    .single();
+
+  if (fetchError || !evidenceRow) {
+    throw new Error("Evidencia no encontrada");
+  }
+
+  if (evidenceRow.user_id === verifierId) {
+    throw new Error("No puedes verificar tu propia evidencia");
+  }
+
+  const evidence = await evidenceRepository.verifyEvidence(
+    evidenceId,
+    verifierId,
+    status,
+    rejectionReason
+  );
+
+  // If verified, mark mission as completed
+  if (status === "verified") {
+    const { error: updateError } = await supabase
+      .from("mission_participants")
+      .update({ completed_at: new Date().toISOString() })
+      .eq("mission_id", evidenceRow.mission_id)
+      .eq("user_id", evidenceRow.user_id);
+
+    if (updateError) {
+      console.error("[services/missions] Failed to set completed_at:", updateError);
+    }
+  }
+
+  logDev(`[services/missions] Evidence ${evidenceId} → ${status}`);
+  return evidence;
+}
+
+/**
+ * Get completion state for a specific user-mission pair.
+ */
+export async function getCompletionState(
+  userId: string,
+  missionId: string
+): Promise<CompletionState> {
+  const { data: participation, error: partError } = await supabase
+    .from("mission_participants")
+    .select("completed_at")
+    .eq("mission_id", missionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (partError || !participation) {
+    return "not_completed";
+  }
+
+  if (participation.completed_at) {
+    return "completed";
+  }
+
+  const hasPending = await evidenceRepository.hasPendingEvidence(userId, missionId);
+  return hasPending ? "awaiting_verification" : "not_completed";
 }

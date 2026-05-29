@@ -3,6 +3,7 @@ import type { Mission, MapCoords, Region, MissionCategory, MissionDifficulty } f
 import type { MapFilterState } from "../types";
 import type { CivicEntity } from "@/types/entity";
 import { calculateHaversineDistance, isValidLatLng } from "../utils/projection";
+import { sortByLifecyclePriority } from "@/domain/lifecycle";
 
 const INITIAL_FILTER_STATE: MapFilterState = {
   region: "todas",
@@ -134,7 +135,7 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
       }
     }
 
-    return result;
+    return result.sort(sortByLifecyclePriority);
   }, [entities, filters, userCoords]);
 
   return {

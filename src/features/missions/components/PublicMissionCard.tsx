@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
-import { MapPin, Users, Calendar, Zap, ArrowRight, Heart } from "lucide-react";
+import { MapPin, Users, Calendar, Zap, ArrowRight, Heart, Clock } from "lucide-react";
 import type { Mission } from "@/types";
 import type { CivicEntity } from "@/types/entity";
 import { isMission, isProposal } from "@/types/entity";
@@ -79,6 +79,23 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
               {isProposalEntity && (
                 <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-bold">
                   Propuesta
+                </span>
+              )}
+              {isMissionEntity && entity.lifecycleInfo.lifecycle === "active" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-[8px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Activa
+                </span>
+              )}
+              {isMissionEntity && entity.lifecycleInfo.lifecycle === "upcoming" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-[8px] font-bold text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30">
+                  <Clock className="h-2.5 w-2.5" />
+                  Próxima
+                </span>
+              )}
+              {isMissionEntity && entity.lifecycleInfo.lifecycle === "completed" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-stone-50 dark:bg-stone-950/30 text-[8px] font-bold text-stone-500 dark:text-stone-400 border border-stone-100 dark:border-stone-900/30">
+                  Finalizada
                 </span>
               )}
             </div>

@@ -45,6 +45,7 @@ const PROPOSAL_INSERT_SCHEMA = z.object({
   images: z.array(z.string()).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  proposed_date: z.string().optional(),
 });
 
 const PROPOSAL_UPDATE_SCHEMA = z.object({
@@ -58,6 +59,7 @@ const PROPOSAL_UPDATE_SCHEMA = z.object({
   status: z.enum(PROPOSAL_STATUSES).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  proposed_date: z.string().optional(),
 });
 
 // ─── Runtime assertion: validate raw Supabase response has expected shape ───
@@ -96,6 +98,7 @@ function toDomain(db: DbProposalRow): Proposal {
     status: db.status,
     latitude: db.latitude != null ? Number(db.latitude) : null,
     longitude: db.longitude != null ? Number(db.longitude) : null,
+    proposedDate: db.proposed_date,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };
@@ -142,6 +145,7 @@ export const proposalRepository = {
       images: dto.images?.length ? dto.images : undefined,
       latitude: dto.latitude ?? undefined,
       longitude: dto.longitude ?? undefined,
+      proposed_date: dto.proposedDate ?? undefined,
     };
 
     // STEP 3: Validate final payload with Zod
@@ -252,6 +256,7 @@ export const proposalRepository = {
     if (dto.status !== undefined) dbPayload.status = dto.status;
     if (dto.latitude !== undefined) dbPayload.latitude = dto.latitude;
     if (dto.longitude !== undefined) dbPayload.longitude = dto.longitude;
+    if (dto.proposedDate !== undefined) dbPayload.proposed_date = dto.proposedDate;
 
     let validatedPayload: Record<string, unknown>;
     try {

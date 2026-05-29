@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { inferRegionFromCoords } from "@/domain/territorial";
+import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { z } from "zod";
 
 type DbMission = Database["public"]["Tables"]["missions"]["Row"];
@@ -23,6 +24,8 @@ const DB_MISSION_SCHEMA = z.object({
   latitude: z.number(),
   longitude: z.number(),
   created_at: z.string(),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
   current_progress: z.number().nullable().optional(),
   max_participants: z.number().nullable().optional(),
   xp_reward: z.number().int().nonnegative().optional(),
@@ -91,6 +94,8 @@ function mapRowToMission(row: DbMission): Mission {
   const participants = row.current_progress ?? 0;
   const capacity = row.max_participants ?? 10;
   const spotsLeft = Math.max(0, capacity - participants);
+  const startDate = "start_date" in row ? (row as Record<string, unknown>).start_date as string | null : null;
+  const endDate = "end_date" in row ? (row as Record<string, unknown>).end_date as string | null : null;
 
   return {
     id: row.id,
@@ -106,6 +111,9 @@ function mapRowToMission(row: DbMission): Mission {
     distanceKm: 0,
     impact: row.description.slice(0, 80),
     difficulty: DEFAULT_DIFFICULTY,
+    startDate,
+    endDate,
+    lifecycleInfo: computeLifecycleInfo(startDate, endDate),
     organizer: {
       name: "Comunidad KUSQA",
       avatar: "🦙",

@@ -1,71 +1,36 @@
 /**
  * User progress domain — pure business logic (no React Query, no Supabase).
+ * No mock paths — all data derives from real mission_participants-backed queries.
  */
 
-import { CURRENT_USER } from "@/data/mockData";
-import { missionResolver } from "@/services/missionResolver";
 import type {
   Mission,
   ProfileMissionTimelineView,
   Region,
   UserMission,
-  UserTerritoryProgressView,
 } from "@/types";
-
-export const PROFILE_TIMELINE_MOCK_LIMIT = 3;
-export const MOCK_USER_ID = "mock-user";
 
 export function buildTimelineView(missions: Mission[]): ProfileMissionTimelineView {
   return {
     missions,
+    userMissions: [],
     totalCompleted: missions.length,
     activeRegions: [...new Set(missions.map((mission) => mission.region))],
   };
 }
 
 export function buildTimelineFromEnriched(enriched: UserMission[]): ProfileMissionTimelineView {
-  return buildTimelineView(enriched.map((entry) => entry.mission));
-}
-
-/**
- * Converts Mission[] to UserMission[] for user progress tracking.
- * Used when fetching from mission_participants which returns Mission objects directly.
- */
-export function enrichMissionsToUserMissions(missions: Mission[]): UserMission[] {
-  return missions.map((mission) => ({
-    id: `${mission.id}-${Date.now()}`, // Generate temporary ID
-    userId: "current", // Will be replaced by actual userId in context
-    missionId: mission.id,
-    status: "in_progress" as const,
-    completedAt: null,
-    xpEarned: null,
-    mission,
-  }));
-}
-
-export async function buildMockProfileTimeline(): Promise<ProfileMissionTimelineView> {
-  const catalog = await missionResolver.resolveAll();
-  const missions = catalog.slice(0, PROFILE_TIMELINE_MOCK_LIMIT);
+  const missions = enriched.map((entry) => entry.mission);
+  const completed = enriched.filter((um) => um.status === "completed").length;
   return {
     missions,
-    totalCompleted: CURRENT_USER.missionsDone ?? missions.length,
-    activeRegions: [...new Set(missions.map((mission) => mission.region))] as Region[],
-  };
-}
-
-export function buildMockTerritoryProgress(): UserTerritoryProgressView {
-  return {
-    userId: MOCK_USER_ID,
-    communityPoints: CURRENT_USER.peopleImpacted ?? 0,
-    totalMissionsCompleted: CURRENT_USER.missionsDone ?? 0,
-    lastActivityAt: new Date().toISOString(),
+    userMissions: enriched,
+    totalCompleted: completed,
+    activeRegions: [...new Set(missions.map((mission) => mission.region))],
   };
 }
 
 export const userProgressDomainService = {
   buildTimelineView,
   buildTimelineFromEnriched,
-  enrichMissionsToUserMissions,
-  buildMockProfileTimeline,
-  buildMockTerritoryProgress,
 };

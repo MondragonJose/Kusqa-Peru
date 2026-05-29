@@ -54,6 +54,7 @@ export type DbProposalRow = {
   latitude: string | null;
   /** PostgreSQL `numeric` → Supabase JS returns string, not number */
   longitude: string | null;
+  proposed_date: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -89,6 +90,7 @@ export type Proposal = {
   status: ProposalStatus;
   latitude: number | null;
   longitude: number | null;
+  proposedDate: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -105,6 +107,7 @@ export type CreateProposalDTO = {
   images?: string[];
   latitude?: number;
   longitude?: number;
+  proposedDate?: string;
 };
 
 export type UpdateProposalDTO = Partial<{
@@ -118,6 +121,7 @@ export type UpdateProposalDTO = Partial<{
   status: ProposalStatus;
   latitude: number;
   longitude: number;
+  proposedDate: string;
 }>;
 
 // ─── Result type (deterministic outcome for every operation) ───────────────

@@ -4,4 +4,6 @@
 
 export { useCreateMission } from "./useCreateMission";
 export { useJoinUserMission } from "./useJoinUserMission";
-export { useCompleteUserMission } from "./useCompleteUserMission";
+export { useSubmitMissionEvidence } from "./useCompleteUserMission";
+/** @deprecated Use useSubmitMissionEvidence */
+export { useSubmitMissionEvidence as useCompleteUserMission } from "./useCompleteUserMission";

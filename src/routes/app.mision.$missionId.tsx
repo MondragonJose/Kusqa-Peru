@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Calendar, Users, ArrowLeft, ArrowRight, Share2, Heart, Compass, Sparkles } from "lucide-react";
+import { MapPin, Calendar, Users, ArrowLeft, ArrowRight, Share2, Heart, Compass, Sparkles, ShieldCheck, Upload, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { CrossingOverlay } from "@/components/CrossingOverlay";
 import { REGION_META } from "@/constants/gamification";
@@ -10,7 +10,9 @@ import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
-import type { Mission, Region } from "@/types";
+import { useMissionEvidence, useSubmitEvidence } from "@/hooks/useUploadMissionEvidence";
+import type { Mission, Region, Evidence } from "@/types";
+import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
@@ -59,6 +61,10 @@ function MissionDetail() {
 
   const { data: timeline } = useProfileMissionTimeline();
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
+  const userMission = timeline?.userMissions?.find((um) => um.missionId === missionId);
+
+  const { data: evidenceList = [] } = useMissionEvidence(missionId);
+  const submitEvidenceMutation = useSubmitEvidence();
 
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
@@ -307,6 +313,38 @@ function MissionDetail() {
               </p>
           </section>
 
+          {/* Evidence feed — contributions from participants */}
+          {evidenceList.length > 0 && (
+            <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6">
+              <h2 className="font-display font-black text-xl mb-4 text-foreground flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-accent" /> Contribuciones
+              </h2>
+              <div className="space-y-3">
+                {evidenceList.slice(0, 5).map((ev: Evidence) => (
+                  <div key={ev.id} className="flex gap-3 p-3 rounded-2xl bg-secondary/30 border border-border/40">
+                    <div className="h-10 w-10 rounded-xl bg-secondary grid place-items-center text-base shrink-0">
+                      {ev.type === "photo" || ev.type === "mixed" ? "📷" : ev.type === "checkpoint" ? "📍" : "📝"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-foreground">{EVIDENCE_TYPE_LABELS[ev.type]}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${EVIDENCE_STATUS_STYLES[ev.verificationStatus]}`}>
+                          {ev.verificationStatus === "verified" ? "Verificada" : ev.verificationStatus === "pending" ? "Pendiente" : ev.verificationStatus === "rejected" ? "Rechazada" : "Marcada"}
+                        </span>
+                      </div>
+                      {ev.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ev.description}</p>
+                      )}
+                      <div className="text-[9px] text-muted-foreground/60 mt-1 font-medium">
+                        {formatRelativeDate(ev.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Expedition timeline stages */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-5 text-foreground flex items-center gap-2">
@@ -430,6 +468,98 @@ function MissionDetail() {
         <aside className="space-y-4">
           <div className="rounded-3xl bg-card border border-border/80 p-6 shadow-soft sticky top-24 space-y-5">
             {/* P0 FIX: Eliminada sección de XP - sistema de gamificación eliminado */}
+
+            {/* Temporal block — derived from startDate/endDate */}
+            {(entity as Mission).startDate && (
+              <div className={`rounded-2xl p-4 border ${theme.bgLight} ${theme.border}`}>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Tiempo de la ruta</div>
+                {(() => {
+                  const m = entity as Mission;
+                  const ts = m.lifecycleInfo.lifecycle;
+                  const fmt = (d: string) => new Date(d).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
+                  if (ts === "upcoming") {
+                    return <div className="text-sm font-semibold text-foreground">Inicia: {fmt(m.startDate!)}</div>;
+                  }
+                  if (ts === "active") {
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          Ruta activa
+                        </div>
+                        {m.endDate && <div className="text-xs text-muted-foreground">Hasta: {fmt(m.endDate)}</div>}
+                      </>
+                    );
+                  }
+                  if (ts === "completed") {
+                    return (
+                      <>
+                        <div className="text-sm font-semibold text-foreground">Finalizó</div>
+                        <div className="text-xs text-muted-foreground">{fmt(m.endDate!)}</div>
+                      </>
+                    );
+                  }
+                  if (m.endDate) {
+                    return <div className="text-sm font-semibold text-foreground">{fmt(m.startDate!)} — {fmt(m.endDate)}</div>;
+                  }
+                  return <div className="text-sm font-semibold text-foreground">{fmt(m.startDate!)}</div>;
+                })()}
+              </div>
+            )}
+
+            {/* Evidence status for joined users */}
+            {userMission && (
+              <div className={`rounded-2xl p-4 border ${
+                userMission.completionState === "completed"
+                  ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40"
+                  : userMission.completionState === "awaiting_verification"
+                  ? "bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800/40"
+                  : theme.bgLight + " " + theme.border
+              }`}>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Tu participación</div>
+
+                {userMission.completionState === "completed" ? (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="h-4 w-4" /> Completada
+                  </div>
+                ) : userMission.completionState === "awaiting_verification" ? (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
+                    <Clock className="h-4 w-4" /> Evidencia enviada
+                    <span className="text-[10px] text-muted-foreground font-normal">— Pendiente de verificación</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                      <Upload className="h-4 w-4 text-accent" /> En ruta
+                    </div>
+                    <button
+                      onClick={() => {
+                        const description = prompt("Describe tu acción en esta ruta (opcional):");
+                        submitEvidenceMutation.mutate(
+                          {
+                            missionId,
+                            type: "text",
+                            description: description ?? undefined,
+                          },
+                          {
+                            onSuccess: () => toast.success("Evidencia enviada", { description: "Tu participación será verificada." }),
+                            onError: (err) => toast.error("Error", { description: err instanceof Error ? err.message : "No se pudo enviar la evidencia" }),
+                          }
+                        );
+                      }}
+                      disabled={submitEvidenceMutation.isPending}
+                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        submitEvidenceMutation.isPending
+                          ? "bg-muted text-muted-foreground cursor-wait"
+                          : "bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30"
+                      }`}
+                    >
+                      {submitEvidenceMutation.isPending ? "Enviando..." : "Enviar evidencia"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="h-px bg-border/60" />
 

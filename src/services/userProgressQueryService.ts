@@ -1,6 +1,7 @@
 /**
  * User progress query service — read-only aggregation (repositories + domain).
  * Uses mission_participants table via services/missions.ts for user-mission relationships.
+ * No mock fallbacks — all data derives from real participation.
  */
 
 import { userRepository } from "@/services/userRepository";
@@ -13,35 +14,28 @@ import type {
 } from "@/types";
 
 export const userProgressQueryService = {
-  async getCompletedMissionsEnriched(userId: string): Promise<UserMission[]> {
-    try {
-      const missions = await getUserMissions(userId);
-      // Filter for completed missions (status = 'completed' in mission_participants)
-      // For now, return all as user missions since we need to enrich them
-      return userProgressDomainService.enrichMissionsToUserMissions(missions);
-    } catch (e) {
-      console.warn("[KUSQA] mission_participants unavailable, returning empty completed missions");
-      return [];
-    }
-  },
-
   async getUserMissionsEnriched(userId: string): Promise<UserMission[]> {
     try {
-      const missions = await getUserMissions(userId);
-      return userProgressDomainService.enrichMissionsToUserMissions(missions);
+      return await getUserMissions(userId);
     } catch (e) {
       console.warn("[KUSQA] mission_participants unavailable, returning empty user missions");
       return [];
     }
   },
 
-  async getProfileMissionTimeline(userId: string): Promise<ProfileMissionTimelineView> {
-    const enriched = await this.getCompletedMissionsEnriched(userId);
-    return userProgressDomainService.buildTimelineFromEnriched(enriched);
+  async getCompletedMissionsEnriched(userId: string): Promise<UserMission[]> {
+    try {
+      const userMissions = await getUserMissions(userId);
+      return userMissions.filter((um) => um.status === "completed");
+    } catch (e) {
+      console.warn("[KUSQA] mission_participants unavailable, returning empty completed missions");
+      return [];
+    }
   },
 
-  async getProfileMissionTimelineMock(): Promise<ProfileMissionTimelineView> {
-    return userProgressDomainService.buildMockProfileTimeline();
+  async getProfileMissionTimeline(userId: string): Promise<ProfileMissionTimelineView> {
+    const userMissions = await getUserMissions(userId);
+    return userProgressDomainService.buildTimelineFromEnriched(userMissions);
   },
 
   async getTerritoryProgress(userId: string): Promise<UserTerritoryProgressView> {
@@ -49,8 +43,8 @@ export const userProgressQueryService = {
     let completedCount = 0;
 
     try {
-      const missions = await getUserMissions(userId);
-      completedCount = missions.length;
+      const userMissions = await getUserMissions(userId);
+      completedCount = userMissions.filter((um) => um.status === "completed").length;
     } catch (e) {
       console.warn("[KUSQA] mission_participants unavailable, counting 0 completed missions");
     }
@@ -59,9 +53,5 @@ export const userProgressQueryService = {
       ...progress,
       totalMissionsCompleted: completedCount,
     };
-  },
-
-  getTerritoryProgressMock(): UserTerritoryProgressView {
-    return userProgressDomainService.buildMockTerritoryProgress();
   },
 };

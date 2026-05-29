@@ -8,9 +8,11 @@ import { useProgression, StageCard, KusqaMomentsModal, type KusqaMomentData } fr
 import { BadgeCard, CIVIC_BADGES } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
-import { MapPin, Sparkles, Pencil, Heart, Users, Map, Clock, ArrowRight, Award, Calendar, ShieldCheck, X } from "lucide-react";
+import { useSupportedProposalIds } from "@/features/proposals";
+import { MapPin, Sparkles, Pencil, Heart, Users, Map, Clock, ArrowRight, Award, Calendar, ShieldCheck, X, Zap, Upload } from "lucide-react";
 import { formatRelativeDate } from "@/utils/date";
-import type { Region, Mission } from "@/types";
+
+import type { Region, Mission, UserMission } from "@/types";
 import type { PlaceSuggestion } from "@/services/googleMaps";
 import { getPlaceSuggestions } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
@@ -29,7 +31,10 @@ export function Profile() {
   const queryClient = useQueryClient();
 
   const { data: timeline } = useProfileMissionTimeline();
+  const joinedMissions: UserMission[] = timeline?.userMissions ?? [];
   const completedMissions: Mission[] = timeline?.missions ?? [];
+
+  const { data: supportedIds = [] } = useSupportedProposalIds();
 
   const [momentOpen, setMomentOpen] = useState(false);
   const [activeMoment, setActiveMoment] = useState<KusqaMomentData | null>(null);
@@ -281,22 +286,13 @@ export function Profile() {
           {/* Supported Proposals */}
           <div className="p-5">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Iniciativas que apoyas</div>
-            {(() => {
-              try {
-                const stored = localStorage.getItem("kusqa_proposal_supports");
-                const supported = stored ? new Set(JSON.parse(stored)) : new Set();
-                  if (supported.size === 0) {
-                    return <div className="text-sm text-muted-foreground">Aún sin apoyos</div>;
-                }
-                return (
-                  <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
-                    {supported.size} iniciativa{supported.size !== 1 ? "s" : ""} apoyada{supported.size !== 1 ? "s" : ""}
-                  </div>
-                );
-              } catch {
-                return <div className="text-sm text-muted-foreground">Sin apoyos registrados</div>;
-              }
-            })()}
+            {supportedIds.length > 0 ? (
+              <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
+                {supportedIds.length} iniciativa{supportedIds.length !== 1 ? "s" : ""} apoyada{supportedIds.length !== 1 ? "s" : ""}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Aún sin apoyos</div>
+            )}
           </div>
         </div>
       </section>
@@ -320,13 +316,15 @@ export function Profile() {
             </h2>
             <p className="text-sm text-muted-foreground pl-1">Tu bitácora de expediciones.</p>
 
-            {completedMissions.length > 0 ? (
+            {joinedMissions.length > 0 ? (
               <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
-                {completedMissions.map((m, i) => {
+                {joinedMissions.map((um, i) => {
+                  const m = um.mission;
                   const nodeColor = REGION_NODE_GRADIENTS[m.region as Region] || "bg-stone-500";
+                  const completionState = um.completionState;
                   return (
                     <motion.div
-                      key={m.id}
+                      key={um.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
@@ -355,10 +353,20 @@ export function Profile() {
                               {m.title}
                             </span>
 
-                            {/* Verified Status Tag */}
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shrink-0">
-                              <ShieldCheck className="h-2.5 w-2.5" /> Verificado
-                            </span>
+                            {/* Completion State Badge — now evidence-aware */}
+                            {completionState === "completed" ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shrink-0">
+                                <ShieldCheck className="h-2.5 w-2.5" /> Completada
+                              </span>
+                            ) : completionState === "awaiting_verification" ? (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-[9px] font-bold text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 shrink-0">
+                                <Upload className="h-2.5 w-2.5" /> En verificación
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-[9px] font-bold text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 shrink-0">
+                                <Clock className="h-2.5 w-2.5" /> En ruta
+                              </span>
+                            )}
                           </div>
 
                           <div className="text-xs text-muted-foreground mt-1 truncate font-medium flex items-center gap-1">
@@ -366,23 +374,34 @@ export function Profile() {
                             <span>{m.district}</span>
                             <span className="opacity-40">•</span>
                             <Calendar className="h-3.5 w-3.5 opacity-60" />
-                            <span>{formatRelativeDate(m.date)}</span>
+                            <span>{formatRelativeDate(um.joinedAt || m.date)}</span>
                           </div>
 
                           <div className="mt-3 text-xs text-muted-foreground/80 font-medium leading-relaxed">
-                            Formaste parte de una jornada de {m.category.toLowerCase()} en {m.district}.
+                            {completionState === "completed"
+                              ? `Formaste parte de una jornada de ${m.category.toLowerCase()} en ${m.district}.`
+                              : completionState === "awaiting_verification"
+                              ? `Evidencia enviada — esperando verificación de tu participación en ${m.district}.`
+                              : `Estás participando en una jornada de ${m.category.toLowerCase()} en ${m.district}.`}
                           </div>
 
                           <div className="mt-3 flex gap-4 text-xs text-muted-foreground/80 font-semibold">
                             <span className="inline-flex items-center gap-1 text-sky-500/90">
                               <Users className="h-3 w-3" /> {m.participants} exploradores
                             </span>
+                            {um.xpEarned != null && (
+                              <span className="inline-flex items-center gap-1 text-amber-500/90">
+                                <Zap className="h-3 w-3" /> +{um.xpEarned} XP
+                              </span>
+                            )}
                           </div>
                         </div>
 
                         <div className="text-right shrink-0 self-center">
-                          <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">Fecha</div>
-                          <div className="font-display font-black text-accent text-lg">{formatRelativeDate(m.date)}</div>
+                          <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+                            {completionState === "completed" ? "Completado" : completionState === "awaiting_verification" ? "Verificando" : "Iniciado"}
+                          </div>
+                          <div className="font-display font-black text-accent text-lg">{formatRelativeDate(um.joinedAt || m.date)}</div>
                         </div>
                       </div>
                     </motion.div>
@@ -392,7 +411,7 @@ export function Profile() {
             ) : (
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
                 <div className="text-4xl mb-3">🗺️</div>
-                <p className="text-sm text-muted-foreground font-medium">                El territorio te espera</p>
+                <p className="text-sm text-muted-foreground font-medium">Aún no has iniciado una ruta.</p>
                 <p className="text-xs text-muted-foreground/70 mt-1">Encuentra tu primera ruta en el mapa.</p>
                 <Link
                   to="/app/mapa"

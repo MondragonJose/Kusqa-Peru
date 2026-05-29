@@ -2,7 +2,7 @@
  * Global mutation phase tracking for UI feedback (no React Query dependency).
  */
 
-export type MissionMutationKind = "createMission" | "joinMission" | "completeMission";
+export type MissionMutationKind = "createMission" | "joinMission" | "completeMission" | "submitEvidence";
 
 export type MutationPhase = "idle" | "pending" | "success" | "error";
 
@@ -23,7 +23,7 @@ export type UnifiedMissionMutationStatus = {
   byKind: Record<MissionMutationKind, MutationKindState>;
 };
 
-const KINDS: MissionMutationKind[] = ["createMission", "joinMission", "completeMission"];
+const KINDS: MissionMutationKind[] = ["createMission", "joinMission", "completeMission", "submitEvidence"];
 
 function createInitialKindState(): MutationKindState {
   return { phase: "idle", pendingCount: 0, error: null };
@@ -34,6 +34,7 @@ function createInitialByKind(): Record<MissionMutationKind, MutationKindState> {
     createMission: createInitialKindState(),
     joinMission: createInitialKindState(),
     completeMission: createInitialKindState(),
+    submitEvidence: createInitialKindState(),
   };
 }
 

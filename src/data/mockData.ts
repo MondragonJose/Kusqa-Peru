@@ -1,6 +1,7 @@
 // KUSQA mock data — shared across pages
 // Single source of truth for all development/prototype data
 import type { Region, Mission, Badge, Notification } from "@/types";
+import { computeLifecycleInfo } from "@/domain/lifecycle";
 
 export const MISSIONS: Mission[] = [
   {
@@ -21,6 +22,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Colectivo Pez Azul", avatar: "🎨" },
     coords: { lat: -12.1492, lng: -77.0222 },
     emoji: "🎨",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "cusco-reforesta",
@@ -40,6 +44,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Raíces del Ande", avatar: "🌱" },
     coords: { lat: -13.3914, lng: -72.0468 },
     emoji: "🌱",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "iquitos-rio",
@@ -59,6 +66,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Amazonía Viva", avatar: "🛶" },
     coords: { lat: -3.7452, lng: -73.2516 },
     emoji: "🛶",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "trujillo-codigo",
@@ -78,6 +88,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "CodeNorte", avatar: "💻" },
     coords: { lat: -8.1119, lng: -79.0287 },
     emoji: "💻",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "puno-ollas",
@@ -97,6 +110,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Manos Wayra", avatar: "🍲" },
     coords: { lat: -15.8402, lng: -70.0219 },
     emoji: "🍲",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "miraflores-mayores",
@@ -116,6 +132,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Casa Abuelo", avatar: "🌼" },
     coords: { lat: -12.1225, lng: -77.0280 },
     emoji: "🌼",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "lima-salud",
@@ -134,6 +153,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Salud Pública SJL", avatar: "💚" },
     coords: { lat: -12.0463, lng: -77.0312 },
     emoji: "💚",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
   {
     id: "puno-cultura",
@@ -152,6 +174,9 @@ export const MISSIONS: Mission[] = [
     organizer: { name: "Cultura Andes", avatar: "🎵" },
     coords: { lat: -15.8402, lng: -70.0219 },
     emoji: "🎵",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   },
 ];
 

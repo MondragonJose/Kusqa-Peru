@@ -15,6 +15,7 @@ import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import { missionRepository } from "@/services/missionRepository";
 import { proposalRepository } from "@/services/proposalRepository";
 import type { Proposal } from "@/services/proposalContract";
+import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { z } from "zod";
 
 const MISSION_UUID_SCHEMA = z.string().uuid();
@@ -49,6 +50,9 @@ function adaptProposalToMission(p: Proposal): Mission {
       lng: p.longitude ?? 0,
     },
     emoji: PROPOSAL_CATEGORY_EMOJI[p.category] ?? "📌",
+    startDate: null,
+    endDate: null,
+    lifecycleInfo: computeLifecycleInfo(null, null),
   };
 }
 

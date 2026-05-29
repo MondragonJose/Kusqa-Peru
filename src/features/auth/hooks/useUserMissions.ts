@@ -1,5 +1,6 @@
 /**
  * React Query hooks for user ↔ mission participation (query options only).
+ * No mock paths — all queries derive from Supabase-backed services.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +11,6 @@ import {
   userMissionsCompletedEnrichedQueryOptions,
   userSessionQueryOptions,
 } from "@/features/auth/queryOptions";
-import type { Mission } from "@/types";
 
 type UseUserMissionsOptions = {
   enabled?: boolean;
@@ -40,16 +40,9 @@ export function useUserCompletedMissions(userId: string, options?: UseUserMissio
 
 export function useProfileMissionTimeline() {
   const liveUserEnabled = isLiveUserEnabled();
-
   const { data: userId } = useQuery(userSessionQueryOptions());
 
   return useQuery(
-    profileTimelineQueryOptions(liveUserEnabled ? userId ?? "pending" : "mock", userId ?? undefined)
+    profileTimelineQueryOptions(userId ?? "")
   );
-}
-
-/** @deprecated Prefer useProfileMissionTimeline().data?.missions in UI when possible. */
-export function useProfileCompletedMissions(): Mission[] {
-  const { data: timeline } = useProfileMissionTimeline();
-  return timeline?.missions ?? [];
 }

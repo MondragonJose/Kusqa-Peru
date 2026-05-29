@@ -4,6 +4,8 @@
  */
 
 import type { Region, MissionCategory, MissionDifficulty, MapCoords } from "./common";
+import type { MissionLifecycleInfo } from "./lifecycle";
+import type { CompletionState } from "./evidence";
 
 /** Usuario de KUSQA */
 export type User = {
@@ -47,6 +49,9 @@ export type Mission = {
   coords: MapCoords;
   emoji: string;
   status?: "proposed" | "active" | "completed";
+  startDate: string | null;
+  endDate: string | null;
+  lifecycleInfo: MissionLifecycleInfo;
 };
 
 /** Badge o medalla ganada */
@@ -87,6 +92,8 @@ export type UserMission = {
   userId: string;
   missionId: string;
   status: UserMissionStatus;
+  completionState: CompletionState;
+  joinedAt: string | null;
   completedAt: string | null;
   xpEarned: number | null;
   mission: Mission;

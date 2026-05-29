@@ -93,6 +93,12 @@ export const evidenceKeys = {
 
     [EVIDENCE_ROOT, userId, missionId] as const,
 
+  byUser: (userId: string) => [EVIDENCE_ROOT, "user", userId] as const,
+
+  completionState: (userId: string, missionId: string) =>
+
+    [EVIDENCE_ROOT, "completion", userId, missionId] as const,
+
 };
 
 

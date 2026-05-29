@@ -1,5 +1,6 @@
 /**
  * React Query option factories — cache policy + queryFn wiring only.
+ * No mock fallbacks — all queries derive from Supabase-backed services.
  */
 
 import {
@@ -15,10 +16,9 @@ import {
 import { missionKeys, userKeys, userMissionKeys, userProgressKeys } from "@/lib/queryKeys";
 import { isLiveUserEnabled } from "@/lib/userFeature";
 import { missionResolver } from "@/services/missionResolver";
-import { userProgressDomainService } from "@/services/userProgressDomainService";
 import { userProgressQueryService } from "@/services/userProgressQueryService";
 import { userRepository } from "@/services/userRepository";
-import type { ProfileMissionTimelineView, UserMission, UserTerritoryProgressView } from "@/types";
+
 
 export function missionCatalogQueryOptions() {
   return {
@@ -84,28 +84,22 @@ export function userMissionsCompletedEnrichedQueryOptions(userId: string) {
   };
 }
 
-export function profileTimelineQueryOptions(scope: string, userId: string | undefined) {
-  const isMock = scope === "mock" || !userId;
+export function profileTimelineQueryOptions(userId: string) {
   return {
-    queryKey: userProgressKeys.territory(isMock ? "mock" : userId),
-    queryFn: () => isMock
-      ? userProgressQueryService.getProfileMissionTimelineMock()
-      : userProgressQueryService.getProfileMissionTimeline(userId),
+    queryKey: userProgressKeys.territory(userId),
+    queryFn: () => userProgressQueryService.getProfileMissionTimeline(userId),
     staleTime: USER_PROGRESS_VIEW_STALE_MS,
     gcTime: USER_PROGRESS_VIEW_GC_MS,
-    enabled: true,
+    enabled: userId.length > 0,
   };
 }
 
-export function territoryProgressQueryOptions(scope: string, userId: string | undefined) {
-  const isMock = scope === "mock" || !userId;
+export function territoryProgressQueryOptions(userId: string) {
   return {
-    queryKey: userProgressKeys.territory(isMock ? "mock" : userId),
-    queryFn: () => isMock
-      ? Promise.resolve(userProgressQueryService.getTerritoryProgressMock())
-      : userProgressQueryService.getTerritoryProgress(userId),
+    queryKey: userProgressKeys.territory(userId),
+    queryFn: () => userProgressQueryService.getTerritoryProgress(userId),
     staleTime: USER_PROGRESS_VIEW_STALE_MS,
     gcTime: USER_PROGRESS_VIEW_GC_MS,
-    enabled: true,
+    enabled: userId.length > 0,
   };
 }

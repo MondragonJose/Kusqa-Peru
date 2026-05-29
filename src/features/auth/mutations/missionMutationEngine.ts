@@ -22,13 +22,14 @@ import {
   reportMutationSuccess,
   type MissionMutationKind,
 } from "@/features/auth/mutations/mutationStatusStore";
-import { missionKeys, userKeys, userMissionKeys, userProgressKeys } from "@/lib/queryKeys";
+import { missionKeys, userKeys, userMissionKeys, userProgressKeys, evidenceKeys } from "@/lib/queryKeys";
 import type {
   Mission,
   User,
   UserMission,
   UserMissionStatus,
   UserTerritoryProgressView,
+  CompletionState,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -357,6 +358,15 @@ function rollbackKeys(kind: MissionMutationKind, ctx: WriteContext): QueryKey[] 
             userKeys.current,
           ]
         : [];
+    case "submitEvidence":
+      return ctx.userId
+        ? [
+            userMissionKeys.all(ctx.userId),
+            evidenceKeys.byMission(ctx.missionIds?.[0] ?? ""),
+            evidenceKeys.byUser(ctx.userId),
+            evidenceKeys.completionState(ctx.userId, ctx.missionIds?.[0] ?? ""),
+          ]
+        : [];
   }
 }
 
@@ -370,11 +380,14 @@ function buildOptimisticUserMission(
   status: UserMissionStatus,
   xpEarned: number | null = null
 ): UserMission {
+  const completionState: CompletionState = status === "completed" ? "completed" : "not_completed";
   return {
     id: `optimistic-${mission.id}-${status}`,
     userId,
     missionId: mission.id,
     status,
+    completionState,
+    joinedAt: new Date().toISOString(),
     completedAt: status === "completed" ? new Date().toISOString() : null,
     xpEarned,
     mission,
@@ -538,7 +551,6 @@ async function flushPending(queryClient: QueryClient, state: SchedulerState): Pr
         queryClient.invalidateQueries({ queryKey: userMissionKeys.completed(userId) }),
         queryClient.invalidateQueries({ queryKey: userProgressKeys.territory(userId) }),
         queryClient.invalidateQueries({ queryKey: userProgressKeys.territory("live") }),
-        queryClient.invalidateQueries({ queryKey: userProgressKeys.territory("mock") }),
         queryClient.invalidateQueries({ queryKey: userKeys.profileRow(userId) })
       );
     }
