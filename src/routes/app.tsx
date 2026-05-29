@@ -1,7 +1,10 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { MissionRealtimeSync } from "@/components/MissionRealtimeSync";
 import { useAuthState } from "@/features/auth";
+import { useEventPropagation } from "@/domain/eventHandlers";
+import { useEventHydrationBootstrap } from "@/hooks/useEventHydrationBootstrap";
 
 /**
  * /app route — Requiere autenticación
@@ -12,7 +15,10 @@ import { useAuthState } from "@/features/auth";
  * 3. Redirigir si no autenticado (después de que isReady = true)
  */
 function AppRouteComponent() {
+  const queryClient = useQueryClient();
+  useEventPropagation(queryClient);
   const { state, isReady, user } = useAuthState();
+  useEventHydrationBootstrap(user?.id);
   const location = useLocation();
 
   if (import.meta.env.DEV) {

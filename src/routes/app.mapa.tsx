@@ -42,19 +42,21 @@ function MapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const activeMission = filteredMissions.find((m) => m.id === selectedId) || filteredMissions[0] || null;
+  // Sidebar only renders missions — proposals stay as map markers only
+  const sidebarMissions = filteredMissions.filter((m) => m.entityType !== "proposal");
+  const activeMission = sidebarMissions.find((m) => m.id === selectedId) || sidebarMissions[0] || null;
 
   useEffect(() => {
-    if (filteredMissions.length === 0) {
+    if (sidebarMissions.length === 0) {
       setSelectedId(null);
       return;
     }
     const selectionValid =
-      selectedId !== null && filteredMissions.some((m) => m.id === selectedId);
+      selectedId !== null && sidebarMissions.some((m) => m.id === selectedId);
     if (!selectionValid) {
-      setSelectedId(filteredMissions[0].id);
+      setSelectedId(sidebarMissions[0].id);
     }
-  }, [filteredMissions, selectedId]);
+  }, [sidebarMissions, selectedId]);
 
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);

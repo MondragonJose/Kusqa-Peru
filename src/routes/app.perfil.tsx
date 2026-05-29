@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useCurrentUser } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useProgression, StageCard, KusqaMomentsModal, type KusqaMomentData } from "@/features/progression";
-import { BadgeCard, CIVIC_BADGES } from "@/features/badges";
+import { BadgeCard, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
 import { useSupportedProposalIds } from "@/features/proposals";
@@ -54,9 +54,20 @@ export function Profile() {
     delay: 400,
   });
 
-  // Get active badges for the user (derived after hooks)
-  const userBadges = CIVIC_BADGES.filter((b) => b.earned);
+  // Derive active regions + badge earning from real mission data
   const activeRegions = Array.from(new Set(completedMissions.map((m) => m.region)));
+  const earnedBadgeIds = new Set<string>();
+  if (completedMissions.length >= 1) earnedBadgeIds.add("primer-paso");
+  if (activeRegions.includes("sierra")) earnedBadgeIds.add("explorador-andino");
+  if (activeRegions.includes("costa")) earnedBadgeIds.add("hijo-del-pacifico");
+  if (activeRegions.includes("selva")) earnedBadgeIds.add("navegante");
+  if (activeRegions.includes("sierra") && activeRegions.includes("costa") && activeRegions.includes("selva")) {
+    earnedBadgeIds.add("tejedor");
+  }
+  const userBadges: CivicBadge[] = CIVIC_BADGES.map((b) => ({
+    ...b,
+    earned: earnedBadgeIds.has(b.id),
+  }));
 
   if (!user) {
     return (
@@ -69,12 +80,12 @@ export function Profile() {
     );
   }
 
-  // Derive civic trust status
+  // Derive civic trust status from real participation data
   const trustStatus = deriveCivicTrust({
     missionsDone: user.missionsDone || 0,
     distinctDistricts: activeRegions.length,
-    hasLedProject: true,
-    streak: 8,
+    hasLedProject: supportedIds.length > 0,
+    streak: 0,
   });
 
   const handleOpenDistrictEdit = () => {

@@ -6,11 +6,18 @@
 
 import type { Mission, Region, MissionCategory, MissionDifficulty, MapCoords, UserMission, EvidenceType, CompletionState, EvidenceStatus, Evidence } from "@/types";
 import type { MissionRow, MissionParticipantRow } from "@/types/supabase";
+import type { CausalEnrichedEvent, KusqaDomainEvent } from "@/domain/events";
 import { supabase } from "@/lib/supabase";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { deriveCompletionStateFromEvidenceStatuses } from "@/domain/evidence";
+import { buildCausalChain } from "@/domain/eventCausality";
+import { reduceEntityState } from "@/domain/eventReducer";
+import { validateEntityState } from "@/domain/entityInvariants";
+import { projectToUserMission } from "@/domain/entityStateProjection";
 import { evidenceRepository } from "@/services/evidenceRepository";
 import { uploadMissionEvidence, buildEvidenceStoragePath, validateEvidenceFile } from "@/services/storage/evidenceStorage";
+import { emit } from "@/domain/eventEmitter";
+import { createEvidenceSubmittedEvent, createEvidenceVerifiedEvent, createEvidenceRejectedEvent } from "@/domain/events";
 import { z } from "zod";
 
 const logDev = (...args: unknown[]) => {
@@ -427,8 +434,34 @@ export async function getUserMissions(userId: string): Promise<UserMission[]> {
       }
     }
 
-    // Step 3: Derive completion state from evidence
+    // Step 3: Derive completion state from evidence (existing fallback path)
     const pendingMap = await evidenceRepository.getPendingEvidenceMap(userId, missionIds);
+
+    // Step 3b: Optional causal enrichment via event_log (non-blocking, fallback)
+    let causalByMission: Map<string, CausalEnrichedEvent[]> | undefined;
+    try {
+      const { data: eventRows } = await supabase
+        .from("event_log")
+        .select("payload, mission_id")
+        .in("mission_id", missionIds)
+        .order("created_at", { ascending: true });
+
+      if (eventRows && eventRows.length > 0) {
+        const grouped = new Map<string, KusqaDomainEvent[]>();
+        for (const row of eventRows) {
+          const event = row.payload as unknown as KusqaDomainEvent;
+          const list = grouped.get(row.mission_id) ?? [];
+          list.push(event);
+          grouped.set(row.mission_id, list);
+        }
+        causalByMission = new Map();
+        for (const [mid, events] of grouped) {
+          causalByMission.set(mid, buildCausalChain(events));
+        }
+      }
+    } catch {
+      // Non-critical — fallback to existing evidence-based logic
+    }
 
     // Step 4: Combine participation metadata + mission details + completion state into UserMission[]
     const result: UserMission[] = [];
@@ -438,6 +471,47 @@ export async function getUserMissions(userId: string): Promise<UserMission[]> {
         logDev(`[services/missions] Mission ${participant.mission_id} not found, skipping`);
         continue;
       }
+
+      // Try causal-enriched path first, fall back to existing logic
+      const causalChain = causalByMission?.get(participant.mission_id);
+      if (causalChain && causalChain.length > 0) {
+        try {
+          const entityState = reduceEntityState(causalChain);
+
+          // Optional validation — log violations in dev, never blocks
+          const validation = import.meta.env.DEV
+            ? validateEntityState(entityState)
+            : null;
+
+          const userMission: UserMission & { __invariantViolations?: string[] } =
+            projectToUserMission(
+              participant.mission_id,
+              participant.user_id,
+              entityState,
+              {
+                mission,
+                joinedAt: participant.created_at,
+                xpEarned: participant.xp_earned,
+              }
+            );
+
+          if (validation && !validation.valid) {
+            console.warn("[missions/getUserMissions] Invariant violation", {
+              missionId: participant.mission_id,
+              violations: validation.violations,
+              severity: validation.severity,
+            });
+            userMission.__invariantViolations = [...validation.violations];
+          }
+
+          result.push(userMission);
+          continue;
+        } catch {
+          // Fall through to existing fallback
+        }
+      }
+
+      // Fallback: existing evidence-based completion derivation
       const isCompleted = participant.completed_at != null;
       const hasPending = pendingMap.get(participant.mission_id) ?? false;
       const evidenceStatuses: EvidenceStatus[] = [];
@@ -555,6 +629,8 @@ export async function submitEvidence(input: {
     throw new Error("Ya tienes evidencia pendiente de verificación para esta ruta");
   }
 
+  let evidence: Evidence;
+
   if (type === "photo" || type === "mixed") {
     if (!file) throw new Error("Se requiere un archivo para evidencia fotográfica");
     validateEvidenceFile(file);
@@ -569,7 +645,7 @@ export async function submitEvidence(input: {
       file,
     });
 
-    return evidenceRepository.createPhotoEvidence(
+    evidence = await evidenceRepository.createPhotoEvidence(
       missionId,
       userId,
       type,
@@ -579,16 +655,19 @@ export async function submitEvidence(input: {
       uploaded.byteSize,
       { caption, description, mediaUrls: [] }
     );
+  } else {
+    // text or checkpoint
+    evidence = await evidenceRepository.createTextEvidence(
+      missionId,
+      userId,
+      type,
+      description ?? "",
+      { caption }
+    );
   }
 
-  // text or checkpoint
-  return evidenceRepository.createTextEvidence(
-    missionId,
-    userId,
-    type,
-    description ?? "",
-    { caption }
-  );
+  emit(createEvidenceSubmittedEvent(evidence.id, userId, missionId, userId));
+  return evidence;
 }
 
 /**
@@ -619,14 +698,11 @@ export async function verifyEvidence(
     throw new Error("No puedes verificar tu propia evidencia");
   }
 
-  const evidence = await evidenceRepository.verifyEvidence(
-    evidenceId,
-    verifierId,
-    status,
-    rejectionReason
-  );
-
-  // If verified, mark mission as completed
+  // Atomicity: update mission_participants BEFORE evidence row.
+  // If participants update fails, evidence stays pending and the caller
+  // can retry. If evidence update fails after participants succeeded,
+  // the mission shows "completed" without verified evidence — this is
+  // equivalent to the legacy completeMission path and is defensive.
   if (status === "verified") {
     const { error: updateError } = await supabase
       .from("mission_participants")
@@ -636,7 +712,21 @@ export async function verifyEvidence(
 
     if (updateError) {
       console.error("[services/missions] Failed to set completed_at:", updateError);
+      throw new Error(`Error al completar la misión: ${updateError.message}`);
     }
+  }
+
+  const evidence = await evidenceRepository.verifyEvidence(
+    evidenceId,
+    verifierId,
+    status,
+    rejectionReason
+  );
+
+  if (status === "verified") {
+    emit(createEvidenceVerifiedEvent(evidenceId, evidenceRow.user_id, evidenceRow.mission_id, verifierId));
+  } else {
+    emit(createEvidenceRejectedEvent(evidenceId, evidenceRow.user_id, evidenceRow.mission_id, verifierId, rejectionReason ?? null));
   }
 
   logDev(`[services/missions] Evidence ${evidenceId} → ${status}`);

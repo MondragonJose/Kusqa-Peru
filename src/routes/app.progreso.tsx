@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCurrentUser } from "@/features/auth";
 import { CivicRouteMap, useProgression } from "@/features/progression";
-import { BadgeGrid, CIVIC_BADGES } from "@/features/badges";
+import { BadgeGrid, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { TrendingUp } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 
 export const Route = createFileRoute("/app/progreso")({
   component: Progress,
@@ -12,7 +13,24 @@ export const Route = createFileRoute("/app/progreso")({
 function Progress() {
   const user = useCurrentUser();
   const { currentStage, nextStage, xpToNextStage } = useProgression();
-  const earnedBadgesCount = CIVIC_BADGES.filter((b) => b.earned).length;
+  const { data: timeline } = useProfileMissionTimeline();
+  const completedMissions = timeline?.missions ?? [];
+
+  // Derive badge earning from real participation
+  const activeRegions = Array.from(new Set(completedMissions.map((m) => m.region)));
+  const earnedBadgeIds = new Set<string>();
+  if (completedMissions.length >= 1) earnedBadgeIds.add("primer-paso");
+  if (activeRegions.includes("sierra")) earnedBadgeIds.add("explorador-andino");
+  if (activeRegions.includes("costa")) earnedBadgeIds.add("hijo-del-pacifico");
+  if (activeRegions.includes("selva")) earnedBadgeIds.add("navegante");
+  if (activeRegions.includes("sierra") && activeRegions.includes("costa") && activeRegions.includes("selva")) {
+    earnedBadgeIds.add("tejedor");
+  }
+  const badges: CivicBadge[] = CIVIC_BADGES.map((b) => ({
+    ...b,
+    earned: earnedBadgeIds.has(b.id),
+  }));
+  const earnedBadgesCount = badges.filter((b) => b.earned).length;
 
   if (!user) return null;
 
@@ -70,7 +88,7 @@ function Progress() {
           <h2 className="font-display font-black text-2xl tracking-tight text-foreground">Insignias de participación</h2>
           <p className="text-sm text-muted-foreground">Reconocimiento por misiones completadas.</p>
         </div>
-        <BadgeGrid badges={CIVIC_BADGES} />
+        <BadgeGrid badges={badges} />
       </section>
       <section className="space-y-4">
         <div className="space-y-4">

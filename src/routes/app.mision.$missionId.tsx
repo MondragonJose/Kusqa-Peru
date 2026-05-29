@@ -10,7 +10,7 @@ import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
-import { useMissionEvidence, useSubmitEvidence } from "@/hooks/useUploadMissionEvidence";
+import { useMissionEvidence, useSubmitEvidence, useUploadMissionEvidence } from "@/hooks/useUploadMissionEvidence";
 import type { Mission, Region, Evidence } from "@/types";
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
@@ -65,6 +65,42 @@ function MissionDetail() {
 
   const { data: evidenceList = [] } = useMissionEvidence(missionId);
   const submitEvidenceMutation = useSubmitEvidence();
+  const uploadEvidenceMutation = useUploadMissionEvidence();
+  const [evidenceType, setEvidenceType] = useState<"text" | "photo">("text");
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+  const [evidencePhoto, setEvidencePhoto] = useState<File | null>(null);
+  const isEvidencePending = submitEvidenceMutation.isPending || uploadEvidenceMutation.isPending;
+
+  const handleSubmitEvidence = () => {
+    if (evidenceType === "text") {
+      submitEvidenceMutation.mutate(
+        { missionId, type: "text", description: evidenceDescription || undefined },
+        {
+          onSuccess: () => {
+            toast.success("Evidencia enviada", { description: "Tu participación será verificada." });
+            setEvidenceDescription("");
+          },
+          onError: (err) => toast.error("Error", { description: err instanceof Error ? err.message : "No se pudo enviar la evidencia" }),
+        }
+      );
+    } else {
+      if (!evidencePhoto) {
+        toast.error("Selecciona una foto");
+        return;
+      }
+      uploadEvidenceMutation.mutate(
+        { missionId, file: evidencePhoto, description: evidenceDescription || undefined },
+        {
+          onSuccess: () => {
+            toast.success("Evidencia enviada", { description: "Tu participación será verificada." });
+            setEvidenceDescription("");
+            setEvidencePhoto(null);
+          },
+          onError: (err) => toast.error("Error", { description: err instanceof Error ? err.message : "No se pudo enviar la evidencia" }),
+        }
+      );
+    }
+  };
 
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
@@ -532,30 +568,72 @@ function MissionDetail() {
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
                       <Upload className="h-4 w-4 text-accent" /> En ruta
                     </div>
-                    <button
-                      onClick={() => {
-                        const description = prompt("Describe tu acción en esta ruta (opcional):");
-                        submitEvidenceMutation.mutate(
-                          {
-                            missionId,
-                            type: "text",
-                            description: description ?? undefined,
-                          },
-                          {
-                            onSuccess: () => toast.success("Evidencia enviada", { description: "Tu participación será verificada." }),
-                            onError: (err) => toast.error("Error", { description: err instanceof Error ? err.message : "No se pudo enviar la evidencia" }),
-                          }
-                        );
-                      }}
-                      disabled={submitEvidenceMutation.isPending}
-                      className={`w-full rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                        submitEvidenceMutation.isPending
-                          ? "bg-muted text-muted-foreground cursor-wait"
-                          : "bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30"
-                      }`}
-                    >
-                      {submitEvidenceMutation.isPending ? "Enviando..." : "Enviar evidencia"}
-                    </button>
+
+                    {/* Evidence submission form — replaces legacy prompt() */}
+                    <div className="space-y-2">
+                      {/* Type toggle */}
+                      <div className="flex gap-1 rounded-lg bg-secondary/40 p-0.5 border border-border/30">
+                        <button
+                          onClick={() => setEvidenceType("text")}
+                          className={`flex-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                            evidenceType === "text"
+                              ? "bg-foreground text-background shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Relato
+                        </button>
+                        <button
+                          onClick={() => setEvidenceType("photo")}
+                          className={`flex-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                            evidenceType === "photo"
+                              ? "bg-foreground text-background shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Foto
+                        </button>
+                      </div>
+
+                      {/* Textarea for description */}
+                      <textarea
+                        value={evidenceDescription}
+                        onChange={(e) => setEvidenceDescription(e.target.value)}
+                        placeholder={evidenceType === "photo" ? "Describe lo que muestra la foto (opcional)" : "Describe tu acción en esta ruta"}
+                        rows={2}
+                        className="w-full rounded-xl border border-border/40 bg-surface px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40 resize-none"
+                      />
+
+                      {/* File input for photo evidence */}
+                      {evidenceType === "photo" && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/heic"
+                            onChange={(e) => setEvidencePhoto(e.target.files?.[0] ?? null)}
+                            className="flex-1 text-[10px] text-muted-foreground file:mr-2 file:rounded-lg file:border file:border-border/40 file:bg-secondary file:px-2 file:py-1 file:text-[10px] file:font-bold file:text-foreground hover:file:bg-secondary/80"
+                          />
+                          {evidencePhoto && (
+                            <span className="text-[9px] text-emerald-600 font-medium shrink-0 truncate max-w-[80px]">
+                              {(evidencePhoto.size / 1024).toFixed(0)} KB
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Submit button */}
+                      <button
+                        onClick={handleSubmitEvidence}
+                        disabled={isEvidencePending}
+                        className={`w-full rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          isEvidencePending
+                            ? "bg-muted text-muted-foreground cursor-wait"
+                            : "bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30"
+                        }`}
+                      >
+                        {isEvidencePending ? "Enviando..." : "Enviar evidencia"}
+                      </button>
+                    </div>
                   </>
                 )}
               </div>

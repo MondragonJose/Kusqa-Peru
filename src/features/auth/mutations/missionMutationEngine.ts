@@ -367,6 +367,18 @@ function rollbackKeys(kind: MissionMutationKind, ctx: WriteContext): QueryKey[] 
             evidenceKeys.completionState(ctx.userId, ctx.missionIds?.[0] ?? ""),
           ]
         : [];
+    case "verifyEvidence":
+      return ctx.userId
+        ? [
+            userMissionKeys.all(ctx.userId),
+            userMissionKeys.completed(ctx.userId),
+            userProgressKeys.territory("live"),
+            userKeys.current,
+            evidenceKeys.byMission(ctx.missionIds?.[0] ?? ""),
+            evidenceKeys.byUser(ctx.userId),
+            evidenceKeys.completionState(ctx.userId, ctx.missionIds?.[0] ?? ""),
+          ]
+        : [];
   }
 }
 

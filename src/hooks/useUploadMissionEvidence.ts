@@ -8,7 +8,6 @@ import { EVIDENCE_FEED_STALE_MS, EVIDENCE_FEED_GC_MS } from "@/lib/queryCache";
 import { submitEvidence, verifyEvidence } from "@/services/missions";
 import { evidenceRepository } from "@/services/evidenceRepository";
 import { userSessionQueryOptions } from "@/features/auth/queryOptions";
-import { resolveAuthenticatedUserId } from "@/features/auth/mutations/authMutationContext";
 import type { Evidence, EvidenceType, CompletionState } from "@/types";
 
 // ─── Query hooks ──────────────────────────────────────────────────────────
@@ -62,20 +61,7 @@ export function useSubmitEvidence() {
       if (!userId) throw new Error("No authenticated user");
       return submitEvidence({ ...input, userId });
     },
-    onSuccess: (evidence) => {
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byMission(evidence.missionId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byUserMission(evidence.userId, evidence.missionId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byUser(evidence.userId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.completionState(evidence.userId, evidence.missionId),
-      });
-    },
+    // Propagation handled centrally by eventHandlers on EvidenceSubmitted
   });
 }
 
@@ -105,14 +91,7 @@ export function useUploadMissionEvidence() {
         file: input.file,
       });
     },
-    onSuccess: (evidence) => {
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byMission(evidence.missionId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byUserMission(evidence.userId, evidence.missionId),
-      });
-    },
+    // Propagation handled centrally by eventHandlers on EvidenceSubmitted
   });
 }
 
@@ -133,13 +112,6 @@ export function useVerifyEvidence() {
       if (!userId) throw new Error("No authenticated user");
       return verifyEvidence(input.evidenceId, userId, input.status, input.rejectionReason);
     },
-    onSuccess: (evidence) => {
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.byMission(evidence.missionId),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: evidenceKeys.completionState(evidence.userId, evidence.missionId),
-      });
-    },
+    // Propagation handled centrally by eventHandlers on EvidenceVerified / EvidenceRejected
   });
 }

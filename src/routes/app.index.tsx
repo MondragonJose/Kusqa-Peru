@@ -350,8 +350,8 @@ function Dashboard() {
           <Sparkles className="h-5 w-5 text-accent" /> En movimiento
         </h2>
         <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
-          {feedItems.length > 0 ? (
-            feedItems.map((item) => {
+          {feedItems.filter((f) => f.entityType !== "proposal").length > 0 ? (
+            feedItems.filter((f) => f.entityType !== "proposal").map((item) => {
               const isMissionEntity = isMission(item);
               return (
               <button

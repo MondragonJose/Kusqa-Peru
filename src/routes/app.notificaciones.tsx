@@ -1,34 +1,51 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/auth";
+import { userSessionQueryOptions } from "@/features/auth/queryOptions";
 import { CivicFeed } from "@/features/notifications";
-import { useMissions } from "@/hooks/useMissions";
+import { useLiveNotificationInbox, useMarkNotificationRead } from "@/hooks/useNotifications";
+import { formatRelativeDate } from "@/utils/date";
+import type { CivicNotification, CivicNotificationType } from "@/features/notifications/types";
 
 export const Route = createFileRoute("/app/notificaciones")({
   component: NotificationsPage,
 });
 
+const NOTIFICATION_TYPE_MAP: Record<string, { type: CivicNotificationType; emoji: string }> = {
+  mission_joined: { type: "misión", emoji: "📍" },
+  mission_completed: { type: "misión", emoji: "✅" },
+  xp_granted: { type: "logro", emoji: "✨" },
+  evidence_received: { type: "presencia", emoji: "📷" },
+  moderation_update: { type: "comunidad", emoji: "🔍" },
+  community_pulse: { type: "comunidad", emoji: "💚" },
+};
+
+function notificationRowToCivic(row: { id: string; notificationType: string; title: string; body: string; payload: Record<string, unknown>; readAt: string | null; createdAt: string }): CivicNotification {
+  const mapped = NOTIFICATION_TYPE_MAP[row.notificationType] ?? { type: "comunidad" as CivicNotificationType, emoji: "📬" };
+  return {
+    id: row.id,
+    type: mapped.type,
+    title: row.title,
+    body: row.body,
+    emoji: mapped.emoji,
+    timestamp: formatRelativeDate(row.createdAt),
+    read: row.readAt !== null,
+    missionId: (row.payload?.mission_id as string | undefined) ?? undefined,
+  };
+}
+
 function NotificationsPage() {
   const user = useCurrentUser();
-  const { data: missions = [] } = useMissions();
+  const { data: userId } = useQuery(userSessionQueryOptions());
+  const { data: dbRows = [] } = useLiveNotificationInbox(userId ?? undefined);
+  const markReadMutation = useMarkNotificationRead(userId ?? undefined);
 
-  // Generate contextual notifications based on real missions
-  const contextualNotifications = missions.slice(0, 5).map((mission, index) => ({
-    id: `notif-${mission.id}`,
-    type: "misión" as const,
-    title: `Nueva misión en ${mission.district}`,
-    body: mission.description,
-    emoji: mission.emoji || "📍",
-    timestamp: `${index + 1}h`,
-    read: false,
-    district: mission.district,
-    region: mission.region as "costa" | "sierra" | "selva",
-    missionId: mission.id,
-  }));
+  const notifications: CivicNotification[] = dbRows.map(notificationRowToCivic);
 
   return (
     <div className="max-w-3xl mx-auto pb-12">
       <CivicFeed
-        notifications={contextualNotifications}
+        notifications={notifications}
         userDistrict={user?.district}
       />
     </div>
