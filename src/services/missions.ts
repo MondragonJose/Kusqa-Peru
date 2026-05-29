@@ -180,10 +180,9 @@ export async function getMissionById(missionId: string): Promise<Mission | null>
       .from("missions")
       .select("*")
       .eq("id", missionId)
-      .single(); // Retorna un objeto o null (no array)
+      .maybeSingle();
 
-    if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows found (es ok)
+    if (error) {
       console.error("[services/missions] Supabase error:", error);
       throw new Error(`Failed to fetch mission: ${error.message}`);
     }

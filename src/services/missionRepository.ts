@@ -153,12 +153,9 @@ export const missionRepository = {
       .from("missions")
       .select("*")
       .eq("id", missionId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return null;
-      }
       throw new Error(`Failed to fetch mission: ${error.message}`);
     }
 

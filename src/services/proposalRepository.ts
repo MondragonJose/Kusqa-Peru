@@ -184,13 +184,14 @@ export const proposalRepository = {
       .from("proposals")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === "PGRST116") return null;
       console.error("[KUSQA PROPOSAL TRACE] Error fetching proposal:", error);
       throw new Error(`Failed to fetch proposal: ${error.message}`);
     }
+
+    if (!rawData) return null;
 
     return toDomain(assertDbRow(rawData));
   },
@@ -266,11 +267,15 @@ export const proposalRepository = {
       .update(validatedPayload)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("[KUSQA PROPOSAL TRACE] Error updating proposal:", error);
       return { status: "error", error: `DB error: ${error.message}` };
+    }
+
+    if (!rawData) {
+      return { status: "error", error: "Propuesta no encontrada" };
     }
 
     const proposal = toDomain(assertDbRow(rawData));
