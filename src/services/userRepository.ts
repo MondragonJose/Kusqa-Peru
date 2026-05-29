@@ -121,11 +121,12 @@ export const userRepository = {
     }
 
     // Try to fetch from user_progress table
+    // Use maybeSingle to avoid 406/PGRST116 when no row exists
     const { data, error } = await supabase
       .from("user_progress")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       // If table doesn't exist or other error, return default

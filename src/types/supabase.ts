@@ -54,13 +54,15 @@ export type ProfileRow = {
 
 /**
  * Respuesta cruda de tabla mission_participants
+ * PRODUCTION SCHEMA: no status column — completion inferred from completed_at IS NOT NULL
  */
 export type MissionParticipantRow = {
   id: string;
   mission_id: string;
   user_id: string;
-  joined_at: string;
-  status: string; // "active" | "completed" | "withdrawn"
+  created_at: string;
+  completed_at: string | null;
+  xp_earned: number | null;
 };
 
 /**

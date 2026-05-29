@@ -327,12 +327,12 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
     );
 
     // Insertar en mission_participants
+    // No status column in production — existence of row IS participation
     // FK constraint on mission_id validates mission existence — no extra query needed
     const { error } = await supabase.from("mission_participants").insert([
       {
         mission_id: missionId,
         user_id: userId,
-        status: "active",
       },
     ]);
 
@@ -358,53 +358,66 @@ export async function joinMission(missionId: string, userId: string): Promise<bo
 
 /**
  * Obtiene las misiones en las que el usuario participa
- * Hace join entre mission_participants y missions
+ * Two-step: fetch participant rows, then batch-fetch missions by ID
+ * Avoids reliance on FK-based resource embedding
  */
 export async function getUserMissions(userId: string): Promise<Mission[]> {
   try {
     logDev(`[services/missions] Fetching missions for user ${userId}...`);
 
-    const { data, error } = await supabase
+    // Step 1: Get all mission IDs this user participates in
+    const { data: participation, error: partError } = await supabase
       .from("mission_participants")
-      .select("missions(*)")
+      .select("mission_id")
       .eq("user_id", userId);
 
-    if (error) {
-      console.error("[services/missions] Supabase error:", error);
-      throw new Error(`Failed to fetch user missions: ${error.message}`);
+    if (partError) {
+      console.error("[services/missions] Error fetching participation:", partError);
+      return [];
     }
 
-    if (!data || data.length === 0) {
+    if (!participation || participation.length === 0) {
       logDev(`[services/missions] User ${userId} has no missions`);
       return [];
     }
 
-    logDev(`[services/missions] Found ${data.length} missions for user`);
-    
-    const rawData = data as unknown as { missions: unknown }[];
-    return rawData
-      .map((row) => {
-        if (!row.missions) return null;
-        
-        const missionRow = Array.isArray(row.missions) ? row.missions[0] : row.missions;
-        if (!missionRow) return null;
-        
-        const parsed = MissionRowSchema.safeParse(missionRow);
+    const missionIds = participation.map((row: { mission_id: string }) => row.mission_id);
+    logDev(`[services/missions] Found ${missionIds.length} missions for user`);
+
+    // Step 2: Batch-fetch missions by IDs
+    const { data: missionsData, error: missionsError } = await supabase
+      .from("missions")
+      .select("*")
+      .in("id", missionIds);
+
+    if (missionsError) {
+      console.error("[services/missions] Error fetching mission details:", missionsError);
+      return [];
+    }
+
+    if (!missionsData || missionsData.length === 0) {
+      return [];
+    }
+
+    return missionsData
+      .map((row: unknown) => {
+        const parsed = MissionRowSchema.safeParse(row);
         if (!parsed.success) {
-          console.error("[services/missions] Join row failed validation:", parsed.error, missionRow);
+          console.error("[services/missions] Mission row failed validation:", parsed.error, row);
+          return null;
         }
-        return transformMissionRow((parsed.success ? parsed.data : missionRow) as MissionRow);
+        return transformMissionRow(parsed.data as MissionRow);
       })
-      .filter((m): m is Mission => m !== null);
+      .filter((m: Mission | null): m is Mission => m !== null);
   } catch (error) {
     console.error("[services/missions] Exception in getUserMissions:", error);
-    throw error;
+    return [];
   }
 }
 
 /**
  * Usuario completa una misión
- * Actualiza registro en mission_participants a status 'completed'
+ * Actualiza registro en mission_participants — sets completed_at (no status column in production)
  */
 export async function completeMission(missionId: string, userId: string): Promise<boolean> {
   try {
@@ -418,10 +431,10 @@ export async function completeMission(missionId: string, userId: string): Promis
       throw new Error("Mission not found");
     }
 
-    // Actualizar mission_participants a status 'completed'
+    // Actualizar mission_participants — completed_at non-null means completed
     const { error } = await supabase
       .from("mission_participants")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .update({ completed_at: new Date().toISOString() })
       .eq("mission_id", missionId)
       .eq("user_id", userId);
 
