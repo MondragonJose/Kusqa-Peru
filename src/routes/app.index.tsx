@@ -27,7 +27,7 @@ import {
   buildTerritory,
   calculateEntityStats
 } from "@/domain/missionSelection";
-import { conventions, iconSize } from "@/design";
+
 
 // Helper para renderizar metadata contextual simple en cards
 function renderCategoryMetadata(category: MissionCategory) {

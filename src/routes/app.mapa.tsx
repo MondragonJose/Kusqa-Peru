@@ -11,7 +11,7 @@ import { Drawer } from "vaul";
 import type { MapCoords, Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { CivicEntity } from "@/types/entity";
 import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
-import { iconSize, loading } from "@/design";
+
 
 export const Route = createFileRoute("/app/mapa")({
   component: MapPage,
