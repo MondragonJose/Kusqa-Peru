@@ -11,6 +11,7 @@ import { useMissions } from "@/hooks/useMissions";
 import { useAllProposals } from "@/features/proposals";
 import { Onboarding } from "@/components/Onboarding";
 import { TerritorialFootprint } from "@/components/TerritorialFootprint";
+import { KusqaButton } from "@/components/ui/kusqa-button";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import type { Region, Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Proposal } from "@/services/proposalContract";
@@ -25,9 +26,9 @@ import {
   selectNearbyMissions,
   selectFeedItems,
   buildTerritory,
-  calculateEntityStats
+  calculateEntityStats,
 } from "@/domain/missionSelection";
-
+import { iconSize } from "@/design";
 
 // Helper para renderizar metadata contextual simple en cards
 function renderCategoryMetadata(category: MissionCategory) {
@@ -179,12 +180,14 @@ function Dashboard() {
               Jóvenes de todo el Perú ya están transformando sus distritos. Descubre las rutas activas cerca de ti.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/app/mapa" className={`inline-flex items-center gap-2 ${conventions.button.primary}`}>
-                Explorar misiones <MapPin className={iconSize.md} />
-              </Link>
-              <Link to="/app/crear" className={`inline-flex items-center gap-2 ${conventions.button.secondary}`}>
-                Crear proyecto
-              </Link>
+              <KusqaButton variant="primary" asChild>
+                <Link to="/app/mapa">
+                  Explorar misiones <MapPin className={iconSize.md} />
+                </Link>
+              </KusqaButton>
+              <KusqaButton variant="secondary" asChild>
+                <Link to="/app/crear">Crear proyecto</Link>
+              </KusqaButton>
             </div>
           </div>
         </section>
