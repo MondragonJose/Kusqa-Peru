@@ -131,7 +131,9 @@ export function MapView({
       }
     }
     loadLeaflet();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Map creation
@@ -146,13 +148,18 @@ export function MapView({
     }).setView([PERU_DEFAULT_CENTER.lat, PERU_DEFAULT_CENTER.lng], MAP_DEFAULT_ZOOM);
 
     const tileUrl = mapStyle === "dark" ? MAP_TILE_LAYER_URL : MAP_TILE_LIGHT_URL;
-    const tileLayer = L.tileLayer(tileUrl, { attribution: MAP_ATTRIBUTION, maxZoom: 19 }).addTo(map);
+    const tileLayer = L.tileLayer(tileUrl, { attribution: MAP_ATTRIBUTION, maxZoom: 19 }).addTo(
+      map,
+    );
     tileLayerRef.current = tileLayer;
 
     // Attribution override
     const attrControl = L.control({ position: "bottomright" });
     attrControl.onAdd = () => {
-      const div = L.DomUtil.create("div", "glass rounded-lg px-2 py-1 text-[10px] text-muted-foreground");
+      const div = L.DomUtil.create(
+        "div",
+        "glass rounded-lg px-2 py-1 text-[10px] text-muted-foreground",
+      );
       div.innerHTML = MAP_ATTRIBUTION;
       return div;
     };
@@ -248,8 +255,14 @@ export function MapView({
     }
 
     // Clean user marks
-    if (userMarkerRef.current) { map.removeLayer(userMarkerRef.current); userMarkerRef.current = null; }
-    if (userCircleRef.current) { map.removeLayer(userCircleRef.current); userCircleRef.current = null; }
+    if (userMarkerRef.current) {
+      map.removeLayer(userMarkerRef.current);
+      userMarkerRef.current = null;
+    }
+    if (userCircleRef.current) {
+      map.removeLayer(userCircleRef.current);
+      userCircleRef.current = null;
+    }
 
     // Draw GPS location with Proximity settings
     if (userCoords && isValidLatLng(userCoords.lat, userCoords.lng)) {
@@ -263,17 +276,20 @@ export function MapView({
           fillColor: "#D4A832",
           fillOpacity: 0.1,
           dashArray: "6, 12",
-          className: "explorador-proximity-circle"
+          className: "explorador-proximity-circle",
         }).addTo(map);
 
-        pulseCircle.bindPopup(`
+        pulseCircle.bindPopup(
+          `
           <div class="p-3 text-center text-xs w-48 font-sans">
             <span class="text-lg">🛡️</span>
             <div class="font-bold text-foreground mt-1">Presencia Territorial</div>
             <div class="text-[10px] text-muted-foreground mt-1">Tu ubicación aproximada en un radio de 2.5 km activa.</div>
             <div class="text-[9px] text-amber-600 dark:text-amber-400 mt-1 font-bold">KUSQA nunca comparte tu ubicación exacta.</div>
           </div>
-        `, { closeButton: false });
+        `,
+          { closeButton: false },
+        );
 
         userCircleRef.current = pulseCircle;
       } else {
@@ -286,14 +302,30 @@ export function MapView({
   // Sync Layers & Style Toggles
   useEffect(() => {
     updateLayersAndStyles();
-  }, [missions, userCoords, selectedMissionId, leafletLoaded, mapMode, mapStyle, isExploradorMode, activeTerritoryPath]);
+  }, [
+    missions,
+    userCoords,
+    selectedMissionId,
+    leafletLoaded,
+    mapMode,
+    mapStyle,
+    isExploradorMode,
+    activeTerritoryPath,
+  ]);
 
   // Center selected mission changes
   useEffect(() => {
     if (!leafletLoaded || !mapRef.current || !selectedMissionId) return;
     const selectedMission = missions.find((m) => m.id === selectedMissionId);
-    if (selectedMission?.coords && isValidLatLng(selectedMission.coords.lat, selectedMission.coords.lng)) {
-      mapRef.current.setView([selectedMission.coords.lat, selectedMission.coords.lng], MAP_DETAIL_ZOOM, { animate: true, duration: 1.0 });
+    if (
+      selectedMission?.coords &&
+      isValidLatLng(selectedMission.coords.lat, selectedMission.coords.lng)
+    ) {
+      mapRef.current.setView(
+        [selectedMission.coords.lat, selectedMission.coords.lng],
+        MAP_DETAIL_ZOOM,
+        { animate: true, duration: 1.0 },
+      );
       const marker = markersMapRef.current.get(selectedMissionId);
       if (marker) {
         setTimeout(() => {
@@ -305,16 +337,25 @@ export function MapView({
 
   // Auto-center on user location when first obtained
   useEffect(() => {
-    if (!leafletLoaded || !mapRef.current || !userCoords || !isValidLatLng(userCoords.lat, userCoords.lng)) return;
+    if (
+      !leafletLoaded ||
+      !mapRef.current ||
+      !userCoords ||
+      !isValidLatLng(userCoords.lat, userCoords.lng)
+    )
+      return;
     // Only center if this is the first time we get user coords (not already centered)
     // We use a simple heuristic: if the map is still at default center, center on user
     const currentCenter = mapRef.current.getCenter();
     const distanceFromDefault = Math.sqrt(
       Math.pow(currentCenter.lat - PERU_DEFAULT_CENTER.lat, 2) +
-      Math.pow(currentCenter.lng - PERU_DEFAULT_CENTER.lng, 2)
+        Math.pow(currentCenter.lng - PERU_DEFAULT_CENTER.lng, 2),
     );
     if (distanceFromDefault < 0.1) {
-      mapRef.current.setView([userCoords.lat, userCoords.lng], 11, { animate: true, duration: 1.5 });
+      mapRef.current.setView([userCoords.lat, userCoords.lng], 11, {
+        animate: true,
+        duration: 1.5,
+      });
     }
   }, [userCoords, leafletLoaded]);
 
@@ -323,27 +364,36 @@ export function MapView({
     if (!leafletLoaded || !mapRef.current) return;
 
     // Only do this on initial load if we have missions
-    const missionsWithCoords = missions.filter(m => m.coords && isValidLatLng(m.coords.lat, m.coords.lng));
+    const missionsWithCoords = missions.filter(
+      (m) => m.coords && isValidLatLng(m.coords.lat, m.coords.lng),
+    );
     if (missionsWithCoords.length === 0) return;
 
     // Check if map is still at default center (not manually moved yet)
     const currentCenter = mapRef.current.getCenter();
     const distanceFromDefault = Math.sqrt(
       Math.pow(currentCenter.lat - PERU_DEFAULT_CENTER.lat, 2) +
-      Math.pow(currentCenter.lng - PERU_DEFAULT_CENTER.lng, 2)
+        Math.pow(currentCenter.lng - PERU_DEFAULT_CENTER.lng, 2),
     );
 
     if (distanceFromDefault < 0.1) {
       // Calculate centroid of all missions
-      const avgLat = missionsWithCoords.reduce((sum, m) => sum + m.coords!.lat, 0) / missionsWithCoords.length;
-      const avgLng = missionsWithCoords.reduce((sum, m) => sum + m.coords!.lng, 0) / missionsWithCoords.length;
+      const avgLat =
+        missionsWithCoords.reduce((sum, m) => sum + m.coords!.lat, 0) / missionsWithCoords.length;
+      const avgLng =
+        missionsWithCoords.reduce((sum, m) => sum + m.coords!.lng, 0) / missionsWithCoords.length;
 
       // Center on centroid with appropriate zoom
       const zoom = missionsWithCoords.length > 5 ? 7 : 9;
       mapRef.current.setView([avgLat, avgLng], zoom, { animate: true, duration: 1.5 });
 
       if (import.meta.env.DEV) {
-        console.log("[KUSQA MAP TRACE] Auto-centered on entity centroid:", { avgLat, avgLng, zoom, entityCount: missionsWithCoords.length });
+        console.log("[KUSQA MAP TRACE] Auto-centered on entity centroid:", {
+          avgLat,
+          avgLng,
+          zoom,
+          entityCount: missionsWithCoords.length,
+        });
       }
     }
   }, [missions, leafletLoaded]);
@@ -351,7 +401,10 @@ export function MapView({
   // GPS User centering sync
   const handleCenterUser = () => {
     if (userCoords && isValidLatLng(userCoords.lat, userCoords.lng) && mapRef.current) {
-      mapRef.current.setView([userCoords.lat, userCoords.lng], MAP_DETAIL_ZOOM, { animate: true, duration: 1.2 });
+      mapRef.current.setView([userCoords.lat, userCoords.lng], MAP_DETAIL_ZOOM, {
+        animate: true,
+        duration: 1.2,
+      });
       if (userMarkerRef.current) userMarkerRef.current.openPopup();
       if (userCircleRef.current) userCircleRef.current.openPopup();
     } else {
@@ -360,12 +413,19 @@ export function MapView({
   };
 
   // Navigation click controls
-  const handleZoomIn = () => { if (mapRef.current) mapRef.current.zoomIn(); };
-  const handleZoomOut = () => { if (mapRef.current) mapRef.current.zoomOut(); };
-  
+  const handleZoomIn = () => {
+    if (mapRef.current) mapRef.current.zoomIn();
+  };
+  const handleZoomOut = () => {
+    if (mapRef.current) mapRef.current.zoomOut();
+  };
+
   const handleResetView = () => {
     if (mapRef.current) {
-      mapRef.current.setView([PERU_DEFAULT_CENTER.lat, PERU_DEFAULT_CENTER.lng], MAP_DEFAULT_ZOOM, { animate: true, duration: 1.2 });
+      mapRef.current.setView([PERU_DEFAULT_CENTER.lat, PERU_DEFAULT_CENTER.lng], MAP_DEFAULT_ZOOM, {
+        animate: true,
+        duration: 1.2,
+      });
       setActiveTerritoryPath([]);
     }
   };
@@ -373,14 +433,17 @@ export function MapView({
   // Sync autocomplete focal views
   useEffect(() => {
     if (focalCoords && isValidLatLng(focalCoords.lat, focalCoords.lng) && mapRef.current) {
-      mapRef.current.setView([focalCoords.lat, focalCoords.lng], MAP_DETAIL_ZOOM, { animate: true, duration: 1.2 });
+      mapRef.current.setView([focalCoords.lat, focalCoords.lng], MAP_DETAIL_ZOOM, {
+        animate: true,
+        duration: 1.2,
+      });
     }
   }, [focalCoords]);
 
   // Deep Territorial Navigation click handlers
   const handleSelectTerritoryNode = (node: TerritoryNode) => {
     const parentKey = node.parentId || node.id;
-    
+
     // Fit path hierarchy
     let nextPath: TerritoryNode[] = [];
     if (node.type === "region") {
@@ -394,15 +457,25 @@ export function MapView({
       // Find department
       let deptNode: TerritoryNode | undefined;
       for (const list of Object.values(TERRITORY_HIERARCHY)) {
-        const found = list.find((item) => item.type === "department" && TERRITORY_HIERARCHY[item.id]?.some((dst) => dst.id === node.id));
-        if (found) { deptNode = found; break; }
+        const found = list.find(
+          (item) =>
+            item.type === "department" &&
+            TERRITORY_HIERARCHY[item.id]?.some((dst) => dst.id === node.id),
+        );
+        if (found) {
+          deptNode = found;
+          break;
+        }
       }
       nextPath = regionNode && deptNode ? [regionNode, deptNode, node] : [node];
     }
 
     setActiveTerritoryPath(nextPath);
     if (mapRef.current) {
-      mapRef.current.setView([node.coords.lat, node.coords.lng], node.zoom, { animate: true, duration: 1.2 });
+      mapRef.current.setView([node.coords.lat, node.coords.lng], node.zoom, {
+        animate: true,
+        duration: 1.2,
+      });
     }
   };
 
@@ -410,14 +483,21 @@ export function MapView({
     if (index === -1) {
       setActiveTerritoryPath([]);
       if (mapRef.current) {
-        mapRef.current.setView([PERU_DEFAULT_CENTER.lat, PERU_DEFAULT_CENTER.lng], MAP_DEFAULT_ZOOM, { animate: true, duration: 1.2 });
+        mapRef.current.setView(
+          [PERU_DEFAULT_CENTER.lat, PERU_DEFAULT_CENTER.lng],
+          MAP_DEFAULT_ZOOM,
+          { animate: true, duration: 1.2 },
+        );
       }
     } else {
       const nextPath = activeTerritoryPath.slice(0, index + 1);
       setActiveTerritoryPath(nextPath);
       const targetNode = nextPath[nextPath.length - 1];
       if (mapRef.current && targetNode) {
-        mapRef.current.setView([targetNode.coords.lat, targetNode.coords.lng], targetNode.zoom, { animate: true, duration: 1.2 });
+        mapRef.current.setView([targetNode.coords.lat, targetNode.coords.lng], targetNode.zoom, {
+          animate: true,
+          duration: 1.2,
+        });
       }
     }
   };
@@ -436,10 +516,12 @@ export function MapView({
 
   return (
     <div className="relative w-full h-full min-h-[480px] md:min-h-[580px] lg:min-h-[660px] rounded-[2rem] overflow-hidden shadow-2xl border border-border/40 flex flex-col lg:flex-row-reverse">
-      
       {/* MAP LAYER CONTAINER */}
       <div className="flex-1 relative h-[65dvh] lg:h-auto">
-        <div ref={containerRef} className={`w-full h-full bg-secondary/10 z-0 kusqa-territorial-map${mapStyle === 'dark' ? ' dark-map' : ''}`} />
+        <div
+          ref={containerRef}
+          className={`w-full h-full bg-secondary/10 z-0 kusqa-territorial-map${mapStyle === "dark" ? " dark-map" : ""}`}
+        />
 
         {/* Loading Overlay */}
         {!leafletLoaded && (
@@ -448,7 +530,9 @@ export function MapView({
               <span className="absolute inset-0 rounded-full border-4 border-amber-500/20 animate-pulse"></span>
               <span className="absolute inset-0 rounded-full border-4 border-t-accent animate-spin"></span>
             </div>
-            <p className="font-display font-semibold text-foreground text-xs uppercase tracking-widest text-amber-600">Explorando el atlas cívico...</p>
+            <p className="font-display font-semibold text-foreground text-xs uppercase tracking-widest text-amber-600">
+              Explorando el atlas cívico...
+            </p>
           </div>
         )}
 
@@ -456,12 +540,14 @@ export function MapView({
         {leafletLoaded && missions.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/90 z-10 backdrop-blur-sm p-6 text-center">
             <div className="text-5xl mb-4">🗺️</div>
-            <h3 className="font-display font-black text-lg text-foreground mb-2">Atlas Territorial</h3>
+            <h3 className="font-display font-black text-lg text-foreground mb-2">
+              Atlas Territorial
+            </h3>
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
               Explora el mapa para descubrir misiones activas en todo el Perú.
             </p>
             <button
-              onClick={() => window.location.href = '/app/mapa'}
+              onClick={() => (window.location.href = "/app/mapa")}
               className="px-4 py-2 rounded-xl bg-secondary text-foreground text-xs font-black border border-border/40 hover:bg-secondary/80 transition-all"
             >
               Ver todo el Perú
@@ -478,14 +564,20 @@ export function MapView({
                 {[
                   { id: "pins", label: "Pines", icon: <MapPin className="h-3.5 w-3.5" /> },
                   { id: "heatmap", label: "Calor", icon: <Flame className="h-3.5 w-3.5" /> },
-                  { id: "districts", label: "Distritos", icon: <Landmark className="h-3.5 w-3.5" /> },
+                  {
+                    id: "districts",
+                    label: "Distritos",
+                    icon: <Landmark className="h-3.5 w-3.5" />,
+                  },
                 ].map((m) => (
                   <button
-                     key={m.id}
-                     onClick={() => setMapMode(m.id as MapMode)}
-                     className={`px-1.5 py-1 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
-                       mapMode === m.id ? "bg-foreground text-background" : "text-muted-foreground hover:bg-secondary/40"
-                     }`}
+                    key={m.id}
+                    onClick={() => setMapMode(m.id as MapMode)}
+                    className={`px-1.5 py-1 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
+                      mapMode === m.id
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:bg-secondary/40"
+                    }`}
                   >
                     {m.icon}
                     <span className="hidden sm:inline sm:ml-1">{m.label}</span>
@@ -495,8 +587,18 @@ export function MapView({
 
               {/* Theme toggle */}
               <div className="flex self-end rounded-lg border border-border/30 bg-surface/70 shadow-soft p-0.5 backdrop-blur-md text-[7px] font-black uppercase tracking-wider gap-0.5">
-                <button onClick={() => setMapStyle("dark")} className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "dark" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Oscuro</button>
-                <button onClick={() => setMapStyle("light")} className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "light" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}>Claro</button>
+                <button
+                  onClick={() => setMapStyle("dark")}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "dark" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}
+                >
+                  Oscuro
+                </button>
+                <button
+                  onClick={() => setMapStyle("light")}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer ${mapStyle === "light" ? "bg-primary text-white" : "text-muted-foreground hover:bg-secondary/20"}`}
+                >
+                  Claro
+                </button>
               </div>
             </div>
 
@@ -515,14 +617,21 @@ export function MapView({
             {/* Top Center - Breadcrumb Trail Overlay — hidden on mobile at root level */}
             {activeTerritoryPath.length > 0 ? (
               <div className="absolute top-3 left-3 z-10 pointer-events-auto flex items-center bg-surface/70 border border-border/30 rounded-2xl px-3 py-1.5 shadow-soft backdrop-blur-md text-[10px] font-semibold gap-1 select-none">
-                <button onClick={() => handleBreadcrumbClick(-1)} className="hover:text-primary transition-colors text-muted-foreground">Perú</button>
+                <button
+                  onClick={() => handleBreadcrumbClick(-1)}
+                  className="hover:text-primary transition-colors text-muted-foreground"
+                >
+                  Perú
+                </button>
                 {activeTerritoryPath.map((node, index) => (
                   <div key={node.id} className="flex items-center gap-1">
                     <ChevronRight className="h-3 w-3 text-stone-400" />
                     <button
                       onClick={() => handleBreadcrumbClick(index)}
                       className={`hover:text-primary transition-colors ${
-                        index === activeTerritoryPath.length - 1 ? "text-foreground font-black" : "text-muted-foreground"
+                        index === activeTerritoryPath.length - 1
+                          ? "text-foreground font-black"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {node.name}
@@ -558,9 +667,11 @@ export function MapView({
           {/* Hierarchy Drill-Down Choices */}
           <div className="space-y-2">
             <div className="text-[9px] font-black uppercase text-stone-400 tracking-wider">
-              {activeTerritoryPath.length === 0 ? "Selecciona una Región Natural" : "Explorar en este tramo"}
+              {activeTerritoryPath.length === 0
+                ? "Selecciona una Región Natural"
+                : "Explorar en este tramo"}
             </div>
-            
+
             {territoryOptions.length > 0 ? (
               <div className="grid grid-cols-1 gap-1.5">
                 {territoryOptions.map((opt) => (
@@ -592,15 +703,25 @@ export function MapView({
 
           {/* Contextual Territorial Summaries */}
           <div className="p-4 bg-secondary/30 rounded-2.5xl border border-border/20 space-y-3">
-            <div className="text-[9px] font-black uppercase text-stone-400 tracking-wider leading-none">Resumen del tramo</div>
+            <div className="text-[9px] font-black uppercase text-stone-400 tracking-wider leading-none">
+              Resumen del tramo
+            </div>
             <div className="grid grid-cols-2 gap-2 text-center pt-1">
               <div className="p-2 bg-card rounded-xl border border-border/10">
-                <div className="font-display font-black text-sm text-foreground">{totalMissionsActive}</div>
-                <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 leading-none">iniciativas</div>
+                <div className="font-display font-black text-sm text-foreground">
+                  {totalMissionsActive}
+                </div>
+                <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 leading-none">
+                  iniciativas
+                </div>
               </div>
               <div className="p-2 bg-card rounded-xl border border-border/10">
-                <div className="font-display font-black text-sm text-foreground">{totalExploradores}</div>
-                <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 leading-none">exploradores</div>
+                <div className="font-display font-black text-sm text-foreground">
+                  {totalExploradores}
+                </div>
+                <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 leading-none">
+                  exploradores
+                </div>
               </div>
             </div>
             <div className="text-[9px] text-muted-foreground font-semibold flex items-center justify-between pt-1 border-t border-border/20">
@@ -612,19 +733,23 @@ export function MapView({
           {/* Mission Preview Cards for Selected Territory */}
           {territoryMissions.length > 0 && (
             <div className="space-y-2">
-              <div className="text-[9px] font-black uppercase text-stone-400 tracking-wider leading-none">Acciones activas aquí</div>
+              <div className="text-[9px] font-black uppercase text-stone-400 tracking-wider leading-none">
+                Acciones activas aquí
+              </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {territoryMissions.slice(0, 5).map((m) => (
                   <button
                     key={m.id}
                     onClick={() => onSelectMission(m.id)}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-card border ${
-                      selectedMissionId === m.id ? 'border-accent bg-accent/5' : 'border-border/20'
+                      selectedMissionId === m.id ? "border-accent bg-accent/5" : "border-border/20"
                     } hover:border-accent/40 text-left transition-all cursor-pointer`}
                   >
                     <span className="text-lg">{m.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-bold text-foreground truncate">{m.title}</div>
+                      <div className="text-[10px] font-bold text-foreground truncate">
+                        {m.title}
+                      </div>
                       <div className="text-[8px] text-muted-foreground truncate">{m.district}</div>
                     </div>
                     <div className="text-[8px] font-black text-accent">+{m.xp} XP</div>
@@ -643,8 +768,10 @@ export function MapView({
         {/* GPS PRIVACY CONTROL — Trust & Proximity Mode */}
         <div className="pt-3 lg:pt-4 border-t border-border/40 mt-3 lg:mt-5 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider">Ubicación GPS segura</span>
-            
+            <span className="text-[9px] font-black uppercase text-stone-400 tracking-wider">
+              Ubicación GPS segura
+            </span>
+
             <div className="flex items-center rounded-lg border border-border/20 bg-secondary/40 p-0.5 text-[8px] font-bold">
               <button
                 onClick={() => setIsExploradorMode(true)}
@@ -666,12 +793,13 @@ export function MapView({
             <div>
               <span>KUSQA nunca comparte tu ubicación exacta.</span>
               {isExploradorMode && (
-                <p className="text-[8px] text-muted-foreground/90 mt-0.5">Ubicación aproximada en un radio de 2.5 km activa.</p>
+                <p className="text-[8px] text-muted-foreground/90 mt-0.5">
+                  Ubicación aproximada en un radio de 2.5 km activa.
+                </p>
               )}
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Styles for explorer proximity circles and heatmap */}

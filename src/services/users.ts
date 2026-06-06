@@ -1,7 +1,7 @@
 /**
  * Service para usuarios
  * Gestiona operaciones de perfil y autenticación
- * 
+ *
  * NOTA: Actualmente usa mock data. Al integrar Supabase Auth:
  * - getCurrentUser(): llamará a supabase.auth.getSession()
  * - getUserProfile(): consultará tabla 'profiles' en Supabase
@@ -17,7 +17,7 @@ import { CIVIC_BADGES } from "@/features/badges";
  */
 export async function getCurrentUser(): Promise<User | null> {
   await new Promise((resolve) => setTimeout(resolve, 200));
-  
+
   // En producción: obtener de Supabase Auth
   return CURRENT_USER;
 }
@@ -28,24 +28,22 @@ export async function getCurrentUser(): Promise<User | null> {
  */
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   await new Promise((resolve) => setTimeout(resolve, 300));
-  
+
   // En producción: buscar en tabla 'profiles'
   const user = CURRENT_USER; // Por ahora solo el usuario actual
-  
+
   if (!user) return null;
-  
+
   return {
     user,
-    badges: CIVIC_BADGES
-      .filter((b) => b.earned)
-      .map((b) => ({
-        id: b.id,
-        name: b.name,
-        emoji: b.emoji,
-        region: b.region === "nacional" ? "todas" : b.region,
-        earned: b.earned,
-        description: b.narrative,
-      })),
+    badges: CIVIC_BADGES.filter((b) => b.earned).map((b) => ({
+      id: b.id,
+      name: b.name,
+      emoji: b.emoji,
+      region: b.region === "nacional" ? "todas" : b.region,
+      earned: b.earned,
+      description: b.narrative,
+    })),
     totalMissionsCompleted: 12,
     totalImpact: "2.5 hectáreas restauradas",
   };
@@ -55,12 +53,9 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
  * Actualiza el perfil del usuario
  * @future Será: `await client.from('profiles').update(...).eq('id', userId)`
  */
-export async function updateUserProfile(
-  userId: string,
-  updates: Partial<User>
-): Promise<User> {
+export async function updateUserProfile(userId: string, updates: Partial<User>): Promise<User> {
   await new Promise((resolve) => setTimeout(resolve, 400));
-  
+
   // En producción: actualizar en Supabase
   return { ...CURRENT_USER, ...updates };
 }
@@ -71,18 +66,16 @@ export async function updateUserProfile(
  */
 export async function getUserBadges(userId: string): Promise<Badge[]> {
   await new Promise((resolve) => setTimeout(resolve, 250));
-  
+
   // En producción: buscar badges ganados del usuario
-  return CIVIC_BADGES
-    .filter((b) => b.earned)
-    .map((b) => ({
-      id: b.id,
-      name: b.name,
-      emoji: b.emoji,
-      region: b.region === "nacional" ? "todas" : b.region,
-      earned: b.earned,
-      description: b.narrative,
-    }));
+  return CIVIC_BADGES.filter((b) => b.earned).map((b) => ({
+    id: b.id,
+    name: b.name,
+    emoji: b.emoji,
+    region: b.region === "nacional" ? "todas" : b.region,
+    earned: b.earned,
+    description: b.narrative,
+  }));
 }
 
 /**

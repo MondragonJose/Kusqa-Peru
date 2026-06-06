@@ -6,7 +6,11 @@
  */
 
 import { supabase } from "@/lib/supabase";
-import { dbEvidenceToDomain, evidenceToDbInsert, evidenceTypeToDb } from "@/services/evidenceContract";
+import {
+  dbEvidenceToDomain,
+  evidenceToDbInsert,
+  evidenceTypeToDb,
+} from "@/services/evidenceContract";
 import type { Evidence, EvidenceType, DbEvidenceRow } from "@/types/evidence";
 import { mapEvidenceToModeration } from "@/domain/evidence";
 
@@ -81,7 +85,7 @@ export const evidenceRepository = {
     userId: string,
     type: EvidenceType,
     description: string,
-    options?: { caption?: string; locationLat?: number; locationLng?: number }
+    options?: { caption?: string; locationLat?: number; locationLng?: number },
   ): Promise<Evidence> {
     const insert = evidenceToDbInsert(missionId, userId, type, {
       description,
@@ -122,7 +126,7 @@ export const evidenceRepository = {
       mediaUrls?: string[];
       widthPx?: number;
       heightPx?: number;
-    }
+    },
   ): Promise<Evidence> {
     const insert = evidenceToDbInsert(missionId, userId, type, {
       storagePath,
@@ -157,7 +161,7 @@ export const evidenceRepository = {
     evidenceId: string,
     verifierId: string,
     status: "verified" | "rejected",
-    rejectionReason?: string
+    rejectionReason?: string,
   ): Promise<Evidence> {
     const update: Record<string, unknown> = {
       moderation_status: mapEvidenceToModeration(status),
@@ -207,11 +211,7 @@ export const evidenceRepository = {
   /**
    * Count evidence by status for a mission/user.
    */
-  async countByStatus(
-    userId: string,
-    missionId: string,
-    status: string
-  ): Promise<number> {
+  async countByStatus(userId: string, missionId: string, status: string): Promise<number> {
     const { count, error } = await supabase
       .from("mission_evidence")
       .select("id", { count: "exact", head: true })

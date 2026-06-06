@@ -3,14 +3,7 @@
  */
 
 import type { LucideIcon } from "lucide-react";
-import {
-  Compass,
-  MapPin,
-  Zap,
-  Bell,
-  Trophy,
-  User,
-} from "lucide-react";
+import { Compass, MapPin, Zap, Bell, Trophy, User } from "lucide-react";
 
 export type NavItem = {
   to: string;

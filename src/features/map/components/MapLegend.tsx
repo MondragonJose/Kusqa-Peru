@@ -7,7 +7,7 @@ export function MapLegend() {
         <Layers className="h-3.5 w-3.5 text-accent" />
         <span>Regiones de Impacto</span>
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-coast ring-2 ring-coast/20 animate-pulse-ring" />

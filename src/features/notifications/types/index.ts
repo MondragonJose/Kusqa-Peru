@@ -7,13 +7,13 @@
 
 /** Tipos de notificaciones cívicas */
 export type CivicNotificationType =
-  | "misión"        // actividad en misiones
-  | "insignia"      // badge desbloqueado
-  | "nivel"         // subida de nivel
-  | "comunidad"     // actividad colectiva del distrito
-  | "social"        // acción de otro usuario
-  | "presencia"     // señal de actividad cercana
-  | "logro";        // hito o achievement
+  | "misión" // actividad en misiones
+  | "insignia" // badge desbloqueado
+  | "nivel" // subida de nivel
+  | "comunidad" // actividad colectiva del distrito
+  | "social" // acción de otro usuario
+  | "presencia" // señal de actividad cercana
+  | "logro"; // hito o achievement
 
 /** Notificación cívica con contexto territorial */
 export type CivicNotification = {
@@ -43,22 +43,22 @@ export type CivicNotification = {
 
 /** Etiquetas de categoría para UI */
 export const NOTIFICATION_TYPE_LABELS: Record<CivicNotificationType, string> = {
-  "misión": "Misiones",
-  "insignia": "Insignias",
-  "nivel": "Expedición",
-  "comunidad": "Comunidad",
-  "social": "Social",
-  "presencia": "Actividad cercana",
-  "logro": "Logros",
+  misión: "Misiones",
+  insignia: "Insignias",
+  nivel: "Expedición",
+  comunidad: "Comunidad",
+  social: "Social",
+  presencia: "Actividad cercana",
+  logro: "Logros",
 };
 
 /** Colores de fondo por tipo */
 export const NOTIFICATION_TYPE_GRADIENT: Record<CivicNotificationType, string> = {
-  "misión": "bg-gradient-coast",
-  "insignia": "bg-gradient-sunrise",
-  "nivel": "bg-gradient-andes",
-  "comunidad": "bg-gradient-jungle",
-  "social": "bg-accent",
-  "presencia": "bg-gradient-terrain-costa",
-  "logro": "bg-gradient-cumbre",
+  misión: "bg-gradient-coast",
+  insignia: "bg-gradient-sunrise",
+  nivel: "bg-gradient-andes",
+  comunidad: "bg-gradient-jungle",
+  social: "bg-accent",
+  presencia: "bg-gradient-terrain-costa",
+  logro: "bg-gradient-cumbre",
 };

@@ -48,7 +48,7 @@ export function renderHeatmapLayer({ L, map, missions }: HeatmapLayerOptions): L
         🔥 Foco de Actividad: ${m.district}<br/>
         <span class="text-[10px] text-muted-foreground">${m.category}</span>
       </div>`,
-      { closeButton: false }
+      { closeButton: false },
     );
 
     heatmapGroup.addLayer(heatCircle);

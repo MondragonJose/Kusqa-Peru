@@ -16,7 +16,7 @@ export function useLogout() {
     if (import.meta.env.DEV) {
       console.log("[KUSQA AUTH TRACE] Initiating logout");
     }
-    
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -27,10 +27,10 @@ export function useLogout() {
     if (import.meta.env.DEV) {
       console.log("[KUSQA AUTH TRACE] Logout successful, clearing cache");
     }
-    
+
     // Limpiar cache de React Query
     queryClient.clear();
-    
+
     // Redirect a /
     navigate({ to: "/", search: { redirect: undefined } });
   }, [navigate, queryClient]);

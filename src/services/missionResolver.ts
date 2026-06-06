@@ -22,11 +22,11 @@ const MISSION_UUID_SCHEMA = z.string().uuid();
 
 const PROPOSAL_CATEGORY_EMOJI: Record<string, string> = {
   "Medio ambiente": "🌱",
-  "Educación": "📚",
+  Educación: "📚",
   "Arte & cultura": "🎨",
-  "Comunidad": "🤝",
-  "Salud": "❤️",
-  "Tecnología": "🏗️",
+  Comunidad: "🤝",
+  Salud: "❤️",
+  Tecnología: "🏗️",
 };
 
 function adaptProposalToMission(p: Proposal): Mission {

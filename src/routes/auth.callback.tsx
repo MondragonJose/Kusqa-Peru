@@ -19,7 +19,8 @@ function AuthCallbackPage() {
     if (processing.current) return;
     processing.current = true;
 
-    if (import.meta.env.DEV) console.log("[KUSQA AUTH TRACE] Callback mounted, handling session token...");
+    if (import.meta.env.DEV)
+      console.log("[KUSQA AUTH TRACE] Callback mounted, handling session token...");
 
     // Declaramos la suscripción y timeout fuera para poder limpiarlos correctamente
     let authSubscription: any = null;
@@ -36,7 +37,8 @@ function AuthCallbackPage() {
       }
 
       if (data.session) {
-        if (import.meta.env.DEV) console.log("[KUSQA AUTH TRACE] Session found immediately:", data.session.user.id);
+        if (import.meta.env.DEV)
+          console.log("[KUSQA AUTH TRACE] Session found immediately:", data.session.user.id);
         window.location.hash = "";
         // Simplified: always navigate to landing with redirect param
         // Landing will decide final destination based on auth state
@@ -45,15 +47,19 @@ function AuthCallbackPage() {
         return;
       }
 
-      if (import.meta.env.DEV) console.log("[KUSQA AUTH TRACE] No immediate session, listening for auth state change...");
+      if (import.meta.env.DEV)
+        console.log("[KUSQA AUTH TRACE] No immediate session, listening for auth state change...");
 
       // 2. Timeout fallback para Safari iOS edge case (10s)
       timeoutId = setTimeout(() => {
-        if (import.meta.env.DEV) console.error("[KUSQA AUTH TRACE] Auth callback timeout - no session received");
+        if (import.meta.env.DEV)
+          console.error("[KUSQA AUTH TRACE] Auth callback timeout - no session received");
         window.location.href = "/?error=auth_timeout";
       }, 10000);
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
         if (import.meta.env.DEV) console.log("[KUSQA AUTH TRACE] Auth event captured:", event);
 
         if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {

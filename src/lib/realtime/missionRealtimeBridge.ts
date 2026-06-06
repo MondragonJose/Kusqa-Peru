@@ -78,17 +78,14 @@ function scheduleReconcile(queryClient: QueryClient, userId: string): void {
 function enqueueRemoteEvent(
   queryClient: QueryClient,
   userId: string,
-  event: MissionDomainEvent
+  event: MissionDomainEvent,
 ): void {
   const state = getBridgeState(queryClient);
   state.pendingEvents.push(event);
   scheduleReconcile(queryClient, userId);
 }
 
-export function subscribeMissionRealtime(
-  queryClient: QueryClient,
-  userId: string
-): () => void {
+export function subscribeMissionRealtime(queryClient: QueryClient, userId: string): () => void {
   const state = getBridgeState(queryClient);
   const generation = ++state.generation;
 
@@ -121,12 +118,17 @@ export function subscribeMissionRealtime(
     // )
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "user_notifications", filter: `user_id=eq.${userId}` },
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "user_notifications",
+        filter: `user_id=eq.${userId}`,
+      },
       (payload) => {
         if (generation !== state.generation) return;
         const event = mapRealtimePayloadToDomainEvent("user_notifications", payload, userId);
         if (event) enqueueRemoteEvent(queryClient, userId, event);
-      }
+      },
     )
     .on("postgres_changes", { event: "*", schema: "public", table: "missions" }, (payload) => {
       if (generation !== state.generation) return;

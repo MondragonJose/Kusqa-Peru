@@ -1,7 +1,7 @@
 /**
  * Service para notificaciones
  * Gestiona notificaciones del sistema
- * 
+ *
  * @future Será: escucha en realtime de Supabase o WebSocket
  */
 
@@ -14,7 +14,7 @@ import { NOTIFICATIONS as NOTIFICATIONS_MOCK } from "@/data/mockData";
  */
 export async function getNotifications(userId: string): Promise<Notification[]> {
   await new Promise((resolve) => setTimeout(resolve, 200));
-  
+
   // En producción: filtrar por userId
   return NOTIFICATIONS_MOCK;
 }
@@ -25,7 +25,7 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 150));
-  
+
   // En producción: actualizar en Supabase
   const notification = NOTIFICATIONS_MOCK.find((n) => n.id === notificationId);
   if (notification) {
@@ -39,7 +39,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
  */
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 300));
-  
+
   // En producción: actualizar todas en Supabase
   NOTIFICATIONS_MOCK.forEach((n) => {
     n.read = true;
@@ -52,6 +52,6 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
  */
 export async function getUnreadNotifications(userId: string): Promise<Notification[]> {
   await new Promise((resolve) => setTimeout(resolve, 200));
-  
+
   return NOTIFICATIONS_MOCK.filter((n) => !n.read);
 }

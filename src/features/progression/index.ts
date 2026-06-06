@@ -5,4 +5,3 @@ export type { KusqaMomentType, KusqaMomentData } from "./components/KusqaMoments
 export { useProgression, useStageStatus } from "./hooks/useProgression";
 export { CIVIC_ROUTE, getStageByLevel, getStageByXp } from "./constants/civicRoute";
 export type { ProgressionStage, UserProgression, StageStatus, StageMilestone } from "./types";
-

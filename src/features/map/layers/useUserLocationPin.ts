@@ -12,7 +12,11 @@ type LeafletInstance = any;
  * Creates or updates the user location pin on the map.
  * Returns the marker instance.
  */
-export function createUserLocationPin(L: LeafletInstance, map: LeafletInstance, coords: MapCoords): LeafletInstance {
+export function createUserLocationPin(
+  L: LeafletInstance,
+  map: LeafletInstance,
+  coords: MapCoords,
+): LeafletInstance {
   if (!isValidLatLng(coords.lat, coords.lng)) return null;
 
   const userIcon = L.divIcon({
@@ -37,7 +41,7 @@ export function createUserLocationPin(L: LeafletInstance, map: LeafletInstance, 
     {
       closeButton: false,
       offset: L.point(0, -5),
-    }
+    },
   );
   marker.addTo(map);
   return marker;

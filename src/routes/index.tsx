@@ -67,42 +67,85 @@ function deriveStatsFromMissions(missions: Mission[]) {
   if (missions.length === 0) {
     return [
       { icon: Globe, label: "distritos activos", value: 0, suffix: "", color: "text-coast" },
-      { icon: Activity, label: "expediciones en marcha", value: 0, suffix: "", color: "text-accent" },
+      {
+        icon: Activity,
+        label: "expediciones en marcha",
+        value: 0,
+        suffix: "",
+        color: "text-accent",
+      },
       { icon: Users, label: "jóvenes movilizados", value: 0, suffix: "", color: "text-sierra" },
       { icon: Clock, label: "horas comunitarias", value: 0, suffix: "", color: "text-jungle" },
     ];
   }
 
-  const uniqueDistricts = new Set(missions.map(m => m.district)).size;
+  const uniqueDistricts = new Set(missions.map((m) => m.district)).size;
   const totalParticipants = missions.reduce((sum, m) => sum + (m.participants || 0), 0);
   // Estimate hours: 2 hours average per participant per mission
   const estimatedHours = totalParticipants * 2;
 
   return [
-    { icon: Globe, label: "distritos activos", value: uniqueDistricts, suffix: "", color: "text-coast" },
-    { icon: Activity, label: "expediciones en marcha", value: missions.length, suffix: "", color: "text-accent" },
-    { icon: Users, label: "jóvenes movilizados", value: totalParticipants, suffix: "", color: "text-sierra" },
-    { icon: Clock, label: "horas comunitarias", value: estimatedHours, suffix: "+", color: "text-jungle" },
+    {
+      icon: Globe,
+      label: "distritos activos",
+      value: uniqueDistricts,
+      suffix: "",
+      color: "text-coast",
+    },
+    {
+      icon: Activity,
+      label: "expediciones en marcha",
+      value: missions.length,
+      suffix: "",
+      color: "text-accent",
+    },
+    {
+      icon: Users,
+      label: "jóvenes movilizados",
+      value: totalParticipants,
+      suffix: "",
+      color: "text-sierra",
+    },
+    {
+      icon: Clock,
+      label: "horas comunitarias",
+      value: estimatedHours,
+      suffix: "+",
+      color: "text-jungle",
+    },
   ];
 }
 
-function StatCounter({ icon: Icon, label, value, suffix, color }: { icon: any; label: string; value: number; suffix: string; color: string }) {
+function StatCounter({
+  icon: Icon,
+  label,
+  value,
+  suffix,
+  color,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  suffix: string;
+  color: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
   const count = useAnimatedCounter(value, 1800, inView);
 
   return (
     <div ref={ref} className="flex flex-col items-center gap-2 text-center">
-      <div className={`h-12 w-12 rounded-2xl glass grid place-items-center ${color} shadow-soft mb-1`}>
+      <div
+        className={`h-12 w-12 rounded-2xl glass grid place-items-center ${color} shadow-soft mb-1`}
+      >
         <Icon className="h-5 w-5" />
       </div>
       <div className="font-display text-4xl lg:text-5xl font-bold text-white">
-        {count.toLocaleString("es-PE")}{suffix}
+        {count.toLocaleString("es-PE")}
+        {suffix}
       </div>
       {/* AQUÍ ESTÁ EL CAMBIO: text-white/90 en lugar de text-muted-foreground */}
-      <div className="text-sm text-white/90 max-w-[130px] leading-snug">
-        {label}
-      </div>
+      <div className="text-sm text-white/90 max-w-[130px] leading-snug">{label}</div>
     </div>
   );
 }
@@ -111,13 +154,27 @@ function StatCounter({ icon: Icon, label, value, suffix, color }: { icon: any; l
 // Peru SVG territorial outline — decorative, SSR-safe
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PeruTerritoryDecoration({ costaCount = 0, sierraCount = 0, selvaCount = 0 }: { costaCount?: number; sierraCount?: number; selvaCount?: number }) {
+function PeruTerritoryDecoration({
+  costaCount = 0,
+  sierraCount = 0,
+  selvaCount = 0,
+}: {
+  costaCount?: number;
+  sierraCount?: number;
+  selvaCount?: number;
+}) {
   return (
     <div className="relative w-full max-w-[340px] mx-auto select-none pointer-events-none">
       {/* Background glow blobs */}
       <div className="absolute top-1/4 left-1/4 w-40 h-40 rounded-full bg-gradient-coast opacity-20 blur-2xl animate-wander" />
-      <div className="absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full bg-gradient-andes opacity-20 blur-2xl animate-wander" style={{ animationDelay: "4s" }} />
-      <div className="absolute top-2/3 left-1/3 w-28 h-28 rounded-full bg-gradient-jungle opacity-20 blur-2xl animate-wander" style={{ animationDelay: "8s" }} />
+      <div
+        className="absolute bottom-1/4 right-1/4 w-32 h-32 rounded-full bg-gradient-andes opacity-20 blur-2xl animate-wander"
+        style={{ animationDelay: "4s" }}
+      />
+      <div
+        className="absolute top-2/3 left-1/3 w-28 h-28 rounded-full bg-gradient-jungle opacity-20 blur-2xl animate-wander"
+        style={{ animationDelay: "8s" }}
+      />
 
       {/* Symbolic Peru outline — simplified SVG polygon */}
       <svg viewBox="0 0 240 360" fill="none" className="w-full h-auto drop-shadow-xl">
@@ -143,10 +200,22 @@ function PeruTerritoryDecoration({ costaCount = 0, sierraCount = 0, selvaCount =
           <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite" />
         </circle>
         <circle cx="120" cy="190" r="5" fill="oklch(0.55 0.2 310)" opacity="0.9">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" begin="0.8s" repeatCount="indefinite" />
+          <animate
+            attributeName="opacity"
+            values="0.6;1;0.6"
+            dur="3s"
+            begin="0.8s"
+            repeatCount="indefinite"
+          />
         </circle>
         <circle cx="140" cy="290" r="5" fill="oklch(0.6 0.19 160)" opacity="0.9">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="3.5s" begin="1.6s" repeatCount="indefinite" />
+          <animate
+            attributeName="opacity"
+            values="0.6;1;0.6"
+            dur="3.5s"
+            begin="1.6s"
+            repeatCount="indefinite"
+          />
         </circle>
         <defs>
           <linearGradient id="peruFill" x1="0" y1="0" x2="1" y2="1">
@@ -161,10 +230,16 @@ function PeruTerritoryDecoration({ costaCount = 0, sierraCount = 0, selvaCount =
       <div className="absolute top-[22%] left-[10%] bg-gradient-coast text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow">
         Costa · 🌊 {costaCount} misiones
       </div>
-      <div className="absolute top-[48%] right-[5%] bg-gradient-andes text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow" style={{ animationDelay: "2s" }}>
+      <div
+        className="absolute top-[48%] right-[5%] bg-gradient-andes text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
+        style={{ animationDelay: "2s" }}
+      >
         Sierra · ⛰️ {sierraCount} misiones
       </div>
-      <div className="absolute bottom-[20%] left-[8%] bg-gradient-jungle text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow" style={{ animationDelay: "1s" }}>
+      <div
+        className="absolute bottom-[20%] left-[8%] bg-gradient-jungle text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
+        style={{ animationDelay: "1s" }}
+      >
         Selva · 🌿 {selvaCount} misiones
       </div>
     </div>
@@ -207,7 +282,7 @@ function Landing(): JSX.Element {
   // Derive mission counts by region for "Elige tu paisaje" cards
   const missionsByRegion = useMemo(() => {
     const counts: Record<string, number> = {};
-    missions.forEach(m => {
+    missions.forEach((m) => {
       counts[m.region] = (counts[m.region] || 0) + 1;
     });
     return counts;
@@ -234,7 +309,7 @@ function Landing(): JSX.Element {
 
     // Group by region for diversity
     const byRegion: Record<string, Mission[]> = {};
-    missions.forEach(m => {
+    missions.forEach((m) => {
       if (!byRegion[m.region]) byRegion[m.region] = [];
       byRegion[m.region].push(m);
     });
@@ -244,7 +319,7 @@ function Landing(): JSX.Element {
     const regions = Object.keys(byRegion);
 
     // Take 2 from each region for diversity
-    regions.forEach(region => {
+    regions.forEach((region) => {
       const regionMissions = byRegion[region];
       // Shuffle within region for variety
       const shuffled = regionMissions.sort(() => Math.random() - 0.5);
@@ -255,31 +330,30 @@ function Landing(): JSX.Element {
     if (selected.length > 6) {
       // Keep one from each region first, then fill remaining
       const diverse: Mission[] = [];
-      regions.forEach(region => {
-        const regionSelected = selected.filter(m => m.region === region);
+      regions.forEach((region) => {
+        const regionSelected = selected.filter((m) => m.region === region);
         if (regionSelected.length > 0) {
           diverse.push(regionSelected[0]);
         }
       });
       // Fill remaining with shuffled extras
-      const extras = selected.filter(m => !diverse.includes(m)).sort(() => Math.random() - 0.5);
+      const extras = selected.filter((m) => !diverse.includes(m)).sort(() => Math.random() - 0.5);
       diverse.push(...extras.slice(0, 6 - diverse.length));
       return diverse;
     }
 
     // If we have less than 6, fill with any remaining missions
     if (selected.length < 6) {
-      const remaining = missions.filter(m => !selected.includes(m));
+      const remaining = missions.filter((m) => !selected.includes(m));
       const shuffled = remaining.sort(() => Math.random() - 0.5);
       selected.push(...shuffled.slice(0, 6 - selected.length));
     }
 
     return selected.slice(0, 6);
   })();
-  
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-
       {/* ── NAV ── */}
       <header className="fixed top-0 inset-x-0 z-50">
         <div className="mx-auto max-w-7xl px-5 lg:px-8 mt-4">
@@ -297,10 +371,18 @@ function Landing(): JSX.Element {
             </Link>
 
             <nav className="hidden md:flex items-center gap-6 ml-6 text-sm text-muted-foreground">
-              <a href="#movimiento" className="hover:text-foreground transition-colors">El movimiento</a>
-              <a href="#expediciones" className="hover:text-foreground transition-colors">Expediciones</a>
-              <a href="#territorio" className="hover:text-foreground transition-colors">Territorio</a>
-              <a href="#voces" className="hover:text-foreground transition-colors">Voces</a>
+              <a href="#movimiento" className="hover:text-foreground transition-colors">
+                El movimiento
+              </a>
+              <a href="#expediciones" className="hover:text-foreground transition-colors">
+                Expediciones
+              </a>
+              <a href="#territorio" className="hover:text-foreground transition-colors">
+                Territorio
+              </a>
+              <a href="#voces" className="hover:text-foreground transition-colors">
+                Voces
+              </a>
             </nav>
 
             <div className="ml-auto flex items-center gap-2">
@@ -326,11 +408,18 @@ function Landing(): JSX.Element {
         {/* Ambient layers */}
         <div className="absolute inset-0 bg-mesh opacity-80" />
         <div className="absolute top-16 -right-28 h-[520px] w-[520px] rounded-full bg-gradient-sunrise opacity-15 blur-3xl animate-float-slow" />
-        <div className="absolute bottom-0 -left-40 h-[420px] w-[420px] rounded-full bg-gradient-andes opacity-15 blur-3xl animate-float-slow" style={{ animationDelay: "2.5s" }} />
+        <div
+          className="absolute bottom-0 -left-40 h-[420px] w-[420px] rounded-full bg-gradient-andes opacity-15 blur-3xl animate-float-slow"
+          style={{ animationDelay: "2.5s" }}
+        />
 
         {/* Qhapaq Ñan background SVG trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <svg className="absolute inset-0 w-full h-full opacity-[0.04]" viewBox="0 0 1440 800" preserveAspectRatio="none">
+          <svg
+            className="absolute inset-0 w-full h-full opacity-[0.04]"
+            viewBox="0 0 1440 800"
+            preserveAspectRatio="none"
+          >
             <path
               d="M -50 700 Q 200 500 400 550 T 700 350 T 1000 250 T 1300 100 T 1490 50"
               stroke="oklch(0.78 0.17 75)"
@@ -366,16 +455,21 @@ function Landing(): JSX.Element {
               >
                 <div className="absolute inset-0 bg-gradient-sunrise opacity-5 animate-pulse" />
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                <span className="relative z-10 truncate">Movimiento vivo · {missions.length} ruta{missions.length !== 1 ? 's' : ''} activa{missions.length !== 1 ? 's' : ''}</span>
+                <span className="relative z-10 truncate">
+                  Movimiento vivo · {missions.length} ruta{missions.length !== 1 ? "s" : ""} activa
+                  {missions.length !== 1 ? "s" : ""}
+                </span>
               </motion.div>
 
               <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-[4.5rem] leading-[1.1] sm:leading-[1.0] lg:leading-[0.95] tracking-tight">
-                Crea proyectos cívicos<br />
+                Crea proyectos cívicos
+                <br />
                 <span className="text-gradient-aurora">en tu distrito.</span>
               </h1>
 
               <p className="mt-3 sm:mt-4 lg:mt-6 text-sm sm:text-base lg:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                KUSQA conecta jóvenes que quieren transformar su entorno. Cada proyecto que creas deja una huella real en tu comunidad.
+                KUSQA conecta jóvenes que quieren transformar su entorno. Cada proyecto que creas
+                deja una huella real en tu comunidad.
               </p>
 
               <p className="mt-2 sm:mt-3 lg:mt-3 text-xs sm:text-sm lg:text-base text-muted-foreground/80 max-w-lg leading-relaxed italic">
@@ -434,9 +528,33 @@ function Landing(): JSX.Element {
           {/* Floating expedition cards */}
           <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 max-w-5xl">
             {[
-              { emoji: "🎨", title: "Mural colectivo", place: "Barranco · Lima", xp: 320, rotate: "-rotate-2", gradient: "from-accent/20 to-sun/20", region: "Costa" },
-              { emoji: "🌱", title: "Reforestación", place: "Chinchero · Cusco", xp: 540, rotate: "rotate-1", gradient: "from-jungle/20 to-sierra/20", region: "Sierra" },
-              { emoji: "🛶", title: "Limpieza del río", place: "Iquitos · Loreto", xp: 680, rotate: "-rotate-1", gradient: "from-coast/20 to-jungle/20", region: "Selva" },
+              {
+                emoji: "🎨",
+                title: "Mural colectivo",
+                place: "Barranco · Lima",
+                xp: 320,
+                rotate: "-rotate-2",
+                gradient: "from-accent/20 to-sun/20",
+                region: "Costa",
+              },
+              {
+                emoji: "🌱",
+                title: "Reforestación",
+                place: "Chinchero · Cusco",
+                xp: 540,
+                rotate: "rotate-1",
+                gradient: "from-jungle/20 to-sierra/20",
+                region: "Sierra",
+              },
+              {
+                emoji: "🛶",
+                title: "Limpieza del río",
+                place: "Iquitos · Loreto",
+                xp: 680,
+                rotate: "-rotate-1",
+                gradient: "from-coast/20 to-jungle/20",
+                region: "Selva",
+              },
             ].map((c, i) => (
               <motion.div
                 key={c.title}
@@ -446,15 +564,22 @@ function Landing(): JSX.Element {
                 transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
                 className={`glass-strong rounded-2xl p-4 lg:p-5 shadow-card hover:shadow-lift transition-smooth ${c.rotate} hover:rotate-0 cursor-pointer`}
               >
-                <div className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}>
+                <div
+                  className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}
+                >
                   {c.emoji}
                 </div>
                 <div className="flex items-center gap-1 text-[8px] lg:text-xs text-muted-foreground mb-2">
-                  <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">{c.region}</span>
+                  <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">
+                    {c.region}
+                  </span>
                   <span>·</span>
-                  <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" /> <span className="truncate">{c.place}</span>
+                  <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" />{" "}
+                  <span className="truncate">{c.place}</span>
                 </div>
-                <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">{c.title}</div>
+                <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">
+                  {c.title}
+                </div>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
                     +{c.xp} XP
@@ -517,9 +642,7 @@ function Landing(): JSX.Element {
             viewport={{ once: true }}
             className="mt-14 text-center"
           >
-            <p className="text-white/60 text-sm mb-4">
-              ¿Quieres ser parte de estas estadísticas?
-            </p>
+            <p className="text-white/60 text-sm mb-4">¿Quieres ser parte de estas estadísticas?</p>
             <button
               onClick={loginWithGoogle}
               className="inline-flex items-center gap-2 rounded-xl bg-white text-foreground px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-card"
@@ -541,19 +664,31 @@ function Landing(): JSX.Element {
               <h2 className="font-display font-bold text-4xl lg:text-5xl mt-3 leading-tight">
                 No es voluntariado.
                 <br />
-                Es{" "}
-                <span className="text-gradient-sunrise">acción comunitaria</span>{" "}
-                real.
+                Es <span className="text-gradient-sunrise">acción comunitaria</span> real.
               </h2>
               <p className="mt-5 text-muted-foreground text-lg leading-relaxed">
-                KUSQA conecta jóvenes que quieren transformar su entorno. Cada misión es una oportunidad real para dejar huella en tu comunidad, conocer a personas que comparten tu visión y construir el Perú que soñamos.
+                KUSQA conecta jóvenes que quieren transformar su entorno. Cada misión es una
+                oportunidad real para dejar huella en tu comunidad, conocer a personas que comparten
+                tu visión y construir el Perú que soñamos.
               </p>
 
               <div className="mt-8 space-y-3">
                 {[
-                  { icon: Compass, title: "Actúa en tu cuadra", body: "Misiones reales en tu distrito que generan impacto visible." },
-                  { icon: Users, title: "Construye comunidad", body: "Conecta con jóvenes de todo el Perú que comparten tu pasión por el cambio." },
-                  { icon: Trophy, title: "Deja huella", body: "Cada acción cuenta. Tu participación se vuelve visible y reconocida." },
+                  {
+                    icon: Compass,
+                    title: "Actúa en tu cuadra",
+                    body: "Misiones reales en tu distrito que generan impacto visible.",
+                  },
+                  {
+                    icon: Users,
+                    title: "Construye comunidad",
+                    body: "Conecta con jóvenes de todo el Perú que comparten tu pasión por el cambio.",
+                  },
+                  {
+                    icon: Trophy,
+                    title: "Deja huella",
+                    body: "Cada acción cuenta. Tu participación se vuelve visible y reconocida.",
+                  },
                 ].map((f) => (
                   <div key={f.title} className="flex gap-4 rounded-2xl glass p-4">
                     <div className="h-11 w-11 rounded-xl bg-gradient-sunrise grid place-items-center shrink-0 text-white shadow-soft">
@@ -577,9 +712,27 @@ function Landing(): JSX.Element {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3">
                   {[
-                    { name: "Costa", icon: Waves, gradient: "bg-gradient-coast", desc: "Surcos del mar", active: missionsByRegion["costa"] || 0 },
-                    { name: "Sierra", icon: Mountain, gradient: "bg-gradient-andes", desc: "Rutas del Ande", active: missionsByRegion["sierra"] || 0 },
-                    { name: "Selva", icon: Trees, gradient: "bg-gradient-jungle", desc: "Corazón verde", active: missionsByRegion["selva"] || 0 },
+                    {
+                      name: "Costa",
+                      icon: Waves,
+                      gradient: "bg-gradient-coast",
+                      desc: "Surcos del mar",
+                      active: missionsByRegion["costa"] || 0,
+                    },
+                    {
+                      name: "Sierra",
+                      icon: Mountain,
+                      gradient: "bg-gradient-andes",
+                      desc: "Rutas del Ande",
+                      active: missionsByRegion["sierra"] || 0,
+                    },
+                    {
+                      name: "Selva",
+                      icon: Trees,
+                      gradient: "bg-gradient-jungle",
+                      desc: "Corazón verde",
+                      active: missionsByRegion["selva"] || 0,
+                    },
                   ].map((r) => (
                     <motion.div
                       key={r.name}
@@ -601,9 +754,13 @@ function Landing(): JSX.Element {
                       />
                       <r.icon className="h-5 w-5 sm:h-6 sm:w-6 mb-auto" />
                       <div className="mt-auto">
-                        <div className="font-display font-bold text-base sm:text-xl leading-tight">{r.name}</div>
+                        <div className="font-display font-bold text-base sm:text-xl leading-tight">
+                          {r.name}
+                        </div>
                         <div className="text-[10px] sm:text-xs opacity-80 mt-1">{r.desc}</div>
-                        <div className="text-[9px] sm:text-[10px] mt-1.5 opacity-60">{r.active} misiones</div>
+                        <div className="text-[9px] sm:text-[10px] mt-1.5 opacity-60">
+                          {r.active} misiones
+                        </div>
                       </div>
                     </motion.div>
                   ))}
@@ -634,7 +791,9 @@ function Landing(): JSX.Element {
             </div>
             <div className="flex items-end justify-between gap-4 flex-wrap">
               <h2 className="font-display font-bold text-4xl lg:text-5xl leading-tight">
-                Jóvenes transformando<br />sus comunidades hoy.
+                Jóvenes transformando
+                <br />
+                sus comunidades hoy.
               </h2>
               <button
                 onClick={loginWithGoogle}
@@ -644,8 +803,8 @@ function Landing(): JSX.Element {
               </button>
             </div>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl leading-relaxed">
-              Cada misión es una historia real de jóvenes como tú dejando huella en su barrio, distrito y región.
-              Explora qué está pasando — para participar, crea tu cuenta gratis.
+              Cada misión es una historia real de jóvenes como tú dejando huella en su barrio,
+              distrito y región. Explora qué está pasando — para participar, crea tu cuenta gratis.
             </p>
           </motion.div>
 
@@ -665,12 +824,10 @@ function Landing(): JSX.Element {
             className="mt-12 rounded-3xl glass-strong border border-border/60 p-8 text-center shadow-soft"
           >
             <div className="text-2xl mb-3">🌱</div>
-            <h3 className="font-display font-bold text-xl mb-2">
-              Tu comunidad te está esperando.
-            </h3>
+            <h3 className="font-display font-bold text-xl mb-2">Tu comunidad te está esperando.</h3>
             <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto leading-relaxed">
-              Únete a jóvenes de todo el Perú que están transformando sus barrios, distritos y regiones.
-              Tu participación importa. Es gratis.
+              Únete a jóvenes de todo el Perú que están transformando sus barrios, distritos y
+              regiones. Tu participación importa. Es gratis.
             </p>
             <button
               onClick={loginWithGoogle}
@@ -695,15 +852,19 @@ function Landing(): JSX.Element {
               De vecino activo a líder Kusqa.
             </h2>
             <p className="mt-5 text-white/70 text-lg leading-relaxed">
-              Cada misión te lleva más alto en una ruta inspirada en los caminos
-              ancestrales. Sube por la costa, atraviesa los Andes, llega a la
-              Amazonía y deja huella en el camino.
+              Cada misión te lleva más alto en una ruta inspirada en los caminos ancestrales. Sube
+              por la costa, atraviesa los Andes, llega a la Amazonía y deja huella en el camino.
             </p>
           </div>
 
           {/* Path */}
           <div className="mt-14 relative">
-            <svg className="absolute inset-0 w-full h-full hidden md:block" viewBox="0 0 1000 300" fill="none" preserveAspectRatio="none">
+            <svg
+              className="absolute inset-0 w-full h-full hidden md:block"
+              viewBox="0 0 1000 300"
+              fill="none"
+              preserveAspectRatio="none"
+            >
               <path
                 d="M 50 240 Q 200 50 400 180 T 750 90 T 950 200"
                 stroke="url(#g1)"
@@ -761,7 +922,9 @@ function Landing(): JSX.Element {
           >
             <Star className="h-8 w-8 text-sun shrink-0" />
             <div className="flex-1 text-center sm:text-left">
-              <div className="font-semibold text-white">Tu aventura empieza en Nivel 1 — Caminante</div>
+              <div className="font-semibold text-white">
+                Tu aventura empieza en Nivel 1 — Caminante
+              </div>
               <div className="text-white/60 text-sm mt-0.5">
                 Cada misión que completes te acerca a ser un Líder Kusqa reconocido en tu región.
               </div>
@@ -790,7 +953,8 @@ function Landing(): JSX.Element {
           <div className="mt-12 grid md:grid-cols-3 gap-5">
             {[
               {
-                quote: "Antes pensaba que para cambiar algo había que esperar a ser grande. KUSQA me mostró que mi cuadra ya cuenta.",
+                quote:
+                  "Antes pensaba que para cambiar algo había que esperar a ser grande. KUSQA me mostró que mi cuadra ya cuenta.",
                 name: "Mateo, 19",
                 place: "Trujillo",
                 emoji: "🌊",
@@ -798,7 +962,8 @@ function Landing(): JSX.Element {
                 missions: "8 misiones",
               },
               {
-                quote: "Sembrar queuñas en Chinchero con otros chicos fue lo más bonito que hice este año. Me hice amigos de toda la sierra.",
+                quote:
+                  "Sembrar queuñas en Chinchero con otros chicos fue lo más bonito que hice este año. Me hice amigos de toda la sierra.",
                 name: "Sayri, 22",
                 place: "Cusco",
                 emoji: "🌱",
@@ -806,7 +971,8 @@ function Landing(): JSX.Element {
                 missions: "15 misiones",
               },
               {
-                quote: "Organicé mi primer proyecto de clases de código. Hoy tengo 40 mentores y sigo creciendo.",
+                quote:
+                  "Organicé mi primer proyecto de clases de código. Hoy tengo 40 mentores y sigo creciendo.",
                 name: "Camila, 24",
                 place: "Lima",
                 emoji: "💻",
@@ -832,7 +998,9 @@ function Landing(): JSX.Element {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t.region}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {t.region}
+                    </div>
                     <div className="text-xs text-accent font-semibold">{t.missions}</div>
                   </div>
                 </div>
@@ -848,8 +1016,19 @@ function Landing(): JSX.Element {
           <div className="relative overflow-hidden rounded-3xl bg-gradient-sunrise p-10 lg:p-16 text-center text-white shadow-lift">
             <div className="absolute inset-0 bg-mesh opacity-30" />
             {/* Qhapaq Ñan decoration */}
-            <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 800 300" fill="none" preserveAspectRatio="none">
-              <path d="M -20 250 Q 200 80 400 150 T 820 80" stroke="white" strokeWidth="2" strokeDasharray="6 10" fill="none" />
+            <svg
+              className="absolute inset-0 w-full h-full opacity-10"
+              viewBox="0 0 800 300"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M -20 250 Q 200 80 400 150 T 820 80"
+                stroke="white"
+                strokeWidth="2"
+                strokeDasharray="6 10"
+                fill="none"
+              />
             </svg>
             <div className="relative">
               <div className="text-sm font-medium opacity-80 mb-4 tracking-wide uppercase">
@@ -861,8 +1040,8 @@ function Landing(): JSX.Element {
                 en tu próxima cuadra.
               </h2>
               <p className="mt-5 text-white/90 max-w-xl mx-auto text-lg">
-                Súmate a la generación que está caminando el Perú con propósito.
-                Crea tu cuenta en menos de un minuto.
+                Súmate a la generación que está caminando el Perú con propósito. Crea tu cuenta en
+                menos de un minuto.
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
                 <button
@@ -888,16 +1067,30 @@ function Landing(): JSX.Element {
         <div className="mx-auto max-w-7xl border-t border-border/60 pt-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-sunrise grid place-items-center text-white text-xs font-bold">K</div>
+              <div className="h-7 w-7 rounded-lg bg-gradient-sunrise grid place-items-center text-white text-xs font-bold">
+                K
+              </div>
               <span className="font-display font-semibold text-foreground">KUSQA</span>
-              <span className="text-sm text-muted-foreground">· Camina el Perú, construye legado.</span>
+              <span className="text-sm text-muted-foreground">
+                · Camina el Perú, construye legado.
+              </span>
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <a href="#movimiento" className="hover:text-foreground transition-colors">Manifiesto</a>
-              <a href="#expediciones" className="hover:text-foreground transition-colors">Expediciones</a>
-              <a href="#voces" className="hover:text-foreground transition-colors">Voces</a>
-              <a href="#movimiento" className="hover:text-foreground transition-colors">Aliados</a>
-              <a href="#comienza" className="hover:text-foreground transition-colors">Contacto</a>
+              <a href="#movimiento" className="hover:text-foreground transition-colors">
+                Manifiesto
+              </a>
+              <a href="#expediciones" className="hover:text-foreground transition-colors">
+                Expediciones
+              </a>
+              <a href="#voces" className="hover:text-foreground transition-colors">
+                Voces
+              </a>
+              <a href="#movimiento" className="hover:text-foreground transition-colors">
+                Aliados
+              </a>
+              <a href="#comienza" className="hover:text-foreground transition-colors">
+                Contacto
+              </a>
             </nav>
           </div>
           <div className="mt-6 text-xs text-muted-foreground/60">

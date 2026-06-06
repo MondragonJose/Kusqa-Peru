@@ -40,7 +40,7 @@ export type ReconciliationMode = "observe" | "repair-registry" | "repair-db";
  */
 export function compareEventStreams(
   registryEvents: readonly KusqaDomainEvent[],
-  dbEvents: readonly KusqaDomainEvent[]
+  dbEvents: readonly KusqaDomainEvent[],
 ): IntegrityDiff {
   const registryKeys = new Set(registryEvents.map(compositeKey));
   const dbKeys = new Set(dbEvents.map(compositeKey));
@@ -68,7 +68,7 @@ export function compareEventStreams(
 export function reconcileEventStreams(
   registryEvents: readonly KusqaDomainEvent[],
   dbEvents: readonly KusqaDomainEvent[],
-  mode: ReconciliationMode
+  mode: ReconciliationMode,
 ): IntegrityDiff {
   const diff = compareEventStreams(registryEvents, dbEvents);
 

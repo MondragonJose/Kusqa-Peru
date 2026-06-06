@@ -8,7 +8,7 @@ import { useEventHydrationBootstrap } from "@/hooks/useEventHydrationBootstrap";
 
 /**
  * /app route — Requiere autenticación
- * 
+ *
  * Usa el estado centralizado para:
  * 1. Esperar bootstrap de sesión (initializing)
  * 2. Validar autenticación sin race conditions

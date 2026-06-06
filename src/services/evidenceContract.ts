@@ -70,7 +70,7 @@ export function evidenceToDbInsert(
     caption?: string;
     description?: string;
     mediaUrls?: string[];
-  }
+  },
 ): DbEvidenceInsert {
   return {
     mission_id: missionId,

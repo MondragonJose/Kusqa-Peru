@@ -94,8 +94,10 @@ function mapRowToMission(row: DbMission): Mission {
   const participants = row.current_progress ?? 0;
   const capacity = row.max_participants ?? 10;
   const spotsLeft = Math.max(0, capacity - participants);
-  const startDate = "start_date" in row ? (row as Record<string, unknown>).start_date as string | null : null;
-  const endDate = "end_date" in row ? (row as Record<string, unknown>).end_date as string | null : null;
+  const startDate =
+    "start_date" in row ? ((row as Record<string, unknown>).start_date as string | null) : null;
+  const endDate =
+    "end_date" in row ? ((row as Record<string, unknown>).end_date as string | null) : null;
 
   return {
     id: row.id,
@@ -137,7 +139,11 @@ export const missionRepository = {
     const missions = (data ?? []).map((row) => mapRowToMission(parseDbMissionRow(row)));
 
     if (import.meta.env.DEV) {
-      console.log("[KUSQA MISSION TRACE] missionRepository.findAll: Retrieved", missions.length, "missions from Supabase");
+      console.log(
+        "[KUSQA MISSION TRACE] missionRepository.findAll: Retrieved",
+        missions.length,
+        "missions from Supabase",
+      );
       missions.forEach((m) => {
         console.log("[KUSQA MISSION TRACE] Mission:", {
           id: m.id,
@@ -182,10 +188,7 @@ export const missionRepository = {
 
     uniqueIds.forEach(assertValidMissionId);
 
-    const { data, error } = await supabase
-      .from("missions")
-      .select("*")
-      .in("id", uniqueIds);
+    const { data, error } = await supabase.from("missions").select("*").in("id", uniqueIds);
 
     if (error) {
       throw new Error(`Failed to fetch missions by ids: ${error.message}`);

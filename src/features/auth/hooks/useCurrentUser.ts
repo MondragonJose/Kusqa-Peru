@@ -2,7 +2,7 @@
  * useCurrentUser — Auth boundary for domain User.
  * Live: Supabase Auth + profiles (+ user_progress for stats).
  * NO fallbacks to mock - returns null if no authenticated user.
- * 
+ *
  * Phase 2: Extended return with explicit auth state (backward compatible).
  */
 
@@ -28,13 +28,13 @@ export interface AuthUserState {
 
 /**
  * Returns the current user for UI (null if not authenticated).
- * 
+ *
  * Phase 2: Maintains backward compatibility (returns User | null).
  * For explicit auth state, use useCurrentUserState().
  */
 export function useCurrentUser(): User | null {
   const { authState } = useAuth();
-  
+
   const { data: user } = useQuery({
     ...userCurrentQueryOptions(),
     retry: false,
@@ -47,15 +47,19 @@ export function useCurrentUser(): User | null {
 
 /**
  * Returns explicit auth state (aligns with authStateMachine).
- * 
+ *
  * Phase 2: New hook for explicit state without breaking existing consumers.
  * Consumers can migrate gradually from useCurrentUser() to this.
- * 
+ *
  * Usage:
  *   const { user, status, isAuthenticated, isReady, error } = useCurrentUserState();
  */
 export function useCurrentUserState(): AuthUserState {
-  const { data: user, isError, error: queryError } = useQuery({
+  const {
+    data: user,
+    isError,
+    error: queryError,
+  } = useQuery({
     ...userCurrentQueryOptions(),
     retry: false,
   });
@@ -140,7 +144,8 @@ export function useUserXpProgress(): {
   };
 
   const currentLevel =
-    CIVIC_ROUTE.find((l) => userWithProgress.xp >= l.xpFrom && userWithProgress.xp < l.xpTo) ?? CIVIC_ROUTE[0];
+    CIVIC_ROUTE.find((l) => userWithProgress.xp >= l.xpFrom && userWithProgress.xp < l.xpTo) ??
+    CIVIC_ROUTE[0];
   const nextLevel = CIVIC_ROUTE.find((l) => l.level === currentLevel.level + 1) ?? currentLevel;
   const fromXp = currentLevel.xpFrom;
   const toXp = nextLevel.xpFrom;
@@ -151,8 +156,6 @@ export function useUserXpProgress(): {
     fromXp,
     toXp,
     progressPct:
-      range > 0
-        ? Math.min(100, Math.max(0, ((userWithProgress.xp - fromXp) / range) * 100))
-        : 100,
+      range > 0 ? Math.min(100, Math.max(0, ((userWithProgress.xp - fromXp) / range) * 100)) : 100,
   };
 }

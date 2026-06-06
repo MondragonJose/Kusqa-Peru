@@ -91,7 +91,7 @@ export function clearRegistry(): void {
  */
 export function seedRegistry(events: readonly KusqaDomainEvent[]): void {
   const sorted = [...events].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
   if (sorted.length > REGISTRY_MAX_SIZE) {
     buffer = sorted.slice(sorted.length - REGISTRY_MAX_SIZE);

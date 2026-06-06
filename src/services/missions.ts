@@ -4,7 +4,18 @@
  * Conecta con Supabase para obtener datos reales
  */
 
-import type { Mission, Region, MissionCategory, MissionDifficulty, MapCoords, UserMission, EvidenceType, CompletionState, EvidenceStatus, Evidence } from "@/types";
+import type {
+  Mission,
+  Region,
+  MissionCategory,
+  MissionDifficulty,
+  MapCoords,
+  UserMission,
+  EvidenceType,
+  CompletionState,
+  EvidenceStatus,
+  Evidence,
+} from "@/types";
 import type { MissionRow, MissionParticipantRow } from "@/types/supabase";
 import type { CausalEnrichedEvent, KusqaDomainEvent } from "@/domain/events";
 import { supabase } from "@/lib/supabase";
@@ -15,9 +26,17 @@ import { reduceEntityState } from "@/domain/eventReducer";
 import { validateEntityState } from "@/domain/entityInvariants";
 import { projectToUserMission } from "@/domain/entityStateProjection";
 import { evidenceRepository } from "@/services/evidenceRepository";
-import { uploadMissionEvidence, buildEvidenceStoragePath, validateEvidenceFile } from "@/services/storage/evidenceStorage";
+import {
+  uploadMissionEvidence,
+  buildEvidenceStoragePath,
+  validateEvidenceFile,
+} from "@/services/storage/evidenceStorage";
 import { emit } from "@/domain/eventEmitter";
-import { createEvidenceSubmittedEvent, createEvidenceVerifiedEvent, createEvidenceRejectedEvent } from "@/domain/events";
+import {
+  createEvidenceSubmittedEvent,
+  createEvidenceVerifiedEvent,
+  createEvidenceRejectedEvent,
+} from "@/domain/events";
 import { z } from "zod";
 
 const logDev = (...args: unknown[]) => {
@@ -67,7 +86,7 @@ function mapRegion(val: unknown): Region {
   const normalized = val.toLowerCase().trim();
   if (normalized === "andes" || normalized === "sierra") return "sierra";
   if (normalized === "jungle" || normalized === "selva") return "selva";
-  
+
   const parsed = RegionSchema.safeParse(normalized);
   return parsed.success ? parsed.data : "costa";
 }
@@ -321,7 +340,11 @@ export async function createMission(data: Omit<Mission, "id">): Promise<Mission>
     logDev(`[services/missions] Created mission: ${inserted.id}`);
     const parsed = MissionRowSchema.safeParse(inserted);
     if (!parsed.success) {
-      console.error("[services/missions] Created mission failed validation:", parsed.error, inserted);
+      console.error(
+        "[services/missions] Created mission failed validation:",
+        parsed.error,
+        inserted,
+      );
     }
     return transformMissionRow((parsed.success ? parsed.data : inserted) as MissionRow);
   } catch (error) {
@@ -479,21 +502,14 @@ export async function getUserMissions(userId: string): Promise<UserMission[]> {
           const entityState = reduceEntityState(causalChain);
 
           // Optional validation — log violations in dev, never blocks
-          const validation = import.meta.env.DEV
-            ? validateEntityState(entityState)
-            : null;
+          const validation = import.meta.env.DEV ? validateEntityState(entityState) : null;
 
           const userMission: UserMission & { __invariantViolations?: string[] } =
-            projectToUserMission(
-              participant.mission_id,
-              participant.user_id,
-              entityState,
-              {
-                mission,
-                joinedAt: participant.created_at,
-                xpEarned: participant.xp_earned,
-              }
-            );
+            projectToUserMission(participant.mission_id, participant.user_id, entityState, {
+              mission,
+              joinedAt: participant.created_at,
+              xpEarned: participant.xp_earned,
+            });
 
           if (validation && !validation.valid) {
             console.warn("[missions/getUserMissions] Invariant violation", {
@@ -520,7 +536,7 @@ export async function getUserMissions(userId: string): Promise<UserMission[]> {
 
       const completionState: CompletionState = deriveCompletionStateFromEvidenceStatuses(
         participant.completed_at,
-        evidenceStatuses
+        evidenceStatuses,
       );
 
       result.push({
@@ -609,7 +625,9 @@ export async function submitEvidence(input: {
 }): Promise<Evidence> {
   const { missionId, userId, type, description, caption, file } = input;
 
-  logDev(`[services/missions] User ${userId} submitting ${type} evidence for mission ${missionId}...`);
+  logDev(
+    `[services/missions] User ${userId} submitting ${type} evidence for mission ${missionId}...`,
+  );
 
   // Lifecycle validation: only active/ending_soon missions can be completed
   const mission = await getMissionById(missionId);
@@ -619,7 +637,8 @@ export async function submitEvidence(input: {
   if (!mission.lifecycleInfo.isCompletable) {
     const state = mission.lifecycleInfo.lifecycle;
     if (state === "upcoming") throw new Error("Esta ruta aún no ha comenzado");
-    if (state === "completed" || state === "archived") throw new Error("Esta ruta ya fue completada");
+    if (state === "completed" || state === "archived")
+      throw new Error("Esta ruta ya fue completada");
     throw new Error("Esta ruta no puede completarse en este momento");
   }
 
@@ -653,7 +672,7 @@ export async function submitEvidence(input: {
       uploaded.storagePath,
       uploaded.mimeType,
       uploaded.byteSize,
-      { caption, description, mediaUrls: [] }
+      { caption, description, mediaUrls: [] },
     );
   } else {
     // text or checkpoint
@@ -662,7 +681,7 @@ export async function submitEvidence(input: {
       userId,
       type,
       description ?? "",
-      { caption }
+      { caption },
     );
   }
 
@@ -679,7 +698,7 @@ export async function verifyEvidence(
   evidenceId: string,
   verifierId: string,
   status: "verified" | "rejected",
-  rejectionReason?: string
+  rejectionReason?: string,
 ): Promise<Evidence> {
   logDev(`[services/missions] Verifier ${verifierId} → evidence ${evidenceId} → ${status}`);
 
@@ -720,13 +739,28 @@ export async function verifyEvidence(
     evidenceId,
     verifierId,
     status,
-    rejectionReason
+    rejectionReason,
   );
 
   if (status === "verified") {
-    emit(createEvidenceVerifiedEvent(evidenceId, evidenceRow.user_id, evidenceRow.mission_id, verifierId));
+    emit(
+      createEvidenceVerifiedEvent(
+        evidenceId,
+        evidenceRow.user_id,
+        evidenceRow.mission_id,
+        verifierId,
+      ),
+    );
   } else {
-    emit(createEvidenceRejectedEvent(evidenceId, evidenceRow.user_id, evidenceRow.mission_id, verifierId, rejectionReason ?? null));
+    emit(
+      createEvidenceRejectedEvent(
+        evidenceId,
+        evidenceRow.user_id,
+        evidenceRow.mission_id,
+        verifierId,
+        rejectionReason ?? null,
+      ),
+    );
   }
 
   logDev(`[services/missions] Evidence ${evidenceId} → ${status}`);
@@ -738,7 +772,7 @@ export async function verifyEvidence(
  */
 export async function getCompletionState(
   userId: string,
-  missionId: string
+  missionId: string,
 ): Promise<CompletionState> {
   const { data: participation, error: partError } = await supabase
     .from("mission_participants")

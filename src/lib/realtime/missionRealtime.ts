@@ -35,7 +35,7 @@ export type RealtimeReconciliationDecision =
 
 export function planRealtimeReconciliation(
   event: MissionDomainEvent,
-  options: { hasLocalWriteInFlight: boolean }
+  options: { hasLocalWriteInFlight: boolean },
 ): RealtimeReconciliationDecision {
   if (options.hasLocalWriteInFlight) {
     return { action: "ignore", reason: "local_write_in_flight" };
@@ -47,7 +47,10 @@ export function planRealtimeReconciliation(
   };
 
   if (event.type === "mission.catalog_updated") {
-    return { action: "invalidate", scope: { missionIds: event.missionId ? [event.missionId] : [] } };
+    return {
+      action: "invalidate",
+      scope: { missionIds: event.missionId ? [event.missionId] : [] },
+    };
   }
 
   if (event.type === "notification.received") {
@@ -66,7 +69,7 @@ type RealtimePayload = {
 export function mapRealtimePayloadToDomainEvent(
   table: string,
   payload: RealtimePayload,
-  actorId: string
+  actorId: string,
 ): MissionDomainEvent | null {
   const occurredAt = new Date().toISOString();
   const row = payload.new ?? payload.old;

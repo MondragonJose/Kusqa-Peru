@@ -3,12 +3,7 @@
  * No mock paths — all data derives from real mission_participants-backed queries.
  */
 
-import type {
-  Mission,
-  ProfileMissionTimelineView,
-  Region,
-  UserMission,
-} from "@/types";
+import type { Mission, ProfileMissionTimelineView, Region, UserMission } from "@/types";
 
 export function buildTimelineView(missions: Mission[]): ProfileMissionTimelineView {
   return {

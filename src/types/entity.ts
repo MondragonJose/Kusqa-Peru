@@ -42,7 +42,7 @@ export type ProposalAsEntity = Omit<Mission, "entityType"> & {
  *       // Use mission-specific features (join, progress)
  *     }
  */
-export type CivicEntity = 
+export type CivicEntity =
   | (Mission & { entityType: "mission" })
   | (ProposalAsEntity & { entityType: "proposal" });
 
@@ -56,7 +56,9 @@ export function isMission(entity: CivicEntity): entity is Mission & { entityType
 /**
  * Type guard: check if entity is a proposal.
  */
-export function isProposal(entity: CivicEntity): entity is ProposalAsEntity & { entityType: "proposal" } {
+export function isProposal(
+  entity: CivicEntity,
+): entity is ProposalAsEntity & { entityType: "proposal" } {
   return entity.entityType === "proposal";
 }
 

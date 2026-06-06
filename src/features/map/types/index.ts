@@ -1,6 +1,6 @@
 import type { MapCoords, Region, MissionCategory, MissionDifficulty } from "@/types";
 
-export type GeolocationErrorType = 
+export type GeolocationErrorType =
   | "PERMISSION_DENIED"
   | "POSITION_UNAVAILABLE"
   | "TIMEOUT"
@@ -29,4 +29,3 @@ export type PlaceSuggestion = {
   region: Region;
   coords: MapCoords;
 };
-

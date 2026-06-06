@@ -62,7 +62,7 @@ export function useUserLocation() {
         enableHighAccuracy: true,
         timeout: 8000,
         maximumAge: 0,
-      }
+      },
     );
   }, []);
 

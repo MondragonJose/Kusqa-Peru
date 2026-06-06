@@ -18,12 +18,7 @@ import type { EvidenceStatus, CompletionState } from "@/types/evidence";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export type VerificationState =
-  | "unverified"
-  | "pending"
-  | "verified"
-  | "rejected"
-  | "flagged";
+export type VerificationState = "unverified" | "pending" | "verified" | "rejected" | "flagged";
 
 /**
  * Consolidated state derived from an entity's full causal event chain.
@@ -93,7 +88,7 @@ const INITIAL_STATE: EntityState = {
  * causal order (use buildCausalChain() output).
  */
 export function reduceEntityState(
-  events: readonly (KusqaDomainEvent | CausalEnrichedEvent)[]
+  events: readonly (KusqaDomainEvent | CausalEnrichedEvent)[],
 ): EntityState {
   return events.reduce<EntityState>((state, event) => {
     switch (event.type) {
@@ -102,9 +97,7 @@ export function reduceEntityState(
           ...state,
           evidenceStatus: "pending",
           completionState:
-            state.completionState === "completed"
-              ? "completed"
-              : "awaiting_verification",
+            state.completionState === "completed" ? "completed" : "awaiting_verification",
           verificationState: "pending",
           isPendingVerification: true,
           isRejected: false,

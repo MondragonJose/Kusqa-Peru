@@ -13,7 +13,6 @@ import type { CivicEntity } from "@/types/entity";
 import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
 import { iconSize, loading } from "@/design";
 
-
 export const Route = createFileRoute("/app/mapa")({
   component: MapPage,
 });
@@ -23,7 +22,11 @@ type TabType = "misiones" | "actividad" | "analitica";
 function MapPage() {
   const { data: missions = [], isLoading: missionsLoading, isError: missionsError } = useMissions();
   const { data: proposals = [] } = useAllProposals();
-  const { coords: userCoords, loading: userLocationLoading, requestUserLocation } = useUserLocation();
+  const {
+    coords: userCoords,
+    loading: userLocationLoading,
+    requestUserLocation,
+  } = useUserLocation();
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const allMapItems = useMemo<CivicEntity[]>(() => {
@@ -34,26 +37,43 @@ function MapPage() {
     });
     const merged = [...missionEntities, ...proposalEntities];
     if (import.meta.env.DEV) {
-      console.log("[KUSQA ENTITY TRACE] Map merge:", missionEntities.length, "missions +", proposalEntities.length, "proposals =", merged.length, "total entities");
+      console.log(
+        "[KUSQA ENTITY TRACE] Map merge:",
+        missionEntities.length,
+        "missions +",
+        proposalEntities.length,
+        "proposals =",
+        merged.length,
+        "total entities",
+      );
     }
     return merged;
   }, [missions, proposals]);
 
-  const { filters, updateFilters, resetFilters, filteredMissions, availableRegions, availableCategories, availableDifficulties, availableDistricts } = useMissionMapFilters(allMapItems, userCoords);
+  const {
+    filters,
+    updateFilters,
+    resetFilters,
+    filteredMissions,
+    availableRegions,
+    availableCategories,
+    availableDifficulties,
+    availableDistricts,
+  } = useMissionMapFilters(allMapItems, userCoords);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Sidebar only renders missions — proposals stay as map markers only
   const sidebarMissions = filteredMissions.filter((m) => m.entityType !== "proposal");
-  const activeMission = sidebarMissions.find((m) => m.id === selectedId) || sidebarMissions[0] || null;
+  const activeMission =
+    sidebarMissions.find((m) => m.id === selectedId) || sidebarMissions[0] || null;
 
   useEffect(() => {
     if (sidebarMissions.length === 0) {
       setSelectedId(null);
       return;
     }
-    const selectionValid =
-      selectedId !== null && sidebarMissions.some((m) => m.id === selectedId);
+    const selectionValid = selectedId !== null && sidebarMissions.some((m) => m.id === selectedId);
     if (!selectionValid) {
       setSelectedId(sidebarMissions[0].id);
     }
@@ -87,7 +107,9 @@ function MapPage() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="rounded-3xl bg-destructive/10 border border-destructive/20 p-8 text-center">
           <div className="text-4xl mb-4">⚠️</div>
-          <h3 className="font-display font-black text-lg text-foreground mb-2">Error al cargar misiones</h3>
+          <h3 className="font-display font-black text-lg text-foreground mb-2">
+            Error al cargar misiones
+          </h3>
           <p className="text-sm text-muted-foreground mb-4">
             No pudimos cargar las misiones del atlas territorial. Por favor intenta nuevamente.
           </p>
@@ -159,7 +181,9 @@ function MapPage() {
         >
           <option value="todas">Todas</option>
           {availableCategories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
           ))}
         </select>
 
@@ -192,7 +216,7 @@ function MapPage() {
         </div>
       </div>
 
-        {/* Main Map & Interactive Sidebar Layout */}
+      {/* Main Map & Interactive Sidebar Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-3 lg:gap-5 items-stretch">
         {/* Dynamic Leaflet Map with focal coords support */}
         <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full order-1 lg:order-1">
@@ -214,10 +238,14 @@ function MapPage() {
               <div className="flex-1 rounded-3xl bg-card border border-border/50 overflow-hidden shadow-card flex flex-col justify-between">
                 <div>
                   {/* Visual Banner Header */}
-                  <div className={`${REGION_META[activeMission.region].gradient} p-4 lg:p-6 text-white relative`}>
+                  <div
+                    className={`${REGION_META[activeMission.region].gradient} p-4 lg:p-6 text-white relative`}
+                  >
                     <div className="absolute inset-0 bg-mesh opacity-30" />
                     <div className="relative z-10">
-                      <div className="text-4xl lg:text-5xl drop-shadow-md select-none">{activeMission.emoji}</div>
+                      <div className="text-4xl lg:text-5xl drop-shadow-md select-none">
+                        {activeMission.emoji}
+                      </div>
                       <div className="mt-2 lg:mt-3 text-[9px] lg:text-[10px] uppercase tracking-widest font-bold opacity-90">
                         {REGION_META[activeMission.region].name} · {activeMission.category}
                       </div>
@@ -244,17 +272,28 @@ function MapPage() {
                         { label: "Cupos", value: `${activeMission.spotsLeft}` },
                         { label: "Dificultad", value: activeMission.difficulty },
                       ].map((s, idx) => (
-                        <div key={idx} className="rounded-xl bg-secondary/50 border border-border/20 p-2 lg:p-2.5 text-center">
-                          <div className="font-display font-extrabold text-foreground text-[10px] lg:text-xs">{s.value}</div>
-                          <div className="text-[7px] lg:text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">{s.label}</div>
+                        <div
+                          key={idx}
+                          className="rounded-xl bg-secondary/50 border border-border/20 p-2 lg:p-2.5 text-center"
+                        >
+                          <div className="font-display font-extrabold text-foreground text-[10px] lg:text-xs">
+                            {s.value}
+                          </div>
+                          <div className="text-[7px] lg:text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">
+                            {s.label}
+                          </div>
                         </div>
                       ))}
                     </div>
 
                     {/* Impact description */}
                     <div className="rounded-xl bg-accent/5 border border-accent/15 p-2.5 lg:p-3 text-[10px] lg:text-xs">
-                      <div className="text-accent font-bold uppercase tracking-wider text-[7px] lg:text-[8px] mb-0.5">Impacto esperado</div>
-                      <div className="font-bold text-foreground text-[10px] lg:text-[11px]">{activeMission.impact}</div>
+                      <div className="text-accent font-bold uppercase tracking-wider text-[7px] lg:text-[8px] mb-0.5">
+                        Impacto esperado
+                      </div>
+                      <div className="font-bold text-foreground text-[10px] lg:text-[11px]">
+                        {activeMission.impact}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -273,7 +312,9 @@ function MapPage() {
             ) : (
               <div className="flex-1 rounded-3xl border border-dashed border-border/60 p-8 text-center flex flex-col items-center justify-center bg-card">
                 <div className="text-4xl mb-3">🗺️</div>
-                <h3 className="font-display font-bold text-sm text-foreground">Aún sin rutas activas aquí</h3>
+                <h3 className="font-display font-bold text-sm text-foreground">
+                  Aún sin rutas activas aquí
+                </h3>
                 <p className="text-[11px] text-muted-foreground mt-2 max-w-[220px] leading-relaxed">
                   Explora otros distritos del Perú y sé el primero en activar este territorio.
                 </p>
@@ -301,7 +342,9 @@ function MapPage() {
                 <>
                   {/* — PREVIEW — compact territorial card + CTA visible at 25% snap */}
                   <div className="px-5 pb-4">
-                    <div className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-4 text-white relative overflow-hidden shadow-card`}>
+                    <div
+                      className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-4 text-white relative overflow-hidden shadow-card`}
+                    >
                       <div className="absolute inset-0 bg-mesh opacity-25 pointer-events-none" />
                       <div className="relative z-10">
                         <div className="flex items-start justify-between gap-3">
@@ -309,12 +352,17 @@ function MapPage() {
                             <div className="text-[10px] uppercase tracking-widest font-bold opacity-85">
                               {REGION_META[activeMission.region].name} · {activeMission.category}
                             </div>
-                            <h3 className="font-display font-bold text-base mt-0.5 leading-tight truncate">{activeMission.title}</h3>
+                            <h3 className="font-display font-bold text-base mt-0.5 leading-tight truncate">
+                              {activeMission.title}
+                            </h3>
                             <p className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
-                              <MapPin className="h-3 w-3" /> <span className="truncate">{activeMission.district}</span>
+                              <MapPin className="h-3 w-3" />{" "}
+                              <span className="truncate">{activeMission.district}</span>
                             </p>
                           </div>
-                          <span className="text-3xl shrink-0 filter drop-shadow-md select-none">{activeMission.emoji}</span>
+                          <span className="text-3xl shrink-0 filter drop-shadow-md select-none">
+                            {activeMission.emoji}
+                          </span>
                         </div>
                         <Link
                           to="/app/mision/$missionId"
@@ -339,15 +387,22 @@ function MapPage() {
                         { l: "Cupos libres", v: activeMission.spotsLeft },
                         { l: "Dificultad", v: activeMission.difficulty },
                       ].map((s, idx) => (
-                        <div key={idx} className="rounded-xl bg-secondary/50 border border-border/10 p-3 text-center">
+                        <div
+                          key={idx}
+                          className="rounded-xl bg-secondary/50 border border-border/10 p-3 text-center"
+                        >
                           <div className="font-bold text-foreground text-xs">{s.v}</div>
-                          <div className="text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5">{s.l}</div>
+                          <div className="text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                            {s.l}
+                          </div>
                         </div>
                       ))}
                     </div>
 
                     <div className="rounded-xl bg-accent/5 border border-accent/15 p-4 text-sm">
-                      <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">Impacto comunitario</div>
+                      <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">
+                        Impacto comunitario
+                      </div>
                       <div className="font-bold text-foreground">{activeMission.impact}</div>
                     </div>
 
@@ -358,7 +413,9 @@ function MapPage() {
                         </span>
                         <div>
                           <div className="text-[9px] text-muted-foreground">Organizador</div>
-                          <div className="font-bold text-foreground">{activeMission.organizer.name}</div>
+                          <div className="font-bold text-foreground">
+                            {activeMission.organizer.name}
+                          </div>
                         </div>
                       </div>
                     )}

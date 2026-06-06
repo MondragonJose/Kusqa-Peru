@@ -11,7 +11,8 @@ interface TerritorialFootprintProps {
 
 /* SVG viewBox constants — matches landing page Peru silhouette */
 const VIEW_BOX = "0 0 240 360";
-const PERU_PATH = "M 60 20 L 100 10 L 140 18 L 160 30 L 175 55 L 185 80 L 180 110 L 195 140 L 200 170 L 190 200 L 195 230 L 180 260 L 160 285 L 140 310 L 120 330 L 100 345 L 80 340 L 60 320 L 45 295 L 35 265 L 30 235 L 40 205 L 35 175 L 45 145 L 40 115 L 50 85 L 45 55 Z";
+const PERU_PATH =
+  "M 60 20 L 100 10 L 140 18 L 160 30 L 175 55 L 185 80 L 180 110 L 195 140 L 200 170 L 190 200 L 195 230 L 180 260 L 160 285 L 140 310 L 120 330 L 100 345 L 80 340 L 60 320 L 45 295 L 35 265 L 30 235 L 40 205 L 35 175 L 45 145 L 40 115 L 50 85 L 45 55 Z";
 
 const REGION_BLOB: Record<Region, { cx: number; cy: number; r: number; color: string }> = {
   costa: { cx: 85, cy: 100, r: 55, color: "oklch(0.82 0.1 200)" },
@@ -45,25 +46,27 @@ function identityFragment(fp: Footprint): string {
   if (fp.visitedRegions.length === 2) {
     const [a, b] = fp.visitedRegions;
     const pair = `${a}→${b}`;
-    if (pair === "costa→sierra" || pair === "sierra→costa") return "Has hecho camino entre el mar y la montaña.";
-    if (pair === "costa→selva" || pair === "selva→costa") return "Tu ruta cruza del litoral a la selva.";
+    if (pair === "costa→sierra" || pair === "sierra→costa")
+      return "Has hecho camino entre el mar y la montaña.";
+    if (pair === "costa→selva" || pair === "selva→costa")
+      return "Tu ruta cruza del litoral a la selva.";
     return "Has descendido de los Andes a la Amazonía.";
   }
   return "Tu ruta abraza el territorio.";
 }
 
-function RegionBlob({ region, visited, explored }: { region: Region; visited: boolean; explored: boolean }) {
+function RegionBlob({
+  region,
+  visited,
+  explored,
+}: {
+  region: Region;
+  visited: boolean;
+  explored: boolean;
+}) {
   const blob = REGION_BLOB[region];
   const opacity = visited ? (explored ? 0.22 : 0.15) : 0.03;
-  return (
-    <circle
-      cx={blob.cx}
-      cy={blob.cy}
-      r={blob.r}
-      fill={blob.color}
-      opacity={opacity}
-    />
-  );
+  return <circle cx={blob.cx} cy={blob.cy} r={blob.r} fill={blob.color} opacity={opacity} />;
 }
 
 function RegionBlobs({ fp }: { fp: Footprint }) {
@@ -134,7 +137,11 @@ function EmptyHint() {
   );
 }
 
-export function TerritorialFootprint({ missions, compact, className = "" }: TerritorialFootprintProps) {
+export function TerritorialFootprint({
+  missions,
+  compact,
+  className = "",
+}: TerritorialFootprintProps) {
   const fp = useMemo(() => computeFootprint(missions), [missions]);
   const identity = useMemo(() => identityFragment(fp), [fp]);
   const isEmpty = fp.totalMissions === 0;
@@ -162,14 +169,14 @@ export function TerritorialFootprint({ missions, compact, className = "" }: Terr
         {isEmpty && <EmptyHint />}
 
         {/* Region presence fields — clipped to Peru outline */}
-      <g>
-        <clipPath id="peruFootprint">
-          <path d={PERU_PATH} />
-        </clipPath>
-        <g clipPath="url(#peruFootprint)">
-          <RegionBlobs fp={fp} />
+        <g>
+          <clipPath id="peruFootprint">
+            <path d={PERU_PATH} />
+          </clipPath>
+          <g clipPath="url(#peruFootprint)">
+            <RegionBlobs fp={fp} />
+          </g>
         </g>
-      </g>
 
         {/* Route traces — between visited regions */}
         {!isEmpty && <RouteTraces fp={fp} />}

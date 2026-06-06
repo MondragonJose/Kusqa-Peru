@@ -16,10 +16,7 @@ export function isValidLatLng(lat: number, lng: number): boolean {
 /**
  * Calculates physical distance in kilometers between two GPS coordinates using the Haversine formula.
  */
-export function calculateHaversineDistance(
-  coords1: MapCoords,
-  coords2: MapCoords
-): number {
+export function calculateHaversineDistance(coords1: MapCoords, coords2: MapCoords): number {
   const earthRadiusKm = 6371;
 
   const dLat = degreesToRadians(coords2.lat - coords1.lat);
@@ -30,10 +27,7 @@ export function calculateHaversineDistance(
 
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.sin(dLng / 2) *
-      Math.sin(dLng / 2) *
-      Math.cos(lat1Rad) *
-      Math.cos(lat2Rad);
+    Math.sin(dLng / 2) * Math.sin(dLng / 2) * Math.cos(lat1Rad) * Math.cos(lat2Rad);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 

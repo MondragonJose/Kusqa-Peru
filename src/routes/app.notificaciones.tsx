@@ -20,8 +20,19 @@ const NOTIFICATION_TYPE_MAP: Record<string, { type: CivicNotificationType; emoji
   community_pulse: { type: "comunidad", emoji: "💚" },
 };
 
-function notificationRowToCivic(row: { id: string; notificationType: string; title: string; body: string; payload: Record<string, unknown>; readAt: string | null; createdAt: string }): CivicNotification {
-  const mapped = NOTIFICATION_TYPE_MAP[row.notificationType] ?? { type: "comunidad" as CivicNotificationType, emoji: "📬" };
+function notificationRowToCivic(row: {
+  id: string;
+  notificationType: string;
+  title: string;
+  body: string;
+  payload: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+}): CivicNotification {
+  const mapped = NOTIFICATION_TYPE_MAP[row.notificationType] ?? {
+    type: "comunidad" as CivicNotificationType,
+    emoji: "📬",
+  };
   return {
     id: row.id,
     type: mapped.type,
@@ -44,10 +55,7 @@ function NotificationsPage() {
 
   return (
     <div className="max-w-3xl mx-auto pb-12">
-      <CivicFeed
-        notifications={notifications}
-        userDistrict={user?.district}
-      />
+      <CivicFeed notifications={notifications} userDistrict={user?.district} />
     </div>
   );
 }

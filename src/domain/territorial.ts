@@ -1,6 +1,6 @@
 /**
  * Territorial Domain Logic
- * 
+ *
  * Pure functions for territorial inference and region detection.
  * Consolidated from multiple sources to provide single source of truth.
  */
@@ -48,7 +48,9 @@ function districtSvgCoords(district: string, region: Region): { x: number; y: nu
   const key = district.toLowerCase().trim();
   const known = DISTRICT_SVG_COORDS[key];
   if (known) return known;
-  const partial = Object.entries(DISTRICT_SVG_COORDS).find(([k]) => key.includes(k) || k.includes(key));
+  const partial = Object.entries(DISTRICT_SVG_COORDS).find(
+    ([k]) => key.includes(k) || k.includes(key),
+  );
   if (partial) return partial[1];
   return REGION_SVG_CENTER[region];
 }
@@ -99,7 +101,7 @@ export function computeFootprint(missions: Mission[]): Footprint {
 
 /**
  * Infer region from district name using keyword matching.
- * 
+ *
  * Strategy:
  * - Check for sierra keywords: cusco, puno, chinchero, andes, sierra
  * - Check for selva keywords: iquitos, loreto, amazon, selva
@@ -108,7 +110,7 @@ export function computeFootprint(missions: Mission[]): Footprint {
 export function inferRegionFromDistrict(district: string | null): Region {
   if (!district) return "costa";
   const normalized = district.toLowerCase();
-  
+
   if (
     normalized.includes("cusco") ||
     normalized.includes("puno") ||
@@ -118,7 +120,7 @@ export function inferRegionFromDistrict(district: string | null): Region {
   ) {
     return "sierra";
   }
-  
+
   if (
     normalized.includes("iquitos") ||
     normalized.includes("loreto") ||
@@ -127,13 +129,13 @@ export function inferRegionFromDistrict(district: string | null): Region {
   ) {
     return "selva";
   }
-  
+
   return "costa";
 }
 
 /**
  * Infer region from geographic coordinates.
- * 
+ *
  * Strategy:
  * - lng < -76.5: costa (west coast)
  * - lat > -6.0: selva (northern amazon)
@@ -151,7 +153,7 @@ export function inferRegionFromCoords(coords: MapCoords): Region {
 
 /**
  * Unified region inference from either coordinates or district.
- * 
+ *
  * Strategy:
  * - If coords provided, use coordinate-based inference
  * - If district provided, use district-based inference
@@ -170,7 +172,7 @@ export function inferRegion(coords?: MapCoords, district?: string): Region {
 
 /**
  * Calculate distance between two coordinates using Haversine formula.
- * 
+ *
  * Note: This is a wrapper around the map projection utility.
  * In the future, this could be moved here for pure domain logic.
  */
@@ -178,10 +180,9 @@ export function calculateDistance(from: MapCoords, to: MapCoords): number {
   const R = 6371; // Earth's radius in km
   const dLat = toRad(to.lat - from.lat);
   const dLng = toRad(to.lng - from.lng);
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
@@ -192,7 +193,7 @@ function toRad(deg: number): number {
 
 /**
  * Check if coordinates are within Peru's bounding box.
- * 
+ *
  * Strategy:
  * - Simple lat/lng validation for Peru's approximate bounds
  */
@@ -202,11 +203,8 @@ export function isWithinPeruBounds(coords: MapCoords): boolean {
   const MAX_LAT = -0.0;
   const MIN_LNG = -81.0;
   const MAX_LNG = -68.0;
-  
+
   return (
-    coords.lat >= MIN_LAT &&
-    coords.lat <= MAX_LAT &&
-    coords.lng >= MIN_LNG &&
-    coords.lng <= MAX_LNG
+    coords.lat >= MIN_LAT && coords.lat <= MAX_LAT && coords.lng >= MIN_LNG && coords.lng <= MAX_LNG
   );
 }

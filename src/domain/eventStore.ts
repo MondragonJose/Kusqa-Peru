@@ -69,7 +69,9 @@ export async function fetchEventsByEntity(entityId: string): Promise<readonly Ku
 /**
  * Fetch all events for a mission, ordered by created_at ascending.
  */
-export async function fetchEventsByMission(missionId: string): Promise<readonly KusqaDomainEvent[]> {
+export async function fetchEventsByMission(
+  missionId: string,
+): Promise<readonly KusqaDomainEvent[]> {
   const { data, error } = await supabase
     .from("event_log")
     .select("*")
@@ -113,9 +115,7 @@ export async function fetchRecentEvents(limit: number = 200): Promise<readonly K
  * Returns events ordered causally (by causalGroupId then created_at).
  * Falls back to raw events if enrichment fails (non-blocking).
  */
-export async function getCausalChain(
-  entityId: string
-): Promise<readonly CausalEnrichedEvent[]> {
+export async function getCausalChain(entityId: string): Promise<readonly CausalEnrichedEvent[]> {
   const raw = await fetchEventsByEntity(entityId);
   if (raw.length === 0) return [];
 
@@ -139,9 +139,11 @@ export async function getCausalChain(
  * The caller decides how to derive state from the sequence
  * using existing domain functions (e.g. deriveCompletionState).
  */
-export function replayEntityState(events: readonly KusqaDomainEvent[]): readonly KusqaDomainEvent[] {
+export function replayEntityState(
+  events: readonly KusqaDomainEvent[],
+): readonly KusqaDomainEvent[] {
   return [...events].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 }
 

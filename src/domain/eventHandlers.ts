@@ -9,7 +9,13 @@
 
 import { useEffect } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { evidenceKeys, userMissionKeys, userKeys, userProgressKeys, missionKeys } from "@/lib/queryKeys";
+import {
+  evidenceKeys,
+  userMissionKeys,
+  userKeys,
+  userProgressKeys,
+  missionKeys,
+} from "@/lib/queryKeys";
 import { reconcileCache } from "@/features/auth/mutations/missionMutationEngine";
 import type { KusqaDomainEvent } from "@/domain/events";
 import { subscribe, unsubscribe } from "@/domain/eventEmitter";
@@ -59,7 +65,7 @@ export function useEventPropagation(queryClient: QueryClient): void {
 
 function handleEvidenceSubmitted(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "EvidenceSubmitted" }
+  event: KusqaDomainEvent & { type: "EvidenceSubmitted" },
 ): void {
   invalidateEvidenceCaches(queryClient, event.userId, event.missionId);
   reconcileCache(queryClient, { userId: event.userId, missionIds: [event.missionId] }, "both");
@@ -69,7 +75,7 @@ function handleEvidenceSubmitted(
 
 function handleEvidenceVerified(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "EvidenceVerified" }
+  event: KusqaDomainEvent & { type: "EvidenceVerified" },
 ): void {
   invalidateEvidenceCaches(queryClient, event.userId, event.missionId);
   reconcileCache(queryClient, { userId: event.userId, missionIds: [event.missionId] }, "both");
@@ -79,7 +85,7 @@ function handleEvidenceVerified(
 
 function handleEvidenceRejected(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "EvidenceRejected" }
+  event: KusqaDomainEvent & { type: "EvidenceRejected" },
 ): void {
   invalidateEvidenceCaches(queryClient, event.userId, event.missionId);
   reconcileCache(queryClient, { userId: event.userId, missionIds: [event.missionId] }, "both");
@@ -89,7 +95,7 @@ function handleEvidenceRejected(
 
 function handleEvidenceFlagged(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "EvidenceFlagged" }
+  event: KusqaDomainEvent & { type: "EvidenceFlagged" },
 ): void {
   invalidateEvidenceCaches(queryClient, event.userId, event.missionId);
   reconcileCache(queryClient, { userId: event.userId, missionIds: [event.missionId] }, "both");
@@ -99,7 +105,7 @@ function handleEvidenceFlagged(
 
 function handleMissionCompleted(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "MissionCompleted" }
+  event: KusqaDomainEvent & { type: "MissionCompleted" },
 ): void {
   invalidateEvidenceCaches(queryClient, event.userId, event.missionId);
   reconcileCache(queryClient, { userId: event.userId, missionIds: [event.missionId] }, "both");
@@ -109,7 +115,7 @@ function handleMissionCompleted(
 
 function handleMissionStateUpdated(
   queryClient: QueryClient,
-  event: KusqaDomainEvent & { type: "MissionStateUpdated" }
+  event: KusqaDomainEvent & { type: "MissionStateUpdated" },
 ): void {
   void queryClient.invalidateQueries({ queryKey: missionKeys.all });
   void queryClient.invalidateQueries({ queryKey: missionKeys.detail(event.missionId) });
@@ -120,7 +126,7 @@ function handleMissionStateUpdated(
 function invalidateEvidenceCaches(
   queryClient: QueryClient,
   userId: string,
-  missionId: string
+  missionId: string,
 ): void {
   void queryClient.invalidateQueries({ queryKey: evidenceKeys.byMission(missionId) });
   void queryClient.invalidateQueries({ queryKey: evidenceKeys.byUserMission(userId, missionId) });

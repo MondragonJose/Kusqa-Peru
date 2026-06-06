@@ -90,7 +90,7 @@ export function projectToUserMission(
     mission: Mission;
     joinedAt: string | null;
     xpEarned: number | null;
-  }
+  },
 ): UserMission {
   const safe = safeEnforce(state);
   const projected = projectEntityState(safe);
@@ -118,7 +118,6 @@ export function projectionCanSubmitEvidence(state: EntityState): boolean {
   const safe = safeEnforce(state);
 
   return (
-    safe.completionState === "not_completed" ||
-    safe.completionState === "awaiting_verification"
+    safe.completionState === "not_completed" || safe.completionState === "awaiting_verification"
   );
 }

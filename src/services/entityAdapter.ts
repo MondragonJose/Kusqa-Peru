@@ -23,11 +23,11 @@ import { computeLifecycleInfo } from "@/domain/lifecycle";
  */
 const CATEGORY_EMOJI: Record<string, string> = {
   "Medio ambiente": "🌱",
-  "Educación": "📚",
+  Educación: "📚",
   "Arte & cultura": "🎨",
-  "Comunidad": "🤝",
-  "Salud": "❤️",
-  "Tecnología": "🏗️",
+  Comunidad: "🤝",
+  Salud: "❤️",
+  Tecnología: "🏗️",
 };
 
 /**

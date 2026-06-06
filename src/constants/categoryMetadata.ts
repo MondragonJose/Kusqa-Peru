@@ -33,7 +33,7 @@ export const CATEGORY_METADATA: Record<MissionCategory, CategoryMetadata> = {
     impactLabel: "Impacto ambiental",
     unit: "árboles",
   },
-  "Educación": {
+  Educación: {
     icon: "📚",
     color: "text-blue-500",
     gradient: "from-blue-400 to-indigo-500",
@@ -56,18 +56,23 @@ export const CATEGORY_METADATA: Record<MissionCategory, CategoryMetadata> = {
     impactLabel: "Obras creadas",
     unit: "obras",
   },
-  "Comunidad": {
+  Comunidad: {
     icon: "🤝",
     color: "text-orange-500",
     gradient: "from-orange-400 to-amber-500",
     fields: [
       { key: "families", label: "Familias", icon: "🏠", defaultValue: "5" },
-      { key: "meetingPoint", label: "Punto de encuentro", icon: "📍", defaultValue: "Plaza central" },
+      {
+        key: "meetingPoint",
+        label: "Punto de encuentro",
+        icon: "📍",
+        defaultValue: "Plaza central",
+      },
     ],
     impactLabel: "Familias impactadas",
     unit: "familias",
   },
-  "Salud": {
+  Salud: {
     icon: "❤️",
     color: "text-rose-500",
     gradient: "from-rose-400 to-red-500",
@@ -78,7 +83,7 @@ export const CATEGORY_METADATA: Record<MissionCategory, CategoryMetadata> = {
     impactLabel: "Atenciones brindadas",
     unit: "atenciones",
   },
-  "Tecnología": {
+  Tecnología: {
     icon: "💻",
     color: "text-cyan-500",
     gradient: "from-cyan-400 to-blue-500",

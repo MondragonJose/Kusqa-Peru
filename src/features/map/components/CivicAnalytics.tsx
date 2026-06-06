@@ -36,7 +36,10 @@ export function CivicAnalytics({ missions, userCoords, onSelectMission }: CivicA
     const list: DistrictScore[] = [];
     map.forEach((val, name) => {
       // Puntuación sintética en base a volumen
-      const score = Math.min(100, Math.round(val.count * 15 + val.xp * 0.05 + val.participants * 0.4));
+      const score = Math.min(
+        100,
+        Math.round(val.count * 15 + val.xp * 0.05 + val.participants * 0.4),
+      );
       let level: DistrictScore["level"] = "Crítico";
       if (score > 75) level = "Foco de Impacto";
       else if (score > 40) level = "Activo";
@@ -81,13 +84,18 @@ export function CivicAnalytics({ missions, userCoords, onSelectMission }: CivicA
       <div>
         <div className="flex items-center gap-2 border-b border-border/20 pb-3 mb-4">
           <TrendingUp className="h-4.5 w-4.5 text-accent animate-pulse" />
-          <h3 className="font-display font-bold text-sm text-foreground">Líderes de Activismo Cívico</h3>
+          <h3 className="font-display font-bold text-sm text-foreground">
+            Líderes de Activismo Cívico
+          </h3>
         </div>
 
         <div className="space-y-3">
           {districtScores.length > 0 ? (
             districtScores.slice(0, 4).map((d) => (
-              <div key={d.name} className="flex flex-col gap-1 text-xs border border-border/10 p-2.5 rounded-2xl bg-secondary/20 hover:bg-secondary/40 transition-colors">
+              <div
+                key={d.name}
+                className="flex flex-col gap-1 text-xs border border-border/10 p-2.5 rounded-2xl bg-secondary/20 hover:bg-secondary/40 transition-colors"
+              >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-foreground">{d.name}</span>
                   <span
@@ -103,7 +111,9 @@ export function CivicAnalytics({ missions, userCoords, onSelectMission }: CivicA
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>{d.missionsCount} {d.missionsCount === 1 ? "misión" : "misiones"}</span>
+                  <span>
+                    {d.missionsCount} {d.missionsCount === 1 ? "misión" : "misiones"}
+                  </span>
                   <span>🔥 +{d.totalXP} XP acumulados</span>
                 </div>
                 {/* Visual bar */}
@@ -128,7 +138,9 @@ export function CivicAnalytics({ missions, userCoords, onSelectMission }: CivicA
         <div className="mt-2">
           <div className="flex items-center gap-2 border-b border-border/20 pb-3 mb-3">
             <Compass className="h-4.5 w-4.5 text-accent animate-spin-slow" />
-            <h3 className="font-display font-bold text-sm text-foreground">Recomendadas cerca de ti</h3>
+            <h3 className="font-display font-bold text-sm text-foreground">
+              Recomendadas cerca de ti
+            </h3>
           </div>
 
           <div className="space-y-2">

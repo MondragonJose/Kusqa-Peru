@@ -41,35 +41,38 @@ export type CivicBadge = {
 };
 
 /** Mapa de colores por rareza */
-export const RARITY_STYLES: Record<BadgeRarity, {
-  label: string;
-  ringClass: string;
-  glowClass: string;
-  textClass: string;
-  bgClass: string;
-}> = {
-  "común": {
+export const RARITY_STYLES: Record<
+  BadgeRarity,
+  {
+    label: string;
+    ringClass: string;
+    glowClass: string;
+    textClass: string;
+    bgClass: string;
+  }
+> = {
+  común: {
     label: "Común",
     ringClass: "ring-border",
     glowClass: "badge-rarity-comun",
     textClass: "text-muted-foreground",
     bgClass: "bg-secondary",
   },
-  "raro": {
+  raro: {
     label: "Raro",
     ringClass: "ring-coast/50",
     glowClass: "badge-rarity-raro",
     textClass: "text-coast",
     bgClass: "bg-coast/10",
   },
-  "épico": {
+  épico: {
     label: "Épico",
     ringClass: "ring-sierra/50",
     glowClass: "badge-rarity-epico",
     textClass: "text-sierra",
     bgClass: "bg-sierra/10",
   },
-  "legendario": {
+  legendario: {
     label: "Legendario",
     ringClass: "ring-accent/60",
     glowClass: "badge-rarity-legendario",

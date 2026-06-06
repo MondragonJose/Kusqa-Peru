@@ -10,8 +10,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { proposalRepository } from "@/services/proposalRepository";
-import type { CreateProposalDTO, UpdateProposalDTO, ProposalResult } from "@/services/proposalRepository";
-import { allProposalsQueryOptions, proposalDetailQueryOptions, userProposalsQueryOptions } from "../queryOptions";
+import type {
+  CreateProposalDTO,
+  UpdateProposalDTO,
+  ProposalResult,
+} from "@/services/proposalRepository";
+import {
+  allProposalsQueryOptions,
+  proposalDetailQueryOptions,
+  proposalSupportersPreviewQueryOptions,
+  userProposalsQueryOptions,
+} from "../queryOptions";
 import { proposalKeys } from "@/lib/queryKeys";
 import type { ProposalRegion, ProposalStatus } from "@/services/proposalContract";
 import { userRepository } from "@/services/userRepository";
@@ -50,6 +59,12 @@ export function useCurrentUserProposals() {
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+}
+
+export function useSupportersPreview(proposalId: string, limit: number = 5) {
+  return useQuery({
+    ...proposalSupportersPreviewQueryOptions(proposalId, limit),
   });
 }
 

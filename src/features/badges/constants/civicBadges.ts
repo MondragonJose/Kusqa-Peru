@@ -159,7 +159,8 @@ export const CIVIC_BADGES: CivicBadge[] = [
     rarity: "legendario",
     category: "liderazgo",
     region: "nacional",
-    narrative: "Caminaste el Perú. Sembraste en la costa, construiste en la sierra, navegaste la selva. Eres parte de la memoria viva de un movimiento.",
+    narrative:
+      "Caminaste el Perú. Sembraste en la costa, construiste en la sierra, navegaste la selva. Eres parte de la memoria viva de un movimiento.",
     unlockCondition: "Alcanza el nivel máximo de la Ruta KUSQA",
     earned: false,
   },
@@ -172,7 +173,8 @@ export const CIVIC_BADGES: CivicBadge[] = [
     rarity: "raro",
     category: "ambiental",
     region: "sierra",
-    narrative: "Plantaste vida donde había tierra seca. El árbol no sabe tu nombre, pero existe porque tú estuviste.",
+    narrative:
+      "Plantaste vida donde había tierra seca. El árbol no sabe tu nombre, pero existe porque tú estuviste.",
     unlockCondition: "Completa una misión ambiental en la Sierra",
     earned: false,
   },
@@ -207,7 +209,8 @@ export const CIVIC_BADGES: CivicBadge[] = [
     rarity: "raro",
     category: "cultural",
     region: "nacional",
-    narrative: "Guardaste una historia antes de que se perdiera. Eso es cultura: acto de resistencia.",
+    narrative:
+      "Guardaste una historia antes de que se perdiera. Eso es cultura: acto de resistencia.",
     unlockCondition: "Participa en una misión cultural o artística",
     earned: false,
   },
@@ -225,16 +228,14 @@ export const CIVIC_BADGES: CivicBadge[] = [
 ];
 
 /** Agrupa insignias por categoría */
-export function getBadgesByCategory(
-  badges: CivicBadge[]
-): Record<string, CivicBadge[]> {
+export function getBadgesByCategory(badges: CivicBadge[]): Record<string, CivicBadge[]> {
   return badges.reduce(
     (acc, badge) => {
       if (!acc[badge.category]) acc[badge.category] = [];
       acc[badge.category].push(badge);
       return acc;
     },
-    {} as Record<string, CivicBadge[]>
+    {} as Record<string, CivicBadge[]>,
   );
 }
 
@@ -246,7 +247,7 @@ export function getEarnedBadges(badges: CivicBadge[]): CivicBadge[] {
 /** Filtra insignias por rareza */
 export function getBadgesByRarity(
   badges: CivicBadge[],
-  rarity: CivicBadge["rarity"]
+  rarity: CivicBadge["rarity"],
 ): CivicBadge[] {
   return badges.filter((b) => b.rarity === rarity);
 }

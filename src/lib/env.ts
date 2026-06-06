@@ -1,7 +1,7 @@
 /**
  * Validación de variables de entorno
  * Usa Zod para garantizar que todas las env vars requeridas existen y tienen tipos correctos
- * 
+ *
  * Ejecuta al startup de la app para fallar rápido si faltan configs
  */
 
@@ -13,9 +13,7 @@ import { z } from "zod";
  */
 const EnvSchema = z.object({
   VITE_SUPABASE_URL: z.string().url("VITE_SUPABASE_URL must be a valid URL"),
-  VITE_SUPABASE_ANON_KEY: z
-    .string()
-    .min(20, "VITE_SUPABASE_ANON_KEY seems invalid (too short)"),
+  VITE_SUPABASE_ANON_KEY: z.string().min(20, "VITE_SUPABASE_ANON_KEY seems invalid (too short)"),
 });
 
 type EnvType = z.infer<typeof EnvSchema>;

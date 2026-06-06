@@ -11,7 +11,14 @@ interface CrossingOverlayProps {
   hold?: boolean;
 }
 
-export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete, hold = false }: CrossingOverlayProps) {
+export function CrossingOverlay({
+  open,
+  gradient,
+  emoji,
+  avatar,
+  onComplete,
+  hold = false,
+}: CrossingOverlayProps) {
   const prefersReducedMotion = useReducedMotion();
   const [canDismiss, setCanDismiss] = useState(false);
   const completedRef = useRef(false);
@@ -83,9 +90,20 @@ export function CrossingOverlay({ open, gradient, emoji, avatar, onComplete, hol
                 <div className="absolute inset-0 bg-mesh opacity-30" />
               </div>
               <div className="relative flex flex-col items-center justify-start h-full pt-[18%] sm:pt-[20%] landscape:pt-[8%] px-8">
-                <span aria-hidden="true" className="text-5xl sm:text-7xl filter drop-shadow-lg mb-8">{emoji}</span>
-                <div aria-hidden="true" className="h-20 sm:h-16 w-px bg-gradient-to-b from-white/40 to-white/5 mb-8" />
-                <div aria-hidden="true" className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur border border-white/20 grid place-items-center text-3xl shadow-lg mb-6">
+                <span
+                  aria-hidden="true"
+                  className="text-5xl sm:text-7xl filter drop-shadow-lg mb-8"
+                >
+                  {emoji}
+                </span>
+                <div
+                  aria-hidden="true"
+                  className="h-20 sm:h-16 w-px bg-gradient-to-b from-white/40 to-white/5 mb-8"
+                />
+                <div
+                  aria-hidden="true"
+                  className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur border border-white/20 grid place-items-center text-3xl shadow-lg mb-6"
+                >
                   {avatar}
                 </div>
                 <p className="text-white/90 text-lg font-display font-bold tracking-tight text-center">

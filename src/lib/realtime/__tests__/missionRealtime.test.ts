@@ -11,7 +11,7 @@ describe("planRealtimeReconciliation", () => {
         occurredAt: new Date().toISOString(),
         xpGranted: 320,
       },
-      { hasLocalWriteInFlight: true }
+      { hasLocalWriteInFlight: true },
     );
     expect(decision.action).toBe("ignore");
   });
@@ -23,7 +23,7 @@ describe("planRealtimeReconciliation", () => {
         actorId: "00000000-0000-4000-8000-000000000002",
         occurredAt: new Date().toISOString(),
       },
-      { hasLocalWriteInFlight: false }
+      { hasLocalWriteInFlight: false },
     );
     expect(decision.action).toBe("invalidate");
     if (decision.action === "invalidate") {
@@ -38,7 +38,7 @@ describe("planRealtimeReconciliation", () => {
         actorId: "00000000-0000-4000-8000-000000000002",
         occurredAt: new Date().toISOString(),
       },
-      { hasLocalWriteInFlight: false }
+      { hasLocalWriteInFlight: false },
     );
     expect(decision.action).toBe("invalidate");
   });

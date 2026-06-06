@@ -142,7 +142,10 @@ export function CivicRouteMap({ userXp, compact = false }: CivicRouteMapProps) {
               strokeLinecap="round"
               fill="none"
               filter="url(#trail-glow)"
-              initial={{ strokeDashoffset: APPROX_PATH_LENGTH, strokeDasharray: `${APPROX_PATH_LENGTH} ${APPROX_PATH_LENGTH}` }}
+              initial={{
+                strokeDashoffset: APPROX_PATH_LENGTH,
+                strokeDasharray: `${APPROX_PATH_LENGTH} ${APPROX_PATH_LENGTH}`,
+              }}
               animate={{ strokeDashoffset: APPROX_PATH_LENGTH - illuminatedLength }}
               transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
             />
@@ -156,8 +159,8 @@ export function CivicRouteMap({ userXp, compact = false }: CivicRouteMapProps) {
         >
           {CIVIC_ROUTE.map((stage, i) => {
             const status = getStageStatus(stage, userXp);
-            const xPct = (NODE_X_PX[i] ?? 50) / 700 * 100;
-            const yPct = (NODE_Y_PX[i] ?? 40) / 80 * 100;
+            const xPct = ((NODE_X_PX[i] ?? 50) / 700) * 100;
+            const yPct = ((NODE_Y_PX[i] ?? 40) / 80) * 100;
             const nodeSize = compact ? 28 : 40;
 
             return (
@@ -180,19 +183,25 @@ export function CivicRouteMap({ userXp, compact = false }: CivicRouteMapProps) {
                   <div
                     className={`
                       relative flex items-center justify-center rounded-full border-2 shadow-sm transition-all duration-500
-                      ${status === "current"
-                        ? `${stage.gradientClass} border-white/90 text-white`
-                        : status === "completed"
-                          ? `${stage.gradientClass} border-transparent text-white opacity-90`
-                          : "bg-muted/70 border-muted-foreground/20 text-muted-foreground/40 backdrop-blur-sm"
+                      ${
+                        status === "current"
+                          ? `${stage.gradientClass} border-white/90 text-white`
+                          : status === "completed"
+                            ? `${stage.gradientClass} border-transparent text-white opacity-90`
+                            : "bg-muted/70 border-muted-foreground/20 text-muted-foreground/40 backdrop-blur-sm"
                       }
                     `}
                     style={{ width: nodeSize, height: nodeSize, fontSize: compact ? 12 : 16 }}
                   >
                     {status === "locked" ? (
-                      <Lock style={{ width: compact ? 10 : 14, height: compact ? 10 : 14 }} strokeWidth={2.5} />
+                      <Lock
+                        style={{ width: compact ? 10 : 14, height: compact ? 10 : 14 }}
+                        strokeWidth={2.5}
+                      />
                     ) : status === "completed" ? (
-                      <CheckCircle2 style={{ width: compact ? 10 : 14, height: compact ? 10 : 14 }} />
+                      <CheckCircle2
+                        style={{ width: compact ? 10 : 14, height: compact ? 10 : 14 }}
+                      />
                     ) : (
                       <span>{stage.icon}</span>
                     )}
@@ -201,9 +210,7 @@ export function CivicRouteMap({ userXp, compact = false }: CivicRouteMapProps) {
                     {status === "current" && (
                       <>
                         <span className="absolute inset-0 rounded-full animate-pulse-ring bg-white/20 pointer-events-none" />
-                        <span
-                          className="absolute -inset-1.5 rounded-full border border-amber-400/50 animate-breathe pointer-events-none"
-                        />
+                        <span className="absolute -inset-1.5 rounded-full border border-amber-400/50 animate-breathe pointer-events-none" />
                         <span className="absolute -top-1.5 -right-1.5">
                           <MapPin className="h-3.5 w-3.5 text-accent fill-accent/70 animate-foot-glow" />
                         </span>

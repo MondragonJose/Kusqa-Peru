@@ -1,11 +1,11 @@
 /**
  * AuthProvider — Bootstrap de sesión Supabase + State Machine
- * 
+ *
  * Responsabilidad única:
  * - Restaurar sesión desde Supabase en cold start
  * - Escuchar cambios de estado en tiempo real
  * - Exponer estado centralizado vía authState machine
- * 
+ *
  * NO debe contener lógica de validación de rutas (eso es responsabilidad del componente).
  */
 
@@ -66,13 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Bootstrap inicial: restaurar sesión desde Supabase/localStorage
     const initializeAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const {
+          data: { session: initialSession },
+        } = await supabase.auth.getSession();
 
         if (!mounted) return;
 
         if (initialSession) {
           if (import.meta.env.DEV) {
-            console.log("[KUSQA AUTH TRACE] Session restored from storage:", initialSession.user.id);
+            console.log(
+              "[KUSQA AUTH TRACE] Session restored from storage:",
+              initialSession.user.id,
+            );
           }
           setSession(initialSession);
           setUser(initialSession.user);
@@ -97,7 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     // 2. Listener pasivo: cambios en tiempo real (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (!mounted) return;
 
       // Solo procesar eventos después de que bootstrap inicial complete
@@ -149,17 +156,17 @@ export function useAuth() {
 
 /**
  * Hook único para acceder al estado centralizado de autenticación
- * 
+ *
  * Reemplaza múltiples checks dispersos de:
- * - if (!user) 
+ * - if (!user)
  * - if (loading)
  * - if (!session)
- * 
+ *
  * Retorna una interfaz consistente para routing y componentes
  */
 export function useAuthState() {
   const { authState, user } = useAuth();
-  
+
   return {
     state: authState.state,
     isAuthenticated: authState.state === "authenticated",

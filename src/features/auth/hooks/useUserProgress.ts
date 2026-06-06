@@ -5,7 +5,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { isLiveUserEnabled } from "@/lib/userFeature";
-import { territoryProgressQueryOptions, userSessionQueryOptions } from "@/features/auth/queryOptions";
+import {
+  territoryProgressQueryOptions,
+  userSessionQueryOptions,
+} from "@/features/auth/queryOptions";
 import type { UserTerritoryProgressView } from "@/types";
 
 const EMPTY_PROGRESS: UserTerritoryProgressView = {

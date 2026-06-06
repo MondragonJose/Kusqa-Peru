@@ -2,7 +2,12 @@
  * Global mutation phase tracking for UI feedback (no React Query dependency).
  */
 
-export type MissionMutationKind = "createMission" | "joinMission" | "completeMission" | "submitEvidence" | "verifyEvidence";
+export type MissionMutationKind =
+  | "createMission"
+  | "joinMission"
+  | "completeMission"
+  | "submitEvidence"
+  | "verifyEvidence";
 
 export type MutationPhase = "idle" | "pending" | "success" | "error";
 
@@ -23,7 +28,13 @@ export type UnifiedMissionMutationStatus = {
   byKind: Record<MissionMutationKind, MutationKindState>;
 };
 
-const KINDS: MissionMutationKind[] = ["createMission", "joinMission", "completeMission", "submitEvidence", "verifyEvidence"];
+const KINDS: MissionMutationKind[] = [
+  "createMission",
+  "joinMission",
+  "completeMission",
+  "submitEvidence",
+  "verifyEvidence",
+];
 
 function createInitialKindState(): MutationKindState {
   return { phase: "idle", pendingCount: 0, error: null };
@@ -57,10 +68,7 @@ export function subscribeMissionMutationStatus(listener: () => void): () => void
   return () => listeners.delete(listener);
 }
 
-export function getMissionMutationStatusSnapshot(): Record<
-  MissionMutationKind,
-  MutationKindState
-> {
+export function getMissionMutationStatusSnapshot(): Record<MissionMutationKind, MutationKindState> {
   return byKind;
 }
 
@@ -122,19 +130,17 @@ export function resetMutationKindStatus(kind: MissionMutationKind): void {
 }
 
 export function deriveUnifiedMissionMutationStatus(
-  snapshot: Record<MissionMutationKind, MutationKindState>
+  snapshot: Record<MissionMutationKind, MutationKindState>,
 ): UnifiedMissionMutationStatus {
   const activeKinds = KINDS.filter((kind) => snapshot[kind].pendingCount > 0);
   const isPending = activeKinds.length > 0;
   const errors = KINDS.map((kind) => snapshot[kind].error).filter(
-    (error): error is Error => error !== null
+    (error): error is Error => error !== null,
   );
   const lastError = errors.at(-1) ?? null;
   const isError = !isPending && lastError !== null;
   const isSuccess =
-    !isPending &&
-    !isError &&
-    KINDS.some((kind) => snapshot[kind].phase === "success");
+    !isPending && !isError && KINDS.some((kind) => snapshot[kind].phase === "success");
   const phase: MutationPhase = isPending
     ? "pending"
     : isError

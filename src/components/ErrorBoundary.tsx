@@ -47,12 +47,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             {/* Título y mensaje */}
             <div>
-              <h1 className="font-display font-bold text-2xl text-foreground">
-                Algo salió mal
-              </h1>
+              <h1 className="font-display font-bold text-2xl text-foreground">Algo salió mal</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Estamos teniendo problemas para cargar esta sección.
-                Tu progreso está seguro.
+                Estamos teniendo problemas para cargar esta sección. Tu progreso está seguro.
               </p>
             </div>
 

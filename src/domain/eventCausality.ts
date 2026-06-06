@@ -22,13 +22,16 @@ function tsSort(a: { timestamp: string }, b: { timestamp: string }): number {
 }
 
 function extractEntityId(event: KusqaDomainEvent): string | null {
-  if ("evidenceId" in event && typeof (event as any).evidenceId === "string") return (event as any).evidenceId;
-  if ("missionId" in event && typeof (event as any).missionId === "string") return (event as any).missionId;
+  if ("evidenceId" in event && typeof (event as any).evidenceId === "string")
+    return (event as any).evidenceId;
+  if ("missionId" in event && typeof (event as any).missionId === "string")
+    return (event as any).missionId;
   return null;
 }
 
 function extractEvidenceId(event: KusqaDomainEvent): string | null {
-  if ("evidenceId" in event && typeof (event as any).evidenceId === "string") return (event as any).evidenceId;
+  if ("evidenceId" in event && typeof (event as any).evidenceId === "string")
+    return (event as any).evidenceId;
   return null;
 }
 
@@ -45,9 +48,7 @@ function makeCausalId(event: KusqaDomainEvent): string {
  * Groups events by entity, sorts each group by timestamp,
  * and concatenates groups in a stable flat list.
  */
-export function buildCausalChain(
-  events: readonly KusqaDomainEvent[]
-): CausalEnrichedEvent[] {
+export function buildCausalChain(events: readonly KusqaDomainEvent[]): CausalEnrichedEvent[] {
   const enriched = assignCausalLinks(events);
 
   // Sort by causalGroupId first (so same-entity events cluster),
@@ -73,9 +74,7 @@ export function buildCausalChain(
  *
  * Idempotent: re-running on already-enriched events overwrites fields.
  */
-export function assignCausalLinks(
-  events: readonly KusqaDomainEvent[]
-): CausalEnrichedEvent[] {
+export function assignCausalLinks(events: readonly KusqaDomainEvent[]): CausalEnrichedEvent[] {
   const sorted = [...events].sort(tsSort);
 
   // Track the latest event per entity (evidenceId or missionId) for parent linkage
@@ -102,11 +101,9 @@ export function assignCausalLinks(
     if (event.type === "MissionCompleted") {
       const evidenceId = extractEvidenceId(event);
       if (evidenceId) {
-        const evidencePredecessor = [...enriched].reverse().find(
-          (e) =>
-            e.type === "EvidenceVerified" &&
-            extractEvidenceId(e) === evidenceId
-        );
+        const evidencePredecessor = [...enriched]
+          .reverse()
+          .find((e) => e.type === "EvidenceVerified" && extractEvidenceId(e) === evidenceId);
         if (evidencePredecessor) {
           parentEventId = evidencePredecessor.causalId;
         }
@@ -139,7 +136,7 @@ export function assignCausalLinks(
  */
 export function resolveCausalParent(
   event: KusqaDomainEvent,
-  eventHistory: readonly CausalEnrichedEvent[]
+  eventHistory: readonly CausalEnrichedEvent[],
 ): string | undefined {
   const entityId = extractEntityId(event);
   if (!entityId) return undefined;
@@ -149,7 +146,5 @@ export function resolveCausalParent(
     return eEntity === entityId;
   });
 
-  return predecessors.length > 0
-    ? predecessors[predecessors.length - 1].causalId
-    : undefined;
+  return predecessors.length > 0 ? predecessors[predecessors.length - 1].causalId : undefined;
 }

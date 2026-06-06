@@ -13,13 +13,11 @@ import {
   type UnifiedMissionMutationStatus,
 } from "@/features/auth/mutations/mutationStatusStore";
 
-export function useMissionMutationKindStatus(
-  kind: MissionMutationKind
-): MutationKindState {
+export function useMissionMutationKindStatus(kind: MissionMutationKind): MutationKindState {
   const snapshot = useSyncExternalStore(
     subscribeMissionMutationStatus,
     getMissionMutationStatusSnapshot,
-    getServerMissionMutationStatusSnapshot
+    getServerMissionMutationStatusSnapshot,
   );
   return snapshot[kind];
 }
@@ -28,7 +26,7 @@ export function useUnifiedMissionMutationStatus(): UnifiedMissionMutationStatus 
   const snapshot = useSyncExternalStore(
     subscribeMissionMutationStatus,
     getMissionMutationStatusSnapshot,
-    getServerMissionMutationStatusSnapshot
+    getServerMissionMutationStatusSnapshot,
   );
   return deriveUnifiedMissionMutationStatus(snapshot);
 }

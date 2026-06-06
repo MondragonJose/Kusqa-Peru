@@ -4,12 +4,32 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useCurrentUser } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
-import { useProgression, StageCard, KusqaMomentsModal, type KusqaMomentData } from "@/features/progression";
+import {
+  useProgression,
+  StageCard,
+  KusqaMomentsModal,
+  type KusqaMomentData,
+} from "@/features/progression";
 import { BadgeCard, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
 import { useSupportedProposalIds } from "@/features/proposals";
-import { MapPin, Sparkles, Pencil, Heart, Users, Map, Clock, ArrowRight, Award, Calendar, ShieldCheck, X, Zap, Upload } from "lucide-react";
+import {
+  MapPin,
+  Sparkles,
+  Pencil,
+  Heart,
+  Users,
+  Map,
+  Clock,
+  ArrowRight,
+  Award,
+  Calendar,
+  ShieldCheck,
+  X,
+  Zap,
+  Upload,
+} from "lucide-react";
 import { formatRelativeDate } from "@/utils/date";
 
 import type { Region, Mission, UserMission } from "@/types";
@@ -19,7 +39,12 @@ import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { userRepository } from "@/services/userRepository";
 import { useQueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/lib/queryKeys";
-import { REGION_META, REGION_THEMES, REGION_BADGES, REGION_NODE_GRADIENTS } from "@/constants/gamification";
+import {
+  REGION_META,
+  REGION_THEMES,
+  REGION_BADGES,
+  REGION_NODE_GRADIENTS,
+} from "@/constants/gamification";
 
 export const Route = createFileRoute("/app/perfil")({
   component: Profile,
@@ -61,7 +86,11 @@ export function Profile() {
   if (activeRegions.includes("sierra")) earnedBadgeIds.add("explorador-andino");
   if (activeRegions.includes("costa")) earnedBadgeIds.add("hijo-del-pacifico");
   if (activeRegions.includes("selva")) earnedBadgeIds.add("navegante");
-  if (activeRegions.includes("sierra") && activeRegions.includes("costa") && activeRegions.includes("selva")) {
+  if (
+    activeRegions.includes("sierra") &&
+    activeRegions.includes("costa") &&
+    activeRegions.includes("selva")
+  ) {
     earnedBadgeIds.add("tejedor");
   }
   const userBadges: CivicBadge[] = CIVIC_BADGES.map((b) => ({
@@ -106,13 +135,14 @@ export function Profile() {
         throw new Error("No authenticated user");
       }
 
-      if (import.meta.env.DEV) console.log("[KUSQA LOCATION TRACE] Saving district:", districtInput);
+      if (import.meta.env.DEV)
+        console.log("[KUSQA LOCATION TRACE] Saving district:", districtInput);
       await userRepository.updateProfileDistrict(userId, districtInput.trim());
-      
+
       // Invalidate user queries to refresh data
       queryClient.invalidateQueries({ queryKey: userKeys.current });
       queryClient.invalidateQueries({ queryKey: userKeys.profileRow(userId) });
-      
+
       if (import.meta.env.DEV) console.log("[KUSQA LOCATION TRACE] District saved successfully");
       setDistrictEditOpen(false);
     } catch (error) {
@@ -150,7 +180,9 @@ export function Profile() {
       {/* Cover / Profile Card */}
       <section className="relative rounded-3xl overflow-hidden shadow-sm bg-card border border-border">
         {/* Banner with user region's gradient */}
-        <div className={`h-40 sm:h-48 lg:h-64 ${REGION_META[user.region]?.gradient || "bg-gradient-coast"} relative`}>
+        <div
+          className={`h-40 sm:h-48 lg:h-64 ${REGION_META[user.region]?.gradient || "bg-gradient-coast"} relative`}
+        >
           <div className="absolute inset-0 bg-mesh opacity-40 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,oklch(1_0_0/0.25),transparent)]" />
         </div>
@@ -161,24 +193,26 @@ export function Profile() {
             <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-sunrise grid place-items-center text-4xl sm:text-5xl shadow-glow border-4 border-card z-10">
               {user.avatar}
             </div>
-            
+
             <div className="flex-1 min-w-[240px] pb-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">
                   {user.name}
                 </h1>
-                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${REGION_BADGES[user.region]}`}>
+                <span
+                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${REGION_BADGES[user.region]}`}
+                >
                   {REGION_META[user.region].emoji} {REGION_META[user.region].name}
                 </span>
-                
+
                 {/* Civic Trust Reputation Badge */}
-                <CivicTrustBadge 
+                <CivicTrustBadge
                   profile={{
                     status: trustStatus,
                     district: user.district,
                     verifiedCount: user.missionsDone,
-                    validatedBy: "Verificado por red KUSQA"
-                  }} 
+                    validatedBy: "Verificado por red KUSQA",
+                  }}
                 />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1.5 font-medium">
@@ -202,7 +236,7 @@ export function Profile() {
             </div>
 
             <div className="flex gap-2 pb-1 z-10 w-full sm:w-auto">
-              <button 
+              <button
                 onClick={handleTriggerCelebration}
                 className="flex-1 sm:flex-initial rounded-xl bg-gradient-sunrise text-white border border-transparent px-4 py-2.5 text-xs font-black shadow-glow hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
@@ -213,19 +247,32 @@ export function Profile() {
 
           {/* Stats Bar — with territorial gradient accent */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-t border-border/60 pt-6 relative">
-            <div className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region].gradient}`} />
+            <div
+              className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region].gradient}`}
+            />
             {[
               { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
               { l: "Rutas", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
               { l: "Regiones", v: activeRegions.length, i: "🏔️", color: "text-accent" },
               { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
-              <div key={s.l} className="rounded-2xl bg-secondary/55 p-2.5 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden">
-                <div className={`absolute inset-0 opacity-[0.04] ${REGION_META[user.region].gradient}`} />
-                <span className="text-xl sm:text-3xl filter drop-shadow-sm relative shrink-0">{s.i}</span>
+              <div
+                key={s.l}
+                className="rounded-2xl bg-secondary/55 p-2.5 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden"
+              >
+                <div
+                  className={`absolute inset-0 opacity-[0.04] ${REGION_META[user.region].gradient}`}
+                />
+                <span className="text-xl sm:text-3xl filter drop-shadow-sm relative shrink-0">
+                  {s.i}
+                </span>
                 <div className="relative min-w-0">
-                  <div className="font-display font-black text-base sm:text-xl text-foreground leading-none truncate max-w-[80px] sm:max-w-none">{s.v}</div>
-                  <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">{s.l}</div>
+                  <div className="font-display font-black text-base sm:text-xl text-foreground leading-none truncate max-w-[80px] sm:max-w-none">
+                    {s.v}
+                  </div>
+                  <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">
+                    {s.l}
+                  </div>
                 </div>
               </div>
             ))}
@@ -241,25 +288,40 @@ export function Profile() {
         <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm">
           {/* Categories */}
           <div className="p-5 border-b border-border/40">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Causas activas</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Causas activas
+            </div>
             <div className="flex flex-wrap gap-2">
               {(() => {
                 const categoryCounts: Record<string, number> = {};
-                completedMissions.forEach(m => {
+                completedMissions.forEach((m) => {
                   categoryCounts[m.category] = (categoryCounts[m.category] || 0) + 1;
                 });
-                const sorted = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
+                const sorted = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]) as [
+                  string,
+                  number,
+                ][];
                 if (sorted.length === 0) {
                   return <div className="text-sm text-muted-foreground">Aún sin participación</div>;
                 }
                 return sorted.slice(0, 4).map(([category, count]: [string, number]) => {
-                  const emoji = category === "Medio ambiente" ? "🌱" :
-                               category === "Educación" ? "📚" :
-                               category === "Comunidad" ? "🤝" :
-                               category === "Salud" ? "❤️" :
-                               category === "Arte & cultura" ? "🎨" : "🏗️";
+                  const emoji =
+                    category === "Medio ambiente"
+                      ? "🌱"
+                      : category === "Educación"
+                        ? "📚"
+                        : category === "Comunidad"
+                          ? "🤝"
+                          : category === "Salud"
+                            ? "❤️"
+                            : category === "Arte & cultura"
+                              ? "🎨"
+                              : "🏗️";
                   return (
-                    <span key={category} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/30 text-xs font-medium">
+                    <span
+                      key={category}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/30 text-xs font-medium"
+                    >
                       <span>{emoji}</span>
                       <span>{category}</span>
                       <span className="text-muted-foreground/60">({count})</span>
@@ -272,19 +334,27 @@ export function Profile() {
 
           {/* Districts */}
           <div className="p-5 border-b border-border/40">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Distritos recorridos</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Distritos recorridos
+            </div>
             <div className="flex flex-wrap gap-2">
               {(() => {
                 const districtCounts: Record<string, number> = {};
-                completedMissions.forEach(m => {
+                completedMissions.forEach((m) => {
                   districtCounts[m.district] = (districtCounts[m.district] || 0) + 1;
                 });
-                const sorted = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]) as [string, number][];
+                const sorted = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]) as [
+                  string,
+                  number,
+                ][];
                 if (sorted.length === 0) {
                   return <div className="text-sm text-muted-foreground">Aún sin participación</div>;
                 }
                 return sorted.slice(0, 4).map(([district, count]: [string, number]) => (
-                  <span key={district} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium">
+                  <span
+                    key={district}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium"
+                  >
                     <MapPin className="h-3 w-3" />
                     <span>{district}</span>
                     <span className="text-muted-foreground/60">({count})</span>
@@ -296,10 +366,13 @@ export function Profile() {
 
           {/* Supported Proposals */}
           <div className="p-5">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Iniciativas que apoyas</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Iniciativas que apoyas
+            </div>
             {supportedIds.length > 0 ? (
               <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
-                {supportedIds.length} iniciativa{supportedIds.length !== 1 ? "s" : ""} apoyada{supportedIds.length !== 1 ? "s" : ""}
+                {supportedIds.length} iniciativa{supportedIds.length !== 1 ? "s" : ""} apoyada
+                {supportedIds.length !== 1 ? "s" : ""}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">Aún sin apoyos</div>
@@ -354,7 +427,9 @@ export function Profile() {
                         className="rounded-3xl bg-card border border-border/80 p-5 flex gap-4 hover:shadow-soft hover:border-accent/40 dark:hover:border-accent/30 transition-all duration-300 relative group cursor-pointer"
                         title="Haz clic para abrir el archivo documental de esta misión"
                       >
-                        <div className={`h-14 w-14 rounded-2xl ${nodeColor} text-white grid place-items-center text-2xl shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 shadow-sm`}>
+                        <div
+                          className={`h-14 w-14 rounded-2xl ${nodeColor} text-white grid place-items-center text-2xl shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 shadow-sm`}
+                        >
                           {m.emoji}
                         </div>
 
@@ -392,8 +467,8 @@ export function Profile() {
                             {completionState === "completed"
                               ? `Formaste parte de una jornada de ${m.category.toLowerCase()} en ${m.district}.`
                               : completionState === "awaiting_verification"
-                              ? `Evidencia enviada — esperando verificación de tu participación en ${m.district}.`
-                              : `Estás participando en una jornada de ${m.category.toLowerCase()} en ${m.district}.`}
+                                ? `Evidencia enviada — esperando verificación de tu participación en ${m.district}.`
+                                : `Estás participando en una jornada de ${m.category.toLowerCase()} en ${m.district}.`}
                           </div>
 
                           <div className="mt-3 flex gap-4 text-xs text-muted-foreground/80 font-semibold">
@@ -410,9 +485,15 @@ export function Profile() {
 
                         <div className="text-right shrink-0 self-center">
                           <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                            {completionState === "completed" ? "Completado" : completionState === "awaiting_verification" ? "Verificando" : "Iniciado"}
+                            {completionState === "completed"
+                              ? "Completado"
+                              : completionState === "awaiting_verification"
+                                ? "Verificando"
+                                : "Iniciado"}
                           </div>
-                          <div className="font-display font-black text-accent text-lg">{formatRelativeDate(um.joinedAt || m.date)}</div>
+                          <div className="font-display font-black text-accent text-lg">
+                            {formatRelativeDate(um.joinedAt || m.date)}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -422,8 +503,12 @@ export function Profile() {
             ) : (
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
                 <div className="text-4xl mb-3">🗺️</div>
-                <p className="text-sm text-muted-foreground font-medium">Aún no has iniciado una ruta.</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Encuentra tu primera ruta en el mapa.</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Aún no has iniciado una ruta.
+                </p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Encuentra tu primera ruta en el mapa.
+                </p>
                 <Link
                   to="/app/mapa"
                   className="inline-flex items-center gap-2 mt-4 text-xs font-black uppercase tracking-wider text-primary hover:underline"
@@ -439,9 +524,11 @@ export function Profile() {
         <div className="space-y-8">
           {/* Identity & Territorial Footprint */}
           <section className="rounded-3xl bg-card border border-border/80 p-6 shadow-sm relative overflow-hidden">
-            <h2 className="font-display font-black text-lg text-foreground mb-1">Participación por región</h2>
+            <h2 className="font-display font-black text-lg text-foreground mb-1">
+              Participación por región
+            </h2>
             <p className="text-xs text-muted-foreground mb-4">Tu huella en cada región.</p>
-            
+
             <div className="grid grid-cols-3 gap-2">
               {REGION_THEMES.map((t) => {
                 const isActive = activeRegions.includes(t.id) || user.region === t.id;
@@ -449,8 +536,8 @@ export function Profile() {
                   <div
                     key={t.id}
                     className={`relative rounded-2xl ${t.gradient} text-white p-3 text-center border overflow-hidden transition-all duration-300 ${
-                      isActive 
-                        ? "shadow-sm border-transparent" 
+                      isActive
+                        ? "shadow-sm border-transparent"
                         : "opacity-35 grayscale border-border"
                     }`}
                   >
@@ -467,7 +554,9 @@ export function Profile() {
             <div className="mt-4 p-3 rounded-2xl bg-muted/50 border border-border/40 text-[11px] text-muted-foreground font-medium flex items-center gap-2">
               <Map className="h-3.5 w-3.5 text-primary/70" />
               <span>
-                Has dejado huella en <strong className="text-foreground">{activeRegions.length}</strong> de las 3 regiones.
+                Has dejado huella en{" "}
+                <strong className="text-foreground">{activeRegions.length}</strong> de las 3
+                regiones.
               </span>
             </div>
           </section>
@@ -476,7 +565,9 @@ export function Profile() {
           <section className="rounded-3xl bg-card border border-border/80 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="font-display font-black text-lg text-foreground leading-none">Insignias</h2>
+                <h2 className="font-display font-black text-lg text-foreground leading-none">
+                  Insignias
+                </h2>
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-1.5 block">
                   {userBadges.length} desbloqueadas
                 </span>
@@ -503,7 +594,7 @@ export function Profile() {
       </div>
 
       {/* Cinematic celebration layer modal */}
-      <KusqaMomentsModal 
+      <KusqaMomentsModal
         isOpen={momentOpen}
         onClose={() => setMomentOpen(false)}
         moment={activeMoment}
@@ -529,7 +620,7 @@ export function Profile() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <p className="text-sm text-muted-foreground mb-4">
               ¿Dónde te encuentras actualmente? Esto nos ayuda a mostrarte misiones cercanas.
             </p>
@@ -542,7 +633,7 @@ export function Profile() {
                 placeholder="Ej: Barranco, Lima"
                 className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
               />
-              
+
               {suggestions.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 max-h-48 overflow-y-auto">
                   {suggestions.map((s, idx) => (

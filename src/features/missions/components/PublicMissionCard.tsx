@@ -134,8 +134,8 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
                 <span className="text-xs font-bold text-accent">+{entity.xp} XP</span>
               </>
             )}
-            {isMissionEntity && (
-              isFull ? (
+            {isMissionEntity &&
+              (isFull ? (
                 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold">
                   Lleno
                 </span>
@@ -143,8 +143,7 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
                 <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-surface text-muted-foreground">
                   {entity.spotsLeft} lugares
                 </span>
-              )
-            )}
+              ))}
             {isProposalEntity && (
               <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-semibold">
                 Comunidad organizándose
@@ -164,9 +163,7 @@ export function PublicMissionCard({ entity, index = 0 }: PublicMissionCardProps)
               onClick={handleSupport}
               disabled={isSupporting || isSupported(entity.id)}
               className={`inline-flex items-center gap-1 text-xs font-semibold hover:gap-2 transition-all ${
-                isSupported(entity.id)
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-accent"
+                isSupported(entity.id) ? "text-emerald-600 dark:text-emerald-400" : "text-accent"
               }`}
             >
               {isSupporting ? (

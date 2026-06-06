@@ -7,12 +7,7 @@
  */
 
 /** Discriminated union of all possible lifecycle states — exhaustive match required. */
-export type MissionLifecycle =
-  | "upcoming"
-  | "active"
-  | "ending_soon"
-  | "completed"
-  | "archived";
+export type MissionLifecycle = "upcoming" | "active" | "ending_soon" | "completed" | "archived";
 
 /** Human-readable labels for each lifecycle state. */
 export const LIFECYCLE_LABELS: Record<MissionLifecycle, string> = {

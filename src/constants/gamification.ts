@@ -6,9 +6,9 @@
 
 /** Rango de XP por dificultad */
 export const XP_BY_DIFFICULTY = {
-  "Suave": { min: 100, max: 400 },
-  "Andina": { min: 400, max: 700 },
-  "Cumbre": { min: 700, max: 1000 },
+  Suave: { min: 100, max: 400 },
+  Andina: { min: 400, max: 700 },
+  Cumbre: { min: 700, max: 1000 },
 } as const;
 
 /** Configuración de UI para regiones - Fuente única de verdad */

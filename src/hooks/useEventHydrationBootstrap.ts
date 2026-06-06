@@ -56,7 +56,10 @@ export function useEventHydrationBootstrap(userId: string | undefined): void {
             if (import.meta.env.DEV && diff.divergenceCount > 0) {
               console.warn(
                 `[KUSQA] Post-hydration divergence: ${diff.divergenceCount} event(s) out of sync`,
-                { missingInDB: diff.missingInDB.length, missingInRegistry: diff.missingInRegistry.length }
+                {
+                  missingInDB: diff.missingInDB.length,
+                  missingInRegistry: diff.missingInRegistry.length,
+                },
               );
             }
           } catch {

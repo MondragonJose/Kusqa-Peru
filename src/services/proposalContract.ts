@@ -55,6 +55,12 @@ export type DbProposalRow = {
   /** PostgreSQL `numeric` → Supabase JS returns string, not number */
   longitude: string | null;
   proposed_date: string | null;
+  /** Optional 280-char preview used in cards and feeds. */
+  summary: string | null;
+  /** Optional author voice: why this matters in the author's district. */
+  why: string | null;
+  /** Optional human-readable place label. */
+  location_label: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -71,6 +77,9 @@ export type DbProposalInsert = {
   status?: string;
   latitude?: number | null;
   longitude?: number | null;
+  summary?: string | null;
+  why?: string | null;
+  location_label?: string | null;
 };
 
 export type DbProposalUpdate = Partial<Omit<DbProposalInsert, "user_id">>;
@@ -91,6 +100,12 @@ export type Proposal = {
   latitude: number | null;
   longitude: number | null;
   proposedDate: string | null;
+  /** Optional 280-char preview. Falls back to description at render time. */
+  summary: string | null;
+  /** Optional author voice. Falls back to a neutral prompt when null. */
+  why: string | null;
+  /** Optional human place label. Independent from lat/lng. */
+  locationLabel: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -108,6 +123,9 @@ export type CreateProposalDTO = {
   latitude?: number;
   longitude?: number;
   proposedDate?: string;
+  summary?: string;
+  why?: string;
+  locationLabel?: string;
 };
 
 export type UpdateProposalDTO = Partial<{
@@ -122,6 +140,9 @@ export type UpdateProposalDTO = Partial<{
   latitude: number;
   longitude: number;
   proposedDate: string;
+  summary: string;
+  why: string;
+  locationLabel: string;
 }>;
 
 // ─── Result type (deterministic outcome for every operation) ───────────────
@@ -147,6 +168,14 @@ export type ProposalSupport = {
   createdAt: string;
 };
 
+export type ProposalSupporterPreview = {
+  userId: string;
+  username: string;
+  firstName: string;
+  avatarUrl: string | null;
+  supportedAt: string;
+};
+
 // ─── DB defaults derived from SQL schema constraints ───────────────────────
 
 export const DB_DEFAULTS = {
@@ -155,4 +184,10 @@ export const DB_DEFAULTS = {
   TEAM_SIZE_MAX: 80,
   TEAM_SIZE_FALLBACK: 3,
   STATUS_DEFAULT: "pending" as ProposalStatus,
+  /** SQL: proposals_summary_length_chk */
+  SUMMARY_MAX: 280,
+  /** SQL: proposals_why_length_chk */
+  WHY_MAX: 600,
+  /** SQL: proposals_location_label_length_chk */
+  LOCATION_LABEL_MAX: 200,
 } as const;

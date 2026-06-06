@@ -3,6 +3,7 @@ import { proposalRepository } from "@/services/proposalRepository";
 import { proposalSupportKeys } from "@/lib/queryKeys";
 import { userRepository } from "@/services/userRepository";
 import { toast } from "sonner";
+import { proposalSupportCountQueryOptions } from "../queryOptions";
 
 export function useSupportedProposalIds() {
   return useQuery({
@@ -17,6 +18,12 @@ export function useSupportedProposalIds() {
   });
 }
 
+export function useSupportCount(proposalId: string) {
+  return useQuery({
+    ...proposalSupportCountQueryOptions(proposalId),
+  });
+}
+
 export function useSupportProposal() {
   const queryClient = useQueryClient();
   const { data: supportedIds = [] } = useSupportedProposalIds();
@@ -27,7 +34,7 @@ export function useSupportProposal() {
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.byUser("current") });
       const previous = queryClient.getQueryData<string[]>(proposalSupportKeys.byUser("current"));
       queryClient.setQueryData<string[]>(proposalSupportKeys.byUser("current"), (old) =>
-        old ? [...old, proposalId] : [proposalId]
+        old ? [...old, proposalId] : [proposalId],
       );
       return { previous };
     },

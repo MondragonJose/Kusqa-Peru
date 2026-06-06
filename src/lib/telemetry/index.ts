@@ -41,10 +41,7 @@ export function trackOperationalMetric(name: OperationalMetricName, payload?: Me
   }
 }
 
-export function captureOperationalException(
-  error: Error,
-  context?: MetricPayload
-): void {
+export function captureOperationalException(error: Error, context?: MetricPayload): void {
   if (IS_DEV) {
     console.error("[kusqa:telemetry] exception", error, context ?? {});
   }

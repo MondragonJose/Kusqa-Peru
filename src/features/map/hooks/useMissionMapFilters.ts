@@ -17,12 +17,15 @@ const INITIAL_FILTER_STATE: MapFilterState = {
 export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCoords | null) {
   const [filters, setFilters] = useState<MapFilterState>(INITIAL_FILTER_STATE);
 
-  const updateFilters = useCallback((updater: Partial<MapFilterState> | ((prev: MapFilterState) => MapFilterState)) => {
-    setFilters((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
-      return next;
-    });
-  }, []);
+  const updateFilters = useCallback(
+    (updater: Partial<MapFilterState> | ((prev: MapFilterState) => MapFilterState)) => {
+      setFilters((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
+        return next;
+      });
+    },
+    [],
+  );
 
   const resetFilters = useCallback(() => {
     setFilters(INITIAL_FILTER_STATE);
@@ -31,26 +34,26 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
   // Extract dynamic filter options based on available entities
   const availableRegions = useMemo(() => {
     const regions = new Set<Region>();
-    entities.forEach(m => regions.add(m.region));
+    entities.forEach((m) => regions.add(m.region));
     return Array.from(regions);
   }, [entities]);
 
   const availableCategories = useMemo(() => {
     const categories = new Set<MissionCategory>();
-    entities.forEach(m => categories.add(m.category));
+    entities.forEach((m) => categories.add(m.category));
     return Array.from(categories);
   }, [entities]);
 
   const availableDifficulties = useMemo(() => {
     const difficulties = new Set<MissionDifficulty>();
-    entities.forEach(m => difficulties.add(m.difficulty));
+    entities.forEach((m) => difficulties.add(m.difficulty));
     return Array.from(difficulties);
   }, [entities]);
 
   // Dynamic districts derived from real activity
   const availableDistricts = useMemo(() => {
     const districtCounts = new Map<string, number>();
-    entities.forEach(m => {
+    entities.forEach((m) => {
       const count = districtCounts.get(m.district) || 0;
       districtCounts.set(m.district, count + 1);
     });
@@ -83,7 +86,11 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
       }
 
       // 4. Difficulty filter
-      if (!hiddenReason && filters.difficulty !== "todas" && mission.difficulty !== filters.difficulty) {
+      if (
+        !hiddenReason &&
+        filters.difficulty !== "todas" &&
+        mission.difficulty !== filters.difficulty
+      ) {
         hiddenReason = `difficulty filter (mission.difficulty=${mission.difficulty}, filter=${filters.difficulty})`;
       }
 
@@ -99,7 +106,12 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
       }
 
       // 6. Proximity filter (if user coordinates are valid and radius is set)
-      if (!hiddenReason && filters.proximityRadiusKm && userCoords && isValidLatLng(userCoords.lat, userCoords.lng)) {
+      if (
+        !hiddenReason &&
+        filters.proximityRadiusKm &&
+        userCoords &&
+        isValidLatLng(userCoords.lat, userCoords.lng)
+      ) {
         if (!mission.coords || !isValidLatLng(mission.coords.lat, mission.coords.lng)) {
           hiddenReason = `missing or invalid coords`;
         } else {
@@ -118,7 +130,15 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
     });
 
     if (import.meta.env.DEV) {
-      console.log("[KUSQA ENTITY TRACE] Map filters:", entities.length, "input →", result.length, "output (hidden:", hidden.length, ")");
+      console.log(
+        "[KUSQA ENTITY TRACE] Map filters:",
+        entities.length,
+        "input →",
+        result.length,
+        "output (hidden:",
+        hidden.length,
+        ")",
+      );
       console.log("[KUSQA ENTITY TRACE] Active filters:", filters);
       if (hidden.length > 0) {
         console.log("[KUSQA ENTITY TRACE] Hidden entities:");

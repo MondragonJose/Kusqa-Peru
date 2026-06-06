@@ -19,7 +19,6 @@ import { missionResolver } from "@/services/missionResolver";
 import { userProgressQueryService } from "@/services/userProgressQueryService";
 import { userRepository } from "@/services/userRepository";
 
-
 export function missionCatalogQueryOptions() {
   return {
     queryKey: missionKeys.all,

@@ -23,7 +23,12 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     xpTo: 500,
     gradientClass: "bg-gradient-coast",
     milestones: [
-      { id: "first-mission", label: "Primera misión completada", xpRequired: 100, unlockLabel: "Acceso al mapa cívico" },
+      {
+        id: "first-mission",
+        label: "Primera misión completada",
+        xpRequired: 100,
+        unlockLabel: "Acceso al mapa cívico",
+      },
       { id: "first-district", label: "Explora tu primer distrito", xpRequired: 250 },
       { id: "join-team", label: "Únete a un equipo barrial", xpRequired: 400 },
     ],
@@ -42,7 +47,12 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     gradientClass: "bg-gradient-terrain-costa",
     milestones: [
       { id: "five-missions", label: "5 misiones en tu zona", xpRequired: 700 },
-      { id: "impact-50", label: "50 personas alcanzadas", xpRequired: 1000, unlockLabel: "Insignia: Vecino activo" },
+      {
+        id: "impact-50",
+        label: "50 personas alcanzadas",
+        xpRequired: 1000,
+        unlockLabel: "Insignia: Vecino activo",
+      },
       { id: "lead-once", label: "Lidera una actividad", xpRequired: 1300 },
     ],
     unlocks: ["Insignia Vecino Activo", "Estadísticas de impacto local"],
@@ -60,7 +70,12 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     gradientClass: "bg-gradient-andes",
     milestones: [
       { id: "three-regions", label: "Misiones en 3 distritos distintos", xpRequired: 2000 },
-      { id: "env-mission", label: "Misión ambiental completada", xpRequired: 2500, unlockLabel: "Insignia: Guardián Verde" },
+      {
+        id: "env-mission",
+        label: "Misión ambiental completada",
+        xpRequired: 2500,
+        unlockLabel: "Insignia: Guardián Verde",
+      },
       { id: "mentor-first", label: "Mentorea a un nuevo caminante", xpRequired: 3000 },
     ],
     unlocks: ["Insignia Guardián Verde", "Filtro de misiones por región"],
@@ -77,11 +92,25 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     xpTo: 6500,
     gradientClass: "bg-gradient-terrain-sierra",
     milestones: [
-      { id: "lead-project", label: "Crea tu propio proyecto", xpRequired: 4000, unlockLabel: "Acceso a creación de misiones" },
+      {
+        id: "lead-project",
+        label: "Crea tu propio proyecto",
+        xpRequired: 4000,
+        unlockLabel: "Acceso a creación de misiones",
+      },
       { id: "impact-300", label: "300 personas alcanzadas", xpRequired: 5000 },
-      { id: "district-win", label: "Tu distrito gana un reto", xpRequired: 6000, unlockLabel: "Insignia: Constructor Comunitario" },
+      {
+        id: "district-win",
+        label: "Tu distrito gana un reto",
+        xpRequired: 6000,
+        unlockLabel: "Insignia: Constructor Comunitario",
+      },
     ],
-    unlocks: ["Creación de misiones propias", "Insignia Constructor Comunitario", "Panel de liderazgo"],
+    unlocks: [
+      "Creación de misiones propias",
+      "Insignia Constructor Comunitario",
+      "Panel de liderazgo",
+    ],
   },
   {
     level: 5,
@@ -96,7 +125,12 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     gradientClass: "bg-gradient-jungle",
     milestones: [
       { id: "selva-mission", label: "Primera misión en la Amazonía", xpRequired: 7000 },
-      { id: "multi-region", label: "Activo en Costa, Sierra y Selva", xpRequired: 8500, unlockLabel: "Insignia: Tejedor Social" },
+      {
+        id: "multi-region",
+        label: "Activo en Costa, Sierra y Selva",
+        xpRequired: 8500,
+        unlockLabel: "Insignia: Tejedor Social",
+      },
       { id: "impact-1000", label: "1,000 personas alcanzadas", xpRequired: 10000 },
     ],
     unlocks: ["Insignia Tejedor Social", "Vista de impacto nacional"],
@@ -114,7 +148,12 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     gradientClass: "bg-gradient-terrain-selva",
     milestones: [
       { id: "five-projects", label: "5 proyectos propios lanzados", xpRequired: 11500 },
-      { id: "fifty-allies", label: "50 aliados en tu red", xpRequired: 13000, unlockLabel: "Insignia: Agente de Cambio" },
+      {
+        id: "fifty-allies",
+        label: "50 aliados en tu red",
+        xpRequired: 13000,
+        unlockLabel: "Insignia: Agente de Cambio",
+      },
       { id: "impact-5000", label: "5,000 personas alcanzadas", xpRequired: 15000 },
     ],
     unlocks: ["Insignia Agente de Cambio", "Perfil público ampliado"],
@@ -132,10 +171,24 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
     gradientClass: "bg-gradient-cumbre",
     milestones: [
       { id: "national-impact", label: "Impacto verificado en 5 regiones", xpRequired: 18000 },
-      { id: "mentor-ten", label: "Mentorea a 10 nuevos líderes", xpRequired: 21000, unlockLabel: "Insignia: Voz Barrial" },
-      { id: "legacy-project", label: "Proyecto de legado comunitario", xpRequired: 24000, unlockLabel: "Insignia Legendaria: Kusqa Mayor" },
+      {
+        id: "mentor-ten",
+        label: "Mentorea a 10 nuevos líderes",
+        xpRequired: 21000,
+        unlockLabel: "Insignia: Voz Barrial",
+      },
+      {
+        id: "legacy-project",
+        label: "Proyecto de legado comunitario",
+        xpRequired: 24000,
+        unlockLabel: "Insignia Legendaria: Kusqa Mayor",
+      },
     ],
-    unlocks: ["Insignia Voz Barrial", "Insignia Legendaria: Kusqa Mayor", "Perfil de Líder Nacional"],
+    unlocks: [
+      "Insignia Voz Barrial",
+      "Insignia Legendaria: Kusqa Mayor",
+      "Perfil de Líder Nacional",
+    ],
   },
 ];
 
@@ -147,6 +200,8 @@ export function getStageByLevel(level: number): ProgressionStage {
 /** Retorna el tramo correspondiente a un XP dado */
 export function getStageByXp(xp: number): ProgressionStage {
   return (
-    CIVIC_ROUTE.slice().reverse().find((s) => xp >= s.xpFrom) ?? CIVIC_ROUTE[0]
+    CIVIC_ROUTE.slice()
+      .reverse()
+      .find((s) => xp >= s.xpFrom) ?? CIVIC_ROUTE[0]
   );
 }

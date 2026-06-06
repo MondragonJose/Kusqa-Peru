@@ -6,10 +6,7 @@
  * NEVER duplicate lifecycle logic elsewhere.
  */
 
-import type {
-  MissionLifecycle,
-  MissionLifecycleInfo,
-} from "@/types/lifecycle";
+import type { MissionLifecycle, MissionLifecycleInfo } from "@/types/lifecycle";
 import {
   LIFECYCLE_PRIORITY,
   ENDING_SOON_THRESHOLD_MS,
@@ -38,7 +35,7 @@ function parseMs(dateStr: string | null | undefined): number | null {
  */
 export function deriveLifecycle(
   startDate: string | null | undefined,
-  endDate: string | null | undefined
+  endDate: string | null | undefined,
 ): MissionLifecycle {
   const start = parseMs(startDate);
   if (start === null) return "active";
@@ -77,7 +74,7 @@ export function deriveLifecycle(
  */
 export function computeLifecycleInfo(
   startDate: string | null | undefined,
-  endDate: string | null | undefined
+  endDate: string | null | undefined,
 ): MissionLifecycleInfo {
   const lifecycle = deriveLifecycle(startDate, endDate);
 
@@ -132,6 +129,9 @@ export function formatCountdown(ms: number): string {
  * Sort comparator for lifecycle-priority ordering.
  * Usage: missions.sort(sortByLifecyclePriority)
  */
-export function sortByLifecyclePriority(a: { lifecycleInfo: MissionLifecycleInfo }, b: { lifecycleInfo: MissionLifecycleInfo }): number {
+export function sortByLifecyclePriority(
+  a: { lifecycleInfo: MissionLifecycleInfo },
+  b: { lifecycleInfo: MissionLifecycleInfo },
+): number {
   return a.lifecycleInfo.lifecyclePriority - b.lifecycleInfo.lifecyclePriority;
 }

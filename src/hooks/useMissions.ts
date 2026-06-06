@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { missionCatalogQueryOptions, missionDetailQueryOptions } from "@/features/auth/queryOptions";
+import {
+  missionCatalogQueryOptions,
+  missionDetailQueryOptions,
+} from "@/features/auth/queryOptions";
 
 export { missionKeys } from "@/lib/queryKeys";
 
@@ -11,7 +14,11 @@ export function useMissions() {
   const query = useQuery(missionCatalogQueryOptions());
 
   if (import.meta.env.DEV && query.data) {
-    console.log("[KUSQA MISSION TRACE] useMissions: Retrieved", query.data.length, "missions from cache/network");
+    console.log(
+      "[KUSQA MISSION TRACE] useMissions: Retrieved",
+      query.data.length,
+      "missions from cache/network",
+    );
   }
 
   return query;

@@ -31,9 +31,9 @@ export function getClosestRegion(coords: MapCoords): "costa" | "sierra" | "selva
     return "costa"; // Costa oeste
   }
   if (coords.lat > -6.0) {
-    return "selva";   // Selva norte/oriente
+    return "selva"; // Selva norte/oriente
   }
-  return "sierra";                         // Andes / Sierra centro y sur
+  return "sierra"; // Andes / Sierra centro y sur
 }
 
 /**

@@ -13,9 +13,9 @@ type DistrictLayerOptions = {
 };
 
 const TERRITORIAL_COLORS = {
-  costa: { stroke: '#C4962A', fill: '#D4A832', glow: 'rgba(196,150,42,0.25)' },
-  sierra: { stroke: '#C47A2A', fill: '#D4A832', glow: 'rgba(196,122,42,0.25)' },
-  selva: { stroke: '#2D7A4A', fill: '#3A8F5A', glow: 'rgba(45,122,74,0.25)' },
+  costa: { stroke: "#C4962A", fill: "#D4A832", glow: "rgba(196,150,42,0.25)" },
+  sierra: { stroke: "#C47A2A", fill: "#D4A832", glow: "rgba(196,122,42,0.25)" },
+  selva: { stroke: "#2D7A4A", fill: "#3A8F5A", glow: "rgba(45,122,74,0.25)" },
 };
 
 /**
@@ -25,16 +25,20 @@ const TERRITORIAL_COLORS = {
 export function renderDistrictLayer({ L, map }: DistrictLayerOptions): LeafletInstance {
   const geojsonLayer = L.geoJSON(DISTRICT_POLYGONS as any, {
     style: (feature: any) => {
-      const regionKey = feature?.properties?.region as 'costa' | 'sierra' | 'selva';
-      const colors = TERRITORIAL_COLORS[regionKey] || { stroke: '#888', fill: '#aaa', glow: 'rgba(128,128,128,0.2)' };
+      const regionKey = feature?.properties?.region as "costa" | "sierra" | "selva";
+      const colors = TERRITORIAL_COLORS[regionKey] || {
+        stroke: "#888",
+        fill: "#aaa",
+        glow: "rgba(128,128,128,0.2)",
+      };
       return {
         color: colors.stroke,
         weight: 2.5,
         opacity: 0.8,
         fillColor: colors.fill,
         fillOpacity: 0.1,
-        dashArray: '6, 10',
-        className: 'glowing-district-polygon',
+        dashArray: "6, 10",
+        className: "glowing-district-polygon",
       };
     },
     onEachFeature: (feature: any, layer: any) => {
@@ -46,7 +50,7 @@ export function renderDistrictLayer({ L, map }: DistrictLayerOptions): LeafletIn
             <span class="text-[10px] italic">Área activa de impacto cívico</span>
           </div>
         </div>`,
-        { closeButton: false }
+        { closeButton: false },
       );
 
       layer.on({

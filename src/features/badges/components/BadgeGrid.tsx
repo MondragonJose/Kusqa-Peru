@@ -39,15 +39,10 @@ export function BadgeGrid({ badges, showNarrative = true }: BadgeGridProps) {
   const [activeCategory, setActiveCategory] = useState<BadgeCategory | "todas">("todas");
 
   const filtered =
-    activeCategory === "todas"
-      ? badges
-      : badges.filter((b) => b.category === activeCategory);
+    activeCategory === "todas" ? badges : badges.filter((b) => b.category === activeCategory);
 
   // Earned first, then locked
-  const sorted = [
-    ...filtered.filter((b) => b.earned),
-    ...filtered.filter((b) => !b.earned),
-  ];
+  const sorted = [...filtered.filter((b) => b.earned), ...filtered.filter((b) => !b.earned)];
 
   const earnedCount = badges.filter((b) => b.earned).length;
 
@@ -61,19 +56,22 @@ export function BadgeGrid({ badges, showNarrative = true }: BadgeGridProps) {
           </p>
         </div>
         <div className="text-xs text-muted-foreground">
-          <span className="text-foreground font-semibold">{Math.round((earnedCount / badges.length) * 100)}%</span> de tu colección
+          <span className="text-foreground font-semibold">
+            {Math.round((earnedCount / badges.length) * 100)}%
+          </span>{" "}
+          de tu colección
         </div>
       </div>
 
       {/* Category filter pills */}
       <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-6">
         {CATEGORY_ORDER.map((cat) => {
-          const count = cat === "todas"
-            ? badges.length
-            : badges.filter((b) => b.category === cat).length;
-          const earnedInCat = cat === "todas"
-            ? earnedCount
-            : badges.filter((b) => b.category === cat && b.earned).length;
+          const count =
+            cat === "todas" ? badges.length : badges.filter((b) => b.category === cat).length;
+          const earnedInCat =
+            cat === "todas"
+              ? earnedCount
+              : badges.filter((b) => b.category === cat && b.earned).length;
 
           return (
             <button
@@ -81,14 +79,17 @@ export function BadgeGrid({ badges, showNarrative = true }: BadgeGridProps) {
               onClick={() => setActiveCategory(cat)}
               className={`
                 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-smooth
-                ${activeCategory === cat
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-surface border-border hover:bg-secondary"
+                ${
+                  activeCategory === cat
+                    ? "bg-foreground text-background border-foreground"
+                    : "bg-surface border-border hover:bg-secondary"
                 }
               `}
             >
               {CATEGORY_LABELS[cat]}
-              <span className="ml-1.5 opacity-60">{earnedInCat}/{count}</span>
+              <span className="ml-1.5 opacity-60">
+                {earnedInCat}/{count}
+              </span>
             </button>
           );
         })}
@@ -105,12 +106,7 @@ export function BadgeGrid({ badges, showNarrative = true }: BadgeGridProps) {
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {sorted.map((badge, i) => (
-            <BadgeCard
-              key={badge.id}
-              badge={badge}
-              index={i}
-              showNarrative={showNarrative}
-            />
+            <BadgeCard key={badge.id} badge={badge} index={i} showNarrative={showNarrative} />
           ))}
         </motion.div>
       </AnimatePresence>

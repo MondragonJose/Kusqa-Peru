@@ -1,6 +1,6 @@
 /**
  * Mission Selection Domain Logic
- * 
+ *
  * Pure functions for selecting and ordering missions/proposals.
  * Extracted from UI layer to improve testability and separation of concerns.
  */
@@ -10,7 +10,7 @@ import type { Region } from "@/types";
 
 /**
  * Select featured missions with territorial diversity priority.
- * 
+ *
  * Strategy:
  * - If missions span multiple regions: take one from each region, then fill
  * - If all missions in one region: distribute by category for internal diversity
@@ -20,7 +20,7 @@ export function selectFeaturedMissions(entities: CivicEntity[]): CivicEntity[] {
   if (entities.length === 0) return [];
 
   const byRegion: Record<string, CivicEntity[]> = {};
-  entities.forEach(m => {
+  entities.forEach((m) => {
     if (!byRegion[m.region]) byRegion[m.region] = [];
     byRegion[m.region].push(m);
   });
@@ -30,11 +30,11 @@ export function selectFeaturedMissions(entities: CivicEntity[]): CivicEntity[] {
   // If missions are spread across multiple regions: take one from each, then fill
   if (regionCount >= 2) {
     const selected: CivicEntity[] = [];
-    ["sierra", "costa", "selva"].forEach(region => {
+    ["sierra", "costa", "selva"].forEach((region) => {
       const pool = byRegion[region];
       if (pool && pool.length > 0) selected.push(pool[0]);
     });
-    const remaining = entities.filter(m => !selected.includes(m));
+    const remaining = entities.filter((m) => !selected.includes(m));
     selected.push(...remaining.slice(0, 3 - selected.length));
     return selected.slice(0, 3);
   }
@@ -49,7 +49,7 @@ export function selectFeaturedMissions(entities: CivicEntity[]): CivicEntity[] {
 
   // Group by category to pick diverse missions
   const byCategory: Record<string, CivicEntity[]> = {};
-  pool.forEach(m => {
+  pool.forEach((m) => {
     if (!byCategory[m.category]) byCategory[m.category] = [];
     byCategory[m.category].push(m);
   });
@@ -64,7 +64,7 @@ export function selectFeaturedMissions(entities: CivicEntity[]): CivicEntity[] {
   }
 
   // Fill remaining slots with any missions not yet selected
-  const remaining = pool.filter(m => !selected.includes(m));
+  const remaining = pool.filter((m) => !selected.includes(m));
   selected.push(...remaining.slice(0, 3 - selected.length));
 
   return selected.slice(0, 3);
@@ -72,20 +72,22 @@ export function selectFeaturedMissions(entities: CivicEntity[]): CivicEntity[] {
 
 /**
  * Select nearby missions based on user's region.
- * 
+ *
  * Strategy:
  * - If user has a region: filter to that region
  * - If no user region: return first 2 missions as fallback
  * - Always return max 2 missions
  */
 export function selectNearbyMissions(entities: CivicEntity[], userRegion?: Region): CivicEntity[] {
-  const nearbyRaw = userRegion ? entities.filter((m) => m.region === userRegion) : entities.slice(0, 2);
+  const nearbyRaw = userRegion
+    ? entities.filter((m) => m.region === userRegion)
+    : entities.slice(0, 2);
   return nearbyRaw.length > 0 ? nearbyRaw : entities.slice(0, 2);
 }
 
 /**
  * Select feed items with adaptive proposal visibility.
- * 
+ *
  * Strategy:
  * - Show up to 3 entities (mix of missions and proposals)
  * - Simple slice for now, can be enhanced with scoring later
@@ -97,7 +99,7 @@ export function selectFeedItems(entities: CivicEntity[]): CivicEntity[] {
 
 /**
  * Build territory metadata for a given region.
- * 
+ *
  * Strategy:
  * - Filter entities by region
  * - Calculate category distribution
@@ -111,23 +113,26 @@ export function buildTerritory(
   name: string,
   fallbackQuote: string,
   fallbackCategory: string,
-  emoji: string
+  emoji: string,
 ) {
-  const pool = entities.filter(m => m.region === region);
+  const pool = entities.filter((m) => m.region === region);
   const counts: Record<string, number> = {};
-  pool.forEach(m => { counts[m.category] = (counts[m.category] || 0) + 1; });
-  const leadCategory = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallbackCategory;
+  pool.forEach((m) => {
+    counts[m.category] = (counts[m.category] || 0) + 1;
+  });
+  const leadCategory =
+    Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || fallbackCategory;
   const preview = pool[0] ?? null;
-  return { 
-    id, 
-    name, 
-    region, 
-    activeMissionsCount: pool.length, 
-    leadCategory, 
-    preview, 
-    imageEmoji: emoji, 
-    quote: fallbackQuote, 
-    link: "/app/mapa" 
+  return {
+    id,
+    name,
+    region,
+    activeMissionsCount: pool.length,
+    leadCategory,
+    preview,
+    imageEmoji: emoji,
+    quote: fallbackQuote,
+    link: "/app/mapa",
   };
 }
 
@@ -138,10 +143,9 @@ export function calculateEntityStats(entities: CivicEntity[]) {
   const activeDistricts = new Set(entities.map((m) => m.district)).size;
   const totalParticipants = entities.reduce((acc, m) => acc + m.participants, 0);
   const totalHoursRaw = Math.round(totalParticipants * 3.5);
-  const totalHoursLabel = totalHoursRaw >= 1000
-    ? `${(totalHoursRaw / 1000).toFixed(1)}K`
-    : `${totalHoursRaw}`;
-  
+  const totalHoursLabel =
+    totalHoursRaw >= 1000 ? `${(totalHoursRaw / 1000).toFixed(1)}K` : `${totalHoursRaw}`;
+
   return {
     activeDistricts,
     totalParticipants,

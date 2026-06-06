@@ -18,8 +18,7 @@ type UseUserMissionsOptions = {
 
 export function useUserMissions(userId: string, options?: UseUserMissionsOptions) {
   const liveUserEnabled = isLiveUserEnabled();
-  const enabled =
-    (options?.enabled ?? true) && liveUserEnabled && userId.length > 0;
+  const enabled = (options?.enabled ?? true) && liveUserEnabled && userId.length > 0;
 
   return useQuery({
     ...userMissionsAllQueryOptions(userId),
@@ -29,8 +28,7 @@ export function useUserMissions(userId: string, options?: UseUserMissionsOptions
 
 export function useUserCompletedMissions(userId: string, options?: UseUserMissionsOptions) {
   const liveUserEnabled = isLiveUserEnabled();
-  const enabled =
-    (options?.enabled ?? true) && liveUserEnabled && userId.length > 0;
+  const enabled = (options?.enabled ?? true) && liveUserEnabled && userId.length > 0;
 
   return useQuery({
     ...userMissionsCompletedEnrichedQueryOptions(userId),
@@ -42,7 +40,5 @@ export function useProfileMissionTimeline() {
   const liveUserEnabled = isLiveUserEnabled();
   const { data: userId } = useQuery(userSessionQueryOptions());
 
-  return useQuery(
-    profileTimelineQueryOptions(userId ?? "")
-  );
+  return useQuery(profileTimelineQueryOptions(userId ?? ""));
 }

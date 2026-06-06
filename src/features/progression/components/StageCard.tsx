@@ -45,13 +45,13 @@ export function StageCard({ stage, status, userXp, index = 0 }: StageCardProps) 
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
             Nivel {stage.level} · {stage.terrain}
           </div>
-          <div className={`font-display font-bold text-lg mt-0.5 ${status === "locked" ? "text-muted-foreground" : ""}`}>
+          <div
+            className={`font-display font-bold text-lg mt-0.5 ${status === "locked" ? "text-muted-foreground" : ""}`}
+          >
             {stage.name}
           </div>
         </div>
-        {status === "completed" && (
-          <CheckCircle2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-        )}
+        {status === "completed" && <CheckCircle2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />}
         {status === "current" && (
           <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 text-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest shrink-0">
             <Sparkles className="h-3 w-3" /> Aquí
@@ -90,13 +90,20 @@ export function StageCard({ stage, status, userXp, index = 0 }: StageCardProps) 
           {stage.milestones.map((m) => {
             const done = userXp >= m.xpRequired;
             return (
-              <div key={m.id} className={`flex items-center gap-2 text-xs ${done ? "text-foreground" : "text-muted-foreground"}`}>
-                <div className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${done ? "border-accent bg-accent text-white" : "border-border"}`}>
+              <div
+                key={m.id}
+                className={`flex items-center gap-2 text-xs ${done ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                <div
+                  className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${done ? "border-accent bg-accent text-white" : "border-border"}`}
+                >
                   {done && <CheckCircle2 className="h-2.5 w-2.5" />}
                 </div>
                 <span className={done ? "line-through opacity-60" : ""}>{m.label}</span>
                 {m.unlockLabel && done && (
-                  <span className="ml-auto text-[10px] text-accent font-semibold">→ {m.unlockLabel}</span>
+                  <span className="ml-auto text-[10px] text-accent font-semibold">
+                    → {m.unlockLabel}
+                  </span>
                 )}
               </div>
             );

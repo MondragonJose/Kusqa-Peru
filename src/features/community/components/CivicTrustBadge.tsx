@@ -12,12 +12,7 @@
 import { motion } from "framer-motion";
 import { Shield, Leaf, Compass, Link2, Star } from "lucide-react";
 
-export type CivicTrustStatus =
-  | "semilla"
-  | "explorador"
-  | "guardian"
-  | "tejedor"
-  | "lider";
+export type CivicTrustStatus = "semilla" | "explorador" | "guardian" | "tejedor" | "lider";
 
 export interface CivicTrustProfile {
   status: CivicTrustStatus;

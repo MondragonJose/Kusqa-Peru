@@ -22,8 +22,8 @@ export interface KusqaMomentData {
   icon: string | React.ReactNode;
   message: string;
   gradientClass: string; // e.g., "bg-gradient-andes" or "bg-gradient-cumbre"
-  regionLabel?: string;  // e.g., "Sierra", "Costa", "Selva"
-  detailLabel?: string;  // e.g., "+350 XP", "Guardián del Valle"
+  regionLabel?: string; // e.g., "Sierra", "Costa", "Selva"
+  detailLabel?: string; // e.g., "+350 XP", "Guardián del Valle"
 }
 
 interface KusqaMomentsModalProps {

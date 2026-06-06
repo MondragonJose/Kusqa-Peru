@@ -62,7 +62,11 @@ export function MapControls({
         >
           <Locate
             className={`h-4 w-4 ${
-              userLocationLoading ? "animate-spin text-accent" : hasUserLocation ? "text-accent fill-accent/10" : ""
+              userLocationLoading
+                ? "animate-spin text-accent"
+                : hasUserLocation
+                  ? "text-accent fill-accent/10"
+                  : ""
             }`}
           />
         </button>

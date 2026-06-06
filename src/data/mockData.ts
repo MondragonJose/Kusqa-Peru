@@ -130,7 +130,7 @@ export const MISSIONS: Mission[] = [
     impact: "30 personas mayores acompañadas",
     difficulty: "Suave",
     organizer: { name: "Casa Abuelo", avatar: "🌼" },
-    coords: { lat: -12.1225, lng: -77.0280 },
+    coords: { lat: -12.1225, lng: -77.028 },
     emoji: "🌼",
     startDate: null,
     endDate: null,
@@ -139,7 +139,8 @@ export const MISSIONS: Mission[] = [
   {
     id: "lima-salud",
     title: "Campaña de salud mental en SJL",
-    description: "Jornada de sensibilización sobre salud mental con psicólogos voluntarios. Habrá talleres, charlas y tienda de recursos.",
+    description:
+      "Jornada de sensibilización sobre salud mental con psicólogos voluntarios. Habrá talleres, charlas y tienda de recursos.",
     district: "San Juan de Lurigancho",
     region: "costa",
     category: "Salud",
@@ -160,7 +161,8 @@ export const MISSIONS: Mission[] = [
   {
     id: "puno-cultura",
     title: "Festival de música tradicional andina",
-    description: "Documenta y promociona la música quechua y aimara con artistas locales de Puno. Oportunidad para aprender instrumentos ancestrales.",
+    description:
+      "Documenta y promociona la música quechua y aimara con artistas locales de Puno. Oportunidad para aprender instrumentos ancestrales.",
     district: "Puno",
     region: "sierra",
     category: "Arte & cultura",
@@ -201,10 +203,58 @@ export const CURRENT_USER = {
 };
 
 export const NOTIFICATIONS: Notification[] = [
-  { id: "1", type: "badge", title: "Nueva insignia desbloqueada", body: "Mentor — enseñaste a 10 personas", timestamp: "hace 2h", emoji: "🎓", read: false },
-  { id: "2", type: "mission", title: "Tu misión empieza mañana", body: "Mural colectivo en Barranco · 9:00", timestamp: "hace 5h", emoji: "🎨", read: false },
-  { id: "3", type: "social", title: "Andrés se unió a tu proyecto", body: "Clases de código para escolares", timestamp: "hace 1d", emoji: "👋", read: false },
-  { id: "4", type: "level", title: "¡Subiste a nivel 4!", body: "Ahora eres Guía del valle", timestamp: "hace 2d", emoji: "⛰️", read: true },
-  { id: "5", type: "community", title: "Tu distrito ganó el reto semanal", body: "Barranco lidera con 1,240 horas", timestamp: "hace 3d", emoji: "🏆", read: true },
-  { id: "6", type: "mission", title: "Cupos casi llenos", body: "Reforestación en el valle sagrado — quedan 4", timestamp: "hace 4d", emoji: "🌱", read: true },
+  {
+    id: "1",
+    type: "badge",
+    title: "Nueva insignia desbloqueada",
+    body: "Mentor — enseñaste a 10 personas",
+    timestamp: "hace 2h",
+    emoji: "🎓",
+    read: false,
+  },
+  {
+    id: "2",
+    type: "mission",
+    title: "Tu misión empieza mañana",
+    body: "Mural colectivo en Barranco · 9:00",
+    timestamp: "hace 5h",
+    emoji: "🎨",
+    read: false,
+  },
+  {
+    id: "3",
+    type: "social",
+    title: "Andrés se unió a tu proyecto",
+    body: "Clases de código para escolares",
+    timestamp: "hace 1d",
+    emoji: "👋",
+    read: false,
+  },
+  {
+    id: "4",
+    type: "level",
+    title: "¡Subiste a nivel 4!",
+    body: "Ahora eres Guía del valle",
+    timestamp: "hace 2d",
+    emoji: "⛰️",
+    read: true,
+  },
+  {
+    id: "5",
+    type: "community",
+    title: "Tu distrito ganó el reto semanal",
+    body: "Barranco lidera con 1,240 horas",
+    timestamp: "hace 3d",
+    emoji: "🏆",
+    read: true,
+  },
+  {
+    id: "6",
+    type: "mission",
+    title: "Cupos casi llenos",
+    body: "Reforestación en el valle sagrado — quedan 4",
+    timestamp: "hace 4d",
+    emoji: "🌱",
+    read: true,
+  },
 ];

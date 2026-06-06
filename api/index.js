@@ -5,7 +5,9 @@ import { Readable } from "node:stream";
 import server from "../dist/server/server.js";
 
 export default async (req, res) => {
-  const proto = String(req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
+  const proto = String(req.headers["x-forwarded-proto"] || "https")
+    .split(",")[0]
+    .trim();
   const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
   const url = new URL(req.url, `${proto}://${host}`);
 
@@ -49,4 +51,3 @@ export default async (req, res) => {
     res.end("<h1>500 Internal Server Error</h1>");
   }
 };
-

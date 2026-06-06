@@ -31,14 +31,19 @@ export const betaEvents = {
   pageView: (page: string) => logBetaEvent({ type: "page_view", page }),
   authStart: (provider: "google") => logBetaEvent({ type: "auth_start", provider }),
   authSuccess: (provider: "google") => logBetaEvent({ type: "auth_success", provider }),
-  authError: (provider: "google", error: string) => logBetaEvent({ type: "auth_error", provider, error }),
+  authError: (provider: "google", error: string) =>
+    logBetaEvent({ type: "auth_error", provider, error }),
   proposalCreateStart: () => logBetaEvent({ type: "proposal_create_start" }),
-  proposalCreateSuccess: (proposalId: string) => logBetaEvent({ type: "proposal_create_success", proposalId }),
+  proposalCreateSuccess: (proposalId: string) =>
+    logBetaEvent({ type: "proposal_create_success", proposalId }),
   proposalCreateError: (error: string) => logBetaEvent({ type: "proposal_create_error", error }),
   missionJoinStart: (missionId: string) => logBetaEvent({ type: "mission_join_start", missionId }),
-  missionJoinSuccess: (missionId: string) => logBetaEvent({ type: "mission_join_success", missionId }),
-  missionJoinError: (missionId: string, error: string) => logBetaEvent({ type: "mission_join_error", missionId, error }),
+  missionJoinSuccess: (missionId: string) =>
+    logBetaEvent({ type: "mission_join_success", missionId }),
+  missionJoinError: (missionId: string, error: string) =>
+    logBetaEvent({ type: "mission_join_error", missionId, error }),
   profileUpdateStart: (field: string) => logBetaEvent({ type: "profile_update_start", field }),
   profileUpdateSuccess: (field: string) => logBetaEvent({ type: "profile_update_success", field }),
-  profileUpdateError: (field: string, error: string) => logBetaEvent({ type: "profile_update_error", field, error }),
+  profileUpdateError: (field: string, error: string) =>
+    logBetaEvent({ type: "profile_update_error", field, error }),
 };

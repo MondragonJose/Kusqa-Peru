@@ -23,16 +23,15 @@ export function NotificationItem({ notification: n, index = 0 }: NotificationIte
       transition={{ delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
       className={`
         group rounded-2xl border p-4 flex gap-4 transition-all duration-355 cursor-pointer relative overflow-hidden
-        ${!n.read
-          ? "bg-card border-accent/20 shadow-soft hover:border-accent/40 hover:shadow-card"
-          : "bg-card/50 border-border/40 hover:bg-card hover:border-stone-300 dark:hover:border-stone-700"
+        ${
+          !n.read
+            ? "bg-card border-accent/20 shadow-soft hover:border-accent/40 hover:shadow-card"
+            : "bg-card/50 border-border/40 hover:bg-card hover:border-stone-300 dark:hover:border-stone-700"
         }
       `}
     >
       {/* Light glow stripe for unread notifications */}
-      {!n.read && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-sunrise" />
-      )}
+      {!n.read && <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-sunrise" />}
 
       {/* Icon Container with Warm Gradients */}
       <div
@@ -44,12 +43,12 @@ export function NotificationItem({ notification: n, index = 0 }: NotificationIte
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`font-bold text-sm ${n.read ? "text-foreground/80" : "text-foreground font-black"}`}>
+          <span
+            className={`font-bold text-sm ${n.read ? "text-foreground/80" : "text-foreground font-black"}`}
+          >
             {n.title}
           </span>
-          {!n.read && (
-            <span className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" />
-          )}
+          {!n.read && <span className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" />}
         </div>
 
         <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed font-medium">

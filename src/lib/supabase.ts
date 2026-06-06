@@ -17,17 +17,13 @@ const isSSR = typeof window === "undefined";
 export function getSupabaseClient() {
   if (!_supabase) {
     const env = validateEnv();
-    _supabase = createClient<Database>(
-      env.VITE_SUPABASE_URL,
-      env.VITE_SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: !isSSR,
-          autoRefreshToken: !isSSR,
-          detectSessionInUrl: !isSSR,
-        },
-      }
-    );
+    _supabase = createClient<Database>(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: !isSSR,
+        autoRefreshToken: !isSSR,
+        detectSessionInUrl: !isSSR,
+      },
+    });
   }
   return _supabase;
 }

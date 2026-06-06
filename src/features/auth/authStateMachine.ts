@@ -1,12 +1,12 @@
 /**
  * Auth State Machine — Centraliza la lógica de autenticación
- * 
+ *
  * Propósito:
  * - Unificar el estado de autenticación en un solo lugar
  * - Eliminar lógica duplicada entre router y componentes
  * - Garantizar transiciones de estado predecibles
  * - Evitar race conditions entre bootstrap y routing
- * 
+ *
  * Estados:
  * - initializing: Restaurando sesión desde localStorage (cold start)
  * - authenticated: Usuario autenticado con sesión válida
@@ -33,7 +33,7 @@ export interface AuthStateSnapshot {
 export function deriveAuthState(
   session: Session | null,
   loading: boolean,
-  user: User | null
+  user: User | null,
 ): AuthStateSnapshot {
   // Mientras AuthProvider está restaurando sesión → initializing
   if (loading) {

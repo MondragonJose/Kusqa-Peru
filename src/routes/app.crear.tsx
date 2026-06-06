@@ -1,8 +1,23 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, Sparkles, MapPin, Users, Camera, Tag, X, AlertTriangle } from "lucide-react";
-import { getPlaceSuggestions, type PlaceSuggestion, PERU_LOCAL_PLACES } from "@/services/googleMaps";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Sparkles,
+  MapPin,
+  Users,
+  Camera,
+  Tag,
+  X,
+  AlertTriangle,
+} from "lucide-react";
+import {
+  getPlaceSuggestions,
+  type PlaceSuggestion,
+  PERU_LOCAL_PLACES,
+} from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useCreateProposal } from "@/features/proposals";
 import type { ProposalResult } from "@/features/proposals";
@@ -32,14 +47,21 @@ function CreateProject() {
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState("Medio ambiente");
   const [district, setDistrict] = useState(currentUser?.district || "");
-  const [region, setRegion] = useState<"costa" | "sierra" | "selva">((currentUser?.region as "costa" | "sierra" | "selva") || "costa");
+  const [region, setRegion] = useState<"costa" | "sierra" | "selva">(
+    (currentUser?.region as "costa" | "sierra" | "selva") || "costa",
+  );
   const [team, setTeam] = useState(15);
   const [description, setDescription] = useState("");
+  const [summary, setSummary] = useState("");
+  const [why, setWhy] = useState("");
+  const [locationLabel, setLocationLabel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [flowState, setFlowState] = useState<"idle" | "uploading_images" | "saving" | "success" | "partial_success" | "error">("idle");
-  
+  const [flowState, setFlowState] = useState<
+    "idle" | "uploading_images" | "saving" | "success" | "partial_success" | "error"
+  >("idle");
+
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  
+
   // Image upload state
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -63,7 +85,7 @@ function CreateProject() {
 
     // Validate file types
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    const validFiles = files.filter(f => validTypes.includes(f.type));
+    const validFiles = files.filter((f) => validTypes.includes(f.type));
 
     if (validFiles.length !== files.length) {
       toast.error("Formato no válido", {
@@ -74,7 +96,7 @@ function CreateProject() {
 
     // Validate file sizes (5MB max)
     const maxSize = 5 * 1024 * 1024;
-    const sizeValidFiles = validFiles.filter(f => f.size <= maxSize);
+    const sizeValidFiles = validFiles.filter((f) => f.size <= maxSize);
 
     if (sizeValidFiles.length !== validFiles.length) {
       toast.error("Archivo demasiado grande", {
@@ -84,14 +106,14 @@ function CreateProject() {
     }
 
     // Create previews
-    const previews = sizeValidFiles.map(file => URL.createObjectURL(file));
-    setImageFiles(prev => [...prev, ...sizeValidFiles]);
-    setImagePreviews(prev => [...prev, ...previews]);
+    const previews = sizeValidFiles.map((file) => URL.createObjectURL(file));
+    setImageFiles((prev) => [...prev, ...sizeValidFiles]);
+    setImagePreviews((prev) => [...prev, ...previews]);
   };
 
   const handleRemoveImage = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
       URL.revokeObjectURL(prev[index]);
       return prev.filter((_, i) => i !== index);
     });
@@ -106,19 +128,21 @@ function CreateProject() {
     setIsUploadingImages(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error("No authenticated user for image upload");
       }
       const userId = user.id;
 
       const uploadPromises = imageFiles.map(async (file, index) => {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = file.name.split(".").pop();
         const fileName = `${userId}/${Date.now()}-${index}.${fileExt}`;
         const filePath = `${fileName}`;
 
         const { data, error } = await supabase.storage
-          .from('proposal-images')
+          .from("proposal-images")
           .upload(filePath, file);
 
         if (error) {
@@ -129,9 +153,9 @@ function CreateProject() {
         }
 
         // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('proposal-images')
-          .getPublicUrl(filePath);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("proposal-images").getPublicUrl(filePath);
 
         if (import.meta.env.DEV) {
           console.log("[KUSQA STORAGE TRACE] Image uploaded:", publicUrl);
@@ -168,15 +192,18 @@ function CreateProject() {
     // Validación coords vs distrito (warning UX, no bloqueo)
     if (coords && district) {
       const districtName = district.split(",")[0].trim().toLowerCase();
-      const matchedPlace = PERU_LOCAL_PLACES.find(p =>
-        p.district.toLowerCase().includes(districtName) ||
-        districtName.includes(p.district.toLowerCase())
+      const matchedPlace = PERU_LOCAL_PLACES.find(
+        (p) =>
+          p.district.toLowerCase().includes(districtName) ||
+          districtName.includes(p.district.toLowerCase()),
       );
 
       if (matchedPlace) {
         const distance = calculateMapDistance(coords, matchedPlace.coords);
         if (distance > 50) {
-          warnings.push(`Las coordenadas parecen estar a ${distance.toFixed(0)} km del distrito seleccionado. Verifica la ubicación.`);
+          warnings.push(
+            `Las coordenadas parecen estar a ${distance.toFixed(0)} km del distrito seleccionado. Verifica la ubicación.`,
+          );
         }
       }
     }
@@ -188,7 +215,10 @@ function CreateProject() {
       imageUrls = await uploadImages();
     } catch (storageError) {
       warnings.push("Las imágenes no se pudieron subir");
-      console.warn("[KUSQA STORAGE TRACE] Image upload failed — continuing without images:", storageError);
+      console.warn(
+        "[KUSQA STORAGE TRACE] Image upload failed — continuing without images:",
+        storageError,
+      );
     }
 
     // STEP 2: Create proposal — CRITICAL PATH (returns ProposalResult, never throws)
@@ -196,6 +226,9 @@ function CreateProject() {
     const dto = {
       title: title.trim(),
       description: description.trim() || undefined,
+      summary: summary.trim() || undefined,
+      why: why.trim() || undefined,
+      locationLabel: locationLabel.trim() || undefined,
       category: cat,
       district: district.trim(),
       region,
@@ -271,7 +304,9 @@ function CreateProject() {
                 {done ? <Check className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-[2px] w-full rounded transition-all duration-500 ${done ? "bg-jungle" : "bg-border/60"}`} />
+                <div
+                  className={`h-[2px] w-full rounded transition-all duration-500 ${done ? "bg-jungle" : "bg-border/60"}`}
+                />
               )}
             </div>
           );
@@ -291,8 +326,12 @@ function CreateProject() {
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-display font-bold text-xl">¿De qué trata tu expedición cívica?</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Dale un nombre que inspire acción y selecciona su causa principal.</p>
+                  <h3 className="font-display font-bold text-xl">
+                    ¿De qué trata tu expedición cívica?
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Dale un nombre que inspire acción y selecciona su causa principal.
+                  </p>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -331,7 +370,10 @@ function CreateProject() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-display font-bold text-xl">¿Dónde ocurrirá la acción?</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Busca el distrito. Identificaremos la región geográfica para tu insignia territorial.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Busca el distrito. Identificaremos la región geográfica para tu insignia
+                    territorial.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -346,8 +388,12 @@ function CreateProject() {
                           : "border-border/60 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground"
                       }`}
                     >
-                      <div className="text-3xl mb-auto">{r === "costa" ? "🌊" : r === "sierra" ? "⛰️" : "🌿"}</div>
-                      <div className="absolute bottom-4 left-4 font-display font-bold capitalize">{r}</div>
+                      <div className="text-3xl mb-auto">
+                        {r === "costa" ? "🌊" : r === "sierra" ? "⛰️" : "🌿"}
+                      </div>
+                      <div className="absolute bottom-4 left-4 font-display font-bold capitalize">
+                        {r}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -380,16 +426,34 @@ function CreateProject() {
                     </div>
                   )}
                 </div>
+
+                <div>
+                  <label className="text-sm font-semibold">Lugar específico (opcional)</label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Un nombre humano del punto de encuentro. Aparecerá en la ficha.
+                  </p>
+                  <input
+                    value={locationLabel}
+                    onChange={(e) => setLocationLabel(e.target.value)}
+                    maxLength={200}
+                    className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                    placeholder="Ej: Plaza de Armas de Cusco, Local comunal de Surquillo…"
+                  />
+                </div>
               </div>
             )}
 
             {step === 3 && (
               <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">Paso 3</div>
+                <div className="text-xs uppercase tracking-widest text-accent font-semibold">
+                  Paso 3
+                </div>
                 <h2 className="font-display font-bold text-3xl mt-2">¿Cuántos seremos?</h2>
                 <p className="text-muted-foreground mt-2">Define el tamaño ideal del equipo.</p>
                 <div className="mt-8 text-center">
-                  <div className="font-display font-bold text-7xl text-gradient-sunrise">{team}</div>
+                  <div className="font-display font-bold text-7xl text-gradient-sunrise">
+                    {team}
+                  </div>
                   <div className="text-sm text-muted-foreground mt-1">jóvenes en tu equipo</div>
                 </div>
                 <input
@@ -402,7 +466,11 @@ function CreateProject() {
                 />
                 <div className="mt-6 grid grid-cols-4 gap-2">
                   {[5, 15, 30, 50].map((n) => (
-                    <button key={n} onClick={() => setTeam(n)} className="rounded-xl border border-border py-3 text-sm font-semibold hover:bg-secondary transition-smooth">
+                    <button
+                      key={n}
+                      onClick={() => setTeam(n)}
+                      className="rounded-xl border border-border py-3 text-sm font-semibold hover:bg-secondary transition-smooth"
+                    >
                       {n}
                     </button>
                   ))}
@@ -412,17 +480,64 @@ function CreateProject() {
 
             {step === 4 && (
               <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">Paso 4</div>
+                <div className="text-xs uppercase tracking-widest text-accent font-semibold">
+                  Paso 4
+                </div>
                 <h2 className="font-display font-bold text-3xl mt-2">Detalles finales</h2>
                 <p className="text-muted-foreground mt-2">Cuenta más sobre tu misión.</p>
+
+                <label className="mt-6 block text-sm font-semibold">
+                  Resumen{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (opcional, máx. 280 caracteres)
+                  </span>
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Aparece en tarjetas y feeds. Si lo dejas vacío, usamos la descripción.
+                </p>
+                <textarea
+                  rows={2}
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value.slice(0, 280))}
+                  maxLength={280}
+                  placeholder="Una línea que enganche: qué van a hacer y por qué importa."
+                  className="mt-2 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground text-right">
+                  {summary.length}/280
+                </div>
+
+                <label className="mt-4 block text-sm font-semibold">
+                  Por qué importa en tu distrito{" "}
+                  <span className="text-muted-foreground font-normal">(opcional, máx. 600)</span>
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Tu voz: qué problema local resuelve, qué te mueve a impulsarla.
+                </p>
+                <textarea
+                  rows={4}
+                  value={why}
+                  onChange={(e) => setWhy(e.target.value.slice(0, 600))}
+                  maxLength={600}
+                  placeholder="Ej: En Surquillo los domingos se acumula basura en la Av. Angamos. Queremos cerrar la jornada con un trueque de reciclables por plantones."
+                  className="mt-2 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground text-right">
+                  {why.length}/600
+                </div>
+
+                <label className="mt-4 block text-sm font-semibold">
+                  Descripción completa{" "}
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
                 <textarea
                   rows={5}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe en pocas líneas qué van a hacer, qué necesitan y qué impacto buscas."
-                  className="mt-6 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
+                  placeholder="Detalla logística, materiales, frecuencia, aliados. Esta información se puede desplegar en la ficha."
+                  className="mt-2 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
                 />
-                
+
                 {/* Image Upload */}
                 <div className="mt-4">
                   <input
@@ -435,7 +550,7 @@ function CreateProject() {
                   />
                   <label
                     htmlFor="image-upload"
-                    className={`rounded-2xl border-2 border-dashed border-border p-6 text-center hover:bg-secondary/40 transition-colors cursor-pointer block ${imagePreviews.length > 0 ? 'hidden' : ''}`}
+                    className={`rounded-2xl border-2 border-dashed border-border p-6 text-center hover:bg-secondary/40 transition-colors cursor-pointer block ${imagePreviews.length > 0 ? "hidden" : ""}`}
                   >
                     <Camera className="h-7 w-7 mx-auto text-muted-foreground" />
                     <div className="mt-2 font-semibold text-sm">Agrega fotos inspiradoras</div>
@@ -446,7 +561,10 @@ function CreateProject() {
                   {imagePreviews.length > 0 && (
                     <div className="grid grid-cols-3 gap-3 mt-4">
                       {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-border">
+                        <div
+                          key={index}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-border"
+                        >
                           <img
                             src={preview}
                             alt={`Preview ${index + 1}`}
@@ -495,7 +613,9 @@ function CreateProject() {
                 </motion.div>
                 <h2 className="font-display font-bold text-3xl mt-6">¡Tu misión está lista!</h2>
                 <p className="text-muted-foreground mt-3 max-w-md mx-auto">
-                  Aparecerá en el mapa de <span className="font-semibold text-foreground">{district}</span> y notificaremos a jóvenes de tu zona.
+                  Aparecerá en el mapa de{" "}
+                  <span className="font-semibold text-foreground">{district}</span> y notificaremos
+                  a jóvenes de tu zona.
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
                   Has ganado <span className="font-bold text-accent">+150 XP</span> por liderar 🚀
@@ -515,11 +635,24 @@ function CreateProject() {
           <ArrowLeft className="h-4 w-4" /> Atrás
         </button>
         <button
-          onClick={step === STEPS.length ? handlePublish : () => setStep((s) => Math.min(STEPS.length, s + 1))}
+          onClick={
+            step === STEPS.length
+              ? handlePublish
+              : () => setStep((s) => Math.min(STEPS.length, s + 1))
+          }
           disabled={isSubmitting}
           className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-6 py-3 font-semibold shadow-sm hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {flowState === "uploading_images" ? "Subiendo imágenes..." : flowState === "saving" ? "Guardando propuesta..." : isSubmitting ? "Publicando..." : step === STEPS.length ? "Publicar misión" : "Continuar"} <ArrowRight className="h-4 w-4" />
+          {flowState === "uploading_images"
+            ? "Subiendo imágenes..."
+            : flowState === "saving"
+              ? "Guardando propuesta..."
+              : isSubmitting
+                ? "Publicando..."
+                : step === STEPS.length
+                  ? "Publicar misión"
+                  : "Continuar"}{" "}
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>

@@ -7,11 +7,7 @@
 import { userRepository } from "@/services/userRepository";
 import { userProgressDomainService } from "@/services/userProgressDomainService";
 import { getUserMissions } from "@/services/missions";
-import type {
-  ProfileMissionTimelineView,
-  UserMission,
-  UserTerritoryProgressView,
-} from "@/types";
+import type { ProfileMissionTimelineView, UserMission, UserTerritoryProgressView } from "@/types";
 
 export const userProgressQueryService = {
   async getUserMissionsEnriched(userId: string): Promise<UserMission[]> {

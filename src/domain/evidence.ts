@@ -49,7 +49,7 @@ export function mapEvidenceToModeration(status: EvidenceStatus): string {
 export function computeEvidenceLifecycle(
   status: EvidenceStatus,
   verifiedBy: string | null,
-  userId: string | undefined
+  userId: string | undefined,
 ): EvidenceLifecycleInfo {
   const isSelf = verifiedBy !== null && userId !== undefined && verifiedBy === userId;
 
@@ -102,7 +102,7 @@ export function computeEvidenceLifecycle(
  */
 export function deriveCompletionState(
   completedAt: string | null | undefined,
-  hasPendingEvidence: boolean
+  hasPendingEvidence: boolean,
 ): CompletionState {
   if (completedAt) return "completed";
   if (hasPendingEvidence) return "awaiting_verification";
@@ -111,7 +111,7 @@ export function deriveCompletionState(
 
 export function deriveCompletionStateFromEvidenceStatuses(
   completedAt: string | null | undefined,
-  evidenceStatuses: EvidenceStatus[]
+  evidenceStatuses: EvidenceStatus[],
 ): CompletionState {
   if (completedAt) return "completed";
   if (evidenceStatuses.some((s) => s === "pending")) return "awaiting_verification";
@@ -124,10 +124,7 @@ export function canSubmitEvidence(completionState: CompletionState): boolean {
   return completionState === "not_completed" || completionState === "awaiting_verification";
 }
 
-export function canVerifyEvidence(
-  verifierId: string,
-  evidenceUserId: string
-): boolean {
+export function canVerifyEvidence(verifierId: string, evidenceUserId: string): boolean {
   if (!EVIDENCE_VERIFICATION_REQUIRED) return true;
   return verifierId !== evidenceUserId;
 }
@@ -135,7 +132,7 @@ export function canVerifyEvidence(
 export function canEditEvidence(
   evidenceUserId: string,
   currentUserId: string,
-  status: EvidenceStatus
+  status: EvidenceStatus,
 ): boolean {
   if (evidenceUserId !== currentUserId) return false;
   return status === "pending";

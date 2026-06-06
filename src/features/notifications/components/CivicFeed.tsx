@@ -38,9 +38,7 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
   };
 
   const filtered =
-    activeTab === "todas"
-      ? notifications
-      : notifications.filter((n) => n.type === activeTab);
+    activeTab === "todas" ? notifications : notifications.filter((n) => n.type === activeTab);
 
   return (
     <div className="space-y-6">
@@ -64,8 +62,8 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
               </span>
             )}
             <span className="text-xs text-muted-foreground font-semibold">
-              {userDistrict 
-                ? `El territorio habla: Hay movimiento activo en ${userDistrict}` 
+              {userDistrict
+                ? `El territorio habla: Hay movimiento activo en ${userDistrict}`
                 : "Tu red comunitaria está respirando"}
             </span>
           </div>
@@ -95,14 +93,17 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
       {/* Live activity indicator */}
       <div className="rounded-3xl bg-accent/5 border border-accent/15 p-5 flex items-center gap-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-sunrise opacity-10 blur-2xl rounded-full pointer-events-none" />
-        
+
         <div className="h-10 w-10 rounded-2xl bg-accent/10 grid place-items-center shrink-0">
           <Radio className="h-4 w-4 text-accent animate-breathe" />
         </div>
         <div>
-          <div className="text-xs sm:text-sm font-black text-foreground">Canal de Presencia en Vivo</div>
+          <div className="text-xs sm:text-sm font-black text-foreground">
+            Canal de Presencia en Vivo
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5 font-medium leading-relaxed">
-            Señales en tiempo aproximado captadas por brigadas en tu región. Explora misiones cercanas para sumarte.
+            Señales en tiempo aproximado captadas por brigadas en tu región. Explora misiones
+            cercanas para sumarte.
           </p>
         </div>
       </div>
@@ -110,7 +111,10 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
       {/* Filter tabs */}
       <div className="flex gap-1.5 overflow-x-auto pb-2 pt-1 no-scrollbar border-b border-border/40">
         {FILTER_TABS.map((tab) => {
-          const count = tab.key === "todas" ? 0 : notifications.filter((n) => n.type === tab.key && !n.read).length;
+          const count =
+            tab.key === "todas"
+              ? 0
+              : notifications.filter((n) => n.type === tab.key && !n.read).length;
           return (
             <button
               key={tab.key}
@@ -118,15 +122,18 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
               onClick={() => setActiveTab(tab.key)}
               className={`
                 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all duration-200 cursor-pointer flex items-center gap-1.5
-                ${activeTab === tab.key
-                  ? "bg-foreground text-background border-foreground shadow-sm scale-102"
-                  : "bg-surface border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
+                ${
+                  activeTab === tab.key
+                    ? "bg-foreground text-background border-foreground shadow-sm scale-102"
+                    : "bg-surface border-border hover:bg-secondary text-muted-foreground hover:text-foreground"
                 }
               `}
             >
               {tab.label}
               {count > 0 && (
-                <span className={`h-1.5 w-1.5 rounded-full ${activeTab === tab.key ? "bg-background" : "bg-accent"}`} />
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${activeTab === tab.key ? "bg-background" : "bg-accent"}`}
+                />
               )}
             </button>
           );
@@ -143,7 +150,8 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
       {filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground text-sm rounded-3xl bg-secondary/20 border border-dashed border-border/60">
           <BellRing className="h-8 w-8 mx-auto mb-3 text-muted-foreground/45" />
-          Tu territorio está tranquilo por ahora. Pronto habrá nuevas señales de actividad comunitaria.
+          Tu territorio está tranquilo por ahora. Pronto habrá nuevas señales de actividad
+          comunitaria.
         </div>
       )}
 

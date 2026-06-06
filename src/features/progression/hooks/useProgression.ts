@@ -26,8 +26,7 @@ export function useProgression(): UserProgression {
     const progressPct = Math.min(100, Math.max(0, (xpInStage / stageRange) * 100));
     const xpToNextStage = nextStage ? currentStage.xpTo - xp : 0;
 
-    const status: StageStatus =
-      xp >= currentStage.xpTo ? "completed" : "current";
+    const status: StageStatus = xp >= currentStage.xpTo ? "completed" : "current";
 
     return {
       currentStage,
@@ -44,10 +43,7 @@ export function useProgression(): UserProgression {
 /**
  * Returns status for a given stage relative to the user's XP
  */
-export function useStageStatus(
-  stageLevel: number,
-  userXp: number
-): StageStatus {
+export function useStageStatus(stageLevel: number, userXp: number): StageStatus {
   const stage = CIVIC_ROUTE.find((s) => s.level === stageLevel);
   if (!stage) return "locked";
 

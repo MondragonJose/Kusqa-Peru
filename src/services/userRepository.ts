@@ -162,7 +162,9 @@ export const userRepository = {
       return await this.findProfileByUserId(userId);
     } catch (error) {
       // Si profile no existe, crearlo automáticamente desde auth.user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
       if (!authUser) {
         throw new Error("No auth user found");
       }
@@ -172,8 +174,8 @@ export const userRepository = {
         .from("profiles")
         .insert({
           id: authUser.id,
-          username: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuario',
-          email: authUser.email || '',
+          username: authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "Usuario",
+          email: authUser.email || "",
           district: null,
           experience_points: 0,
           level: 1,
@@ -196,10 +198,7 @@ export const userRepository = {
   },
 
   async updateProfileDistrict(userId: string, district: string): Promise<void> {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ district })
-      .eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ district }).eq("id", userId);
 
     if (error) {
       console.error("[KUSQA LOCATION TRACE] Error updating district:", error);

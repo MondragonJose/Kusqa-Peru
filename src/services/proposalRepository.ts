@@ -19,8 +19,7 @@ import {
   type UpdateProposalDTO,
   type ProposalResult,
   type DbProposalRow,
-  type DbProposalSupportRow,
-  type ProposalSupport,
+  type ProposalSupporterPreview,
   type ProposalRegion,
   type ProposalStatus,
   PROPOSAL_CATEGORIES,
@@ -30,7 +29,13 @@ import {
 } from "./proposalContract";
 
 // Re-export contract types so consumers only need one import
-export type { Proposal, CreateProposalDTO, UpdateProposalDTO, ProposalResult };
+export type {
+  Proposal,
+  CreateProposalDTO,
+  UpdateProposalDTO,
+  ProposalResult,
+  ProposalSupporterPreview,
+};
 
 // ─── Zod schemas (validate snake_case DB payloads ONLY) ────────────────────
 
@@ -46,6 +51,12 @@ const PROPOSAL_INSERT_SCHEMA = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   proposed_date: z.string().optional(),
+  summary: z.string().max(DB_DEFAULTS.SUMMARY_MAX, "El resumen es demasiado largo").optional(),
+  why: z.string().max(DB_DEFAULTS.WHY_MAX, "La explicación es demasiado larga").optional(),
+  location_label: z
+    .string()
+    .max(DB_DEFAULTS.LOCATION_LABEL_MAX, "La ubicación es demasiado larga")
+    .optional(),
 });
 
 const PROPOSAL_UPDATE_SCHEMA = z.object({
@@ -54,12 +65,20 @@ const PROPOSAL_UPDATE_SCHEMA = z.object({
   category: z.enum(PROPOSAL_CATEGORIES).optional(),
   district: z.string().min(1).optional(),
   region: z.enum(PROPOSAL_REGIONS).optional(),
-  team_size: z.number().int().min(DB_DEFAULTS.TEAM_SIZE_MIN).max(DB_DEFAULTS.TEAM_SIZE_MAX).optional(),
+  team_size: z
+    .number()
+    .int()
+    .min(DB_DEFAULTS.TEAM_SIZE_MIN)
+    .max(DB_DEFAULTS.TEAM_SIZE_MAX)
+    .optional(),
   images: z.array(z.string()).optional(),
   status: z.enum(PROPOSAL_STATUSES).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   proposed_date: z.string().optional(),
+  summary: z.string().max(DB_DEFAULTS.SUMMARY_MAX).optional(),
+  why: z.string().max(DB_DEFAULTS.WHY_MAX).optional(),
+  location_label: z.string().max(DB_DEFAULTS.LOCATION_LABEL_MAX).optional(),
 });
 
 // ─── Runtime assertion: validate raw Supabase response has expected shape ───
@@ -69,7 +88,11 @@ function assertDbRow(raw: unknown): DbProposalRow {
     throw new Error("[KUSQA PROPOSAL TRACE] DB returned non-object: " + typeof raw);
   }
   const row = raw as Record<string, unknown>;
-  if (typeof row.id !== "string" || typeof row.user_id !== "string" || typeof row.title !== "string") {
+  if (
+    typeof row.id !== "string" ||
+    typeof row.user_id !== "string" ||
+    typeof row.title !== "string"
+  ) {
     throw new Error("[KUSQA PROPOSAL TRACE] DB row missing required fields (id, user_id, title)");
   }
   return row as unknown as DbProposalRow;
@@ -99,6 +122,9 @@ function toDomain(db: DbProposalRow): Proposal {
     latitude: db.latitude != null ? Number(db.latitude) : null,
     longitude: db.longitude != null ? Number(db.longitude) : null,
     proposedDate: db.proposed_date,
+    summary: db.summary,
+    why: db.why,
+    locationLabel: db.location_label,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };
@@ -107,9 +133,14 @@ function toDomain(db: DbProposalRow): Proposal {
 // ─── Internal: resolve authenticated user_id ───────────────────────────────
 
 async function resolveUserId(): Promise<string> {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
   if (error || !user) {
-    throw new Error(`[KUSQA PROPOSAL TRACE] Cannot resolve user_id: ${error?.message ?? "no session"}`);
+    throw new Error(
+      `[KUSQA PROPOSAL TRACE] Cannot resolve user_id: ${error?.message ?? "no session"}`,
+    );
   }
   return user.id;
 }
@@ -117,7 +148,6 @@ async function resolveUserId(): Promise<string> {
 // ─── Repository ────────────────────────────────────────────────────────────
 
 export const proposalRepository = {
-
   async createProposal(dto: CreateProposalDTO): Promise<ProposalResult> {
     // STEP 1: Resolve user_id from Supabase session
     let userId: string;
@@ -130,9 +160,10 @@ export const proposalRepository = {
     }
 
     // STEP 2: Normalize DTO → snake_case DB payload + apply DB-safe defaults
-    const teamSize = (dto.teamSize != null && dto.teamSize >= DB_DEFAULTS.TEAM_SIZE_MIN)
-      ? dto.teamSize
-      : DB_DEFAULTS.TEAM_SIZE_FALLBACK;
+    const teamSize =
+      dto.teamSize != null && dto.teamSize >= DB_DEFAULTS.TEAM_SIZE_MIN
+        ? dto.teamSize
+        : DB_DEFAULTS.TEAM_SIZE_FALLBACK;
 
     const dbPayload = {
       user_id: userId,
@@ -146,17 +177,24 @@ export const proposalRepository = {
       latitude: dto.latitude ?? undefined,
       longitude: dto.longitude ?? undefined,
       proposed_date: dto.proposedDate ?? undefined,
+      summary: dto.summary?.trim() ? dto.summary.trim() : undefined,
+      why: dto.why?.trim() ? dto.why.trim() : undefined,
+      location_label: dto.locationLabel?.trim() ? dto.locationLabel.trim() : undefined,
     };
 
     // STEP 3: Validate final payload with Zod
     if (import.meta.env.DEV) {
-      console.log("[KUSQA PROPOSAL TRACE] Normalized DB payload:", JSON.stringify(dbPayload, null, 2));
+      console.log(
+        "[KUSQA PROPOSAL TRACE] Normalized DB payload:",
+        JSON.stringify(dbPayload, null, 2),
+      );
     }
     let validatedPayload: Record<string, unknown>;
     try {
       validatedPayload = PROPOSAL_INSERT_SCHEMA.parse(dbPayload);
     } catch (e) {
-      const msg = e instanceof z.ZodError ? e.issues.map(i => i.message).join("; ") : "Validation failed";
+      const msg =
+        e instanceof z.ZodError ? e.issues.map((i) => i.message).join("; ") : "Validation failed";
       console.error("[KUSQA PROPOSAL TRACE] Zod validation error:", msg);
       return { status: "error", error: `Datos inválidos: ${msg}` };
     }
@@ -220,10 +258,7 @@ export const proposalRepository = {
     status?: ProposalStatus;
     district?: string;
   }): Promise<Proposal[]> {
-    let query = supabase
-      .from("proposals")
-      .select("*")
-      .order("created_at", { ascending: false });
+    let query = supabase.from("proposals").select("*").order("created_at", { ascending: false });
 
     if (filters?.region) query = query.eq("region", filters.region);
     if (filters?.status) query = query.eq("status", filters.status);
@@ -257,12 +292,22 @@ export const proposalRepository = {
     if (dto.latitude !== undefined) dbPayload.latitude = dto.latitude;
     if (dto.longitude !== undefined) dbPayload.longitude = dto.longitude;
     if (dto.proposedDate !== undefined) dbPayload.proposed_date = dto.proposedDate;
+    if (dto.summary !== undefined) {
+      dbPayload.summary = dto.summary.trim() ? dto.summary.trim() : null;
+    }
+    if (dto.why !== undefined) {
+      dbPayload.why = dto.why.trim() ? dto.why.trim() : null;
+    }
+    if (dto.locationLabel !== undefined) {
+      dbPayload.location_label = dto.locationLabel.trim() ? dto.locationLabel.trim() : null;
+    }
 
     let validatedPayload: Record<string, unknown>;
     try {
       validatedPayload = PROPOSAL_UPDATE_SCHEMA.parse(dbPayload);
     } catch (e) {
-      const msg = e instanceof z.ZodError ? e.issues.map(i => i.message).join("; ") : "Validation failed";
+      const msg =
+        e instanceof z.ZodError ? e.issues.map((i) => i.message).join("; ") : "Validation failed";
       console.error("[KUSQA PROPOSAL TRACE] Zod update validation error:", msg);
       return { status: "error", error: `Datos inválidos: ${msg}` };
     }
@@ -288,10 +333,7 @@ export const proposalRepository = {
   },
 
   async deleteProposal(id: string): Promise<ProposalResult<void>> {
-    const { error } = await supabase
-      .from("proposals")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("proposals").delete().eq("id", id);
 
     if (error) {
       console.error("[KUSQA PROPOSAL TRACE] Error deleting proposal:", error);
@@ -376,5 +418,40 @@ export const proposalRepository = {
     }
 
     return count ?? 0;
+  },
+
+  /**
+   * Fetch a small public-safe preview of recent supporters for a proposal.
+   * Goes through SECURITY DEFINER RPC because profiles is RLS-restricted.
+   * Returns an empty array on any failure (non-critical: never block detail page).
+   */
+  async getSupportersPreview(
+    proposalId: string,
+    limit: number = 5,
+  ): Promise<ProposalSupporterPreview[]> {
+    try {
+      const { data, error } = await supabase.rpc("get_proposal_supporters_preview", {
+        p_proposal_id: proposalId,
+        p_limit: limit,
+      });
+
+      if (error) {
+        console.error("[KUSQA PROPOSAL TRACE] Supporters preview RPC error:", error);
+        return [];
+      }
+
+      if (!Array.isArray(data)) return [];
+
+      return data.map((row: Record<string, unknown>) => ({
+        userId: String(row.user_id),
+        username: String(row.username ?? "kusqero"),
+        firstName: String(row.first_name ?? ""),
+        avatarUrl: typeof row.avatar_url === "string" ? row.avatar_url : null,
+        supportedAt: String(row.supported_at),
+      }));
+    } catch (e) {
+      console.error("[KUSQA PROPOSAL TRACE] Supporters preview unexpected error:", e);
+      return [];
+    }
   },
 };

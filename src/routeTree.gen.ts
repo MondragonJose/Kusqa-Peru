@@ -18,6 +18,7 @@ import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppNotificacionesRouteImport } from './routes/app.notificaciones'
 import { Route as AppMapaRouteImport } from './routes/app.mapa'
 import { Route as AppCrearRouteImport } from './routes/app.crear'
+import { Route as AppPropuestaProposalIdRouteImport } from './routes/app.propuesta.$proposalId'
 import { Route as AppMisionMissionIdRouteImport } from './routes/app.mision.$missionId'
 
 const AppRoute = AppRouteImport.update({
@@ -65,6 +66,11 @@ const AppCrearRoute = AppCrearRouteImport.update({
   path: '/crear',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPropuestaProposalIdRoute = AppPropuestaProposalIdRouteImport.update({
+  id: '/propuesta/$proposalId',
+  path: '/propuesta/$proposalId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMisionMissionIdRoute = AppMisionMissionIdRouteImport.update({
   id: '/mision/$missionId',
   path: '/mision/$missionId',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app/'
     | '/app/mision/$missionId'
+    | '/app/propuesta/$proposalId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app'
     | '/app/mision/$missionId'
+    | '/app/propuesta/$proposalId'
   id:
     | '__root__'
     | '/'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app/'
     | '/app/mision/$missionId'
+    | '/app/propuesta/$proposalId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCrearRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/propuesta/$proposalId': {
+      id: '/app/propuesta/$proposalId'
+      path: '/propuesta/$proposalId'
+      fullPath: '/app/propuesta/$proposalId'
+      preLoaderRoute: typeof AppPropuestaProposalIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/mision/$missionId': {
       id: '/app/mision/$missionId'
       path: '/mision/$missionId'
@@ -234,6 +253,7 @@ interface AppRouteChildren {
   AppProgresoRoute: typeof AppProgresoRoute
   AppIndexRoute: typeof AppIndexRoute
   AppMisionMissionIdRoute: typeof AppMisionMissionIdRoute
+  AppPropuestaProposalIdRoute: typeof AppPropuestaProposalIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -244,6 +264,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgresoRoute: AppProgresoRoute,
   AppIndexRoute: AppIndexRoute,
   AppMisionMissionIdRoute: AppMisionMissionIdRoute,
+  AppPropuestaProposalIdRoute: AppPropuestaProposalIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

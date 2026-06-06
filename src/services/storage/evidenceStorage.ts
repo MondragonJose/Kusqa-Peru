@@ -9,12 +9,7 @@ import { z } from "zod";
 export const EVIDENCE_BUCKET = "mission-evidence";
 export const EVIDENCE_MAX_BYTES = 10 * 1024 * 1024;
 
-const ALLOWED_MIME = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-]);
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic"]);
 
 const UPLOAD_INPUT_SCHEMA = z.object({
   userId: z.string().uuid(),
@@ -42,7 +37,7 @@ export function buildEvidenceStoragePath(
   userId: string,
   missionId: string,
   evidenceId: string,
-  mimeType: string
+  mimeType: string,
 ): string {
   const ext = extensionForMime(mimeType);
   return `${userId}/${missionId}/${evidenceId}.${ext}`;
@@ -71,7 +66,7 @@ export async function uploadMissionEvidence(input: {
     parsed.userId,
     parsed.missionId,
     parsed.evidenceId,
-    parsed.file.type
+    parsed.file.type,
   );
 
   trackOperationalMetric("upload.start", {
@@ -116,7 +111,7 @@ export async function uploadMissionEvidence(input: {
 
 export async function createEvidenceSignedUrl(
   storagePath: string,
-  expiresInSeconds = 3600
+  expiresInSeconds = 3600,
 ): Promise<string> {
   const { data, error } = await supabase.storage
     .from(EVIDENCE_BUCKET)

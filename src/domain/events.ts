@@ -90,7 +90,7 @@ export function createEvidenceSubmittedEvent(
   evidenceId: string,
   userId: string,
   missionId: string,
-  actorId: string
+  actorId: string,
 ): EvidenceSubmittedEvent {
   return {
     type: "EvidenceSubmitted",
@@ -106,7 +106,7 @@ export function createEvidenceVerifiedEvent(
   evidenceId: string,
   userId: string,
   missionId: string,
-  verifierId: string
+  verifierId: string,
 ): EvidenceVerifiedEvent {
   return {
     type: "EvidenceVerified",
@@ -123,7 +123,7 @@ export function createEvidenceRejectedEvent(
   userId: string,
   missionId: string,
   verifierId: string,
-  rejectionReason: string | null
+  rejectionReason: string | null,
 ): EvidenceRejectedEvent {
   return {
     type: "EvidenceRejected",
@@ -140,7 +140,7 @@ export function createEvidenceFlaggedEvent(
   evidenceId: string,
   userId: string,
   missionId: string,
-  flaggerId: string
+  flaggerId: string,
 ): EvidenceFlaggedEvent {
   return {
     type: "EvidenceFlagged",
@@ -155,7 +155,7 @@ export function createEvidenceFlaggedEvent(
 export function createMissionCompletedEvent(
   missionId: string,
   userId: string,
-  evidenceId: string
+  evidenceId: string,
 ): MissionCompletedEvent {
   return {
     type: "MissionCompleted",

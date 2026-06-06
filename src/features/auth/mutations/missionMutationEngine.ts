@@ -22,7 +22,13 @@ import {
   reportMutationSuccess,
   type MissionMutationKind,
 } from "@/features/auth/mutations/mutationStatusStore";
-import { missionKeys, userKeys, userMissionKeys, userProgressKeys, evidenceKeys } from "@/lib/queryKeys";
+import {
+  missionKeys,
+  userKeys,
+  userMissionKeys,
+  userProgressKeys,
+  evidenceKeys,
+} from "@/lib/queryKeys";
 import type {
   Mission,
   User,
@@ -136,7 +142,7 @@ function logWrite(
     missionId?: string;
     durationMs?: number;
     deduped?: boolean;
-  }
+  },
 ): void {
   if (!IS_DEV) return;
   console.debug("[kusqa:write]", phase, {
@@ -222,7 +228,7 @@ function beginInflightWrite(
   kind: MissionMutationKind,
   writeContext: WriteContext,
   snapshot: QuerySnapshot,
-  keys: QueryKey[]
+  keys: QueryKey[],
 ): { signature: string; deduped: boolean; snapshot: QuerySnapshot } {
   const state = getClientState(queryClient);
   const signature = mutationSignature(kind, writeContext);
@@ -262,7 +268,11 @@ function beginInflightWrite(
   return { signature, deduped: false, snapshot };
 }
 
-function endInflightWrite(queryClient: QueryClient, signature: string, phase: "success" | "rollback"): void {
+function endInflightWrite(
+  queryClient: QueryClient,
+  signature: string,
+  phase: "success" | "rollback",
+): void {
   const state = getClientState(queryClient);
   const entry = state.inflight.get(signature);
   if (!entry) return;
@@ -293,7 +303,7 @@ function markOptimisticApplied(queryClient: QueryClient, signature: string): boo
 function runInMissionLane<T>(
   queryClient: QueryClient,
   writeContext: WriteContext,
-  task: () => Promise<T>
+  task: () => Promise<T>,
 ): Promise<T> {
   const lane = missionLaneKey(writeContext);
   if (!lane) return task();
@@ -309,14 +319,17 @@ function runInMissionLane<T>(
       }
     });
 
-  state.laneTail.set(lane, next.then(() => undefined));
+  state.laneTail.set(
+    lane,
+    next.then(() => undefined),
+  );
   return next;
 }
 
 function getOrCreateApiPromise<T>(
   queryClient: QueryClient,
   signature: string,
-  factory: () => Promise<T>
+  factory: () => Promise<T>,
 ): Promise<T> {
   const entry = getClientState(queryClient).inflight.get(signature);
   if (!entry) return factory();
@@ -330,7 +343,7 @@ function getOrCreateApiPromise<T>(
 function protectedSetQueryData<T>(
   queryClient: QueryClient,
   key: QueryKey,
-  updater: (current: T | undefined) => T
+  updater: (current: T | undefined) => T,
 ): void {
   const state = getClientState(queryClient);
   const hash = keyHash(key);
@@ -390,7 +403,7 @@ function buildOptimisticUserMission(
   mission: Mission,
   userId: string,
   status: UserMissionStatus,
-  xpEarned: number | null = null
+  xpEarned: number | null = null,
 ): UserMission {
   const completionState: CompletionState = status === "completed" ? "completed" : "not_completed";
   return {
@@ -416,11 +429,15 @@ export function applyOptimistic(queryClient: QueryClient, patch: OptimisticPatch
       break;
     case "join": {
       const entry = buildOptimisticUserMission(patch.mission, patch.userId, "in_progress");
-      protectedSetQueryData<UserMission[]>(queryClient, userMissionKeys.all(patch.userId), (current) => {
-        const list = current ?? [];
-        if (list.some((row) => row.missionId === patch.mission.id)) return list;
-        return [entry, ...list];
-      });
+      protectedSetQueryData<UserMission[]>(
+        queryClient,
+        userMissionKeys.all(patch.userId),
+        (current) => {
+          const list = current ?? [];
+          if (list.some((row) => row.missionId === patch.mission.id)) return list;
+          return [entry, ...list];
+        },
+      );
       break;
     }
     case "complete": {
@@ -428,7 +445,7 @@ export function applyOptimistic(queryClient: QueryClient, patch: OptimisticPatch
       const completedEntry = buildOptimisticUserMission(mission, userId, "completed", xpEarned);
 
       protectedSetQueryData<UserMission[]>(queryClient, userMissionKeys.all(userId), (current) =>
-        (current ?? []).filter((row) => row.missionId !== mission.id)
+        (current ?? []).filter((row) => row.missionId !== mission.id),
       );
 
       protectedSetQueryData<UserMission[]>(
@@ -437,7 +454,7 @@ export function applyOptimistic(queryClient: QueryClient, patch: OptimisticPatch
         (current) => {
           const list = (current ?? []).filter((row) => row.missionId !== mission.id);
           return [completedEntry, ...list];
-        }
+        },
       );
 
       const territoryKey = userProgressKeys.territory("live");
@@ -476,10 +493,13 @@ export const applyOptimisticComplete = (
   qc: QueryClient,
   userId: string,
   mission: Mission,
-  xpEarned: number
+  xpEarned: number,
 ) => applyOptimistic(qc, { entity: "userMissions", action: "complete", userId, mission, xpEarned });
 
-export function getMissionFromCache(queryClient: QueryClient, missionId: string): Mission | undefined {
+export function getMissionFromCache(
+  queryClient: QueryClient,
+  missionId: string,
+): Mission | undefined {
   const detail = queryClient.getQueryData<Mission>(missionKeys.detail(missionId));
   if (detail) return detail;
   return queryClient.getQueryData<Mission[]>(missionKeys.all)?.find((m) => m.id === missionId);
@@ -563,7 +583,7 @@ async function flushPending(queryClient: QueryClient, state: SchedulerState): Pr
         queryClient.invalidateQueries({ queryKey: userMissionKeys.completed(userId) }),
         queryClient.invalidateQueries({ queryKey: userProgressKeys.territory(userId) }),
         queryClient.invalidateQueries({ queryKey: userProgressKeys.territory("live") }),
-        queryClient.invalidateQueries({ queryKey: userKeys.profileRow(userId) })
+        queryClient.invalidateQueries({ queryKey: userKeys.profileRow(userId) }),
       );
     }
     await Promise.all(tasks);
@@ -575,7 +595,7 @@ async function flushPending(queryClient: QueryClient, state: SchedulerState): Pr
 export function reconcileCache(
   queryClient: QueryClient,
   scope?: InvalidateRequest,
-  mode: "schedule" | "flush" | "both" = "schedule"
+  mode: "schedule" | "flush" | "both" = "schedule",
 ): Promise<void> | void {
   const state = getScheduler(queryClient);
 
@@ -592,7 +612,7 @@ export function reconcileCache(
                 reconcileCache(
                   queryClient,
                   { userId: state.pending.userId, missionIds: [...state.pending.missionIds] },
-                  "schedule"
+                  "schedule",
                 );
               }
             });
@@ -621,7 +641,7 @@ export function reconcileCache(
 
 export const scheduleMissionCacheInvalidation = (
   queryClient: QueryClient,
-  scope?: InvalidateRequest
+  scope?: InvalidateRequest,
 ) => reconcileCache(queryClient, scope, "schedule");
 
 export const flushMissionCacheInvalidation = (queryClient: QueryClient) =>
@@ -642,18 +662,16 @@ export type RunMissionWriteOptions<TResult> = {
 
 export async function runMissionWrite<TResult>(
   queryClient: QueryClient,
-  options: RunMissionWriteOptions<TResult>
+  options: RunMissionWriteOptions<TResult>,
 ): Promise<TResult> {
   const { kind, writeContext, steps, optimistic, invalidate, mapResults } = options;
   const keys = rollbackKeys(kind, writeContext);
   const snapshot = captureQuerySnapshot(queryClient, keys);
-  const { signature, deduped, snapshot: leaderSnapshot } = beginInflightWrite(
-    queryClient,
-    kind,
-    writeContext,
-    snapshot,
-    keys
-  );
+  const {
+    signature,
+    deduped,
+    snapshot: leaderSnapshot,
+  } = beginInflightWrite(queryClient, kind, writeContext, snapshot, keys);
 
   if (deduped) {
     return getOrCreateApiPromise(queryClient, signature, async () => {
@@ -690,7 +708,7 @@ export async function runMissionWrite<TResult>(
         else void reconcileCache(queryClient, undefined, "flush");
       },
       mapResults,
-    })
+    }),
   );
 }
 
@@ -758,18 +776,20 @@ type MissionMutationConfig<TInput, TOutput, TError> = {
 };
 
 export function createMissionMutation<TInput, TOutput, TError = Error>(
-  config: MissionMutationConfig<TInput, TOutput, TError>
+  config: MissionMutationConfig<TInput, TOutput, TError>,
 ) {
   return function useMissionMutation(
     options?: Omit<
       UseMutationOptions<TOutput, TError, TInput, MutationWriteContext>,
       "mutationFn" | "onMutate" | "onError" | "onSuccess" | "onSettled"
-    >
+    >,
   ) {
     const queryClient = useQueryClient();
     const requiresAuth = config.requiresAuth !== false;
     // Typed alias to access lifecycle call-through delegates intentionally omitted from the public API
-    const callThrough = options as UseMutationOptions<TOutput, TError, TInput, MutationWriteContext> | undefined;
+    const callThrough = options as
+      | UseMutationOptions<TOutput, TError, TInput, MutationWriteContext>
+      | undefined;
 
     return useMutation<TOutput, TError, TInput, MutationWriteContext>({
       ...options,
@@ -780,7 +800,9 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
         const signature = mutationSignature(config.kind, writeContext);
 
         return runInMissionLane(queryClient, writeContext, () =>
-          getOrCreateApiPromise(queryClient, signature, () => config.mutationFn(queryClient, input))
+          getOrCreateApiPromise(queryClient, signature, () =>
+            config.mutationFn(queryClient, input),
+          ),
         );
       },
       onMutate: async (input) => {
@@ -796,7 +818,7 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
             config.kind,
             writeContext,
             captured,
-            keys
+            keys,
           );
 
           if (!deduped) {
@@ -815,7 +837,9 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
             }
           }
 
-          const extra = callThrough?.onMutate ? await (callThrough.onMutate as (v: TInput) => Promise<unknown>)(input) : undefined;
+          const extra = callThrough?.onMutate
+            ? await (callThrough.onMutate as (v: TInput) => Promise<unknown>)(input)
+            : undefined;
           return {
             snapshot,
             writeContext,
@@ -827,7 +851,7 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
         } catch (error) {
           reportMutationError(
             config.kind,
-            error instanceof Error ? error : new Error(String(error))
+            error instanceof Error ? error : new Error(String(error)),
           );
           throw error;
         }
@@ -843,7 +867,7 @@ export function createMissionMutation<TInput, TOutput, TError = Error>(
         if (!context?.deduped) {
           reportMutationError(
             config.kind,
-            error instanceof Error ? error : new Error(String(error))
+            error instanceof Error ? error : new Error(String(error)),
           );
         }
         callThrough?.onError?.(error, input, context, meta);
@@ -870,7 +894,7 @@ export function useMissionWriteRunner() {
   const queryClient = useQueryClient();
   return useCallback(
     <TResult>(options: RunMissionWriteOptions<TResult>) => runMissionWrite(queryClient, options),
-    [queryClient]
+    [queryClient],
   );
 }
 
@@ -880,7 +904,7 @@ export const runMissionTransaction = runMissionWrite;
 /** True when local optimistic writes are active (skip remote realtime invalidation). */
 export function hasLocalWriteInFlight(
   queryClient: QueryClient,
-  scope?: InvalidateRequest
+  scope?: InvalidateRequest,
 ): boolean {
   return inflightCountForScope(getClientState(queryClient), scope) > 0;
 }

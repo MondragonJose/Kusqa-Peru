@@ -16,6 +16,12 @@ type MarkerLayerOptions = {
   onSelectMission: (id: string) => void;
   onRequestDetail?: (id: string) => void;
   markersMap: Map<string, LeafletInstance>;
+  /**
+   * IDs of entities that are proposals (not missions).
+   * Proposal pins render as outlined squares to visually communicate
+   * "open / gathering support" vs the solid filled circle of active missions.
+   */
+  proposalIds?: Set<string>;
 };
 
 const REGION_GRADIENT: Record<string, { gradient: string; glow: string }> = {
@@ -42,19 +48,27 @@ export function renderMissionMarkers({
   onSelectMission,
   onRequestDetail,
   markersMap,
+  proposalIds,
 }: MarkerLayerOptions): void {
   missions.forEach((mission) => {
     if (!mission.coords || !isValidLatLng(mission.coords.lat, mission.coords.lng)) return;
 
     const isSelected = selectedMissionId === mission.id;
+    const isProposal = proposalIds?.has(mission.id) ?? false;
     const { gradient, glow } = REGION_GRADIENT[mission.region] ?? REGION_GRADIENT.sierra;
     const chipClass = REGION_CHIP[mission.region] ?? REGION_CHIP.sierra;
     const iconSize = isSelected ? 52 : 38;
 
+    // Proposal pins: outlined rounded square (gathering/support) with dashed border
+    // Mission pins: solid filled circle (active) with gradient fill
+    const shapeClasses = isProposal
+      ? "rounded-xl border-2 border-dashed border-violet-400 bg-white/85 dark:bg-violet-950/40 backdrop-blur"
+      : `${gradient} text-white shadow-glow border-2 border-white/90`;
+
     const htmlContent = `
       <div class="relative flex items-center justify-center pointer-events-auto" style="width: ${iconSize}px; height: ${iconSize}px;">
         <span class="absolute inset-0 rounded-full ${gradient} ${isSelected ? "scale-125 opacity-40 animate-pulse-ring" : "scale-100 opacity-20"}"></span>
-        <div class="relative flex items-center justify-center rounded-full ${gradient} text-white shadow-glow border-2 border-white/90 transition-all duration-300 transform ${isSelected ? `scale-110 rotate-3 ring-4 ${glow}` : "hover:scale-115"}" style="width: 80%; height: 80%;">
+        <div class="relative flex items-center justify-center ${shapeClasses} transition-all duration-300 transform ${isSelected ? `scale-110 ring-4 ${glow}` : "hover:scale-115"}" style="width: 80%; height: 80%;">
           <span class="select-none text-base">${mission.emoji}</span>
         </div>
       </div>
@@ -62,10 +76,13 @@ export function renderMissionMarkers({
 
     const customIcon = L.divIcon({
       html: htmlContent,
-      className: "custom-mission-pin",
+      className: isProposal ? "custom-proposal-pin" : "custom-mission-pin",
       iconSize: [iconSize, iconSize],
       iconAnchor: [iconSize / 2, iconSize / 2],
     });
+
+    const ctaLabel = isProposal ? "Apoyar" : "Unirme";
+    const detailHref = isProposal ? `/app/propuesta/${mission.id}` : `/app/mision/${mission.id}`;
 
     const popupHtml = `
       <div class="p-2.5 text-xs w-56 font-sans">
@@ -79,8 +96,8 @@ export function renderMissionMarkers({
           <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>
         </div>
         <div class="flex items-center gap-1.5 mt-2">
-          <a href="/app/mision/${mission.id}" class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white py-1.5 text-[8px] font-bold hover:opacity-90 transition-all">
-            Unirme
+          <a href="${detailHref}" class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg ${isProposal ? "bg-violet-500" : "bg-gradient-to-r from-amber-500 to-rose-500"} text-white py-1.5 text-[8px] font-bold hover:opacity-90 transition-all">
+            ${ctaLabel}
           </a>
           <button class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30">
             Ver más →

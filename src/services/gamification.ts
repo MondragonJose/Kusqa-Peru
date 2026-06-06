@@ -14,13 +14,14 @@ import { XP_BY_DIFFICULTY } from "@/constants/gamification";
  */
 export function calculateProgress(currentXp: number): GamificationProgress {
   // Encontrar el nivel actual
-  const currentLevel = CIVIC_ROUTE.find((l) => currentXp >= l.xpFrom && currentXp < l.xpTo) || CIVIC_ROUTE[0];
+  const currentLevel =
+    CIVIC_ROUTE.find((l) => currentXp >= l.xpFrom && currentXp < l.xpTo) || CIVIC_ROUTE[0];
   const nextLevel = CIVIC_ROUTE[currentLevel.level] || currentLevel;
-  
+
   const xpInCurrentLevel = currentXp - currentLevel.xpFrom;
   const xpNeededForNext = currentLevel.xpTo - currentLevel.xpFrom;
   const progress = Math.round((xpInCurrentLevel / xpNeededForNext) * 100);
-  
+
   return {
     currentXp,
     nextLevelXp: nextLevel.xpFrom,

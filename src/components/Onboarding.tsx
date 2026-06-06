@@ -13,7 +13,8 @@ const SLIDES = [
   {
     icon: MapPin,
     title: "Conecta con iniciativas juveniles",
-    description: "Explora misiones en tu distrito y región. Forma parte de una red territorial en construcción.",
+    description:
+      "Explora misiones en tu distrito y región. Forma parte de una red territorial en construcción.",
     gradient: "bg-gradient-sunrise",
   },
   {
@@ -25,7 +26,8 @@ const SLIDES = [
   {
     icon: BookOpen,
     title: "Tu recorrido territorial",
-    description: "Tu perfil registra las misiones que completas. Tu participación deja huella en el mapa.",
+    description:
+      "Tu perfil registra las misiones que completas. Tu participación deja huella en el mapa.",
     gradient: "bg-gradient-sunrise",
   },
 ];
@@ -111,7 +113,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               className="space-y-4"
             >
               {/* Icon */}
-              <div className={`h-16 w-16 rounded-xl sm:h-20 sm:w-20 bg-gradient-sunrise grid place-items-center text-white text-4xl shadow-glow mx-auto`}>
+              <div
+                className={`h-16 w-16 rounded-xl sm:h-20 sm:w-20 bg-gradient-sunrise grid place-items-center text-white text-4xl shadow-glow mx-auto`}
+              >
                 <Icon className="h-8 w-8 sm:h-10 sm:w-10" />
               </div>
 

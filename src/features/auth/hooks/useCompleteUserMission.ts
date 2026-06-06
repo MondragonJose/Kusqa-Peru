@@ -22,10 +22,7 @@ type SubmitMissionEvidenceInput = {
   file?: File;
 };
 
-export const useSubmitMissionEvidence = createMissionMutation<
-  SubmitMissionEvidenceInput,
-  boolean
->({
+export const useSubmitMissionEvidence = createMissionMutation<SubmitMissionEvidenceInput, boolean>({
   kind: "submitEvidence",
   mutationFn: async (queryClient, { missionId, type, description, caption, file }) => {
     const userId = await resolveAuthenticatedUserId(queryClient);
