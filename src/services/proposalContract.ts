@@ -55,6 +55,8 @@ export type DbProposalRow = {
   /** PostgreSQL `numeric` → Supabase JS returns string, not number */
   longitude: string | null;
   proposed_date: string | null;
+  /** FK to districts (Phase 3A). Nullable — text `district` remains source of truth. */
+  district_id: string | null;
   /** Optional 280-char preview used in cards and feeds. */
   summary: string | null;
   /** Optional author voice: why this matters in the author's district. */
@@ -100,6 +102,8 @@ export type Proposal = {
   latitude: number | null;
   longitude: number | null;
   proposedDate: string | null;
+  /** FK to districts (Phase 3A). */
+  districtId: string | null;
   /** Optional 280-char preview. Falls back to description at render time. */
   summary: string | null;
   /** Optional author voice. Falls back to a neutral prompt when null. */
@@ -190,4 +194,140 @@ export const DB_DEFAULTS = {
   WHY_MAX: 600,
   /** SQL: proposals_location_label_length_chk */
   LOCATION_LABEL_MAX: 200,
+  /** SQL: proposal_collaborators.message check */
+  COLLABORATOR_MESSAGE_MAX: 600,
+  /** SQL: proposal_comments.content check */
+  COMMENT_MIN: 1,
+  COMMENT_MAX: 1200,
+  /** Edit window for a comment (24h) — enforced at the service layer */
+  COMMENT_EDIT_WINDOW_MS: 24 * 60 * 60 * 1000,
+  /** Support threshold floor (lowest team_size branch) */
+  SUPPORT_THRESHOLD_MIN: 3,
+  /** Multiplier for default threshold: ceil(team_size * 0.3) */
+  SUPPORT_THRESHOLD_RATIO: 0.3,
 } as const;
+
+// ─── Coalition: collaborators ───────────────────────────────────────────────
+
+export const COLLABORATOR_ROLES = ["co_author", "ally"] as const;
+export type CollaboratorRole = (typeof COLLABORATOR_ROLES)[number];
+
+export const COLLABORATOR_STATUSES = ["pending", "accepted", "declined"] as const;
+export type CollaboratorStatus = (typeof COLLABORATOR_STATUSES)[number];
+
+export type DbProposalCollaboratorRow = {
+  id: string;
+  proposal_id: string;
+  user_id: string;
+  role: CollaboratorRole;
+  invited_by: string | null;
+  status: CollaboratorStatus;
+  message: string | null;
+  created_at: string;
+  responded_at: string | null;
+};
+
+export type ProposalCollaborator = {
+  id: string;
+  proposalId: string;
+  userId: string;
+  username: string;
+  firstName: string;
+  avatarUrl: string | null;
+  role: CollaboratorRole;
+  status: CollaboratorStatus;
+  invitedBy: string | null;
+  message: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+};
+
+export type CreateCollaboratorInvitationDTO = {
+  proposalId: string;
+  /** Target user (must already be a registered KUSQA member) */
+  userId: string;
+  role: CollaboratorRole;
+  message?: string;
+};
+
+export type RespondToInvitationDTO = {
+  collaboratorId: string;
+  response: "accepted" | "declined";
+};
+
+// ─── Coalition: comments ────────────────────────────────────────────────────
+
+export type DbProposalCommentRow = {
+  id: string;
+  proposal_id: string;
+  user_id: string;
+  parent_comment_id: string | null;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type ProposalComment = {
+  id: string;
+  proposalId: string;
+  authorId: string;
+  authorUsername: string;
+  authorFirstName: string;
+  authorAvatarUrl: string | null;
+  parentCommentId: string | null;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  /** True if the comment is editable by the current user (within 24h, not deleted) */
+  isEditable: boolean;
+  /** True if the comment is soft-deleted (shown as placeholder) */
+  isDeleted: boolean;
+};
+
+export type CreateCommentDTO = {
+  proposalId: string;
+  content: string;
+  parentCommentId?: string | null;
+};
+
+export type EditCommentDTO = {
+  commentId: string;
+  content: string;
+};
+
+export type ListCommentsResult = {
+  comments: ProposalComment[];
+  total: number;
+  hasMore: boolean;
+};
+
+// ─── Coalition: stats + composite coalition view ────────────────────────────
+
+export type ProposalSupportStats = {
+  proposalId: string;
+  supportCount: number;
+  collaboratorCount: number;
+  acceptedCollaboratorCount: number;
+};
+
+export type DbProposalSupportStatsRow = {
+  proposal_id: string;
+  support_count: number;
+  collaborator_count: number;
+  accepted_collaborator_count: number;
+};
+
+export type ProposalCoalition = {
+  proposalId: string;
+  stats: ProposalSupportStats;
+  /** Author is always the first entry, even if not in accepted collaborators. */
+  author: {
+    userId: string;
+    username: string;
+    firstName: string;
+    avatarUrl: string | null;
+  };
+  /** Accepted collaborators only (public coalition). */
+  collaborators: ProposalCollaborator[];
+};

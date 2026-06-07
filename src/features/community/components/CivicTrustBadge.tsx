@@ -24,7 +24,7 @@ export interface CivicTrustProfile {
   validatedBy?: string;
 }
 
-const TRUST_META: Record<
+export const TRUST_STATUS_META: Record<
   CivicTrustStatus,
   {
     label: string;
@@ -92,7 +92,7 @@ interface CivicTrustBadgeProps {
 }
 
 export function CivicTrustBadge({ profile, expanded = false, delay = 0 }: CivicTrustBadgeProps) {
-  const meta = TRUST_META[profile.status];
+  const meta = TRUST_STATUS_META[profile.status];
 
   return (
     <motion.div

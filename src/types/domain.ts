@@ -36,6 +36,10 @@ export type Mission = {
   title: string;
   description: string;
   district: string;
+  /** Phase 4C.1: optional FK to `districts.id`. Optional so legacy
+   *  rows and seed mocks that haven't been back-filled still typecheck.
+   *  New writes should always include this. */
+  districtId?: string | null;
   region: Region;
   category: MissionCategory;
   xp: number;

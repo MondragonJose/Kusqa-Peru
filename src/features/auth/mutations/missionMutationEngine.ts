@@ -28,6 +28,9 @@ import {
   userMissionKeys,
   userProgressKeys,
   evidenceKeys,
+  proposalKeys,
+  proposalSupportKeys,
+  proposalCoalitionKeys,
 } from "@/lib/queryKeys";
 import type {
   Mission,
@@ -50,6 +53,12 @@ export type WriteContext = {
 export type InvalidateRequest = {
   userId?: string;
   missionIds?: readonly string[];
+  /**
+   * Phase 4B: proposal ids to invalidate. The flush will invalidate
+   * `proposalKeys.detail(id)` + `proposalSupportKeys.byProposal(id)` +
+   * `proposalCoalitionKeys.byProposal(id)` for each id.
+   */
+  proposalIds?: readonly string[];
 };
 
 type QuerySnapshot = Array<{ key: QueryKey; data: unknown }>;
@@ -528,7 +537,7 @@ async function cancelQueryKeys(queryClient: QueryClient, keys: QueryKey[]): Prom
 // ---------------------------------------------------------------------------
 
 type SchedulerState = {
-  pending: { userId?: string; missionIds: Set<string> };
+  pending: { userId?: string; missionIds: Set<string>; proposalIds: Set<string> };
   flushPromise: Promise<void> | null;
   scheduled: boolean;
 };
@@ -538,7 +547,7 @@ const schedulers = new WeakMap<QueryClient, SchedulerState>();
 function getScheduler(queryClient: QueryClient): SchedulerState {
   let state = schedulers.get(queryClient);
   if (!state) {
-    state = { pending: { missionIds: new Set() }, flushPromise: null, scheduled: false };
+    state = { pending: { missionIds: new Set(), proposalIds: new Set() }, flushPromise: null, scheduled: false };
     schedulers.set(queryClient, state);
   }
   return state;
@@ -548,12 +557,14 @@ function mergeScope(state: SchedulerState, scope?: InvalidateRequest): void {
   if (!scope) return;
   if (scope.userId) state.pending.userId = scope.userId;
   for (const id of scope.missionIds ?? []) state.pending.missionIds.add(id);
+  for (const id of scope.proposalIds ?? []) state.pending.proposalIds.add(id);
 }
 
 async function flushPending(queryClient: QueryClient, state: SchedulerState): Promise<void> {
   const pendingScope: InvalidateRequest = {
     userId: state.pending.userId,
     missionIds: [...state.pending.missionIds],
+    proposalIds: [...state.pending.proposalIds],
   };
 
   const hardening = getClientState(queryClient);
@@ -563,8 +574,8 @@ async function flushPending(queryClient: QueryClient, state: SchedulerState): Pr
     return;
   }
 
-  const { userId, missionIds } = state.pending;
-  state.pending = { missionIds: new Set() };
+  const { userId, missionIds, proposalIds } = state.pending;
+  state.pending = { missionIds: new Set(), proposalIds: new Set() };
   state.scheduled = false;
 
   try {
@@ -576,6 +587,13 @@ async function flushPending(queryClient: QueryClient, state: SchedulerState): Pr
     ];
     for (const missionId of missionIds) {
       tasks.push(queryClient.invalidateQueries({ queryKey: missionKeys.detail(missionId) }));
+    }
+    for (const proposalId of proposalIds) {
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: proposalKeys.detail(proposalId) }),
+        queryClient.invalidateQueries({ queryKey: proposalSupportKeys.byProposal(proposalId) }),
+        queryClient.invalidateQueries({ queryKey: proposalCoalitionKeys.byProposal(proposalId) }),
+      );
     }
     if (userId) {
       tasks.push(
@@ -608,10 +626,18 @@ export function reconcileCache(
           if (!state.flushPromise) {
             state.flushPromise = flushPending(queryClient, state).finally(() => {
               state.flushPromise = null;
-              if (state.pending.missionIds.size > 0 || state.pending.userId) {
+              if (
+                state.pending.missionIds.size > 0 ||
+                state.pending.proposalIds.size > 0 ||
+                state.pending.userId
+              ) {
                 reconcileCache(
                   queryClient,
-                  { userId: state.pending.userId, missionIds: [...state.pending.missionIds] },
+                  {
+                    userId: state.pending.userId,
+                    missionIds: [...state.pending.missionIds],
+                    proposalIds: [...state.pending.proposalIds],
+                  },
                   "schedule",
                 );
               }
@@ -628,7 +654,11 @@ export function reconcileCache(
     return (async () => {
       try {
         if (state.flushPromise) await state.flushPromise;
-        if (state.pending.missionIds.size > 0 || state.pending.userId) {
+        if (
+          state.pending.missionIds.size > 0 ||
+          state.pending.proposalIds.size > 0 ||
+          state.pending.userId
+        ) {
           state.scheduled = false;
           await flushPending(queryClient, state);
         }

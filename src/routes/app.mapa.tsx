@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MapPin, Search, Sparkles, Navigation, RefreshCw, ArrowRight } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
+import { districtSlugify } from "@/utils/districtSlug";
 import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
 import { MapView } from "@/features/map/components/MapView";
@@ -254,7 +255,13 @@ function MapPage() {
                       </h2>
                       <div className="text-[10px] lg:text-xs opacity-95 mt-1.5 lg:mt-2 flex items-center gap-1">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{activeMission.district}</span>
+                        <Link
+                          to="/app/distrito/$slug"
+                          params={{ slug: districtSlugify(activeMission.district) }}
+                          className="truncate hover:underline"
+                        >
+                          {activeMission.district}
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -357,7 +364,13 @@ function MapPage() {
                             </h3>
                             <p className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
                               <MapPin className="h-3 w-3" />{" "}
-                              <span className="truncate">{activeMission.district}</span>
+                              <Link
+                                to="/app/distrito/$slug"
+                                params={{ slug: districtSlugify(activeMission.district) }}
+                                className="truncate hover:underline"
+                              >
+                                {activeMission.district}
+                              </Link>
                             </p>
                           </div>
                           <span className="text-3xl shrink-0 filter drop-shadow-md select-none">

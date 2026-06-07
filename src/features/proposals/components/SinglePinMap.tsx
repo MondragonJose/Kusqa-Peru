@@ -48,16 +48,15 @@ export function SinglePinMap({ latitude, longitude, region, title }: SinglePinMa
       const tint = REGION_TINT[region] ?? "#3b82f6";
       const icon = L.divIcon({
         className: "kusqa-single-pin",
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
         html: `<div style="
-          width: 28px; height: 28px; border-radius: 50% 50% 50% 0;
+          width: 30px; height: 30px; border-radius: 50%;
           background: ${tint};
-          transform: rotate(-45deg);
           display: grid; place-items: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.30), 0 0 0 2px rgba(255,255,255,0.95);
           border: 2px solid white;
-        "><span style="transform: rotate(45deg); font-size: 13px; line-height: 1;">📍</span></div>`,
+        "><span style="font-size: 14px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));">📍</span></div>`,
       });
 
       L.marker([latitude, longitude], { icon, title, keyboard: false }).addTo(instance);

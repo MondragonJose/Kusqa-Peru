@@ -14,6 +14,18 @@ import { NOTIFICATION_TYPE_LABELS } from "../types";
 interface CivicFeedProps {
   notifications: CivicNotification[];
   userDistrict?: string;
+  /**
+   * Phase 4B.6: per-item mark-as-read. Called when the user clicks
+   * a single row. Parent is responsible for firing the mutation and
+   * reconciling the cache.
+   */
+  onMarkRead?: (notificationId: string) => void;
+  /**
+   * Phase 4B.6: bulk mark-all-read. Called when the user clicks the
+   * "Marcar como leídas" button. Parent must persist via the
+   * repository.
+   */
+  onMarkAllRead?: () => void;
 }
 
 type FilterTab = "todas" | CivicNotificationType;
@@ -27,14 +39,32 @@ const FILTER_TABS: Array<{ key: FilterTab; label: string }> = [
   { key: "insignia", label: "Insignias" },
 ];
 
-export function CivicFeed({ notifications: initialNotifications, userDistrict }: CivicFeedProps) {
+export function CivicFeed({
+  notifications: initialNotifications,
+  userDistrict,
+  onMarkRead,
+  onMarkAllRead,
+}: CivicFeedProps) {
   const [activeTab, setActiveTab] = useState<FilterTab>("todas");
   const [notifications, setNotifications] = useState<CivicNotification[]>(initialNotifications);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    if (onMarkAllRead) {
+      onMarkAllRead();
+    } else {
+      // Fallback: optimistic local-only update so the badge decrements.
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    }
+  };
+
+  const handleMarkOne = (id: string) => {
+    if (onMarkRead) {
+      onMarkRead(id);
+    } else {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    }
   };
 
   const filtered =
@@ -143,7 +173,12 @@ export function CivicFeed({ notifications: initialNotifications, userDistrict }:
       {/* Notifications list */}
       <div className="space-y-3">
         {filtered.map((n, i) => (
-          <NotificationItem key={n.id} notification={n} index={i} />
+          <NotificationItem
+            key={n.id}
+            notification={n}
+            index={i}
+            onRead={onMarkRead ? handleMarkOne : undefined}
+          />
         ))}
       </div>
 

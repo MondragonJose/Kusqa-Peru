@@ -6,6 +6,7 @@ export {
   type AuthUserStatus,
   type AuthUserState,
 } from "./hooks/useCurrentUser";
+export { useCurrentUserId } from "./hooks/useCurrentUserId";
 export { useOAuthLogin } from "./hooks/useOAuthLogin";
 export { useLogout } from "./hooks/useLogout";
 export { useUserProgress } from "./hooks/useUserProgress";

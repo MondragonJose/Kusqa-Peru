@@ -6,4 +6,3 @@
 export * from "./missions";
 export * from "./users";
 export * from "./gamification";
-export * from "./notifications";

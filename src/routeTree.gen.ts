@@ -19,7 +19,9 @@ import { Route as AppNotificacionesRouteImport } from './routes/app.notificacion
 import { Route as AppMapaRouteImport } from './routes/app.mapa'
 import { Route as AppCrearRouteImport } from './routes/app.crear'
 import { Route as AppPropuestaProposalIdRouteImport } from './routes/app.propuesta.$proposalId'
+import { Route as AppPerfilUserIdRouteImport } from './routes/app.perfil.$userId'
 import { Route as AppMisionMissionIdRouteImport } from './routes/app.mision.$missionId'
+import { Route as AppDistritoSlugRouteImport } from './routes/app.distrito.$slug'
 
 const AppRoute = AppRouteImport.update({
   id: '/app',
@@ -71,9 +73,19 @@ const AppPropuestaProposalIdRoute = AppPropuestaProposalIdRouteImport.update({
   path: '/propuesta/$proposalId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPerfilUserIdRoute = AppPerfilUserIdRouteImport.update({
+  id: '/$userId',
+  path: '/$userId',
+  getParentRoute: () => AppPerfilRoute,
+} as any)
 const AppMisionMissionIdRoute = AppMisionMissionIdRouteImport.update({
   id: '/mision/$missionId',
   path: '/mision/$missionId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDistritoSlugRoute = AppDistritoSlugRouteImport.update({
+  id: '/distrito/$slug',
+  path: '/distrito/$slug',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -83,11 +95,13 @@ export interface FileRoutesByFullPath {
   '/app/crear': typeof AppCrearRoute
   '/app/mapa': typeof AppMapaRoute
   '/app/notificaciones': typeof AppNotificacionesRoute
-  '/app/perfil': typeof AppPerfilRoute
+  '/app/perfil': typeof AppPerfilRouteWithChildren
   '/app/progreso': typeof AppProgresoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/distrito/$slug': typeof AppDistritoSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRoutesByTo {
@@ -95,11 +109,13 @@ export interface FileRoutesByTo {
   '/app/crear': typeof AppCrearRoute
   '/app/mapa': typeof AppMapaRoute
   '/app/notificaciones': typeof AppNotificacionesRoute
-  '/app/perfil': typeof AppPerfilRoute
+  '/app/perfil': typeof AppPerfilRouteWithChildren
   '/app/progreso': typeof AppProgresoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
+  '/app/distrito/$slug': typeof AppDistritoSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRoutesById {
@@ -109,11 +125,13 @@ export interface FileRoutesById {
   '/app/crear': typeof AppCrearRoute
   '/app/mapa': typeof AppMapaRoute
   '/app/notificaciones': typeof AppNotificacionesRoute
-  '/app/perfil': typeof AppPerfilRoute
+  '/app/perfil': typeof AppPerfilRouteWithChildren
   '/app/progreso': typeof AppProgresoRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
+  '/app/distrito/$slug': typeof AppDistritoSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
+  '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
 }
 export interface FileRouteTypes {
@@ -128,7 +146,9 @@ export interface FileRouteTypes {
     | '/app/progreso'
     | '/auth/callback'
     | '/app/'
+    | '/app/distrito/$slug'
     | '/app/mision/$missionId'
+    | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,7 +160,9 @@ export interface FileRouteTypes {
     | '/app/progreso'
     | '/auth/callback'
     | '/app'
+    | '/app/distrito/$slug'
     | '/app/mision/$missionId'
+    | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
   id:
     | '__root__'
@@ -153,7 +175,9 @@ export interface FileRouteTypes {
     | '/app/progreso'
     | '/auth/callback'
     | '/app/'
+    | '/app/distrito/$slug'
     | '/app/mision/$missionId'
+    | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
   fileRoutesById: FileRoutesById
 }
@@ -235,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPropuestaProposalIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/perfil/$userId': {
+      id: '/app/perfil/$userId'
+      path: '/$userId'
+      fullPath: '/app/perfil/$userId'
+      preLoaderRoute: typeof AppPerfilUserIdRouteImport
+      parentRoute: typeof AppPerfilRoute
+    }
     '/app/mision/$missionId': {
       id: '/app/mision/$missionId'
       path: '/mision/$missionId'
@@ -242,16 +273,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMisionMissionIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/distrito/$slug': {
+      id: '/app/distrito/$slug'
+      path: '/distrito/$slug'
+      fullPath: '/app/distrito/$slug'
+      preLoaderRoute: typeof AppDistritoSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
+
+interface AppPerfilRouteChildren {
+  AppPerfilUserIdRoute: typeof AppPerfilUserIdRoute
+}
+
+const AppPerfilRouteChildren: AppPerfilRouteChildren = {
+  AppPerfilUserIdRoute: AppPerfilUserIdRoute,
+}
+
+const AppPerfilRouteWithChildren = AppPerfilRoute._addFileChildren(
+  AppPerfilRouteChildren,
+)
 
 interface AppRouteChildren {
   AppCrearRoute: typeof AppCrearRoute
   AppMapaRoute: typeof AppMapaRoute
   AppNotificacionesRoute: typeof AppNotificacionesRoute
-  AppPerfilRoute: typeof AppPerfilRoute
+  AppPerfilRoute: typeof AppPerfilRouteWithChildren
   AppProgresoRoute: typeof AppProgresoRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppDistritoSlugRoute: typeof AppDistritoSlugRoute
   AppMisionMissionIdRoute: typeof AppMisionMissionIdRoute
   AppPropuestaProposalIdRoute: typeof AppPropuestaProposalIdRoute
 }
@@ -260,9 +311,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppCrearRoute: AppCrearRoute,
   AppMapaRoute: AppMapaRoute,
   AppNotificacionesRoute: AppNotificacionesRoute,
-  AppPerfilRoute: AppPerfilRoute,
+  AppPerfilRoute: AppPerfilRouteWithChildren,
   AppProgresoRoute: AppProgresoRoute,
   AppIndexRoute: AppIndexRoute,
+  AppDistritoSlugRoute: AppDistritoSlugRoute,
   AppMisionMissionIdRoute: AppMisionMissionIdRoute,
   AppPropuestaProposalIdRoute: AppPropuestaProposalIdRoute,
 }

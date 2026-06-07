@@ -13,14 +13,33 @@ import { NOTIFICATION_TYPE_GRADIENT } from "../types";
 interface NotificationItemProps {
   notification: CivicNotification;
   index?: number;
+  /**
+   * Phase 4B.6: optional click handler. When provided, clicking the
+   * row fires it. The parent is responsible for persisting the
+   * read state via the repository.
+   */
+  onRead?: (id: string) => void;
 }
 
-export function NotificationItem({ notification: n, index = 0 }: NotificationItemProps) {
+export function NotificationItem({ notification: n, index = 0, onRead }: NotificationItemProps) {
+  const handleClick = () => {
+    if (onRead) onRead(n.id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+      onClick={handleClick}
+      role={onRead ? "button" : undefined}
+      tabIndex={onRead ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onRead && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       className={`
         group rounded-2xl border p-4 flex gap-4 transition-all duration-355 cursor-pointer relative overflow-hidden
         ${

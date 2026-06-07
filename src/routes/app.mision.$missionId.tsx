@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -23,6 +23,7 @@ import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
+import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
 import {
   useMissionEvidence,
   useSubmitEvidence,
@@ -31,6 +32,8 @@ import {
 import type { Mission, Region, Evidence } from "@/types";
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
+import { missionToEntity, proposalToEntity } from "@/services/entityAdapter";
+import { isMission, isProposal, type CivicEntity } from "@/types/entity";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
   component: MissionDetail,
@@ -62,6 +65,7 @@ const REGION_THEMES: Record<
 
 function MissionDetail() {
   const { missionId } = useParams({ from: "/app/mision/$missionId" });
+  const navigate = useNavigate();
   const { data: mission, isLoading: missionLoading, isError: missionError } = useMission(missionId);
   const {
     data: proposal,
@@ -70,13 +74,35 @@ function MissionDetail() {
   } = useProposal(missionId);
   const { data: allMissions = [] } = useMissions();
 
-  // Determine if entity is mission or proposal
-  const isMissionEntity = !missionError && mission;
-  const isProposalEntity = !proposalError && proposal;
+  // Phase 4C: type the entity as CivicEntity. The `isMission` / `isProposal`
+  // guards narrow the union, removing the need for `entity` casts.
+  const entity: CivicEntity | null = mission
+    ? missionToEntity(mission)
+    : proposal
+      ? proposalToEntity(proposal)
+      : null;
+  const isMissionEntity = entity != null && isMission(entity);
+  const isProposalEntity = entity != null && isProposal(entity);
   const isLoading = missionLoading || proposalLoading;
   const isError = missionError && proposalError;
   const error = missionError || proposalError;
-  const entity = isMissionEntity ? mission : proposal;
+
+  // Phase 1.5: redirect active proposals to their dedicated detail route.
+  // This route is mission-only. If the id resolves to a proposal that is still
+  // open / mobilizing, send the user to /app/propuesta/$proposalId where the
+  // correct lifecycle-aware CTA lives. We never attempt to join a mission
+  // with a proposal id.
+  useEffect(() => {
+    if (isMissionEntity || !isProposalEntity || !proposal) return;
+    const phase = getProposalPhase(proposal.status);
+    if (phase === "open" || phase === "mobilizing") {
+      navigate({
+        to: "/app/propuesta/$proposalId",
+        params: { proposalId: proposal.id },
+        replace: true,
+      });
+    }
+  }, [isMissionEntity, isProposalEntity, proposal, navigate]);
 
   const currentUser = useCurrentUser();
   const joinMutation = useJoinUserMission();
@@ -190,6 +216,19 @@ function MissionDetail() {
       toast.error("Debes iniciar sesión para iniciar una ruta.");
       return;
     }
+    // Defensive: this route is mission-only. If we ever land here with a
+    // proposal entity (e.g. the conversion view), do not call joinMission —
+    // the proposal id does not exist in the missions table and the join
+    // service will throw. Redirect to the proposal detail instead.
+    if (!isMissionEntity) {
+      if (isProposalEntity && proposal) {
+        navigate({
+          to: "/app/propuesta/$proposalId",
+          params: { proposalId: proposal.id },
+        });
+      }
+      return;
+    }
     if (alreadyJoined || joinMutation.isSuccess) return;
     joiningRef.current = true;
     setCrossingOpen(true);
@@ -222,6 +261,55 @@ function MissionDetail() {
           <div className="h-64 bg-muted/30 rounded-3xl border border-border/20" />
           <div className="h-32 bg-muted/30 rounded-3xl border border-border/20" />
         </div>
+      </div>
+    );
+  }
+
+  // While the redirect effect runs, render a quiet loading state to avoid
+  // flashing the mission hero with a fake "Unirme" CTA for a proposal.
+  if (isProposalEntity && !isMissionEntity) {
+    const phase = getProposalPhase(proposal!.status);
+    if (phase === "open" || phase === "mobilizing") {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <span className="text-xs text-muted-foreground">Redirigiendo…</span>
+        </div>
+      );
+    }
+    // Converted / dismissed proposals: render a quiet terminal view, no CTA.
+    const copy = getProposalPhaseCopy(phase);
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 pb-12 px-4 sm:px-6">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-semibold"
+        >
+          <ArrowLeft className="h-4 w-4" /> Volver al inicio
+        </Link>
+        <section className="rounded-3xl bg-card border border-border/80 p-6 sm:p-8 space-y-4">
+          <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
+            {copy.label}
+          </div>
+          <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight">
+            {proposal!.title}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{copy.blurb}</p>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Link
+              to="/app/propuesta/$proposalId"
+              params={{ proposalId: proposal!.id }}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 font-semibold text-sm shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Ver ficha de la propuesta <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/app/mapa"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 font-semibold text-sm hover:bg-secondary transition-colors"
+            >
+              <Compass className="h-4 w-4" /> Explorar mapa
+            </Link>
+          </div>
+        </section>
       </div>
     );
   }
@@ -260,14 +348,26 @@ function MissionDetail() {
       <div className="lg:hidden fixed bottom-20 left-4 right-4 z-30">
         <motion.button
           onClick={handleJoinMission}
-          disabled={alreadyJoined || joinMutation.isPending || joinMutation.isSuccess}
-          className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow transition-all cursor-pointer ${
-            alreadyJoined || joinMutation.isSuccess ? "opacity-90 cursor-default" : ""
+          disabled={
+            !isMissionEntity || alreadyJoined || joinMutation.isPending || joinMutation.isSuccess
+          }
+          className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow transition-all ${
+            !isMissionEntity
+              ? "opacity-90 cursor-default"
+              : alreadyJoined || joinMutation.isSuccess
+                ? "opacity-90 cursor-default"
+                : "cursor-pointer"
           } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
-          whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.01 } : {}}
-          whileTap={!alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}}
+          whileHover={
+            isMissionEntity && !alreadyJoined && !joinMutation.isPending ? { scale: 1.01 } : {}
+          }
+          whileTap={
+            isMissionEntity && !alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}
+          }
         >
-          {joinMutation.isPending ? (
+          {!isMissionEntity ? (
+            <span className="flex items-center gap-2">Ver propuesta</span>
+          ) : joinMutation.isPending ? (
             <span className="flex items-center gap-2">
               <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
               Ingresando...
@@ -300,7 +400,7 @@ function MissionDetail() {
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
             <div className="text-7xl select-none filter drop-shadow-sm">
-              {(entity as Mission).emoji}
+              {entity.emoji}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
@@ -330,24 +430,43 @@ function MissionDetail() {
                 <MapPin className="h-3.5 w-3.5" /> {entity.district}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" /> {formatRelativeDate((entity as Mission).date)}
+                <Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(entity.date)}
               </span>
               <span className="hidden sm:inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> {(entity as Mission).participants} participantes
+                <Users className="h-3.5 w-3.5" /> {entity.participants} participantes
               </span>
             </div>
             {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
             <div className="mt-4 sm:mt-6">
               <motion.button
                 onClick={handleJoinMission}
-                disabled={alreadyJoined || joinMutation.isPending || joinMutation.isSuccess}
-                className={`inline-flex items-center gap-2 rounded-2xl bg-gradient-sunrise text-white px-6 py-3 font-black text-xs shadow-glow hover:scale-[1.02] transition-all cursor-pointer ${
-                  alreadyJoined || joinMutation.isSuccess ? "opacity-90 cursor-default" : ""
-                } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
-                whileHover={!alreadyJoined && !joinMutation.isPending ? { scale: 1.02 } : {}}
-                whileTap={!alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}}
+                disabled={
+                  !isMissionEntity ||
+                  alreadyJoined ||
+                  joinMutation.isPending ||
+                  joinMutation.isSuccess
+                }
+                className={`inline-flex items-center gap-2 rounded-2xl bg-gradient-sunrise text-white px-6 py-3 font-black text-xs shadow-glow transition-all ${
+                  !isMissionEntity || alreadyJoined || joinMutation.isSuccess
+                    ? "opacity-90 cursor-default"
+                    : "cursor-pointer"
+                } ${joinMutation.isPending ? "opacity-70 cursor-wait hover:scale-100" : "hover:scale-[1.02]"}`}
+                whileHover={
+                  isMissionEntity && !alreadyJoined && !joinMutation.isPending
+                    ? { scale: 1.02 }
+                    : {}
+                }
+                whileTap={
+                  isMissionEntity && !alreadyJoined && !joinMutation.isPending
+                    ? { scale: 0.98 }
+                    : {}
+                }
               >
-                {joinMutation.isPending ? (
+                {!isMissionEntity ? (
+                  <span className="flex items-center gap-2">
+                    Ver propuesta <ArrowRight className="h-4 w-4" />
+                  </span>
+                ) : joinMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 rounded-full border-2 border-foreground/40 border-t-foreground animate-spin" />
                     Ingresando...
@@ -403,24 +522,25 @@ function MissionDetail() {
         <div className="space-y-6">
           <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6 space-y-3">
             <h2 className="font-display font-black text-xl text-foreground">
-              La Misión Territorial
+              {isMissionEntity ? "La Misión Territorial" : "Sobre esta iniciativa"}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
               {entity.description}
             </p>
           </section>
 
-          {/* Why this matters */}
-          <section className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6`}>
-            <h2 className="font-display font-black text-xl mb-3 text-foreground flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
-              Esta ruta fortalece el tejido comunitario en {entity.district}, generando impacto
-              visible en {(entity as Mission).impact || "el entorno local"}. Cada persona que se
-              suma deja una huella real en su territorio.
-            </p>
-          </section>
+          {/* Why this matters — only meaningful for real missions. Proposals
+              have their own "Por qué" in the proposal detail view. */}
+          {isMissionEntity && entity.impact && (
+            <section className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6`}>
+              <h2 className="font-display font-black text-xl mb-3 text-foreground flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
+              </h2>
+              <p className="text-sm sm:text-base text-foreground/90 leading-relaxed font-medium">
+                {entity.impact}
+              </p>
+            </section>
+          )}
 
           {/* Evidence feed — contributions from participants */}
           {evidenceList.length > 0 && (
@@ -523,14 +643,14 @@ function MissionDetail() {
           {/* Participants group — count-based, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-4 text-foreground">
-              Participantes ({(entity as Mission).participants})
+              Participantes ({entity.participants})
             </h2>
-            {(entity as Mission).participants > 0 ? (
+            {entity.participants > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {(() => {
                   const pool = ["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"];
-                  const show = Math.max(1, Math.min((entity as Mission).participants, pool.length));
-                  const remaining = (entity as Mission).participants - show;
+                  const show = Math.max(1, Math.min(entity.participants, pool.length));
+                  const remaining = entity.participants - show;
                   return (
                     <>
                       {pool.slice(0, show).map((e, i) => (
@@ -626,13 +746,13 @@ function MissionDetail() {
             {/* P0 FIX: Eliminada sección de XP - sistema de gamificación eliminado */}
 
             {/* Temporal block — derived from startDate/endDate */}
-            {(entity as Mission).startDate && (
+            {entity.startDate && (
               <div className={`rounded-2xl p-4 border ${theme.bgLight} ${theme.border}`}>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Tiempo de la ruta
                 </div>
                 {(() => {
-                  const m = entity as Mission;
+                  const m = entity;
                   const ts = m.lifecycleInfo.lifecycle;
                   const fmt = (d: string) =>
                     new Date(d).toLocaleDateString("es-PE", {
@@ -796,23 +916,23 @@ function MissionDetail() {
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Dificultad</span>
                 <span className="font-bold text-foreground">
-                  {(entity as Mission).difficulty || "N/A"}
+                  {entity.difficulty || "N/A"}
                 </span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Cupos libres</span>
-                <span className="font-bold text-accent">{(entity as Mission).spotsLeft ?? 0}</span>
+                <span className="font-bold text-accent">{entity.spotsLeft ?? 0}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Organizador</span>
                 <span className="font-bold text-foreground">
-                  {(entity as Mission).organizer?.name || "N/A"}
+                  {entity.organizer?.name || "N/A"}
                 </span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Impacto</span>
                 <span className="font-bold text-stone-700 dark:text-stone-300 text-right">
-                  {(entity as Mission).impact || "N/A"}
+                  {entity.impact || "N/A"}
                 </span>
               </div>
             </div>
@@ -850,7 +970,7 @@ function MissionDetail() {
       <CrossingOverlay
         open={crossingOpen}
         gradient={meta.gradient}
-        emoji={(entity as Mission).emoji}
+        emoji={entity.emoji}
         avatar={currentUser?.avatar ?? ""}
         hold={joinMutation.isPending}
         onComplete={handleCrossingComplete}

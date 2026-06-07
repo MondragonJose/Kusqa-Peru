@@ -3,6 +3,7 @@ import { Compass, Map, Plus, Trophy, Bell, User, Sparkles, Search } from "lucide
 import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { HeaderBellBadge } from "./HeaderBellBadge";
 
 type NavItem = {
   to: string;
@@ -136,6 +137,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             </div> */}
           {/* P0 FIX: Eliminado display de racha - streak siempre es 0 (hardcoded), métrica sin datos reales */}
+          <div className="ml-auto flex items-center gap-2">
+            <HeaderBellBadge />
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto">

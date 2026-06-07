@@ -1,286 +1,279 @@
--- Seed para hacer la plataforma más viva
--- Crea perfiles adicionales, participaciones en misiones, actividad reciente
--- Ejecutar en Supabase SQL Editor
+-- KUSQA: vitality seed (Phase 3 rewrite).
+--
+-- This file seeds a small, *believable* vitality layer on top of 0000_baseline.
+-- Phase 3 changes:
+--   - Sections 1-2 (profiles + mission_participants): retained, with idempotency
+--     guards added (ON CONFLICT for profiles.email + user_missions(user_id, mission_id)).
+--   - Section 3 (activity_log): REMOVED. The `activity_log` table does not exist
+--     in any committed migration and is not referenced by application code.
+--   - Section 4 (notifications → user_notifications): rewritten to target the
+--     real `user_notifications` table with the correct shape.
+--   - Section 5 (missions.participants/spots_left): REMOVED. Those columns do
+--     not exist in the real missions schema (current_progress is the only
+--     progress column).
+--   - Section 6 (proposals): rewritten for the actual proposals schema
+--     (summary, why, location_label, team_size, images, proposed_date).
+--     Uses WHERE NOT EXISTS per title for idempotency. 3 proposals, small team
+--     sizes, no fake engagement numbers.
 
--- 1. Crear perfiles de usuarios adicionales (6 perfiles realistas)
-INSERT INTO profiles (id, email, username, full_name, avatar_url, experience_points, level, bio, location, created_at) VALUES
--- Usuario principal (actualiza si ya existe)
-(
-  gen_random_uuid(),
-  'demo@kusqa.pe',
-  'kusqa_hero',
-  'María Quispe',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=maria',
-  1250,
-  5,
-  'Apasionada por el medio ambiente y la educación comunitaria. Siempre buscando formas de ayudar.',
-  'Lima, Perú',
-  NOW()
-),
--- Perfiles adicionales
-(
-  gen_random_uuid(),
-  'carlos.mendoza@gmail.com',
-  'carlos_voluntario',
-  'Carlos Mendoza',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=carlos',
-  890,
-  4,
-  'Ingeniero ambiental comprometido con la conservación de la selva.',
-  'Iquitos, Perú',
-  NOW()
-),
-(
-  gen_random_uuid(),
-  'sofia.huaman@outlook.com',
-  'sofia_arte',
-  'Sofía Huamán',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=sofia',
-  650,
-  3,
-  'Artista visual y educadora. Creo murales comunitarios y talleres de arte.',
-  'Cusco, Perú',
-  NOW()
-),
-(
-  gen_random_uuid(),
-  'juan.perez@yahoo.com',
-  'juan_tech',
-  'Juan Pérez',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=juan',
-  420,
-  2,
-  'Desarrollador de software que enseña programación a jóvenes.',
-  'Lima, Perú',
-  NOW()
-),
-(
-  gen_random_uuid(),
-  'ana.rodriguez@gmail.com',
-  'ana_salud',
-  'Ana Rodríguez',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=ana',
-  780,
-  4,
-  'Médica voluntaria en campañas de salud comunitaria.',
-  'Trujillo, Perú',
-  NOW()
-),
-(
-  gen_random_uuid(),
-  'miguel.choque@hotmail.com',
-  'miguel_naturaleza',
-  'Miguel Choque',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=miguel',
-  340,
-  2,
-  'Guardaparques y guía de turismo sostenible en la sierra.',
-  'Puno, Perú',
-  NOW()
-),
-(
-  gen_random_uuid(),
-  'laura.sanchez@gmail.com',
-  'laura_educacion',
-  'Laura Sánchez',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=laura',
-  560,
-  3,
-  'Profesora de primaria apasionada por la lectura infantil.',
-  'San Juan de Lurigancho, Perú',
-  NOW()
-)
-ON CONFLICT (email) DO NOTHING;
+-- ===========================================================================
+-- 1) Profiles (idempotent on email)
+-- ===========================================================================
 
--- 2. Crear participaciones en misiones (user_missions)
--- Usaremos los IDs de las misiones existentes y los nuevos perfiles
-WITH user_ids AS (
-  SELECT id, username FROM profiles WHERE username IN ('kusqa_hero', 'carlos_voluntario', 'sofia_arte', 'juan_tech', 'ana_salud', 'miguel_naturaleza', 'laura_educacion')
+insert into public.profiles (id, email, username, full_name, avatar_url, experience_points, level, bio, location, created_at)
+select * from (values
+  (
+    gen_random_uuid()::text::uuid,
+    'demo@kusqa.pe'::text,
+    'kusqa_hero'::text,
+    'María Quispe'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=maria'::text,
+    1250,
+    5,
+    'Apasionada por el medio ambiente y la educación comunitaria.'::text,
+    'Miraflores, Lima'::text,
+    NOW()
+  ),
+  (
+    gen_random_uuid()::text::uuid,
+    'carlos.mendoza@gmail.com'::text,
+    'carlos_voluntario'::text,
+    'Carlos Mendoza'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=carlos'::text,
+    890,
+    4,
+    'Ingeniero ambiental comprometido con la conservación de la selva.'::text,
+    'Iquitos, Loreto'::text,
+    NOW()
+  ),
+  (
+    gen_random_uuid()::text::uuid,
+    'sofia.huaman@outlook.com'::text,
+    'sofia_arte'::text,
+    'Sofía Huamán'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=sofia'::text,
+    650,
+    3,
+    'Artista visual y educadora. Pinto murales comunitarios.'::text,
+    'Cusco Centro, Cusco'::text,
+    NOW()
+  ),
+  (
+    gen_random_uuid()::text::uuid,
+    'juan.perez@yahoo.com'::text,
+    'juan_tech'::text,
+    'Juan Pérez'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=juan'::text,
+    420,
+    2,
+    'Desarrollador que enseña programación a jóvenes.'::text,
+    'San Borja, Lima'::text,
+    NOW()
+  ),
+  (
+    gen_random_uuid()::text::uuid,
+    'ana.rodriguez@gmail.com'::text,
+    'ana_salud'::text,
+    'Ana Rodríguez'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=ana'::text,
+    780,
+    4,
+    'Médica voluntaria en campañas de salud comunitaria.'::text,
+    'Trujillo, La Libertad'::text,
+    NOW()
+  ),
+  (
+    gen_random_uuid()::text::uuid,
+    'miguel.choque@hotmail.com'::text,
+    'miguel_naturaleza'::text,
+    'Miguel Choque'::text,
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=miguel'::text,
+    340,
+    2,
+    'Guardaparques y guía de turismo sostenible en la sierra.'::text,
+    'Puno Ciudad, Puno'::text,
+    NOW()
+  )
+) as v(id, email, username, full_name, avatar_url, experience_points, level, bio, location, created_at)
+on conflict (email) do nothing;
+
+-- ===========================================================================
+-- 2) mission_participants (idempotent on user_id+mission_id)
+-- ===========================================================================
+
+with user_ids as (
+  select id, username from public.profiles
+  where username in ('kusqa_hero','carlos_voluntario','sofia_arte','juan_tech','ana_salud','miguel_naturaleza')
 ),
-mission_ids AS (
-  SELECT id, title FROM missions WHERE title IN (
+mission_ids as (
+  select id, title from public.missions
+  where title in (
     'Reforestación del Parque Kennedy',
     'Taller de Reciclaje Creativo en Barranco',
     'Clases de Lectura para Niños en SJL',
-    'Murales Comunitarios en Villa María',
+    'Murales Comunitarios en Villa María del Triunfo',
     'Jornada de Salud en Comas',
-    'Taller de Programación para Jóvenes',
-    'Limpieza de Playas en Costa Verde',
+    'Limpieza de Playas en Magdalena',
     'Restauración de Caminos Inca',
     'Huertos Escolares en Chinchero',
-    'Taller de Tejido Ancestral',
     'Campaña de Vacunación en Puno',
     'Reforestación en Iquitos',
-    'Restauración del Centro Histórico'
+    'Restauración del Centro Histórico de Trujillo'
   )
 )
-INSERT INTO user_missions (user_id, mission_id, status, completed_at, xp_earned, created_at)
-SELECT
+insert into public.mission_participants (user_id, mission_id, xp_earned, completed_at, created_at)
+select
   u.id,
   m.id,
-  CASE 
-    WHEN m.title IN ('Reforestación del Parque Kennedy', 'Clases de Lectura para Niños en SJL', 'Jornada de Salud en Comas', 'Limpieza de Playas en Costa Verde', 'Restauración de Caminos Inca', 'Huertos Escolares en Chinchero', 'Campaña de Vacunación en Puno', 'Reforestación en Iquitos')
-    THEN 'completed'
-    ELSE 'in_progress'
-  END,
-  CASE 
-    WHEN m.title IN ('Reforestación del Parque Kennedy', 'Clases de Lectura para Niños en SJL', 'Jornada de Salud en Comas', 'Limpieza de Playas en Costa Verde', 'Restauración de Caminos Inca', 'Huertos Escolares en Chinchero', 'Campaña de Vacunación en Puno', 'Reforestación en Iquitos')
-    THEN NOW() - INTERVAL '1 day' * (RANDOM() * 30 + 1)::int
-    ELSE NULL
-  END,
-  CASE 
-    WHEN m.title IN ('Reforestación del Parque Kennedy', 'Clases de Lectura para Niños en SJL', 'Jornada de Salud en Comas', 'Limpieza de Playas en Costa Verde', 'Restauración de Caminos Inca', 'Huertos Escolares en Chinchero', 'Campaña de Vacunación en Puno', 'Reforestación en Iquitos')
-    THEN (SELECT xp FROM missions WHERE id = m.id)
-    ELSE NULL
-  END,
-  NOW() - INTERVAL '1 day' * (RANDOM() * 60 + 1)::int
-FROM user_ids u
-CROSS JOIN mission_ids m
-WHERE 
-  (u.username = 'kusqa_hero' AND m.title IN ('Reforestación del Parque Kennedy', 'Taller de Reciclaje Creativo en Barranco', 'Clases de Lectura para Niños en SJL', 'Limpieza de Playas en Costa Verde'))
-  OR (u.username = 'carlos_voluntario' AND m.title IN ('Reforestación en Iquitos', 'Reforestación del Parque Kennedy'))
-  OR (u.username = 'sofia_arte' AND m.title IN ('Murales Comunitarios en Villa María', 'Restauración del Centro Histórico', 'Taller de Tejido Ancestral'))
-  OR (u.username = 'juan_tech' AND m.title IN ('Taller de Programación para Jóvenes'))
-  OR (u.username = 'ana_salud' AND m.title IN ('Jornada de Salud en Comas', 'Campaña de Vacunación en Puno'))
-  OR (u.username = 'miguel_naturaleza' AND m.title IN ('Restauración de Caminos Inca', 'Huertos Escolares en Chinchero'))
-  OR (u.username = 'laura_educacion' AND m.title IN ('Clases de Lectura para Niños en SJL'))
-ON CONFLICT (user_id, mission_id) DO NOTHING;
+  case
+    when m.title in (
+      'Reforestación del Parque Kennedy',
+      'Clases de Lectura para Niños en SJL',
+      'Jornada de Salud en Comas',
+      'Limpieza de Playas en Magdalena',
+      'Restauración de Caminos Inca',
+      'Huertos Escolares en Chinchero',
+      'Campaña de Vacunación en Puno',
+      'Reforestación en Iquitos'
+    ) then 320
+    else null
+  end,
+  case
+    when m.title in (
+      'Reforestación del Parque Kennedy',
+      'Clases de Lectura para Niños en SJL',
+      'Jornada de Salud en Comas',
+      'Limpieza de Playas en Magdalena',
+      'Restauración de Caminos Inca',
+      'Huertos Escolares en Chinchero',
+      'Campaña de Vacunación en Puno',
+      'Reforestación en Iquitos'
+    ) then NOW() - interval '14 days'
+    else null
+  end,
+  NOW() - interval '21 days'
+from user_ids u
+cross join mission_ids m
+where
+  (u.username = 'kusqa_hero'       and m.title in ('Reforestación del Parque Kennedy', 'Taller de Reciclaje Creativo en Barranco', 'Clases de Lectura para Niños en SJL', 'Limpieza de Playas en Magdalena'))
+  or (u.username = 'carlos_voluntario' and m.title in ('Reforestación en Iquitos', 'Reforestación del Parque Kennedy'))
+  or (u.username = 'sofia_arte'     and m.title in ('Murales Comunitarios en Villa María del Triunfo', 'Restauración del Centro Histórico de Trujillo'))
+  or (u.username = 'juan_tech'      and m.title in ('Restauración de Caminos Inca'))
+  or (u.username = 'ana_salud'      and m.title in ('Jornada de Salud en Comas', 'Campaña de Vacunación en Puno'))
+  or (u.username = 'miguel_naturaleza' and m.title in ('Reforestación en Iquitos', 'Restauración de Caminos Inca'))
+on conflict (user_id, mission_id) do nothing;
 
--- 3. Crear actividad reciente (activity_log)
-INSERT INTO activity_log (user_id, action_type, target_type, target_id, metadata, created_at)
-SELECT 
-  um.user_id,
-  CASE 
-    WHEN um.status = 'completed' THEN 'mission_completed'
-    ELSE 'mission_joined'
-  END,
-  'mission',
-  um.mission_id,
-  jsonb_build_object(
-    'mission_title', (SELECT title FROM missions WHERE id = um.mission_id),
-    'xp_earned', um.xp_earned,
-    'district', (SELECT district FROM missions WHERE id = um.mission_id)
+-- ===========================================================================
+-- 3) user_notifications (small batch, idempotent on (user_id, type, target_id))
+-- ===========================================================================
+
+do $$
+declare
+  v_hero uuid;
+  v_sofia uuid;
+  v_mission_pk uuid;
+  v_mission_clases uuid;
+  v_mission_reforest uuid;
+begin
+  select id into v_hero from public.profiles where username = 'kusqa_hero' limit 1;
+  select id into v_sofia from public.profiles where username = 'sofia_arte' limit 1;
+  select id into v_mission_pk from public.missions where title = 'Reforestación del Parque Kennedy' limit 1;
+  select id into v_mission_clases from public.missions where title = 'Clases de Lectura para Niños en SJL' limit 1;
+  select id into v_mission_reforest from public.missions where title = 'Reforestación en Iquitos' limit 1;
+
+  if v_hero is not null then
+    insert into public.user_notifications (user_id, type, title, message, target_id, metadata, read_at, created_at)
+    values
+      (v_hero, 'mission_nearby', 'Nueva misión cerca de ti', 'Hay una nueva misión de medio ambiente en Miraflores.', v_mission_pk, jsonb_build_object('mission_id', v_mission_pk), null, NOW() - interval '2 hours'),
+      (v_hero, 'xp_earned', 'Ganaste 320 XP', 'Completaste la misión "Reforestación del Parque Kennedy".', v_mission_pk, jsonb_build_object('xp', 320, 'mission_id', v_mission_pk), null, NOW() - interval '14 days'),
+      (v_hero, 'mission_invitation', 'Te invitaron a una misión', 'Sofía Huamán te invitó a "Clases de Lectura para Niños en SJL".', v_mission_clases, jsonb_build_object('mission_id', v_mission_clases, 'inviter_id', v_sofia), null, NOW() - interval '5 days')
+    on conflict do nothing;
+  end if;
+end $$;
+
+-- ===========================================================================
+-- 4) Proposals (3 entries, real schema, idempotent on title)
+-- ===========================================================================
+
+with authors as (
+  select id, username from public.profiles
+  where username in ('sofia_arte', 'juan_tech', 'ana_salud')
+)
+insert into public.proposals (
+  user_id, title, description, summary, why, district, region, category,
+  team_size, images, status, latitude, longitude, location_label, proposed_date
+)
+select
+  a.id,
+  v.title,
+  v.description,
+  v.summary,
+  v.why,
+  v.district,
+  v.region,
+  v.category,
+  v.team_size,
+  v.images,
+  v.status,
+  v.latitude,
+  v.longitude,
+  v.location_label,
+  v.proposed_date
+from authors a
+join (values
+  (
+    'sofia_arte'::text,
+    'Mural del Rímac'::text,
+    'Pintaremos un mural histórico en el Rímac para recuperar la identidad cultural del distrito y embellecer una plaza olvidada.'::text,
+    'Mural que recupere la memoria del Rímac en una plaza pública.'::text,
+    'El Rímac ha perdido sus plazas como punto de encuentro. Un mural comunitario puede ser el primer gesto para recuperarlas.'::text,
+    'Rímac'::text,
+    'costa'::text,
+    'Arte & cultura'::text,
+    5,
+    '{}'::text[],
+    'pending'::text,
+    -12.03::numeric,
+    -77.00::numeric,
+    'Plaza de Armas del Rímac'::text,
+    '2025-08-10'::timestamptz
   ),
-  CASE 
-    WHEN um.status = 'completed' THEN um.completed_at
-    ELSE um.created_at
-  END
-FROM user_missions um
-ORDER BY um.created_at DESC
-LIMIT 50;
-
--- 4. Crear notificaciones para el usuario principal
-WITH main_user AS (
-  SELECT id FROM profiles WHERE username = 'kusqa_hero' LIMIT 1
-)
-INSERT INTO notifications (user_id, type, title, message, metadata, is_read, created_at)
-SELECT 
-  mu.id,
-  'mission_nearby',
-  '¡Nueva misión cerca de ti!',
-  'Hay una nueva misión de medio ambiente en Miraflores que podría interesarte.',
-  jsonb_build_object('mission_id', (SELECT id FROM missions WHERE title = 'Reforestación del Parque Kennedy' LIMIT 1)),
-  false,
-  NOW() - INTERVAL '2 hours'
-FROM main_user mu
-UNION ALL
-SELECT 
-  mu.id,
-  'xp_earned',
-  '¡Ganaste 150 XP!',
-  'Completaste la misión "Reforestación del Parque Kennedy" y ganaste 150 puntos de experiencia.',
-  jsonb_build_object('xp', 150, 'mission_id', (SELECT id FROM missions WHERE title = 'Reforestación del Parque Kennedy' LIMIT 1)),
-  false,
-  NOW() - INTERVAL '1 day'
-FROM main_user mu
-UNION ALL
-SELECT 
-  mu.id,
-  'level_up',
-  '¡Subiste al nivel 5!',
-  'Felicidades por alcanzar el nivel 5. Sigue así para desbloquear más misiones.',
-  jsonb_build_object('new_level', 5, 'xp_required', 1000),
-  false,
-  NOW() - INTERVAL '3 days'
-FROM main_user mu
-UNION ALL
-SELECT 
-  mu.id,
-  'new_follower',
-  'Sofía Huamán te siguió',
-  'Sofía Huamán, una artista de Cusco, ahora te sigue en KUSQA.',
-  jsonb_build_object('follower_id', (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1), 'follower_name', 'Sofía Huamán'),
-  false,
-  NOW() - INTERVAL '5 hours'
-FROM main_user mu;
-
--- 5. Actualizar participantes en misiones para reflejar actividad real
-UPDATE missions 
-SET participants = (
-  SELECT COUNT(*) 
-  FROM user_missions 
-  WHERE user_missions.mission_id = missions.id
-),
-spots_left = GREATEST(0, spots_left - (
-  SELECT COUNT(*) 
-  FROM user_missions 
-  WHERE user_missions.mission_id = missions.id AND user_missions.status = 'in_progress'
-))
-WHERE id IN (SELECT DISTINCT mission_id FROM user_missions);
-
--- 6. Crear propuestas adicionales para simular actividad comunitaria
-WITH user_ids AS (
-  SELECT id FROM profiles WHERE username IN ('sofia_arte', 'juan_tech', 'ana_salud')
-)
-INSERT INTO proposals (user_id, title, description, district, region, category, xp, difficulty, date, participants, spots_left, distance_km, impact, coords, emoji, status, created_at)
-SELECT
-  u.id,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN 'Mural del Rímac'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN 'Hackathon Comunitario'
-    ELSE 'Clínica Móvil en Villa El Salvador'
-  END,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN 'Pintaremos un mural histórico en el Rímac para recuperar la identidad cultural del distrito.'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN 'Hackathon de 48 horas para desarrollar soluciones tecnológicas para problemas locales.'
-    ELSE 'Llevaremos atención médica básica a zonas vulnerables de Villa El Salvador.'
-  END,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN 'Rímac'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN 'San Borja'
-    ELSE 'Villa El Salvador'
-  END,
-  'costa',
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN 'Arte & cultura'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN 'Tecnología'
-    ELSE 'Salud'
-  END,
-  120,
-  'Andina',
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN '2025-08-10'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN '2025-08-15'
-    ELSE '2025-08-20'
-  END,
-  25,
-  15,
-  0,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN 'Recuperación cultural'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN 'Innovación local'
-    ELSE 'Acceso a salud'
-  END,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN '{"lat": -12.03, "lng": -77.00}'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN '{"lat": -12.10, "lng": -76.98}'
-    ELSE '{"lat": -12.20, "lng": -76.95}'
-  END,
-  CASE u.id
-    WHEN (SELECT id FROM profiles WHERE username = 'sofia_arte' LIMIT 1) THEN '🎨'
-    WHEN (SELECT id FROM profiles WHERE username = 'juan_tech' LIMIT 1) THEN '💻'
-    ELSE '🏥'
-  END,
-  'proposed',
-  NOW()
-FROM user_ids u;
+  (
+    'juan_tech'::text,
+    'Hackathon Comunitario en San Borja'::text,
+    'Hackathon de 48 horas para desarrollar soluciones tecnológicas a problemas locales del distrito, abierto a jóvenes mayores de 15 años.'::text,
+    '48 horas para construir soluciones digitales a problemas del distrito.'::text,
+    'Los jóvenes de San Borja tienen acceso limitado a espacios de creación tecnológica. Un hackathon abierto cambia eso.'::text,
+    'San Borja'::text,
+    'costa'::text,
+    'Tecnología'::text,
+    6,
+    '{}'::text[],
+    'pending'::text,
+    -12.10::numeric,
+    -76.98::numeric,
+    'Centro Cultural de San Borja'::text,
+    '2025-08-15'::timestamptz
+  ),
+  (
+    'ana_salud'::text,
+    'Clínica Móvil en Villa El Salvador'::text,
+    'Llevaremos atención médica básica a una zona de Villa El Salvador donde el centro de salud más cercano queda a más de 40 minutos a pie.'::text,
+    'Atención médica básica donde el centro de salud queda lejos.'::text,
+    'Las familias de los asentamientos altos de VES postergan chequeos básicos por distancia. Una clínica móvil mensual cambia eso.'::text,
+    'Villa El Salvador'::text,
+    'costa'::text,
+    'Salud'::text,
+    4,
+    '{}'::text[],
+    'pending'::text,
+    -12.20::numeric,
+    -76.95::numeric,
+    'AA.HH. Las Lomas de VES'::text,
+    '2025-08-20'::timestamptz
+  )
+) as v(username, title, description, summary, why, district, region, category, team_size, images, status, latitude, longitude, location_label, proposed_date)
+  on a.username = v.username
+where not exists (
+  select 1 from public.proposals p where p.title = v.title
+);

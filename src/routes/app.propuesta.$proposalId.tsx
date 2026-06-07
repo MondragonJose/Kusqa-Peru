@@ -3,11 +3,13 @@ import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useProposal } from "@/features/proposals";
 import { ProposalHero } from "@/features/proposals/components/ProposalHero";
-import { ProposalCivicIntent } from "@/features/proposals/components/ProposalCivicIntent";
-import { ProposalLocationPreview } from "@/features/proposals/components/ProposalLocationPreview";
-import { ProposalSupportersRow } from "@/features/proposals/components/ProposalSupportersRow";
 import { ProposalStickyCTA } from "@/features/proposals/components/ProposalStickyCTA";
 import { ProposalImagesCarousel } from "@/features/proposals/components/ProposalImagesCarousel";
+import { ProposalTabs } from "@/features/proposals/components/ProposalTabs";
+import {
+  ConversionCta,
+  ProposalLifecycleTimeline,
+} from "@/features/proposals/components/ConversionCta";
 
 export const Route = createFileRoute("/app/propuesta/$proposalId")({
   component: ProposalDetail,
@@ -68,9 +70,11 @@ function ProposalDetail() {
       <article className="max-w-3xl mx-auto bg-background">
         <ProposalImagesCarousel proposal={proposal} />
         <ProposalHero proposal={proposal} />
-        <ProposalCivicIntent proposal={proposal} />
-        <ProposalLocationPreview proposal={proposal} />
-        <ProposalSupportersRow proposalId={proposal.id} />
+        <div className="px-4 sm:px-6 pb-6 space-y-4">
+          <ProposalTabs proposal={proposal} />
+          <ConversionCta proposalId={proposal.id} />
+          <ProposalLifecycleTimeline proposalId={proposal.id} />
+        </div>
       </article>
 
       <ProposalStickyCTA proposal={proposal} />

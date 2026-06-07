@@ -22,11 +22,15 @@ import {
   type ProposalSupporterPreview,
   type ProposalRegion,
   type ProposalStatus,
+  type ProposalSupportStats,
+  type ProposalCoalition,
+  type ProposalCollaborator,
   PROPOSAL_CATEGORIES,
   PROPOSAL_REGIONS,
   PROPOSAL_STATUSES,
   DB_DEFAULTS,
 } from "./proposalContract";
+import { proposalCollaboratorRepository } from "./proposalCollaboratorRepository";
 
 // Re-export contract types so consumers only need one import
 export type {
@@ -35,6 +39,9 @@ export type {
   UpdateProposalDTO,
   ProposalResult,
   ProposalSupporterPreview,
+  ProposalSupportStats,
+  ProposalCoalition,
+  ProposalCollaborator,
 };
 
 // ─── Zod schemas (validate snake_case DB payloads ONLY) ────────────────────
@@ -122,6 +129,7 @@ function toDomain(db: DbProposalRow): Proposal {
     latitude: db.latitude != null ? Number(db.latitude) : null,
     longitude: db.longitude != null ? Number(db.longitude) : null,
     proposedDate: db.proposed_date,
+    districtId: db.district_id,
     summary: db.summary,
     why: db.why,
     locationLabel: db.location_label,
@@ -453,5 +461,104 @@ export const proposalRepository = {
       console.error("[KUSQA PROPOSAL TRACE] Supporters preview unexpected error:", e);
       return [];
     }
+  },
+
+  /**
+   * Phase 2A: aggregate stats from the `proposal_support_stats` view.
+   * Single round-trip; view does the join.
+   *
+   * Returns zeroed stats on error (never throws) — these are non-critical
+   * counts and the UI must keep working if the view is missing.
+   */
+  async getSupportStats(proposalId: string): Promise<ProposalSupportStats> {
+    try {
+      const { data, error } = await supabase
+        .from("proposal_support_stats")
+        .select("proposal_id, support_count, collaborator_count, accepted_collaborator_count")
+        .eq("proposal_id", proposalId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[KUSQA PROPOSAL TRACE] getSupportStats error:", error);
+        return { proposalId, supportCount: 0, collaboratorCount: 0, acceptedCollaboratorCount: 0 };
+      }
+      if (!data) {
+        return { proposalId, supportCount: 0, collaboratorCount: 0, acceptedCollaboratorCount: 0 };
+      }
+      return {
+        proposalId: String(data.proposal_id),
+        supportCount: Number(data.support_count ?? 0),
+        collaboratorCount: Number(data.collaborator_count ?? 0),
+        acceptedCollaboratorCount: Number(data.accepted_collaborator_count ?? 0),
+      };
+    } catch (e) {
+      console.error("[KUSQA PROPOSAL TRACE] getSupportStats unexpected error:", e);
+      return { proposalId, supportCount: 0, collaboratorCount: 0, acceptedCollaboratorCount: 0 };
+    }
+  },
+
+  /**
+   * Phase 2A + Phase 3A: composite view for the proposal detail "Quiénes" tab.
+   *
+   * Phase 3A: uses the get_proposal_author_preview SECURITY DEFINER RPC
+   * to surface real author info (replaces the previous "Quien propuso"
+   * placeholder). Falls back to a minimal record if the RPC is missing.
+   *
+   * Strategy to avoid N+1:
+   *   1) fetch proposal row (cached by useProposal in the route)
+   *   2) fetch stats via view (single query)
+   *   3) fetch accepted collaborators (single query)
+   *   4) fetch author info via SECURITY DEFINER RPC (single query)
+   */
+  async getProposalCoalition(proposalId: string): Promise<ProposalCoalition> {
+    const [stats, collaborators, proposalRow] = await Promise.all([
+      this.getSupportStats(proposalId),
+      proposalCollaboratorRepository.listAccepted(proposalId),
+      this.getProposalById(proposalId),
+    ]);
+
+    const fallbackUserId = proposalRow?.userId ?? "";
+    let author: {
+      userId: string;
+      username: string;
+      firstName: string;
+      avatarUrl: string | null;
+    };
+
+    try {
+      const { data, error } = await supabase.rpc("get_proposal_author_preview", {
+        p_proposal_id: proposalId,
+      });
+      if (error || !data) {
+        author = {
+          userId: fallbackUserId,
+          username: "kusqa",
+          firstName: "Quien propuso",
+          avatarUrl: null,
+        };
+      } else {
+        const row = Array.isArray(data) ? data[0] : data;
+        author = {
+          userId: String((row as { user_id: string }).user_id),
+          username: String((row as { username: string }).username ?? "kusqa"),
+          firstName: String((row as { first_name: string }).first_name ?? "Quien propuso"),
+          avatarUrl: (row as { avatar_url: string | null }).avatar_url ?? null,
+        };
+      }
+    } catch {
+      author = {
+        userId: fallbackUserId,
+        username: "kusqa",
+        firstName: "Quien propuso",
+        avatarUrl: null,
+      };
+    }
+
+    return {
+      proposalId,
+      stats,
+      author,
+      collaborators: collaborators.filter((c) => c.userId !== author.userId),
+    };
   },
 };

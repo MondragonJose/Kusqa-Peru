@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { trackOperationalMetric } from "@/lib/telemetry";
 import {
+  mapCivicEventPayloadToProposalSupport,
   mapRealtimePayloadToDomainEvent,
   planRealtimeReconciliation,
   type MissionDomainEvent,
@@ -45,6 +46,7 @@ function flushPendingEvents(queryClient: QueryClient, userId: string): void {
     const scope = {
       userId: event.actorId,
       missionIds: event.missionId ? [event.missionId] : undefined,
+      proposalIds: event.proposalId ? [event.proposalId] : undefined,
     };
 
     if (hasLocalWriteInFlight(queryClient, scope)) {
@@ -96,26 +98,25 @@ export function subscribeMissionRealtime(queryClient: QueryClient, userId: strin
 
   const channel = supabase
     .channel(`kusqa-sync:${userId}`)
-    // user_missions table may not exist — skip subscription to prevent 404 errors
-    // .on(
-    //   "postgres_changes",
-    //   { event: "*", schema: "public", table: "user_missions", filter: `user_id=eq.${userId}` },
-    //   (payload) => {
-    //     if (generation !== state.generation) return;
-    //     const event = mapRealtimePayloadToDomainEvent("user_missions", payload, userId);
-    //     if (event) enqueueRemoteEvent(queryClient, userId, event);
-    //   }
-    // )
-    // user_progress table may not exist — skip subscription to prevent 406 errors
-    // .on(
-    //   "postgres_changes",
-    //   { event: "*", schema: "public", table: "user_progress", filter: `user_id=eq.${userId}` },
-    //   (payload) => {
-    //     if (generation !== state.generation) return;
-    //     const event = mapRealtimePayloadToDomainEvent("user_progress", payload, userId);
-    //     if (event) enqueueRemoteEvent(queryClient, userId, event);
-    //   }
-    // )
+    // Phase 4B: civic_events fan-out for proposal support. The
+    // server-side trigger trg_fanout_proposal_support appends a
+    // 'proposal.supported' row on every proposal_supports INSERT.
+    // We subscribe to the narrow kind + target_type filter so we
+    // don't deliver the entire event stream to every client.
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "civic_events",
+        filter: "target_type=eq.proposal",
+      },
+      (payload) => {
+        if (generation !== state.generation) return;
+        const event = mapCivicEventPayloadToProposalSupport(payload, userId);
+        if (event) enqueueRemoteEvent(queryClient, userId, event);
+      },
+    )
     .on(
       "postgres_changes",
       {

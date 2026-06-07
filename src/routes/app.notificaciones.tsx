@@ -53,9 +53,23 @@ function NotificationsPage() {
 
   const notifications: CivicNotification[] = dbRows.map(notificationRowToCivic);
 
+  const handleMarkOne = (id: string) => {
+    markReadMutation.mutate(id);
+  };
+
+  const handleMarkAll = () => {
+    const unreadIds = dbRows.filter((r) => r.readAt === null).map((r) => r.id);
+    unreadIds.forEach((id) => markReadMutation.mutate(id));
+  };
+
   return (
     <div className="max-w-3xl mx-auto pb-12">
-      <CivicFeed notifications={notifications} userDistrict={user?.district} />
+      <CivicFeed
+        notifications={notifications}
+        userDistrict={user?.district}
+        onMarkRead={handleMarkOne}
+        onMarkAllRead={handleMarkAll}
+      />
     </div>
   );
 }

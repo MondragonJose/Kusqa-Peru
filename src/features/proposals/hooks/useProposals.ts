@@ -20,9 +20,30 @@ import {
   proposalDetailQueryOptions,
   proposalSupportersPreviewQueryOptions,
   userProposalsQueryOptions,
+  proposalCoalitionStatsQueryOptions,
+  proposalCoalitionQueryOptions,
+  proposalCollaboratorsQueryOptions,
+  proposalPendingInvitationsQueryOptions,
+  proposalCommentsQueryOptions,
 } from "../queryOptions";
-import { proposalKeys } from "@/lib/queryKeys";
-import type { ProposalRegion, ProposalStatus } from "@/services/proposalContract";
+import {
+  proposalCoalitionKeys,
+  proposalCollaboratorKeys,
+  proposalCommentKeys,
+  proposalKeys,
+} from "@/lib/queryKeys";
+import type {
+  CreateCollaboratorInvitationDTO,
+  CreateCommentDTO,
+  EditCommentDTO,
+  ProposalCollaborator,
+  ProposalComment,
+  ProposalRegion,
+  ProposalStatus,
+  RespondToInvitationDTO,
+} from "@/services/proposalContract";
+import { proposalCollaboratorRepository } from "@/services/proposalCollaboratorRepository";
+import { proposalCommentRepository } from "@/services/proposalCommentRepository";
 import { userRepository } from "@/services/userRepository";
 import { betaEvents } from "@/lib/telemetry/betaLogger";
 
@@ -129,6 +150,161 @@ export function useDeleteProposal() {
         queryClient.invalidateQueries({ queryKey: proposalKeys.all() });
         queryClient.invalidateQueries({ queryKey: proposalKeys.detail(id) });
       }
+    },
+  });
+}
+
+// ─── Phase 2A: coalition hooks ────────────────────────────────────────────
+
+export function useProposalCoalitionStats(proposalId: string) {
+  return useQuery({
+    ...proposalCoalitionStatsQueryOptions(proposalId),
+  });
+}
+
+export function useProposalCoalition(proposalId: string) {
+  return useQuery({
+    ...proposalCoalitionQueryOptions(proposalId),
+  });
+}
+
+export function useProposalCollaborators(proposalId: string) {
+  return useQuery({
+    ...proposalCollaboratorsQueryOptions(proposalId),
+  });
+}
+
+export function usePendingInvitations() {
+  return useQuery({
+    ...proposalPendingInvitationsQueryOptions(),
+  });
+}
+
+export function useProposalComments(
+  proposalId: string,
+  options: { page?: number; pageSize?: number } = {},
+) {
+  return useQuery({
+    ...proposalCommentsQueryOptions(proposalId, options),
+  });
+}
+
+export function useInviteCollaborator() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      dto: CreateCollaboratorInvitationDTO,
+    ): Promise<ProposalResult<ProposalCollaborator>> => {
+      const invitedBy = await userRepository.getAuthenticatedUserId();
+      if (!invitedBy) {
+        return { status: "error", error: "Necesitas iniciar sesión para invitar." };
+      }
+      return proposalCollaboratorRepository.invite({ ...dto, invitedBy });
+    },
+    onSuccess: (result, dto) => {
+      if (result.status === "success") {
+        queryClient.invalidateQueries({
+          queryKey: proposalCollaboratorKeys.accepted(dto.proposalId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCollaboratorKeys.pendingForUser(result.data.userId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCoalitionKeys.byProposal(dto.proposalId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCoalitionKeys.stats(dto.proposalId),
+        });
+      }
+    },
+  });
+}
+
+export function useRespondToInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      dto: RespondToInvitationDTO,
+    ): Promise<ProposalResult<ProposalCollaborator>> => {
+      const currentUserId = await userRepository.getAuthenticatedUserId();
+      if (!currentUserId) {
+        return { status: "error", error: "Necesitas iniciar sesión." };
+      }
+      return proposalCollaboratorRepository.respond({ ...dto, currentUserId });
+    },
+    onSuccess: (result) => {
+      if (result.status === "success") {
+        const proposalId = result.data.proposalId;
+        queryClient.invalidateQueries({
+          queryKey: proposalCollaboratorKeys.accepted(proposalId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCollaboratorKeys.pendingForUser("current"),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCoalitionKeys.byProposal(proposalId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCoalitionKeys.stats(proposalId),
+        });
+      }
+    },
+  });
+}
+
+export function useCreateComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (dto: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> => {
+      const authorId = await userRepository.getAuthenticatedUserId();
+      if (!authorId) {
+        return { status: "error", error: "Necesitas iniciar sesión para comentar." };
+      }
+      return proposalCommentRepository.create({ ...dto, authorId });
+    },
+    onSuccess: (result) => {
+      if (result.status === "success") {
+        queryClient.invalidateQueries({
+          queryKey: proposalCommentKeys.root,
+        });
+      }
+    },
+  });
+}
+
+export function useEditComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (dto: EditCommentDTO): Promise<ProposalResult<ProposalComment>> => {
+      const currentUserId = await userRepository.getAuthenticatedUserId();
+      if (!currentUserId) {
+        return { status: "error", error: "Necesitas iniciar sesión para editar." };
+      }
+      return proposalCommentRepository.edit({ ...dto, currentUserId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proposalCommentKeys.root });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: string): Promise<ProposalResult<true>> => {
+      const currentUserId = await userRepository.getAuthenticatedUserId();
+      if (!currentUserId) {
+        return { status: "error", error: "Necesitas iniciar sesión para eliminar." };
+      }
+      return proposalCommentRepository.softDelete(commentId, currentUserId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proposalCommentKeys.root });
     },
   });
 }

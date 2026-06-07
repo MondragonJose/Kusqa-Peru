@@ -5,7 +5,7 @@
 import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 
-export type ModerationTargetType = "mission" | "evidence" | "user" | "activity";
+export type ModerationTargetType = "mission" | "evidence" | "user" | "activity" | "proposal";
 
 export type ModerationReportRow = {
   id: string;
@@ -20,7 +20,7 @@ export type ModerationReportRow = {
 
 const REPORT_INPUT_SCHEMA = z.object({
   reporterId: z.string().uuid(),
-  targetType: z.enum(["mission", "evidence", "user", "activity"]),
+  targetType: z.enum(["mission", "evidence", "user", "activity", "proposal"]),
   targetId: z.string().uuid(),
   reasonCode: z.string().min(2).max(64),
   description: z.string().max(2000).optional(),
@@ -29,7 +29,7 @@ const REPORT_INPUT_SCHEMA = z.object({
 const DB_REPORT_SCHEMA = z.object({
   id: z.string().uuid(),
   reporter_id: z.string().uuid(),
-  target_type: z.enum(["mission", "evidence", "user", "activity"]),
+  target_type: z.enum(["mission", "evidence", "user", "activity", "proposal"]),
   target_id: z.string().uuid(),
   reason_code: z.string(),
   description: z.string().nullable(),

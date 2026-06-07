@@ -9,6 +9,7 @@ import { useProgression } from "@/features/progression";
 // P0 FIX: Eliminado CommunityPulse - componente de fake community eliminado
 import { useMissions } from "@/hooks/useMissions";
 import { useAllProposals } from "@/features/proposals";
+import { districtSlugify } from "@/utils/districtSlug";
 import { Onboarding } from "@/components/Onboarding";
 import { TerritorialFootprint } from "@/components/TerritorialFootprint";
 import { KusqaButton } from "@/components/ui/kusqa-button";
@@ -298,24 +299,21 @@ function Dashboard() {
         </section>
 
         {/* Territorios en Movimiento — Horizontally scrollable expedition cards */}
-        <section className="space-y-4 relative">
-          {/* activeMissionsCount is derived from real missions */}
-          {/* Small connection dot */}
-          <div className="absolute -left-4 top-8 w-2 h-2 rounded-full bg-accent/50 hidden lg:block" />
-          <div className="flex items-end justify-between px-1">
+        <section className="space-y-3 relative">
+          <div className="flex items-baseline justify-between gap-3 px-1">
             <div>
-              <h2 className="font-display font-black text-xl sm:text-2xl tracking-tight text-foreground flex items-center gap-2">
-                <CompassIcon className="h-5 w-5 text-accent" /> Misiones por región
+              <h2 className="font-display font-bold text-lg sm:text-xl tracking-tight text-foreground inline-flex items-center gap-2">
+                <CompassIcon className="h-4 w-4 text-accent" /> Misiones por región
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                Explora expediciones activas en cada territorio del Perú.
+              <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                Rutas activas en cada territorio del Perú.
               </p>
             </div>
             <Link
               to="/app/mapa"
-              className="text-xs uppercase tracking-wider text-primary font-bold hover:underline inline-flex items-center gap-1"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 shrink-0"
             >
-              Explorar territorio <ArrowRight className="h-3.5 w-3.5" />
+              Ver mapa <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
 
@@ -336,112 +334,74 @@ function Dashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-4 lg:overflow-x-visible lg:snap-none lg:pb-0">
+            <div className="flex gap-3 sm:gap-3.5 overflow-x-auto pb-3 pt-1 px-1 no-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-3.5 lg:overflow-x-visible lg:snap-none lg:pb-0">
               {territories.map((t) => {
                 const meta = REGION_META[t.region];
                 return (
                   <motion.div
                     key={t.id}
-                    whileHover={{ y: -2 }}
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileHover={{ y: -1 }}
+                    initial={{ opacity: 0, scale: 0.97 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                    className="w-[260px] sm:w-[280px] md:w-[320px] lg:w-auto shrink-0 snap-start bg-card border border-border/80 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 flex flex-col justify-between relative"
+                    transition={{ duration: 0.35 }}
+                    className="w-[240px] sm:w-[260px] md:w-[300px] lg:w-auto shrink-0 snap-start bg-card border border-border/60 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between relative"
                   >
-                    {/* Subtle pulse for active territories */}
-                    {t.activeMissionsCount > 0 && (
-                      <motion.div
-                        className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400"
-                        animate={{
-                          scale: [1, 1.5, 1],
-                          opacity: [1, 0.5, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      />
-                    )}
-                    {/* Visual Header */}
-                    <div className={`h-24 ${meta.gradient} text-white p-4 relative`}>
-                      <div className="absolute inset-0 bg-mesh opacity-20" />
-                      <div className="relative z-10 flex items-center justify-between">
-                        <span className="text-3xl filter drop-shadow-sm select-none">
+                    {/* Visual Header — single solid band, no mesh overlay */}
+                    <div
+                      className={`h-20 ${meta.gradient} text-white px-4 flex flex-col justify-between py-3 relative`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl select-none" aria-hidden>
                           {t.imageEmoji}
                         </span>
-                        <span className="text-[8px] uppercase tracking-widest font-black bg-black/35 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10 text-white">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-white/90">
                           {meta.name}
                         </span>
                       </div>
-                      <div className="absolute bottom-3 left-4 right-4 text-white">
-                        <h3 className="font-display font-bold text-sm tracking-tight leading-none truncate">
-                          {t.name}
-                        </h3>
-                      </div>
+                      <h3 className="font-display font-semibold text-sm tracking-tight leading-none truncate">
+                        {t.name}
+                      </h3>
                     </div>
 
-                    {/* Body Details */}
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    {/* Body Details — calm, scannable */}
+                    <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
                       {t.preview ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xl shrink-0">{t.preview.emoji}</span>
-                          <p className="text-xs text-foreground/80 font-semibold leading-snug line-clamp-2">
+                          <span className="text-lg shrink-0">{t.preview.emoji}</span>
+                          <p className="text-xs text-foreground/80 leading-snug line-clamp-2">
                             {t.preview.title}
                           </p>
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground italic leading-relaxed">
+                        <p className="text-xs text-muted-foreground italic leading-relaxed line-clamp-2">
                           "{t.quote}"
                         </p>
                       )}
 
-                      <div className="space-y-2 pt-2 border-t border-border/40">
-                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                          <span className="font-semibold">Causa principal</span>
-                          <span className="font-extrabold text-primary">{t.leadCategory}</span>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[9px] font-bold text-muted-foreground">
-                            <span>Actividad territorial</span>
-                            <span
-                              className={
-                                t.activeMissionsCount > 0
-                                  ? "text-emerald-500"
-                                  : "text-muted-foreground/50"
-                              }
-                            >
-                              {t.activeMissionsCount > 0
-                                ? `${t.activeMissionsCount} misión${t.activeMissionsCount !== 1 ? "es" : ""}`
-                                : "Próximamente"}
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                            <motion.div
-                              className="h-full bg-gradient-sunrise"
-                              initial={{ width: 0 }}
-                              animate={{
-                                width:
-                                  t.activeMissionsCount > 0
-                                    ? `${Math.min(100, t.activeMissionsCount * 20)}%`
-                                    : "3%",
-                              }}
-                              transition={{ duration: 1, ease: "easeOut" }}
-                            />
-                          </div>
-                        </div>
+                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-border/30">
+                        <span className="text-muted-foreground">{t.leadCategory}</span>
+                        <span
+                          className={
+                            t.activeMissionsCount > 0
+                              ? "font-semibold text-foreground/80 tabular-nums"
+                              : "font-medium text-muted-foreground/70"
+                          }
+                        >
+                          {t.activeMissionsCount > 0
+                            ? `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
+                            : "Próximamente"}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Footer CTA */}
-                    <div className="px-4 pb-4 pt-1">
-                      <Link
-                        to={t.link}
-                        className="w-full inline-flex justify-center items-center py-2.5 rounded-xl bg-gradient-sunrise text-white hover:opacity-90 transition-all text-[10px] font-black uppercase tracking-wider shadow-sm"
-                      >
-                        Explorar ruta
-                      </Link>
-                    </div>
+                    {/* Footer CTA — quiet text link, not a heavy button */}
+                    <Link
+                      to={t.link}
+                      className="px-3.5 pb-3.5 pt-1 inline-flex items-center gap-1 text-xs text-accent font-semibold hover:gap-1.5 transition-all"
+                    >
+                      Explorar territorio
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </motion.div>
                 );
               })}
@@ -489,7 +449,14 @@ function Dashboard() {
                       </div>
                       <div className="text-[9px] lg:text-[10px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
                         <MapPin className="h-2.5 w-2.5 opacity-60" />{" "}
-                        <span className="truncate">{item.district}</span>
+                        <Link
+                          to="/app/distrito/$slug"
+                          params={{ slug: districtSlugify(item.district) }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="truncate hover:underline hover:text-accent transition-colors"
+                        >
+                          {item.district}
+                        </Link>
                         <span className="opacity-45">•</span>
                         <span className="truncate">{formatRelativeDate(item.date)}</span>
                         {isMissionEntity && (

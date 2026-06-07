@@ -9,6 +9,7 @@ export const MISSION_REALTIME_CHANNELS = {
   userProgress: (userId: string) => `kusqa:user-progress:${userId}`,
   missionCatalog: "kusqa:missions:catalog",
   notifications: (userId: string) => `kusqa:notifications:${userId}`,
+  proposalSupport: (proposalId: string) => `kusqa:proposal-support:${proposalId}`,
 } as const;
 
 export type MissionDomainEventType =
@@ -17,12 +18,17 @@ export type MissionDomainEventType =
   | "progress.updated"
   | "profile.xp_updated"
   | "notification.received"
-  | "mission.catalog_updated";
+  | "mission.catalog_updated"
+  | "proposal.support_changed";
 
 export type MissionDomainEvent = {
   type: MissionDomainEventType;
   actorId: string;
   missionId?: string;
+  /** Phase 4B: when the event is a proposal support change, this is
+   *  the proposal id. The bridge's reconciliation invalidates the
+   *  proposal detail + coalition keys. */
+  proposalId?: string;
   occurredAt: string;
   xpGranted?: number;
   idempotent?: boolean;
@@ -54,6 +60,13 @@ export function planRealtimeReconciliation(
   }
 
   if (event.type === "notification.received") {
+    return { action: "invalidate", scope: { userId: event.actorId } };
+  }
+
+  if (event.type === "proposal.support_changed") {
+    // The bridge invalidates proposal detail + coalition stats.
+    // missionIds is unused for proposal events; proposalId is carried
+    // on the event for the bridge to compose the right query key.
     return { action: "invalidate", scope: { userId: event.actorId } };
   }
 
@@ -121,4 +134,34 @@ export function mapRealtimePayloadToDomainEvent(
   }
 
   return null;
+}
+
+/**
+ * Phase 4B: map a `civic_events` payload to a `proposal.support_changed`
+ * domain event. Only `kind = 'proposal.supported'` and
+ * `target_type = 'proposal'` are mapped; everything else returns null
+ * so the bridge does not dispatch spurious invalidations.
+ *
+ * Returned events flow into the same `planRealtimeReconciliation`
+ * pipeline as mission events, with `proposalId` carrying the target.
+ */
+export function mapCivicEventPayloadToProposalSupport(
+  payload: RealtimePayload,
+  fallbackActorId: string,
+): MissionDomainEvent | null {
+  const row = payload.new;
+  if (!row) return null;
+  if (row.target_type !== "proposal") return null;
+  if (row.kind !== "proposal.supported") return null;
+  if (!row.target_id) return null;
+
+  return {
+    type: "proposal.support_changed",
+    actorId: typeof row.actor_id === "string" && row.actor_id.length > 0
+      ? String(row.actor_id)
+      : fallbackActorId,
+    proposalId: String(row.target_id),
+    occurredAt: typeof row.occurred_at === "string" ? row.occurred_at : new Date().toISOString(),
+    sourceTable: "civic_events",
+  };
 }

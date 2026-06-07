@@ -2,19 +2,20 @@
  * Entity Adapter — Single place to convert between domain types.
  *
  * Responsibilities:
- *   - proposalToMission(): Proposal → Mission (original shape)
  *   - proposalToEntity(): Proposal → CivicEntity with entityType
+ *   - missionToEntity(): Mission → CivicEntity with entityType
  *   - Consistent emoji mapping, district derivation, etc.
  *
- * Benefits:
- *   - No duplication of proposalToMission logic across app.index.tsx and app.mapa.tsx
- *   - Easy to update mapping logic in one place
- *   - Type-safe with proper discriminated union
+ * Phase 4C cleanup:
+ *   - Removed proposalToMission (no external callers; use proposalToEntity
+ *     and read the inner Mission if needed via _proposal).
+ *   - Removed getCategoryEmoji (no callers).
+ *   - Added districtId passthrough so the entity carries the FK.
  */
 
 import type { Proposal } from "@/services/proposalContract";
 import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
-import type { CivicEntity, ProposalAsEntity } from "@/types/entity";
+import type { CivicEntity } from "@/types/entity";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
 
 /**
@@ -31,10 +32,12 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 /**
- * Convert a Proposal to Mission shape (original adapter logic).
- * Returns null if proposal lacks coordinates.
+ * Internal: lift a Proposal into a synthetic Mission-shape.
+ * Not exported — proposalToEntity is the only public entry point.
+ * Returns null if the proposal lacks coordinates (which the
+ * public-facing renderer needs for the map).
  */
-export function proposalToMission(proposal: Proposal): Mission | null {
+function adaptProposalToMission(proposal: Proposal): Mission | null {
   if (proposal.latitude == null || proposal.longitude == null) {
     return null;
   }
@@ -44,6 +47,7 @@ export function proposalToMission(proposal: Proposal): Mission | null {
     title: proposal.title,
     description: proposal.description ?? proposal.title,
     district: proposal.district,
+    districtId: proposal.districtId ?? null,
     region: proposal.region,
     category: proposal.category as MissionCategory,
     xp: 0,
@@ -64,21 +68,19 @@ export function proposalToMission(proposal: Proposal): Mission | null {
 
 /**
  * Convert Proposal to CivicEntity with entityType discriminator.
- * Returns null if proposal lacks coordinates.
+ * Returns null if the proposal lacks coordinates.
  */
 export function proposalToEntity(proposal: Proposal): CivicEntity | null {
-  const mission = proposalToMission(proposal);
+  const mission = adaptProposalToMission(proposal);
   if (!mission) {
     return null;
   }
-
   const entity: CivicEntity = {
     ...mission,
     entityType: "proposal",
     proposalId: proposal.id,
     _proposal: proposal,
   };
-
   return entity;
 }
 
@@ -91,11 +93,4 @@ export function missionToEntity(mission: Mission): CivicEntity {
     entityType: "mission",
   };
   return entity;
-}
-
-/**
- * Get emoji for category. Works for both missions and proposals.
- */
-export function getCategoryEmoji(category: string): string {
-  return CATEGORY_EMOJI[category] ?? "📌";
 }
