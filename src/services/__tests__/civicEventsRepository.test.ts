@@ -10,13 +10,12 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { createSupabaseMock } from "../../test/createSupabaseMock";
+import type { CivicEventKind } from "../civicEventsRepository";
 
 const mock = createSupabaseMock();
 vi.doMock("@/lib/supabase", () => ({ supabase: mock.client }));
 
-const { civicEventsRepository, CIVIC_EVENT_COPY } = await import(
-  "../civicEventsRepository"
-);
+const { civicEventsRepository, CIVIC_EVENT_COPY } = await import("../civicEventsRepository");
 
 const validEventRow = {
   id: "44444444-4444-4444-4444-444444444444",
@@ -91,12 +90,12 @@ describe("civicEventsRepository", () => {
   });
 
   describe("CIVIC_EVENT_COPY", () => {
-    it("has a copy entry for every key, with non-empty title or body", () => {
-      const keys = Object.keys(CIVIC_EVENT_COPY);
+    it("has a copy entry for every key, with non-empty title", () => {
+      const keys = Object.keys(CIVIC_EVENT_COPY) as CivicEventKind[];
       expect(keys.length).toBeGreaterThan(0);
       for (const kind of keys) {
-        const c = CIVIC_EVENT_COPY[kind] as { title?: string; body?: string };
-        expect(c.title ?? c.body).toBeTruthy();
+        const c = CIVIC_EVENT_COPY[kind];
+        expect(c.title).toBeTruthy();
       }
     });
   });

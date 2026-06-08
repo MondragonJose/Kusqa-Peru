@@ -179,11 +179,11 @@ export const proposalCollaboratorRepository = {
     }
     return (data ?? [])
       .map(flattenRow)
-      .map((row) => {
+      .map((row: unknown) => {
         const parsed = DB_COLLABORATOR_SCHEMA.safeParse(row);
         return parsed.success ? toDomain(parsed.data) : null;
       })
-      .filter((c): c is ProposalCollaborator => c !== null);
+      .filter((c: ProposalCollaborator | null): c is ProposalCollaborator => c !== null);
   },
 
   /**
@@ -208,11 +208,11 @@ export const proposalCollaboratorRepository = {
     }
     return (data ?? [])
       .map(flattenRow)
-      .map((row) => {
+      .map((row: unknown) => {
         const parsed = DB_COLLABORATOR_SCHEMA.safeParse(row);
         return parsed.success ? toDomain(parsed.data) : null;
       })
-      .filter((c): c is ProposalCollaborator => c !== null);
+      .filter((c: ProposalCollaborator | null): c is ProposalCollaborator => c !== null);
   },
 
   /**

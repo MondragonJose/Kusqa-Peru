@@ -25,17 +25,16 @@ vi.mock("@/features/auth", () => ({
 
 vi.doMock("@/lib/supabase", () => ({ supabase: mock.client }));
 
-const PublicProfilePage = (
-  await import("../app.perfil.$userId")
-).Route.options.component as React.ComponentType;
+const PublicProfilePage = (await import("../app.perfil.$userId")).Route.options
+  .component as React.ComponentType;
 
 describe("app.perfil.$userId", () => {
   it("shows a loading state initially", async () => {
     // No mock response configured → usePublicProfile is in loading.
-    renderWithProviders(
-      <PublicProfilePage />,
-      { testPath: "/app/perfil/$userId", initialEntries: ["/app/perfil/test-user-id"] },
-    );
+    renderWithProviders(<PublicProfilePage />, {
+      testPath: "/app/perfil/$userId",
+      initialEntries: ["/app/perfil/test-user-id"],
+    });
     // The loading view renders a Loader2 with class "animate-spin"
     // inside a centered flex container.
     await waitFor(() => {
@@ -47,15 +46,13 @@ describe("app.perfil.$userId", () => {
   it("shows a not-found state when the RPC returns no rows", async () => {
     mock.queue.rpcResponse("get_public_profile", { data: [], error: null });
 
-    renderWithProviders(
-      <PublicProfilePage />,
-      { testPath: "/app/perfil/$userId", initialEntries: ["/app/perfil/test-user-id"] },
-    );
+    renderWithProviders(<PublicProfilePage />, {
+      testPath: "/app/perfil/$userId",
+      initialEntries: ["/app/perfil/test-user-id"],
+    });
 
     await waitFor(() => {
-      expect(
-        screen.getByText("No encontramos este perfil"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("No encontramos este perfil")).toBeInTheDocument();
     });
   });
 
@@ -69,10 +66,10 @@ describe("app.perfil.$userId", () => {
       error: null,
     });
 
-    renderWithProviders(
-      <PublicProfilePage />,
-      { testPath: "/app/perfil/$userId", initialEntries: ["/app/perfil/test-user-id"] },
-    );
+    renderWithProviders(<PublicProfilePage />, {
+      testPath: "/app/perfil/$userId",
+      initialEntries: ["/app/perfil/test-user-id"],
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Ana Quispe")).toBeInTheDocument();
@@ -96,14 +93,13 @@ describe("app.perfil.$userId", () => {
       data: [],
       error: null,
     });
-    const OwnProfilePage = (
-      await import("../app.perfil.$userId")
-    ).Route.options.component as React.ComponentType;
+    const OwnProfilePage = (await import("../app.perfil.$userId")).Route.options
+      .component as React.ComponentType;
 
-    renderWithProviders(
-      <OwnProfilePage />,
-      { testPath: "/app/perfil/$userId", initialEntries: ["/app/perfil/test-user-id"] },
-    );
+    renderWithProviders(<OwnProfilePage />, {
+      testPath: "/app/perfil/$userId",
+      initialEntries: ["/app/perfil/test-user-id"],
+    });
 
     // Both the sticky header and the trust badge display the label;
     // assert at least one is present.

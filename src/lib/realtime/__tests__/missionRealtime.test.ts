@@ -10,6 +10,7 @@ import {
   planRealtimeReconciliation,
   mapCivicEventPayloadToProposalSupport,
   MISSION_REALTIME_CHANNELS,
+  type RealtimePayload,
 } from "@/lib/realtime/missionRealtime";
 
 const baseOpts = { hasLocalWriteInFlight: false };
@@ -127,7 +128,12 @@ describe("mapCivicEventPayloadToProposalSupport", () => {
       occurred_at: "2026-06-07T10:00:00Z",
       dedupe_key: `proposal.supported:${proposalId}:${userA}`,
     };
-    const event = mapCivicEventPayloadToProposalSupport({ new: row }, userA);
+    const payload: RealtimePayload = {
+      eventType: "INSERT",
+      new: row,
+      old: null,
+    };
+    const event = mapCivicEventPayloadToProposalSupport(payload, userA);
     expect(event).not.toBeNull();
     expect(event?.proposalId).toBe(proposalId);
     expect(event?.actorId).toBe(userA);
@@ -145,7 +151,12 @@ describe("mapCivicEventPayloadToProposalSupport", () => {
       occurred_at: "2026-06-07T10:00:00Z",
       dedupe_key: null,
     };
-    const event = mapCivicEventPayloadToProposalSupport({ new: row }, userA);
+    const payload: RealtimePayload = {
+      eventType: "INSERT",
+      new: row,
+      old: null,
+    };
+    const event = mapCivicEventPayloadToProposalSupport(payload, userA);
     expect(event).not.toBeNull();
     expect(event?.actorId).toBe(userA);
   });
@@ -162,7 +173,12 @@ describe("mapCivicEventPayloadToProposalSupport", () => {
       occurred_at: "2026-06-07T10:00:00Z",
       dedupe_key: null,
     };
-    const event = mapCivicEventPayloadToProposalSupport({ new: row }, userA);
+    const payload: RealtimePayload = {
+      eventType: "INSERT",
+      new: row,
+      old: null,
+    };
+    const event = mapCivicEventPayloadToProposalSupport(payload, userA);
     expect(event).toBeNull();
   });
 
@@ -178,7 +194,12 @@ describe("mapCivicEventPayloadToProposalSupport", () => {
       occurred_at: "2026-06-07T10:00:00Z",
       dedupe_key: null,
     };
-    const event = mapCivicEventPayloadToProposalSupport({ new: row }, userA);
+    const payload: RealtimePayload = {
+      eventType: "INSERT",
+      new: row,
+      old: null,
+    };
+    const event = mapCivicEventPayloadToProposalSupport(payload, userA);
     expect(event).toBeNull();
   });
 });

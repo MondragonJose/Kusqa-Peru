@@ -38,9 +38,7 @@ describe("notificationRepository", () => {
       });
 
       await expect(
-        notificationRepository.findInboxByUserId(
-          "22222222-2222-2222-2222-222222222222",
-        ),
+        notificationRepository.findInboxByUserId("22222222-2222-2222-2222-222222222222"),
       ).rejects.toThrow(/Failed to fetch notifications/);
     });
   });
@@ -102,9 +100,7 @@ describe("notificationRepository", () => {
       });
 
       await expect(
-        notificationRepository.markAllRead(
-          "22222222-2222-2222-2222-222222222222",
-        ),
+        notificationRepository.markAllRead("22222222-2222-2222-2222-222222222222"),
       ).rejects.toThrow(/Failed to mark all notifications read/);
     });
   });

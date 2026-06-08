@@ -73,7 +73,7 @@ export function planRealtimeReconciliation(
   return { action: "invalidate", scope };
 }
 
-type RealtimePayload = {
+export type RealtimePayload = {
   eventType: string;
   new: Record<string, unknown> | null;
   old: Record<string, unknown> | null;
@@ -157,9 +157,10 @@ export function mapCivicEventPayloadToProposalSupport(
 
   return {
     type: "proposal.support_changed",
-    actorId: typeof row.actor_id === "string" && row.actor_id.length > 0
-      ? String(row.actor_id)
-      : fallbackActorId,
+    actorId:
+      typeof row.actor_id === "string" && row.actor_id.length > 0
+        ? String(row.actor_id)
+        : fallbackActorId,
     proposalId: String(row.target_id),
     occurredAt: typeof row.occurred_at === "string" ? row.occurred_at : new Date().toISOString(),
     sourceTable: "civic_events",

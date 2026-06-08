@@ -83,7 +83,7 @@ export const moderationRepository = {
       throw new Error(`Failed to fetch moderation queue: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => {
+    return (data ?? []).map((row: unknown) => {
       const parsed = DB_REPORT_SCHEMA.parse(row);
       return {
         id: parsed.id,

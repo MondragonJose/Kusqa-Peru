@@ -11,8 +11,13 @@ export const XP_BY_DIFFICULTY = {
   Cumbre: { min: 700, max: 1000 },
 } as const;
 
+import type { Region } from "@/types";
+
 /** Configuración de UI para regiones - Fuente única de verdad */
-export const REGION_META = {
+export const REGION_META: Record<
+  Region,
+  { name: string; gradient: string; color: string; chipBg: string; emoji: string }
+> = {
   costa: {
     name: "Costa",
     gradient: "bg-gradient-coast",
@@ -38,7 +43,7 @@ export const REGION_META = {
 
 /** Array de regiones para iteración - derivado de REGION_META */
 export const REGION_THEMES = Object.entries(REGION_META).map(([id, meta]) => ({
-  id: id as "costa" | "sierra" | "selva",
+  id: id as Region,
   label: meta.name,
   gradient: meta.gradient,
   emoji: meta.emoji,

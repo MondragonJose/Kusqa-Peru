@@ -53,7 +53,7 @@ export const notificationRepository = {
       throw new Error(`Failed to fetch notifications: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => toRow(DB_NOTIFICATION_SCHEMA.parse(row)));
+    return (data ?? []).map((row: unknown) => toRow(DB_NOTIFICATION_SCHEMA.parse(row)));
   },
 
   async countUnread(userId: string): Promise<number> {

@@ -190,7 +190,7 @@ export async function getMissions(): Promise<Mission[]> {
     }
 
     logDev(`[services/missions] Retrieved ${data.length} missions`);
-    return data.map((row) => {
+    return data.map((row: unknown) => {
       const parsed = MissionRowSchema.safeParse(row);
       if (!parsed.success) {
         console.error("[services/missions] Row failed validation:", parsed.error, row);
@@ -257,7 +257,7 @@ export async function getMissionsByRegion(region: string): Promise<Mission[]> {
     }
 
     logDev(`[services/missions] Found ${data?.length || 0} missions in ${region}`);
-    return (data || []).map((row) => {
+    return (data || []).map((row: unknown) => {
       const parsed = MissionRowSchema.safeParse(row);
       if (!parsed.success) {
         console.error("[services/missions] Row failed validation:", parsed.error, row);
@@ -289,7 +289,7 @@ export async function getMissionsByCategory(category: string): Promise<Mission[]
     }
 
     logDev(`[services/missions] Found ${data?.length || 0} missions in ${category}`);
-    return (data || []).map((row) => {
+    return (data || []).map((row: unknown) => {
       const parsed = MissionRowSchema.safeParse(row);
       if (!parsed.success) {
         console.error("[services/missions] Row failed validation:", parsed.error, row);

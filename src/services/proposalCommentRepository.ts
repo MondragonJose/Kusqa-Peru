@@ -123,7 +123,7 @@ export const proposalCommentRepository = {
       throw new Error(`Failed to load comments: ${topErr.message}`);
     }
 
-    const topIds = (topLevel ?? []).map((r) => (r as { id: string }).id);
+    const topIds = (topLevel ?? []).map((r: any) => (r as { id: string }).id);
     let replies: unknown[] = [];
     if (topIds.length > 0) {
       const { data, error } = await supabase
@@ -155,12 +155,14 @@ export const proposalCommentRepository = {
       byParent.set(parsed.data.parent_comment_id, list);
     }
 
-    const comments: ProposalComment[] = (topLevel ?? []).map(flattenComment).flatMap((row) => {
-      const parsed = DB_COMMENT_SCHEMA.safeParse(row);
-      if (!parsed.success) return [];
-      const top = toDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now });
-      return [top, ...(byParent.get(top.id) ?? [])];
-    });
+    const comments: ProposalComment[] = (topLevel ?? [])
+      .map(flattenComment)
+      .flatMap((row: unknown) => {
+        const parsed = DB_COMMENT_SCHEMA.safeParse(row);
+        if (!parsed.success) return [];
+        const top = toDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now });
+        return [top, ...(byParent.get(top.id) ?? [])];
+      });
 
     return {
       comments,

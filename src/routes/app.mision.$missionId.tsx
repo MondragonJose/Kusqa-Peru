@@ -399,9 +399,7 @@ function MissionDetail() {
         <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
-            <div className="text-7xl select-none filter drop-shadow-sm">
-              {entity.emoji}
-            </div>
+            <div className="text-7xl select-none filter drop-shadow-sm">{entity.emoji}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
                 {meta.name} · {entity.category}
@@ -915,9 +913,7 @@ function MissionDetail() {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Dificultad</span>
-                <span className="font-bold text-foreground">
-                  {entity.difficulty || "N/A"}
-                </span>
+                <span className="font-bold text-foreground">{entity.difficulty || "N/A"}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Cupos libres</span>
@@ -925,9 +921,7 @@ function MissionDetail() {
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Organizador</span>
-                <span className="font-bold text-foreground">
-                  {entity.organizer?.name || "N/A"}
-                </span>
+                <span className="font-bold text-foreground">{entity.organizer?.name || "N/A"}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Impacto</span>

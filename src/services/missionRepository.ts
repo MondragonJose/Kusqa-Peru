@@ -136,7 +136,9 @@ export const missionRepository = {
       throw new Error(`Failed to fetch missions: ${error.message}`);
     }
 
-    const missions = (data ?? []).map((row) => mapRowToMission(parseDbMissionRow(row)));
+    const missions: Mission[] = (data ?? []).map((row: any) =>
+      mapRowToMission(parseDbMissionRow(row)),
+    );
 
     if (import.meta.env.DEV) {
       console.log(
@@ -196,12 +198,12 @@ export const missionRepository = {
 
     const rows = data ?? [];
     if (rows.length !== uniqueIds.length) {
-      const found = new Set(rows.map((row) => row.id));
+      const found = new Set(rows.map((row: any) => row.id));
       const missing = uniqueIds.filter((id) => !found.has(id));
       throw new Error(`Missions not found: ${missing.join(", ")}`);
     }
 
-    return rows.map((row) => mapRowToMission(parseDbMissionRow(row)));
+    return rows.map((row: any) => mapRowToMission(parseDbMissionRow(row)));
   },
 
   async create(data: Omit<Mission, "id">): Promise<Mission> {

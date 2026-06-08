@@ -388,10 +388,10 @@ export const districtRepository = {
       return [];
     }
     return (data ?? [])
-      .map((row) => {
+      .map((row: unknown) => {
         const parsed = DISTRICT_SCHEMA.safeParse(row);
         return parsed.success ? toDistrict(parsed.data) : null;
       })
-      .filter((d): d is District => d !== null);
+      .filter((d: District | null): d is District => d !== null);
   },
 };

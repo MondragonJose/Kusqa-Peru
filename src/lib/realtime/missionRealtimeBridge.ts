@@ -3,7 +3,7 @@
  */
 
 import type { QueryClient } from "@tanstack/react-query";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { RealtimeChannel } from "@supabase/realtime-js";
 import {
   hasLocalWriteInFlight,
   reconcileCache,

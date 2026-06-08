@@ -33,7 +33,10 @@ describe("test infrastructure smoke", () => {
     };
     expect(result.data).toEqual({ id: "u1" });
     expect(m.queue.rpcCalls).toHaveLength(1);
-    expect(m.queue.rpcCalls[0]).toEqual({ name: "get_public_profile", params: { p_user_id: "u1" } });
+    expect(m.queue.rpcCalls[0]).toEqual({
+      name: "get_public_profile",
+      params: { p_user_id: "u1" },
+    });
   });
 
   it("factories produce Zod-valid rows", () => {

@@ -19,6 +19,8 @@ import {
   createRoute,
   createRouter,
   RouterProvider,
+  type Router,
+  type AnyRoute,
 } from "@tanstack/react-router";
 import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import { type ReactElement, type ReactNode } from "react";
@@ -42,10 +44,20 @@ type RenderWithProvidersOptions = {
   queryClient?: QueryClient;
 } & Omit<RenderOptions, "wrapper">;
 
+type RenderWithRouterResult = RenderResult & {
+  router: Router<
+    AnyRoute,
+    "never",
+    false,
+    import("@tanstack/react-router").RouterHistory,
+    Record<string, unknown>
+  >;
+};
+
 export function renderWithProviders(
   ui: ReactElement,
   options: RenderWithProvidersOptions = {},
-): RenderResult & { router: ReturnType<typeof createRouter> } {
+): RenderWithRouterResult {
   const {
     initialEntries = ["/"],
     routes = [],
@@ -99,5 +111,5 @@ export function renderWithProviders(
     ...renderOptions,
   });
 
-  return Object.assign(result, { router });
+  return { ...result, router };
 }

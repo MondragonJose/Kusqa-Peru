@@ -62,7 +62,7 @@ const REGION_THEMES: Record<
     bgLight: "bg-emerald-50 dark:bg-emerald-950/20",
     border: "border-emerald-200 dark:border-emerald-800/40",
   },
-};
+} as const;
 
 export function MissionStoryModal({ isOpen, onClose, missionId }: MissionStoryModalProps) {
   const [expandedNodeIndex, setExpandedNodeIndex] = useState<number | null>(null);
@@ -113,8 +113,9 @@ export function MissionStoryModal({ isOpen, onClose, missionId }: MissionStoryMo
     );
   }
 
-  const meta = REGION_META[mission.region];
-  const theme = REGION_THEMES[mission.region] || REGION_THEMES.sierra;
+  const region = mission.region as Region;
+  const meta = REGION_META[region];
+  const theme = REGION_THEMES[region] || REGION_THEMES.sierra;
 
   // Static timeline milestones (narratives for completed / active missions)
   const timelineMilestones: StoryTimelineNode[] = [

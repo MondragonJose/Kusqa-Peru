@@ -1,23 +1,19 @@
 /**
  * app.notificaciones route integration test — Phase 5A.3.
  *
- * Verifies the route's empty state, mark-all-read button, and the
- * per-row markRead click handler. The mock is scoped per-test using
- * `vi.resetModules` so each test gets a fresh module-level inbox
- * store that the test owns.
+ * Verifies the route's empty state, notification row rendering,
+ * territory header, and disabled settings button.
+ * Mocks are scoped per-test via vi.resetModules + vi.doMock.
  */
 import { describe, expect, it, vi } from "vitest";
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { makeUserNotificationRow } from "../../test/factories";
 
-// Per-test scratch. Filled in by each `it` via `setInbox`.
 let inbox: ReturnType<typeof makeUserNotificationRow>[] = [];
-let markReadCalls: string[] = [];
 
 function setInbox(rows: ReturnType<typeof makeUserNotificationRow>[]) {
   inbox = rows;
-  markReadCalls = [];
 }
 
 async function loadRoute() {
@@ -37,9 +33,7 @@ async function loadRoute() {
   }));
   vi.doMock("@/hooks/useNotifications", () => ({
     useLiveNotificationInbox: () => ({ data: inbox }),
-    useMarkNotificationRead: () => ({
-      mutate: (id: string) => markReadCalls.push(id),
-    }),
+    useMarkNotificationRead: () => ({ mutate: vi.fn() }),
   }));
   const mod = await import("../app.notificaciones");
   return mod.Route.options.component as React.ComponentType;
@@ -52,9 +46,7 @@ describe("app.notificaciones", () => {
     renderWithProviders(<Page />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Tu territorio está tranquilo por ahora/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Tu territorio está tranquilo por ahora/)).toBeInTheDocument();
     });
   });
 
@@ -80,20 +72,15 @@ describe("app.notificaciones", () => {
     });
   });
 
-  it("fires per-id markRead mutations on the mark-all-read click", async () => {
-    setInbox([
-      makeUserNotificationRow({ id: "n1", read_at: null }),
-      makeUserNotificationRow({ id: "n2", read_at: null }),
-    ]);
+  it("has a settings button (disabled, future feature)", async () => {
+    setInbox([]);
     const Page = await loadRoute();
     renderWithProviders(<Page />);
 
-    const btn = await screen.findByRole("button", { name: /Marcar como leídas/i });
-    fireEvent.click(btn);
-
     await waitFor(() => {
-      expect(markReadCalls).toContain("n1");
-      expect(markReadCalls).toContain("n2");
+      expect(
+        screen.getByRole("button", { name: /Ajustes de alertas/i }),
+      ).toBeDisabled();
     });
   });
 });

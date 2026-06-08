@@ -36,7 +36,7 @@ export const evidenceRepository = {
       throw new Error(`Failed to fetch evidence: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => dbEvidenceToDomain(row as DbEvidenceRow));
+    return (data ?? []).map((row: any) => dbEvidenceToDomain(row as DbEvidenceRow));
   },
 
   /**
@@ -56,7 +56,7 @@ export const evidenceRepository = {
       throw new Error(`Failed to fetch evidence: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => dbEvidenceToDomain(row as DbEvidenceRow));
+    return (data ?? []).map((row: any) => dbEvidenceToDomain(row as DbEvidenceRow));
   },
 
   /**
@@ -74,7 +74,7 @@ export const evidenceRepository = {
       throw new Error(`Failed to fetch evidence: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => dbEvidenceToDomain(row as DbEvidenceRow));
+    return (data ?? []).map((row: any) => dbEvidenceToDomain(row as DbEvidenceRow));
   },
 
   /**

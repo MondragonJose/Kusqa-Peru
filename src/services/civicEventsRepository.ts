@@ -51,7 +51,7 @@ export type CivicProfileEvent = {
   payload: Record<string, unknown>;
 };
 
-const RPC_EVENT_SCHEMA = z.object({
+export const RPC_EVENT_SCHEMA = z.object({
   id: z.string().uuid(),
   kind: z.enum(CIVIC_EVENT_KINDS),
   target_type: z.string(),

@@ -20,9 +20,6 @@ export default defineConfig({
       ["src/components/**/*.test.tsx", "happy-dom"],
       ["src/test/**/*.test.tsx", "happy-dom"],
     ],
-    setupFiles: [
-      "./vitest.setup.ts",
-      "./vitest.setup.dom.ts",
-    ],
+    setupFiles: ["./vitest.setup.ts", "./vitest.setup.dom.ts"],
   },
 });

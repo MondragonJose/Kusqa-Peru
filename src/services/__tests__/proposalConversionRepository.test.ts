@@ -15,9 +15,7 @@ import { createSupabaseMock } from "../../test/createSupabaseMock";
 const mock = createSupabaseMock();
 vi.doMock("@/lib/supabase", () => ({ supabase: mock.client }));
 
-const { proposalConversionRepository } = await import(
-  "../proposalConversionRepository"
-);
+const { proposalConversionRepository } = await import("../proposalConversionRepository");
 
 const proposalId = "11111111-1111-1111-1111-111111111111";
 

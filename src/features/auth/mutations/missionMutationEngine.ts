@@ -547,7 +547,11 @@ const schedulers = new WeakMap<QueryClient, SchedulerState>();
 function getScheduler(queryClient: QueryClient): SchedulerState {
   let state = schedulers.get(queryClient);
   if (!state) {
-    state = { pending: { missionIds: new Set(), proposalIds: new Set() }, flushPromise: null, scheduled: false };
+    state = {
+      pending: { missionIds: new Set(), proposalIds: new Set() },
+      flushPromise: null,
+      scheduled: false,
+    };
     schedulers.set(queryClient, state);
   }
   return state;

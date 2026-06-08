@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { REGION_META } from "@/constants/gamification";
+import type { Region } from "@/types";
 import {
   useDistrict,
   useDistrictActivity,
@@ -79,7 +80,8 @@ function DistrictPage() {
     );
   }
 
-  const regionMeta = REGION_META[district.region];
+  const region = district.region as Region;
+  const regionMeta = REGION_META[region];
   const summary = stats ?? {
     missionCount: 0,
     upcomingMissionCount: 0,

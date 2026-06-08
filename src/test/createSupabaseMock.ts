@@ -131,8 +131,7 @@ export function createSupabaseMock(): SupabaseMock {
       channel: () => makeChannel(),
       removeChannel: () => Promise.resolve("ok"),
       auth: {
-        getUser: () =>
-          Promise.resolve({ data: { user: { id: "test-user-id" } }, error: null }),
+        getUser: () => Promise.resolve({ data: { user: { id: "test-user-id" } }, error: null }),
       },
     },
   };

@@ -10,11 +10,7 @@
  * placeholder metrics.
  */
 
-export type DistrictActivityClass =
-  | "empty"
-  | "early"
-  | "active"
-  | "established";
+export type DistrictActivityClass = "empty" | "early" | "active" | "established";
 
 export type TerritorialImpactSummary = {
   missionCount: number;
@@ -32,9 +28,7 @@ export type TerritorialImpactSummary = {
  * Thresholds are derived from the count magnitudes, not from a percentile
  * (i.e. "you're active" is not a comparison with other districts).
  */
-export function classifyDistrictActivity(
-  summary: TerritorialImpactSummary,
-): DistrictActivityClass {
+export function classifyDistrictActivity(summary: TerritorialImpactSummary): DistrictActivityClass {
   const total = summary.missionCount + summary.proposalCount;
   const live = summary.completedMissionCount + summary.activeProposalCount;
   if (total === 0) return "empty";
@@ -49,12 +43,14 @@ export const DISTRICT_ACTIVITY_COPY: Record<
 > = {
   empty: {
     label: "Distrito sin rutas activas",
-    description: "Todavía no hay propuestas ni misiones en este distrito. Sé quien inicie la primera.",
+    description:
+      "Todavía no hay propuestas ni misiones en este distrito. Sé quien inicie la primera.",
     short: "Sin actividad",
   },
   early: {
     label: "Primeras semillas",
-    description: "Hay propuestas o misiones en el distrito, pero ninguna se ha concretado todavía. Es un momento para sumarte.",
+    description:
+      "Hay propuestas o misiones en el distrito, pero ninguna se ha concretado todavía. Es un momento para sumarte.",
     short: "Primeras semillas",
   },
   active: {
@@ -87,17 +83,13 @@ export function missingFirstMovements(summary: TerritorialImpactSummary): number
  *   "2 propuestas · 8 apoyos"
  *   "Sin actividad aún"
  */
-export function formatTerritorialImpact(
-  summary: TerritorialImpactSummary,
-): string {
+export function formatTerritorialImpact(summary: TerritorialImpactSummary): string {
   const total = summary.missionCount + summary.proposalCount;
   if (total === 0) return "Sin actividad aún";
 
   const parts: string[] = [];
   if (summary.missionCount > 0) {
-    parts.push(
-      `${summary.missionCount} ${summary.missionCount === 1 ? "misión" : "misiones"}`,
-    );
+    parts.push(`${summary.missionCount} ${summary.missionCount === 1 ? "misión" : "misiones"}`);
   }
   if (summary.proposalCount > 0) {
     parts.push(
@@ -111,9 +103,7 @@ export function formatTerritorialImpact(
  * Derive a single-word civic memory line for the narrative section.
  * Returns null when there's not enough signal to say anything true.
  */
-export function deriveCivicMemoryLine(
-  summary: TerritorialImpactSummary,
-): string | null {
+export function deriveCivicMemoryLine(summary: TerritorialImpactSummary): string | null {
   const cls = classifyDistrictActivity(summary);
   if (cls === "empty") return null;
   if (cls === "early") {
@@ -129,11 +119,6 @@ export function deriveCivicMemoryLine(
  * Determine if a district is ready for the "first movement" empty state.
  * Returns true only when there is literally nothing in the district.
  */
-export function isFirstMovementNeeded(
-  summary: TerritorialImpactSummary,
-): boolean {
-  return (
-    summary.missionCount === 0 &&
-    summary.proposalCount === 0
-  );
+export function isFirstMovementNeeded(summary: TerritorialImpactSummary): boolean {
+  return summary.missionCount === 0 && summary.proposalCount === 0;
 }

@@ -193,9 +193,7 @@ export const publicProfileRpcSchema = z.object({
 
 export type PublicProfileRpc = z.infer<typeof publicProfileRpcSchema>;
 
-export function makePublicProfileRpc(
-  overrides: Partial<PublicProfileRpc> = {},
-): PublicProfileRpc {
+export function makePublicProfileRpc(overrides: Partial<PublicProfileRpc> = {}): PublicProfileRpc {
   return publicProfileRpcSchema.parse({
     id: "22222222-2222-2222-2222-222222222222",
     username: "ana_cusco",

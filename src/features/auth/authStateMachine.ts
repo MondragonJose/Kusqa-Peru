@@ -13,7 +13,7 @@
  * - unauthenticated: Sin sesión o logout completado
  */
 
-import type { Session, User } from "@supabase/supabase-js";
+import type { AuthSession as Session, AuthUser as User } from "@supabase/supabase-js";
 
 export type AuthState = "initializing" | "authenticated" | "unauthenticated";
 
