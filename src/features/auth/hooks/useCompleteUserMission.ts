@@ -6,7 +6,6 @@
  * verification finalizes the mission completion.
  */
 
-import { resolveAuthenticatedUserId } from "@/features/auth/mutations/authMutationContext";
 import {
   createMissionMutation,
   getMissionFromCache,
@@ -24,22 +23,17 @@ type SubmitMissionEvidenceInput = {
 
 export const useSubmitMissionEvidence = createMissionMutation<SubmitMissionEvidenceInput, boolean>({
   kind: "submitEvidence",
-  mutationFn: async (queryClient, { missionId, type, description, caption, file }) => {
-    const userId = await resolveAuthenticatedUserId(queryClient);
-    await submitEvidence({ userId, missionId, type, description, caption, file });
+  mutationFn: async (_queryClient, { missionId, type, description, caption, file }) => {
+    await submitEvidence({ missionId, type, description, caption, file });
     return true;
   },
-  writeContext: ({ missionId }, userId) => ({
-    userId,
+  writeContext: ({ missionId }) => ({
     missionIds: [missionId],
   }),
-  invalidate: ({ missionId }, _output, userId) => ({
-    userId,
+  invalidate: ({ missionId }, _output, _userId) => ({
     missionIds: [missionId],
   }),
-  optimistic: (queryClient, { missionId }, userId) => {
-    if (!userId) return;
-    const mission = getMissionFromCache(queryClient, missionId);
+  optimistic: (_queryClient, _input, _userId) => {
     // No optimistic evidence patch — evidence feed is invalidated on success
     // The user missions cache shows "awaiting_verification" after refetch
   },

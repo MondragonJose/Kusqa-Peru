@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabase";
 import { z } from "zod";
 import type { Mission } from "@/types";
 import type { Proposal } from "./proposalContract";
+import type { TerritorialImpactSummary } from "@/domain/territoryAggregations";
 import { proposalRepository } from "./proposalRepository";
 import { missionRepository } from "./missionRepository";
 
@@ -260,9 +261,64 @@ export const districtRepository = {
   },
 
   /**
-   * Get the combined district feed: active proposals + recent missions
-   * (filtering by district text since the missions table also has district).
-   * For proposals, prefer the new district_id filter; fall back to text.
+   * Return a TerritorialImpactSummary with recent proposal/completion counts.
+   * This is the primary input for territorial intelligence (vitality, narrative).
+   * Merges district_stats with two lightweight recent-count queries.
+   */
+  async getDistrictIntelligence(districtId: string): Promise<TerritorialImpactSummary> {
+    const [stats, recentProposalCount, recentCompletionCount] = await Promise.all([
+      this.getDistrictStats(districtId),
+      this.getRecentProposalCount(districtId),
+      this.getRecentCompletionCount(districtId),
+    ]);
+
+    return {
+      missionCount: stats.missionCount,
+      completedMissionCount: stats.completedMissionCount,
+      proposalCount: stats.proposalCount,
+      activeProposalCount: stats.activeProposalCount,
+      uniqueSupporterCount: stats.uniqueSupporterCount,
+      acceptedCollaboratorCount: stats.acceptedCollaboratorCount,
+      lastActivityAt: stats.lastActivityAt,
+      recentProposalCount,
+      recentCompletionCount,
+    };
+  },
+
+  /**
+   * Count proposals created within the last 30 days in the given district.
+   * Lightweight — uses `head: true` (count only, no rows).
+   */
+  async getRecentProposalCount(districtId: string): Promise<number> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { count, error } = await supabase
+      .from("proposals")
+      .select("*", { count: "exact", head: true })
+      .eq("district_id", districtId)
+      .gte("created_at", thirtyDaysAgo);
+    if (error || count === null) return 0;
+    return count;
+  },
+
+  /**
+   * Count mission-participant completions within the last 30 days.
+   * Uses a join filter through the mission FK relationship.
+   */
+  async getRecentCompletionCount(districtId: string): Promise<number> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { count, error } = await supabase
+      .from("mission_participants")
+      .select("*", { count: "exact", head: true })
+      .gte("completed_at", thirtyDaysAgo)
+      .neq("completed_at", null)
+      .filter("mission.district_id", "eq", districtId);
+    if (error || count === null) return 0;
+    return count;
+  },
+
+  /**
+   * Get the combined district feed: active proposals + recent missions.
+   * Uses district_id FK for both proposals and missions.
    */
   async getDistrictFeed(districtSlug: string): Promise<DistrictFeed> {
     const district = await this.getDistrictBySlug(districtSlug);
@@ -271,18 +327,16 @@ export const districtRepository = {
     }
 
     const [proposals, missions] = await Promise.all([
-      proposalRepository.getAllProposals({ district: district.displayName }),
-      missionRepository.findAll().then((all) =>
-        all.filter((m) => {
-          const mDistrict = m.district?.toLowerCase().trim() ?? "";
-          return mDistrict === district.displayName.toLowerCase() || mDistrict === district.slug;
-        }),
+      proposalRepository.getAllProposals(
+        { districtId: district.id },
+        { limit: 20, offset: 0 },
       ),
+      missionRepository.findByDistrict(district.displayName, district.slug, district.id, { limit: 10, offset: 0 }),
     ]);
 
     return {
       activeProposals: proposals.filter((p) => p.status === "pending" || p.status === "active"),
-      recentMissions: missions.slice(0, 10),
+      recentMissions: missions,
     };
   },
 

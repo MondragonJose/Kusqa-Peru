@@ -2,8 +2,10 @@
  * Hooks for the district system (Phase 3A) + proposal conversion (Phase 3B).
  */
 
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { districtRepository } from "@/services/districtRepository";
+import { spatialRepository } from "@/services/spatialRepository";
 import { proposalConversionRepository } from "@/services/proposalConversionRepository";
 import type {
   District,
@@ -13,15 +15,21 @@ import type {
   DistrictTopSupporter,
 } from "@/services/districtRepository";
 import type { ProposalLifecycleEvent } from "@/services/proposalConversionRepository";
+import type { DistrictGeometry, RegionMetadata, TerritoryNode } from "@/services/spatialRepository";
+import type { TerritorialImpactSummary } from "@/domain/territoryAggregations";
+import { proposalLifecycleKeys } from "@/lib/queryKeys";
 import {
   districtActivityQueryOptions,
   districtBySlugQueryOptions,
   districtFeedQueryOptions,
+  districtIntelligenceQueryOptions,
   districtStatsQueryOptions,
   districtTopSupportersQueryOptions,
   districtsListQueryOptions,
   proposalConversionInvalidationKeys,
   proposalLifecycleQueryOptions,
+  territorialGeometryQueryOptions,
+  regionMetadataQueryOptions,
 } from "../queryOptions";
 
 export function useDistrict(slug: string) {
@@ -42,6 +50,12 @@ export function useDistrictStats(districtId: string) {
   });
 }
 
+export function useDistrictIntelligence(districtId: string) {
+  return useQuery<TerritorialImpactSummary>({
+    ...districtIntelligenceQueryOptions(districtId),
+  });
+}
+
 export function useDistrictActivity(districtId: string, limit: number = 20) {
   return useQuery<DistrictActivity[]>({
     ...districtActivityQueryOptions(districtId, limit),
@@ -57,6 +71,16 @@ export function useDistrictFeed(slug: string) {
 export function useDistrictTopSupporters(districtId: string, limit: number = 10) {
   return useQuery<DistrictTopSupporter[]>({
     ...districtTopSupportersQueryOptions(districtId, limit),
+  });
+}
+
+export function useProposalOriginByMissionId(missionId: string) {
+  return useQuery<string | null>({
+    queryKey: [...proposalLifecycleKeys.root, "mission-origin", missionId] as const,
+    queryFn: () => proposalConversionRepository.findProposalByMissionId(missionId),
+    staleTime: 10 * 60 * 1000,
+    enabled: missionId.length > 0,
+    retry: 1 as const,
   });
 }
 
@@ -107,4 +131,25 @@ export function useReopenProposal() {
 // Re-export the repository types for convenience.
 export type { District, DistrictStats, DistrictActivity } from "@/services/districtRepository";
 export type { ProposalLifecycleEvent } from "@/services/proposalConversionRepository";
+export type { DistrictGeometry, RegionMetadata, TerritoryNode } from "@/services/spatialRepository";
 export { districtRepository };
+
+export function useTerritorialGeometry() {
+  return useQuery<DistrictGeometry[]>({
+    ...territorialGeometryQueryOptions(),
+  });
+}
+
+export function useRegionMetadata() {
+  return useQuery<RegionMetadata[]>({
+    ...regionMetadataQueryOptions(),
+  });
+}
+
+export function useTerritorialHierarchy() {
+  const { data: geometry } = useTerritorialGeometry();
+  return useMemo(() => {
+    if (!geometry) return [];
+    return spatialRepository.buildHierarchy(geometry);
+  }, [geometry]);
+}

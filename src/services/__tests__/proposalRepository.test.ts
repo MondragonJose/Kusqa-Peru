@@ -93,6 +93,10 @@ describe("proposalRepository", () => {
 
   describe("supportProposal", () => {
     it("returns a success envelope on insert", async () => {
+      mock.queue.tableResponse("proposals", {
+        data: makeProposalRow(),
+        error: null,
+      });
       mock.queue.tableResponse("proposal_supports", {
         data: { id: "s1" },
         error: null,
@@ -106,6 +110,10 @@ describe("proposalRepository", () => {
     });
 
     it("returns an error envelope on failure", async () => {
+      mock.queue.tableResponse("proposals", {
+        data: makeProposalRow(),
+        error: null,
+      });
       mock.queue.tableResponse("proposal_supports", {
         data: null,
         error: { message: "boom" },
@@ -122,6 +130,10 @@ describe("proposalRepository", () => {
     });
 
     it("treats 23505 (already supported) as success", async () => {
+      mock.queue.tableResponse("proposals", {
+        data: makeProposalRow(),
+        error: null,
+      });
       mock.queue.tableResponse("proposal_supports", {
         data: null,
         error: { message: "duplicate", code: "23505" },
@@ -134,4 +146,5 @@ describe("proposalRepository", () => {
       expect(result.status).toBe("success");
     });
   });
+
 });

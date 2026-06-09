@@ -8,17 +8,14 @@
  * This ensures that UUIDs originating from proposals table work correctly
  * in routes like /app/mision/$missionId without "Mission not found" errors.
  *
- * Phase 4C: `adaptProposalToMission` was a near-duplicate of
- * entityAdapter.proposalToEntity (same emoji map, same defaults, same
- * lossy drop of proposal-only fields). We now delegate to the adapter
- * — single source of truth for the Proposal → Mission shape, no
- * diverged emoji maps, and the districtId passthrough is preserved.
+ * Phase 10D: adapted proposal-to-mission path always uses the sentinel
+ * shape directly instead of going through proposalToEntity (which now
+ * returns a native ProposalEntity with no Mission fields).
  */
 
 import type { Mission } from "@/types";
 import { missionRepository } from "@/services/missionRepository";
 import { proposalRepository } from "@/services/proposalRepository";
-import { proposalToEntity } from "@/services/entityAdapter";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { z } from "zod";
 
@@ -32,13 +29,11 @@ function assertUuidMissionId(missionId: string): void {
 }
 
 /**
- * Adapt a Proposal to Mission shape. Delegates to the canonical
- * proposalToEntity adapter so the emoji map and field defaults stay
- * in one place. If the proposal lacks coordinates, returns a
- * sentinel Mission (lat/lng = 0) so the route can still render a
- * fallback; this preserves the previous behavior of missionResolver.
+ * Build a fallback Mission from a Proposal row.
+ * Used by the mission detail page when a proposal ID is resolved.
+ * The actual proposal can still be fetched independently by the page.
  */
-function adaptProposalToMission(p: {
+function proposalToFallbackMission(p: {
   id: string;
   title: string;
   description: string | null;
@@ -51,33 +46,6 @@ function adaptProposalToMission(p: {
   latitude: number | null;
   longitude: number | null;
 }): Mission {
-  const entity = proposalToEntity({
-    id: p.id,
-    userId: "",
-    title: p.title,
-    description: p.description,
-    category: p.category,
-    district: p.district,
-    districtId: p.districtId ?? null,
-    region: p.region,
-    teamSize: p.teamSize,
-    images: [],
-    status: "pending",
-    latitude: p.latitude,
-    longitude: p.longitude,
-    proposedDate: null,
-    summary: null,
-    why: null,
-    locationLabel: null,
-    createdAt: p.createdAt,
-    updatedAt: p.createdAt,
-  });
-  if (entity) {
-    return entity as Mission;
-  }
-  // Proposal lacked coordinates: build a sentinel Mission so the
-  // route can render a fallback. Uses the same defaults the adapter
-  // would have produced.
   return {
     id: p.id,
     title: p.title,
@@ -94,7 +62,7 @@ function adaptProposalToMission(p: {
     impact: p.description ?? p.title,
     difficulty: "Suave",
     organizer: { name: "Propuesta ciudadana", avatar: "🏛️" },
-    coords: { lat: 0, lng: 0 },
+    coords: { lat: p.latitude ?? 0, lng: p.longitude ?? 0 },
     emoji: "📌",
     startDate: null,
     endDate: null,
@@ -116,7 +84,7 @@ async function resolveMission(missionId: string): Promise<Mission> {
 
   // Step 2: fallback to proposals table
   const proposalResult = await proposalRepository.getProposalById(id);
-  if (proposalResult) return adaptProposalToMission(proposalResult);
+  if (proposalResult) return proposalToFallbackMission(proposalResult);
 
   throw new Error(`Mission not found: ${id}`);
 }

@@ -17,6 +17,10 @@ import {
 import { useCallback } from "react";
 import { resolveAuthenticatedUserId } from "@/features/auth/mutations/authMutationContext";
 import {
+  trackOperationalMetric,
+  captureOperationalException,
+} from "@/lib/telemetry";
+import {
   reportMutationError,
   reportMutationPending,
   reportMutationSuccess,
@@ -788,9 +792,16 @@ async function executeWrite<TResult>({
     endInflightWrite(queryClient, signature, "success");
     return (mapResults ? mapResults(results as unknown[]) : results) as TResult;
   } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    trackOperationalMetric("rollback.applied", {
+      kind,
+      signature,
+      error: err.message,
+    });
+    captureOperationalException(err, { kind, signature });
     restoreQuerySnapshot(queryClient, snapshot);
     releaseQueryKeyPins(queryClient, keys);
-    reportMutationError(kind, error instanceof Error ? error : new Error(String(error)));
+    reportMutationError(kind, err);
     endInflightWrite(queryClient, signature, "rollback");
     throw error;
   }

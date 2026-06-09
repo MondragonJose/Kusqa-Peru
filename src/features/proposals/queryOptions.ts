@@ -34,10 +34,10 @@ export function proposalDetailQueryOptions(proposalId: string) {
   };
 }
 
-export function userProposalsQueryOptions(userId: string) {
+export function userProposalsQueryOptions(userId: string, pg?: { limit?: number; offset?: number }) {
   return {
-    queryKey: proposalKeys.userProposals(userId),
-    queryFn: () => proposalRepository.getProposalsByUserId(userId),
+    queryKey: [...proposalKeys.userProposals(userId), pg ?? {}] as const,
+    queryFn: () => proposalRepository.getProposalsByUserId(userId, pg),
     staleTime: PROPOSALS_STALE_MS,
     gcTime: PROPOSALS_GC_MS,
     enabled: userId.length > 0,
@@ -45,14 +45,18 @@ export function userProposalsQueryOptions(userId: string) {
   };
 }
 
-export function allProposalsQueryOptions(filters?: {
-  region?: ProposalRegion;
-  status?: ProposalStatus;
-  district?: string;
-}) {
+export function allProposalsQueryOptions(
+  filters?: {
+    region?: ProposalRegion;
+    status?: ProposalStatus;
+    district?: string;
+    districtId?: string;
+  },
+  pg?: { limit?: number; offset?: number },
+) {
   return {
-    queryKey: proposalKeys.all(filters),
-    queryFn: () => proposalRepository.getAllProposals(filters),
+    queryKey: [...proposalKeys.all(filters), pg ?? {}] as const,
+    queryFn: () => proposalRepository.getAllProposals(filters, pg),
     staleTime: PROPOSALS_STALE_MS,
     gcTime: PROPOSALS_GC_MS,
     retry: false as const,
@@ -126,6 +130,17 @@ export function proposalPendingInvitationsQueryOptions() {
     },
     staleTime: COLLABORATORS_STALE_MS,
     gcTime: 5 * 60 * 1000,
+    retry: 1 as const,
+  };
+}
+
+export function proposalCommentCountQueryOptions(proposalId: string) {
+  return {
+    queryKey: proposalCommentKeys.count(proposalId),
+    queryFn: () => proposalCommentRepository.count(proposalId),
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
+    enabled: proposalId.length > 0,
     retry: 1 as const,
   };
 }

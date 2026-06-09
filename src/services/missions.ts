@@ -19,6 +19,7 @@ import type {
 import type { MissionRow, MissionParticipantRow } from "@/types/supabase";
 import type { CausalEnrichedEvent, KusqaDomainEvent } from "@/domain/events";
 import { supabase } from "@/lib/supabase";
+import { resolveAuthenticatedUserId } from "@/services/_resolveAuth";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { deriveCompletionStateFromEvidenceStatuses } from "@/domain/evidence";
 import { buildCausalChain } from "@/domain/eventCausality";
@@ -169,6 +170,8 @@ function transformMissionRow(row: MissionRow): Mission {
 
 /**
  * Obtiene todas las misiones disponibles desde Supabase
+ * @deprecated Use missionRepository.getAllMissions() instead. This function
+ * uses a MissionRow type that does not match the actual DB schema.
  */
 export async function getMissions(): Promise<Mission[]> {
   try {
@@ -234,38 +237,6 @@ export async function getMissionById(missionId: string): Promise<Mission | null>
     return transformMissionRow((parsed.success ? parsed.data : data) as MissionRow);
   } catch (error) {
     console.error("[services/missions] Exception in getMissionById:", error);
-    throw error;
-  }
-}
-
-/**
- * Obtiene misiones filtradas por región
- */
-export async function getMissionsByRegion(region: string): Promise<Mission[]> {
-  try {
-    logDev(`[services/missions] Fetching missions in region: ${region}`);
-
-    const { data, error } = await supabase
-      .from("missions")
-      .select("*")
-      .eq("region", region)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("[services/missions] Supabase error:", error);
-      throw new Error(`Failed to fetch missions by region: ${error.message}`);
-    }
-
-    logDev(`[services/missions] Found ${data?.length || 0} missions in ${region}`);
-    return (data || []).map((row: unknown) => {
-      const parsed = MissionRowSchema.safeParse(row);
-      if (!parsed.success) {
-        console.error("[services/missions] Row failed validation:", parsed.error, row);
-      }
-      return transformMissionRow((parsed.success ? parsed.data : row) as MissionRow);
-    });
-  } catch (error) {
-    console.error("[services/missions] Exception in getMissionsByRegion:", error);
     throw error;
   }
 }
@@ -357,7 +328,8 @@ export async function createMission(data: Omit<Mission, "id">): Promise<Mission>
  * Usuario se une a una misión
  * Inserta registro en tabla mission_participants
  */
-export async function joinMission(missionId: string, userId: string): Promise<boolean> {
+export async function joinMission(missionId: string): Promise<boolean> {
+  const userId = await resolveAuthenticatedUserId();
   try {
     logDev(`[services/missions] User ${userId} joining mission ${missionId}...`);
 
@@ -617,13 +589,13 @@ export async function completeMission(missionId: string, userId: string): Promis
  */
 export async function submitEvidence(input: {
   missionId: string;
-  userId: string;
   type: EvidenceType;
   description?: string;
   caption?: string;
   file?: File;
 }): Promise<Evidence> {
-  const { missionId, userId, type, description, caption, file } = input;
+  const userId = await resolveAuthenticatedUserId();
+  const { missionId, type, description, caption, file } = input;
 
   logDev(
     `[services/missions] User ${userId} submitting ${type} evidence for mission ${missionId}...`,
@@ -666,7 +638,6 @@ export async function submitEvidence(input: {
 
     evidence = await evidenceRepository.createPhotoEvidence(
       missionId,
-      userId,
       type,
       evidenceId,
       uploaded.storagePath,
@@ -678,7 +649,6 @@ export async function submitEvidence(input: {
     // text or checkpoint
     evidence = await evidenceRepository.createTextEvidence(
       missionId,
-      userId,
       type,
       description ?? "",
       { caption },
@@ -696,10 +666,10 @@ export async function submitEvidence(input: {
  */
 export async function verifyEvidence(
   evidenceId: string,
-  verifierId: string,
   status: "verified" | "rejected",
   rejectionReason?: string,
 ): Promise<Evidence> {
+  const verifierId = await resolveAuthenticatedUserId();
   logDev(`[services/missions] Verifier ${verifierId} → evidence ${evidenceId} → ${status}`);
 
   // Self-verification check (domain rule enforced at service boundary)
@@ -737,7 +707,6 @@ export async function verifyEvidence(
 
   const evidence = await evidenceRepository.verifyEvidence(
     evidenceId,
-    verifierId,
     status,
     rejectionReason,
   );

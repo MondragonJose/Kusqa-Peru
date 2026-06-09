@@ -141,7 +141,10 @@ export function buildTerritory(
  */
 export function calculateEntityStats(entities: CivicEntity[]) {
   const activeDistricts = new Set(entities.map((m) => m.district)).size;
-  const totalParticipants = entities.reduce((acc, m) => acc + m.participants, 0);
+  const totalParticipants = entities.reduce(
+    (acc, m) => acc + (m.entityType === "mission" ? m.participants : 0),
+    0,
+  );
   const totalHoursRaw = Math.round(totalParticipants * 3.5);
   const totalHoursLabel =
     totalHoursRaw >= 1000 ? `${(totalHoursRaw / 1000).toFixed(1)}K` : `${totalHoursRaw}`;

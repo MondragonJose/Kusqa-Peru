@@ -2,14 +2,16 @@
  * Territorial Domain Logic
  *
  * Pure functions for territorial inference and region detection.
- * Consolidated from multiple sources to provide single source of truth.
+ * SVG coordinate lookups are data-driven when geometry is provided,
+ * falling back to hardcoded values for backward compatibility.
  */
 
 import type { MapCoords, Mission, Region } from "@/types";
 
 /**
  * SVG coordinates for known districts within the 240×360 Peru silhouette viewBox.
- * Fallback to region center when district string doesn't match.
+ * Phase 12: these are now seeded in the districts table. This hardcoded fallback
+ * is kept for backward compatibility when spatial data is not loaded.
  */
 const DISTRICT_SVG_COORDS: Record<string, { x: number; y: number }> = {
   barranco: { x: 75, y: 105 },
@@ -44,7 +46,31 @@ export type Footprint = {
   totalMissions: number;
 };
 
-function districtSvgCoords(district: string, region: Region): { x: number; y: number } {
+/**
+ * Resolve SVG coordinates for a district from either a geometry lookup or
+ * hardcoded fallback. Accepts an optional map of slug→svg coords for
+ * data-driven resolution.
+ */
+type SvgCoordMap = Record<string, { x: number; y: number }>;
+
+export function resolveSvgCoords(
+  district: string,
+  region: Region,
+  geometrySvgCoords?: SvgCoordMap | null,
+): { x: number; y: number } {
+  // Prefer data-driven geometry if available
+  if (geometrySvgCoords) {
+    const key = district.toLowerCase().trim();
+    const known = geometrySvgCoords[key];
+    if (known) return known;
+    const partial = Object.entries(geometrySvgCoords).find(
+      ([k]) => key.includes(k) || k.includes(key),
+    );
+    if (partial) return partial[1];
+    return REGION_SVG_CENTER[region];
+  }
+
+  // Fallback to hardcoded SVG coords
   const key = district.toLowerCase().trim();
   const known = DISTRICT_SVG_COORDS[key];
   if (known) return known;
@@ -56,7 +82,7 @@ function districtSvgCoords(district: string, region: Region): { x: number; y: nu
 }
 
 /** Aggregate mission timeline into a Footprint — pure, memoizable. */
-export function computeFootprint(missions: Mission[]): Footprint {
+export function computeFootprint(missions: Mission[], geometrySvgCoords?: SvgCoordMap | null): Footprint {
   const districtMap = new Map<string, { count: number; region: Region }>();
   const regionCount = new Map<Region, number>();
 
@@ -69,7 +95,7 @@ export function computeFootprint(missions: Mission[]): Footprint {
 
   const activeDistricts: ActivatedDistrict[] = [];
   for (const [name, data] of districtMap) {
-    const coords = districtSvgCoords(name, data.region);
+    const coords = resolveSvgCoords(name, data.region, geometrySvgCoords);
     activeDistricts.push({
       name,
       region: data.region,

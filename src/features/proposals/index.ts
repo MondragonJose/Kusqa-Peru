@@ -7,6 +7,7 @@ export * from "./hooks/useProposals";
 export * from "./hooks/useSupportProposal";
 export * from "../../services/proposalContract";
 export * from "../../services/proposalRepository";
+export { proposalKeys } from "@/lib/queryKeys";
 
 export { ProposalHero } from "./components/ProposalHero";
 export { ProposalCivicIntent } from "./components/ProposalCivicIntent";
@@ -15,3 +16,4 @@ export { ProposalSupportersRow } from "./components/ProposalSupportersRow";
 export { ProposalStickyCTA } from "./components/ProposalStickyCTA";
 export { ProposalImagesCarousel } from "./components/ProposalImagesCarousel";
 export { SinglePinMap } from "./components/SinglePinMap";
+export { ProposalMomentum } from "./components/ProposalMomentum";

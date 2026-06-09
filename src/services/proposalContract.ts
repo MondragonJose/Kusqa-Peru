@@ -65,6 +65,14 @@ export type DbProposalRow = {
   location_label: string | null;
   created_at: string;
   updated_at: string;
+  /** Phase 10B: lifecycle timestamp — when support threshold was first met. */
+  ready_at: string | null;
+  /** Phase 10B: lifecycle timestamp — when proposal was converted to mission. */
+  converted_at: string | null;
+  /** Phase 10B: lifecycle timestamp — when the mission was completed. */
+  completed_at: string | null;
+  /** Phase 3B: FK to the mission created from this proposal. */
+  has_converted_mission_id: string | null;
 };
 
 export type DbProposalInsert = {
@@ -112,6 +120,12 @@ export type Proposal = {
   locationLabel: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Phase 10B: persisted lifecycle timestamps. Null before milestone is reached. */
+  readyAt: string | null;
+  convertedAt: string | null;
+  completedAt: string | null;
+  /** FK to the mission created from this proposal (Phase 3B). */
+  hasConvertedMissionId: string | null;
 };
 
 // ─── Input DTOs (what UI sends — no user_id, no DB concerns) ──────────────

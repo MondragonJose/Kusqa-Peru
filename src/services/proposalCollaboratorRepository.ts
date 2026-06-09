@@ -9,6 +9,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import { resolveAuthenticatedUserId } from "@/services/_resolveAuth";
 import { DB_DEFAULTS } from "@/services/proposalContract";
 import type {
   CreateCollaboratorInvitationDTO,
@@ -72,9 +73,10 @@ export const proposalCollaboratorRepository = {
    * Caller must be the proposal's author (DB-enforced).
    */
   async invite(
-    input: CreateCollaboratorInvitationDTO & { invitedBy: string },
+    input: CreateCollaboratorInvitationDTO,
   ): Promise<ProposalResult<ProposalCollaborator>> {
-    if (input.userId === input.invitedBy) {
+    const invitedBy = await resolveAuthenticatedUserId();
+    if (input.userId === invitedBy) {
       return { status: "error", error: "No puedes invitarte a ti mismo." };
     }
     if (input.message && input.message.length > DB_DEFAULTS.COLLABORATOR_MESSAGE_MAX) {
@@ -90,7 +92,7 @@ export const proposalCollaboratorRepository = {
         proposal_id: input.proposalId,
         user_id: input.userId,
         role: input.role,
-        invited_by: input.invitedBy,
+        invited_by: invitedBy,
         message: input.message ?? null,
         status: "pending",
       })

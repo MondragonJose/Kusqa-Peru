@@ -50,3 +50,6 @@ bun.lockb
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# Backup artifacts
+.backups/

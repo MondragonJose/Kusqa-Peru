@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { fetchRecentEvents } from "@/domain/eventStore";
+import { fetchRecentEvents } from "@/services/eventStoreRepository";
 import { seedRegistry, getAllEvents } from "@/domain/eventRegistry";
 import { compareEventStreams } from "@/domain/eventIntegrity";
 import { assignCausalLinks } from "@/domain/eventCausality";

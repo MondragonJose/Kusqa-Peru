@@ -25,6 +25,7 @@ import {
   proposalCollaboratorsQueryOptions,
   proposalPendingInvitationsQueryOptions,
   proposalCommentsQueryOptions,
+  proposalCommentCountQueryOptions,
 } from "../queryOptions";
 import {
   proposalCoalitionKeys,
@@ -46,6 +47,7 @@ import { proposalCollaboratorRepository } from "@/services/proposalCollaboratorR
 import { proposalCommentRepository } from "@/services/proposalCommentRepository";
 import { userRepository } from "@/services/userRepository";
 import { betaEvents } from "@/lib/telemetry/betaLogger";
+import { consumeRateLimit, getRateLimitResetMs } from "@/lib/rateLimiter";
 
 export function useAllProposals(filters?: {
   region?: ProposalRegion;
@@ -70,16 +72,16 @@ export function useUserProposals(userId?: string) {
   });
 }
 
-export function useCurrentUserProposals() {
+export function useCurrentUserProposals(pg?: { limit?: number; offset?: number }) {
   return useQuery({
-    queryKey: proposalKeys.userProposals("current"),
+    queryKey: [...proposalKeys.userProposals("current"), pg ?? {}] as const,
     queryFn: async () => {
       const userId = await userRepository.getAuthenticatedUserId();
       if (!userId) return [];
-      return proposalRepository.getProposalsByUserId(userId);
+      return proposalRepository.getProposalsByUserId(userId, pg);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -94,6 +96,10 @@ export function useCreateProposal() {
 
   return useMutation({
     mutationFn: async (dto: CreateProposalDTO): Promise<ProposalResult> => {
+      if (!consumeRateLimit("createProposal")) {
+        const resetMs = getRateLimitResetMs("createProposal");
+        throw new Error(`Demasiadas propuestas. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`);
+      }
       betaEvents.proposalCreateStart();
       if (import.meta.env.DEV) {
         console.log("[KUSQA PROPOSAL TRACE] Hook → repository.createProposal");
@@ -189,19 +195,18 @@ export function useProposalComments(
   });
 }
 
+export function useCommentCount(proposalId: string) {
+  return useQuery({
+    ...proposalCommentCountQueryOptions(proposalId),
+  });
+}
+
 export function useInviteCollaborator() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      dto: CreateCollaboratorInvitationDTO,
-    ): Promise<ProposalResult<ProposalCollaborator>> => {
-      const invitedBy = await userRepository.getAuthenticatedUserId();
-      if (!invitedBy) {
-        return { status: "error", error: "Necesitas iniciar sesión para invitar." };
-      }
-      return proposalCollaboratorRepository.invite({ ...dto, invitedBy });
-    },
+    mutationFn: (dto: CreateCollaboratorInvitationDTO): Promise<ProposalResult<ProposalCollaborator>> =>
+      proposalCollaboratorRepository.invite(dto),
     onSuccess: (result, dto) => {
       if (result.status === "success") {
         queryClient.invalidateQueries({
@@ -258,17 +263,23 @@ export function useCreateComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (dto: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> => {
-      const authorId = await userRepository.getAuthenticatedUserId();
-      if (!authorId) {
-        return { status: "error", error: "Necesitas iniciar sesión para comentar." };
+    mutationFn: (dto: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> => {
+      if (!consumeRateLimit("createComment")) {
+        const resetMs = getRateLimitResetMs("createComment");
+        throw new Error(`Demasiados comentarios. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`);
       }
-      return proposalCommentRepository.create({ ...dto, authorId });
+      return proposalCommentRepository.create(dto);
     },
-    onSuccess: (result) => {
+    onMutate: async (dto: CreateCommentDTO) => {
+      await queryClient.cancelQueries({ queryKey: proposalCommentKeys.listAll(dto.proposalId) });
+    },
+    onSuccess: (result, dto) => {
       if (result.status === "success") {
         queryClient.invalidateQueries({
-          queryKey: proposalCommentKeys.root,
+          queryKey: proposalCommentKeys.listAll(dto.proposalId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: proposalCommentKeys.count(dto.proposalId),
         });
       }
     },

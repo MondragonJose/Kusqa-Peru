@@ -1,8 +1,1 @@
-/**
- * Barrel export para services
- * Lógica de negocio de KUSQA
- */
-
-export * from "./missions";
-export * from "./users";
-export * from "./gamification";
+// Barrel intentionally empty — services are imported directly

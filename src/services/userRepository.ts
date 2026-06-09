@@ -21,11 +21,9 @@ const DB_PROFILE_SCHEMA = z.object({
   district: z.string().nullable().optional(),
   experience_points: z.number().nullable().optional(),
   level: z.number().nullable().optional(),
-  badges: z.array(z.string()).nullable().optional(),
 });
 
 const DB_USER_PROGRESS_SCHEMA = z.object({
-  id: z.string().uuid(),
   user_id: z.string().uuid(),
   community_points: z.number(),
   total_missions_completed: z.number(),
@@ -140,7 +138,7 @@ export const userRepository = {
       return this.getDefaultProgress(userId);
     }
 
-    return mapProgressRow(data);
+    return mapProgressRow(parseUserProgressRow(data));
   },
 
   getDefaultProgress(userId: string): UserTerritoryProgress {
@@ -179,7 +177,6 @@ export const userRepository = {
           district: null,
           experience_points: 0,
           level: 1,
-          badges: [],
         })
         .select()
         .single();

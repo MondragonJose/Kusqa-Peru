@@ -61,34 +61,34 @@ export function renderMissionMarkers({
 
     // Visual semantics:
     //   - Mission (active): solid filled circle with region gradient + glow
-    //   - Proposal (open):  outlined circle, soft white fill — distinct but
-    //     modern and consistent with mission shapes
-    const proposalShape = `rounded-full bg-white dark:bg-card border-2 border-violet-400 dark:border-violet-500 text-foreground shadow-md`;
+    //   - Proposal (open):  square pin with seed icon, dotted border — clearly
+    //     communicates "seed / gathering support" vs the filled circle of missions
+    const proposalShape = `rounded-xl bg-white dark:bg-card border-2 border-violet-300 dark:border-violet-600 border-dashed text-foreground shadow-md`;
     const missionShape = `rounded-full ${gradient} text-white shadow-glow border-2 border-white/90`;
     const shapeClasses = isProposal ? proposalShape : missionShape;
-    const emojiColorClass = isProposal ? "" : "";
+    const emojiColorClass = isProposal ? "text-violet-500" : "";
 
     const htmlContent = `
       <div class="relative flex items-center justify-center pointer-events-auto" style="width: ${iconSize}px; height: ${iconSize}px;">
         ${
           !isProposal
             ? `<span class="absolute inset-0 rounded-full ${gradient} ${isSelected ? "scale-125 opacity-40 animate-pulse-ring" : "scale-100 opacity-20"}"></span>`
-            : ""
+            : `<span class="absolute inset-0 rounded-xl bg-violet-300/20 dark:bg-violet-800/20 ${isSelected ? "scale-125" : "scale-100"}"></span>`
         }
-        <div class="relative flex items-center justify-center ${shapeClasses} transition-all duration-300 transform ${isSelected ? `scale-110 ring-4 ${glow}` : "hover:scale-115"}" style="width: 78%; height: 78%;">
-          <span class="select-none text-base ${emojiColorClass}">${mission.emoji}</span>
+        <div class="relative flex items-center justify-center ${shapeClasses} transition-all duration-300 transform ${isSelected ? `scale-110 ring-4 ${isProposal ? "ring-violet-300" : glow}` : "hover:scale-115"}" style="width: 78%; height: 78%;">
+          <span class="select-none text-base ${emojiColorClass}">${isProposal ? "🌱" : mission.emoji}</span>
         </div>
       </div>
     `;
 
     const customIcon = L.divIcon({
       html: htmlContent,
-      className: isProposal ? "custom-proposal-pin" : "custom-mission-pin",
+      className: "custom-map-pin",
       iconSize: [iconSize, iconSize],
       iconAnchor: [iconSize / 2, iconSize / 2],
     });
 
-    const ctaLabel = isProposal ? "Apoyar" : "Unirme";
+    const ctaLabel = isProposal ? "Apoyar iniciativa" : "Unirme";
     const detailHref = isProposal ? `/app/propuesta/${mission.id}` : `/app/mision/${mission.id}`;
 
     const popupHtml = `
@@ -98,6 +98,7 @@ export function renderMissionMarkers({
             <div class="font-bold text-foreground text-sm truncate leading-tight">${mission.title}</div>
             <div class="text-[9px] text-muted-foreground mt-0.5 flex items-center gap-1">
               <span>📍</span> ${mission.district}
+              ${isProposal ? '<span class="text-violet-500 ml-1">🌱 Semilla cívica</span>' : ""}
             </div>
           </div>
           <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${mission.region}</span>

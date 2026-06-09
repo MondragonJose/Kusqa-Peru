@@ -11,7 +11,7 @@ export type BadgeRarity = "común" | "raro" | "épico" | "legendario";
 /** Categoría cívica de la insignia */
 export type BadgeCategory =
   | "territorial"
-  | "social"
+  | "cívica"
   | "liderazgo"
   | "ambiental"
   | "cultural"

@@ -12,8 +12,8 @@ KUSQA exists to lower the barrier for civic participation in Peru. Rather than w
 
 ## Core Purpose
 
-- **Discover** community projects (expeditions) by region, category, or proximity.
-- **Create** new civic proposals with geolocation, images, and team formation.
+- **Discover** community expeditions by district, category, or proximity.
+- **Create** new civic proposals with geolocation, images, and coalition support.
 - **Participate** by joining expeditions, submitting evidence, and earning XP.
 - **Track impact** across districts, regions, and the national territory map.
 - **Build reputation** through a progression system (Caminante → Líder Kusqa).
@@ -30,45 +30,58 @@ KUSQA exists to lower the barrier for civic participation in Peru. Rather than w
 | **Styling** | Tailwind CSS v4 + `tw-animate-css` |
 | **UI Primitives** | shadcn/ui (Radix + Lucide icons) |
 | **State / Server** | TanStack React Query |
-| **Animations** | Framer Motion |
-| **Map** | Leaflet + MarkerCluster |
-| **Drawers** | Vaul |
+| **Map** | Leaflet + MarkerCluster + TopoJSON |
+| **Spatial** | PostGIS (Haversine queries, boundary intersection) |
 | **Backend** | Supabase (PostgreSQL, Auth, Realtime, Storage) |
 | **Validation** | Zod |
-| **Testing** | Vitest |
+| **Testing** | Vitest + Testing Library |
 | **Linting** | ESLint + Prettier + typescript-eslint |
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
 src/
-├── components/       # Shared UI components (AppShell, Onboarding, Map overlay)
-│   └── ui/           # shadcn/ui primitives (button, card, dialog, etc.)
+├── components/       # Shared UI components (AppShell, TerritorialFootprint)
+│   └── ui/           # shadcn/ui primitives
 ├── constants/        # App-wide constants (navigation, categories, gamification)
-├── data/             # Mock/seed data for development
-├── design/           # Design tokens (spacing, shadows, typography)
-├── domain/           # Event-sourced domain layer (events, invariants, projections)
+├── domain/           # Event-sourced domain layer
+│   ├── events.ts     # Event types, reducers, projections
+│   ├── territorial.ts       # Region inference, spatial lookup
+│   ├── territorialEvent.ts  # TerritorialEvent aggregate
+│   ├── spatialRelationships.ts  # Adjacency, spread, continuity
+│   ├── territorialIntelligence.ts  # Vitality, continuity classification
+│   └── ...            # Invariants, causality, evidence, lifecycle
 ├── features/         # Feature slices
-│   ├── auth/         # Authentication provider, hooks, mutations
+│   ├── auth/         # Auth provider, mutation engine, hooks
 │   ├── badges/       # Civic badge system
 │   ├── community/    # Civic trust badge
-│   ├── map/          # Leaflet map, layers, geocoding
-│   ├── missions/     # Public mission cards
+│   ├── map/          # Leaflet map, layers, geocoding, analytics
+│   ├── missions/     # Public mission cards, story modal
 │   ├── notifications/# In-app notification feed
 │   ├── progression/  # Civic route map, stages, kusqa moments
-│   └── proposals/    # Proposal CRUD hooks and queries
+│   └── proposals/    # Proposal CRUD, comments, images, coalition
 ├── hooks/            # Shared React hooks (missions, evidence, realtime)
 ├── lib/              # Core infrastructure
 │   ├── realtime/     # Supabase Realtime → React Query reconciliation
 │   ├── telemetry/    # Operational metrics (Sentry/PostHog shims)
+│   ├── env.ts        # Zod-validated environment variables
 │   ├── supabase.ts   # Supabase client singleton
 │   └── utils.ts      # cn() class merger
-├── routes/           # TanStack file-based routes (app layout + 6 sub-routes)
-├── services/         # Data access layer (repositories, contracts, adapters)
-├── types/            # TypeScript type definitions (domain, Supabase, evidence)
-└── utils/            # Date formatting, geographic helpers
+├── routes/           # TanStack file-based routes
+├── services/         # Data access + business logic
+│   ├── missionRepository.ts   # Mission queries (correct DbMission schema)
+│   ├── userRepository.ts      # Profile + progress queries
+│   ├── proposalRepository.ts  # Proposal CRUD
+│   ├── evidenceRepository.ts  # Evidence queries
+│   ├── evidenceContract.ts    # Evidence domain mapping
+│   ├── districtRepository.ts  # District queries + stats
+│   ├── spatialRepository.ts   # Spatial queries (nearby, density)
+│   ├── storage/               # Evidence upload + signed URLs
+│   └── ...                    # RPC adapters, comment repo, etc.
+├── types/            # TypeScript type definitions
+└── utils/            # Geographic helpers, formatting
 ```
 
 ### Data Flow
@@ -76,12 +89,18 @@ src/
 ```
 Route / Component
     → Feature hook (useMissions, useProposals, ...)
-        → Service / Repository (missions.ts, proposalRepository.ts)
+        → Service / Repository (missionRepository.ts, proposalRepository.ts)
             → Supabase client (lib/supabase.ts)
                 → PostgreSQL + RPCs
 ```
 
-Write operations go through **missionMutationEngine** (optimistic concurrency, dedup, pinned writes, realtime reconciliation).
+Write operations go through **missionMutationEngine** (optimistic concurrency, dedup, pinned writes, realtime reconciliation). Realtime sync is managed per-user via `kusqa-sync:${userId}` channels with 3 `postgres_changes` subscriptions.
+
+### Security Model
+
+- **RLS is the final authority barrier.** Every table has row-level security policies. Service-layer auth resolution (added Phase 16E) provides defense-in-depth.
+- Storage buckets: `mission-evidence` (private, path-prefix RLS), `proposal-images` (public, read-all).
+- Feature flags (`VITE_USE_REALTIME_SYNC`, `VITE_EVIDENCE_UPLOAD_ENABLED`) provide kill-switch safety.
 
 ---
 
@@ -91,135 +110,112 @@ Write operations go through **missionMutationEngine** (optimistic concurrency, d
 
 - Node.js >= 22
 - npm
-- A Supabase project (free tier works)
+- A Supabase project (free tier works; Pro recommended for automated backups)
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and configure:
+Copy `.env.example` to `.env` and configure. Required:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anon/public key |
-| `VITE_USE_LIVE_USER` | No | Enable live auth + profiles (`true`) or mock (`false`, default) |
-| `VITE_USE_RPC_TRANSACTIONS` | No | Use atomic RPC for mission join/complete |
-| `VITE_USE_REALTIME_SYNC` | No | Enable Supabase Realtime sync |
-| `VITE_EVIDENCE_UPLOAD_ENABLED` | No | Enable evidence image uploads |
-| `VITE_GOOGLE_MAPS_API_KEY` | No | Google Places Autocomplete (falls back to local dataset) |
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
+
+Optional feature flags (all default `false`): `VITE_USE_LIVE_USER`, `VITE_USE_RPC_TRANSACTIONS`, `VITE_USE_REALTIME_SYNC`, `VITE_EVIDENCE_UPLOAD_ENABLED`, `VITE_TELEMETRY_ENABLED`.
 
 ### Supabase Setup
 
 1. Create a Supabase project at [supabase.com](https://supabase.com).
-2. Run migrations in order:
-
-```bash
-npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase db push
-```
-
-Or apply each migration file from `supabase/migrations/` manually via the SQL editor.
-
+2. Apply migrations from `supabase/migrations/` in timestamp order via the Supabase SQL editor or `supabase db push`.
 3. Enable Google Auth in Supabase Dashboard → Authentication → Providers.
-4. (Optional) Create the `proposal-images` storage bucket if not created by migrations.
 
 ### Local Development
 
 ```bash
 npm install
-npm run dev
+npm run dev        # Opens at http://localhost:5173
 ```
-
-Opens at `http://localhost:5173`.
 
 ### Production Build
 
 ```bash
-npm run build
-npm run preview
+npm run build      # Includes prebuild typecheck
+npx vercel --prod
 ```
 
 ### Testing
 
 ```bash
-npm run test              # Unit tests (Vitest)
+npm run test              # Unit tests (Vitest) — 200+ tests
 npm run test:watch        # Watch mode
 npm run test:rpc          # RPC integration tests (requires Supabase env)
 ```
 
-### Deployment
-
-The project is configured for **Vercel** deployment via `vercel.json`:
+### Ops Scripts
 
 ```bash
-npx vercel --prod
+npm run backup            # Full DB + Storage backup (see scripts/backup.sh)
+npm run db:verify         # Run consistency checks
+npm run db:verify-rls     # Verify RLS policy coverage
 ```
-
-The `api/index.js` entry point bridges Vercel serverless functions with TanStack Start SSR.
 
 ---
 
 ## Supabase Migrations
 
-The `supabase/migrations/` directory contains 20 sequential migrations covering:
+37 timestamped migrations in `supabase/migrations/` covering:
 
-- User mission tracking (`user_missions`)
-- Civic proposals with geolocation (`proposals`, `proposal_supports`)
-- Mission evidence with moderation (`mission_evidence`)
-- Notifications and moderation reports
-- Authoritative XP RPCs and audit trail (`mission_events`)
-- Storage buckets for proposal images and evidence
-- Row-level security policies
-
-Seed files are provided for development/staging environments.
+| Phase | Tables / Features |
+|-------|-------------------|
+| Baseline | `profiles`, `missions`, `mission_participants`, `user_progress`, `proposals`, `proposal_supports` |
+| Phase B | `user_missions`, `mission_events`, `mission_evidence`, `user_notifications`, `moderation_reports`, storage buckets, realtime publication |
+| Proposals | Proposal enrichment, images, coalition system, collaborators, comments, lifecycle events |
+| Districts | `districts` table with spatial coordinates, FK columns on profiles/missions/proposals, aggregation RPCs |
+| Civic Events | `civic_events` table, event emission RPCs, triggers on proposals/supports/comments |
+| Spatial (Phases 12-13) | `region_metadata`, PostGIS geometry, boundary data, Haversine-based `find_nearby_*` and `find_territories_intersecting` RPCs |
+| Authority (Phase 16E) | RLS policy consistency fixes across all tables |
 
 ---
 
 ## Current Status
 
-Production-stabilization phase. Core flows (auth, mission catalog, map, proposals, profile, progression) are functional and connected to live Supabase data.
-
 | Feature | Status |
 |---------|--------|
 | Auth (Google OAuth) | Live |
-| Mission catalog | Live (Supabase) |
-| Territorial map | Live (Leaflet + clustering) |
-| Proposal creation | Live (with image upload) |
+| Mission catalog | Live (Supabase, RLS-scoped) |
+| Territorial map | Live (Leaflet + clustering + heatmap) |
+| Proposal creation | Live (with images, coalition support, comments) |
+| Districts & spatial queries | Live (with PostGIS spatial queries) |
 | Profile & progression | Live |
+| Civic events | Live (event-sourced activity feed) |
 | Badges system | Live (derived from participation data) |
 | Notifications | Live (Supabase Realtime) |
-| Evidence upload | Phase B (feature-flagged) |
-| Realtime sync | Phase B (feature-flagged) |
-| Multi-device reconciliation | Phase B (debounced, pin-aware) |
+| Evidence upload | Feature-flagged (VITE_EVIDENCE_UPLOAD_ENABLED) |
+| Realtime sync | Feature-flagged (VITE_USE_REALTIME_SYNC) |
+| Multi-device reconciliation | Debounced, pin-aware |
 
 ---
 
-## Roadmap
+## Backup & Recovery
 
-- [x] Core mission + proposal CRUD
-- [x] Territorial map with region filtering
-- [x] Google OAuth + session management
-- [x] User progression (XP, levels, badges)
-- [x] Evidence submission pipeline
-- [x] Realtime cross-device reconciliation
-- [ ] Admin moderation UI
-- [ ] Push notifications (FCM/APNs)
-- [ ] Image compression worker
-- [ ] Community analytics dashboard
+See `scripts/ops/recovery_procedures.md` for detailed recovery scenarios:
+
+- **Failed migration** — restore from `.backups/`, re-apply forward
+- **Accidental deletion** — selective restore from `pg_dump`
+- **Corrupted uploads** — re-upload from storage backup, regenerate signed URLs
+- **Broken RLS** — temporary disable, fix policy, re-enable
+- **Realtime outage** — kill-switch via `VITE_USE_REALTIME_SYNC=false`
+
+Automated backup: `scripts/backup.sh` (DB via `supabase db dump` + storage via REST API).
 
 ---
 
 ## Project Resources
 
-- **Supabase Project:** `uhtgoljscgorfmfvxzux` (MondragonJose's Project)
+- **Supabase Project:** `uhtgoljscgorfmfvxzux`
 - **Deployment:** Vercel
-- **Migrations:** `supabase/migrations/` (20 files)
-- **Ops Scripts:** `scripts/ops/verify_consistency.sql`
-
----
-
-## Contributing
-
-This is an internal civic-tech project. If you're interested in contributing or adapting KUSQA for your region, please open an issue or reach out.
+- **Migrations:** `supabase/migrations/` (37 files)
+- **Ops Scripts:** `scripts/ops/verify_consistency.sql`, `scripts/ops/verify_rls.sql`, `scripts/ops/recovery_procedures.md`
 
 ---
 

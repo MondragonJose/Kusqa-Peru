@@ -18,7 +18,7 @@ interface BadgeCardProps {
 
 const CATEGORY_ICONS: Record<string, string> = {
   territorial: "🗺️",
-  social: "👥",
+  cívica: "👥",
   liderazgo: "⚡",
   ambiental: "🌿",
   cultural: "🎭",

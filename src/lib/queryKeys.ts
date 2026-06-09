@@ -24,11 +24,13 @@ const PROPOSAL_COALITION_ROOT = "proposal-coalition" as const;
 const PROPOSAL_LIFECYCLE_ROOT = "proposal-lifecycle" as const;
 const DISTRICTS_ROOT = "districts" as const;
 const DISTRICT_STATS_ROOT = "district-stats" as const;
+const DISTRICT_INTELLIGENCE_ROOT = "district-intelligence" as const;
 const DISTRICT_ACTIVITY_ROOT = "district-activity" as const;
 const DISTRICT_FEED_ROOT = "district-feed" as const;
 
 const PUBLIC_PROFILES_ROOT = "public-profiles" as const;
 const CIVIC_EVENTS_ROOT = "civic-events" as const;
+const SPATIAL_ROOT = "spatial" as const;
 
 export const missionKeys = {
   all: [MISSIONS_ROOT] as const,
@@ -102,6 +104,8 @@ export const proposalKeys = {
   detail: (proposalId: string) => [PROPOSALS_ROOT, "detail", proposalId] as const,
 
   userProposals: (userId: string) => [PROPOSALS_ROOT, "user", userId] as const,
+
+  supported: (ids: string[]) => [PROPOSALS_ROOT, "supported", ...ids] as const,
 };
 
 export const proposalSupportKeys = {
@@ -125,6 +129,8 @@ export const proposalCommentKeys = {
   root: [PROPOSAL_COMMENTS_ROOT] as const,
   list: (proposalId: string, page: number) =>
     [PROPOSAL_COMMENTS_ROOT, "proposal", proposalId, "list", page] as const,
+  listAll: (proposalId: string) => [PROPOSAL_COMMENTS_ROOT, "proposal", proposalId] as const,
+  count: (proposalId: string) => [PROPOSAL_COMMENTS_ROOT, "proposal", proposalId, "count"] as const,
 };
 export const proposalCoalitionKeys = {
   root: [PROPOSAL_COALITION_ROOT] as const,
@@ -148,6 +154,11 @@ export const districtStatsKeys = {
   byId: (districtId: string) => [DISTRICT_STATS_ROOT, districtId] as const,
 };
 
+export const districtIntelligenceKeys = {
+  root: [DISTRICT_INTELLIGENCE_ROOT] as const,
+  byId: (districtId: string) => [DISTRICT_INTELLIGENCE_ROOT, districtId] as const,
+};
+
 export const districtActivityKeys = {
   root: [DISTRICT_ACTIVITY_ROOT] as const,
   byId: (districtId: string, limit: number) => [DISTRICT_ACTIVITY_ROOT, districtId, limit] as const,
@@ -156,6 +167,12 @@ export const districtActivityKeys = {
 export const districtFeedKeys = {
   root: [DISTRICT_FEED_ROOT] as const,
   bySlug: (slug: string) => [DISTRICT_FEED_ROOT, "slug", slug] as const,
+};
+
+export const spatialKeys = {
+  root: [SPATIAL_ROOT] as const,
+  geometry: [SPATIAL_ROOT, "geometry"] as const,
+  regionMetadata: [SPATIAL_ROOT, "region-metadata"] as const,
 };
 
 /** Ensures legacy key shapes remain prefixes of the central factory (dev-time guard). */

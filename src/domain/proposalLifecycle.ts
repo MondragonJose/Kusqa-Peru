@@ -21,41 +21,73 @@
  */
 
 import { DB_DEFAULTS, type ProposalStatus } from "@/services/proposalContract";
+import type { Proposal } from "@/services/proposalContract";
 
-export type ProposalPhase = "open" | "mobilizing" | "converted" | "dismissed";
+export type ProposalPhase = "open" | "ready" | "mobilizing" | "converted" | "completed" | "archived";
 
-const STATUS_TO_PHASE: Record<ProposalStatus, ProposalPhase> = {
-  pending: "open",
-  active: "mobilizing",
-  resolved: "converted",
-  rejected: "dismissed",
-};
-
+/**
+ * Derive the user-facing phase from DB status + support context.
+ *
+ * Phase 9B expansion:
+ *   pending + below threshold  → "open"
+ *   pending + at/above threshold → "ready"
+ *   active                      → "mobilizing"
+ *   resolved                    → "converted"
+ *   completed (derived)         → "completed"
+ *   rejected                    → "archived"
+ */
 export function getProposalPhase(status: ProposalStatus): ProposalPhase {
-  return STATUS_TO_PHASE[status];
+  switch (status) {
+    case "pending": return "open";
+    case "active": return "mobilizing";
+    case "resolved": return "converted";
+    case "rejected": return "archived";
+  }
+}
+
+/**
+ * Like getProposalPhase but aware of support threshold, so "pending"
+ * splits into "open" (below threshold) vs "ready" (threshold met).
+ */
+export function getProposalPhaseWithThreshold(
+  status: ProposalStatus,
+  supportCount: number,
+  threshold: number,
+): ProposalPhase {
+  if (status === "pending") {
+    return supportCount >= threshold ? "ready" : "open";
+  }
+  return getProposalPhase(status);
 }
 
 /**
  * Spanish copy keyed by phase. Single source of truth so the same
  * vocabulary appears across hero, sticky CTA, and share sheet.
  */
-export const PROPOSAL_PHASE_COPY: Record<
-  ProposalPhase,
-  {
-    label: string;
-    shortLabel: string;
-    ctaPrimary: string | null;
-    ctaSecondary: string | null;
-    blurb: string;
-    action: "support" | "coorganize" | "view_mission" | "none";
-  }
-> = {
+export type ProposalPhaseCopy = {
+  label: string;
+  shortLabel: string;
+  ctaPrimary: string | null;
+  ctaSecondary: string | null;
+  blurb: string;
+  action: "support" | "coorganize" | "view_mission" | "none";
+};
+
+export const PROPOSAL_PHASE_COPY: Record<ProposalPhase, ProposalPhaseCopy> = {
   open: {
     label: "Recogiendo apoyo",
     shortLabel: "En apoyo",
     ctaPrimary: "Apoyar",
     ctaSecondary: "Compartir",
     blurb: "Esta propuesta está sumando voluntades. Si te resuena, deja tu apoyo.",
+    action: "support",
+  },
+  ready: {
+    label: "Lista para movilizar",
+    shortLabel: "Lista",
+    ctaPrimary: "Apoyar",
+    ctaSecondary: "Compartir",
+    blurb: "Esta propuesta ya tiene los apoyos necesarios. El siguiente paso es convertirla en misión.",
     action: "support",
   },
   mobilizing: {
@@ -74,7 +106,15 @@ export const PROPOSAL_PHASE_COPY: Record<
     blurb: "Esta propuesta se transformó en una misión activa de la comunidad.",
     action: "view_mission",
   },
-  dismissed: {
+  completed: {
+    label: "Misión cumplida",
+    shortLabel: "Cumplida",
+    ctaPrimary: null,
+    ctaSecondary: null,
+    blurb: "Esta propuesta se transformó en misión y fue completada por la comunidad.",
+    action: "none",
+  },
+  archived: {
     label: "No procede",
     shortLabel: "Archivada",
     ctaPrimary: null,
@@ -212,10 +252,83 @@ export function getSupportProgress(args: { supportCount: number; threshold: numb
  */
 export function getFeedChip(
   status: ProposalStatus,
-): "en_apoyo" | "en_marcha" | "convertida" | "archivada" {
+  supportCount?: number,
+  threshold?: number,
+): "en_apoyo" | "lista" | "en_marcha" | "convertida" | "cumplida" | "archivada" {
   const phase = getProposalPhase(status);
-  if (phase === "open") return "en_apoyo";
+  if (phase === "archived") return "archivada";
   if (phase === "mobilizing") return "en_marcha";
   if (phase === "converted") return "convertida";
-  return "archivada";
+  if (phase === "completed") return "cumplida";
+  if (
+    supportCount !== undefined &&
+    threshold !== undefined &&
+    supportCount >= threshold
+  ) {
+    return "lista";
+  }
+  return "en_apoyo";
+}
+
+/**
+ * Momentum: how many supports per day the proposal is receiving on average.
+ * Returns null when the proposal is too young (< 1 day) to have meaningful velocity.
+ */
+export function getProposalMomentum(
+  createdAt: string,
+  supportCount: number,
+): { supportsPerDay: number; daysActive: number } | null {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  const daysActive = Math.max(0, (now - created) / (1000 * 60 * 60 * 24));
+  if (daysActive < 1) return null;
+  return {
+    supportsPerDay: parseFloat((supportCount / daysActive).toFixed(2)),
+    daysActive: Math.round(daysActive),
+  };
+}
+
+/**
+ * Human-readable momentum message. Avoids gamified language.
+ * Returns null when there's insufficient data for a meaningful message.
+ */
+export function getMomentumMessage(
+  createdAt: string,
+  supportCount: number,
+  threshold: number,
+): string | null {
+  const momentum = getProposalMomentum(createdAt, supportCount);
+  if (!momentum) {
+    if (supportCount >= threshold) return "Acaba de alcanzar el umbral de apoyos.";
+    return "apenas comienza — los primeros apoyos marcan la dirección.";
+  }
+
+  if (supportCount >= threshold) {
+    if (momentum.daysActive <= 7) return `Alcanzó el umbral en ${momentum.daysActive} día${momentum.daysActive !== 1 ? "s" : ""}.`;
+    return `Reunió los apoyos necesarios en ${momentum.daysActive} días.`;
+  }
+
+  const needed = threshold - supportCount;
+  if (momentum.supportsPerDay > 0) {
+    const estimatedDays = Math.ceil(needed / momentum.supportsPerDay);
+    if (estimatedDays <= 30) {
+      return `Al ritmo actual, alcanzaría el umbral en ~${estimatedDays} día${estimatedDays !== 1 ? "s" : ""}.`;
+    }
+    return `Sumando ${momentum.supportsPerDay} apoyo${momentum.supportsPerDay !== 1 ? "s" : ""} por día.`;
+  }
+
+  return `Se necesitan ${needed} apoyo${needed !== 1 ? "s" : ""} más para movilizar.`;
+}
+
+/**
+ * How "alive" the proposal feels: days since creation with qualitative label.
+ */
+export function getProposalAgeContext(daysActive: number): {
+  label: string;
+  kind: "newborn" | "young" | "established" | "mature";
+} {
+  if (daysActive <= 1) return { label: "recién nacida", kind: "newborn" };
+  if (daysActive <= 7) return { label: "primera semana", kind: "young" };
+  if (daysActive <= 30) return { label: "primer mes", kind: "established" };
+  return { label: "en curso", kind: "mature" };
 }

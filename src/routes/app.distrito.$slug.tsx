@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-import { ArrowLeft, MapPin, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { lazy, Suspense, useMemo } from "react";
+import { ArrowLeft, MapPin, Loader2, AlertCircle, Sparkles, Compass, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,19 +12,27 @@ import {
   useDistrict,
   useDistrictActivity,
   useDistrictFeed,
-  useDistrictStats,
+  useDistrictIntelligence,
   useDistrictTopSupporters,
+  useTerritorialGeometry,
 } from "@/features/districts/hooks";
 import {
   classifyDistrictActivity,
   DISTRICT_ACTIVITY_COPY,
   formatTerritorialImpact,
   isFirstMovementNeeded,
+  deriveMovementDirection,
 } from "@/domain/territoryAggregations";
+import { deriveDistrictVitality, deriveSpatialSignals, buildSpatialNarrative } from "@/domain/territorialIntelligence";
+import { buildAdjacencyMap, findConvergenceZones, detectIsolation } from "@/domain/spatialRelationships";
+import type { SpatialContext } from "@/domain/territorialIntelligence";
+import { useCoordinationNarratives } from "@/features/coordination/hooks/useCoordinationNarratives";
 import { useCurrentUserId } from "@/features/auth";
 import { PublicMissionCard } from "@/features/missions/components/PublicMissionCard";
 import { missionToEntity } from "@/services/entityAdapter";
 import { formatRelativeDate } from "@/utils/date";
+import { districtActivityToTerritorial } from "@/domain/territorialEvent";
+import type { DistrictActivity } from "@/services/districtRepository";
 
 // Lazy-load the activity feed (avatars + timestamps can grow the bundle)
 const DistrictActivityFeed = lazy(() =>
@@ -47,7 +55,7 @@ export const Route = createFileRoute("/app/distrito/$slug")({
 function DistrictPage() {
   const { slug } = useParams({ from: "/app/distrito/$slug" });
   const { data: district, isLoading: districtLoading, isError: districtError } = useDistrict(slug);
-  const { data: stats, isLoading: statsLoading } = useDistrictStats(district?.id ?? "");
+  const { data: intelligence, isLoading: intelligenceLoading } = useDistrictIntelligence(district?.id ?? "");
   const { data: feed, isLoading: feedLoading } = useDistrictFeed(slug);
   const { data: activity } = useDistrictActivity(district?.id ?? "", 12);
   const { data: topSupporters } = useDistrictTopSupporters(district?.id ?? "", 8);
@@ -82,9 +90,8 @@ function DistrictPage() {
 
   const region = district.region as Region;
   const regionMeta = REGION_META[region];
-  const summary = stats ?? {
+  const summary = intelligence ?? {
     missionCount: 0,
-    upcomingMissionCount: 0,
     completedMissionCount: 0,
     proposalCount: 0,
     activeProposalCount: 0,
@@ -96,6 +103,35 @@ function DistrictPage() {
   const activityCopy = DISTRICT_ACTIVITY_COPY[activityClass];
   const impact = formatTerritorialImpact(summary);
   const firstMovement = isFirstMovementNeeded(summary);
+  const vitality = deriveDistrictVitality(summary, activityClass, deriveMovementDirection(summary));
+
+  // Phase 13G: spatial narrative — geometry-aware context
+  const { data: spatialGeometry } = useTerritorialGeometry();
+  const spatialContext = useMemo<SpatialContext | null>(() => {
+    if (!spatialGeometry || spatialGeometry.length === 0) return null;
+    const adjacencyMap = buildAdjacencyMap(spatialGeometry);
+    const neighbors = adjacencyMap.get(slug) ?? [];
+    const zones = findConvergenceZones([slug], adjacencyMap);
+    return {
+      districtSlug: slug,
+      adjacencyMap,
+      activeSlugs: [],
+      dormantSlugs: [],
+      isIsolated: neighbors.length === 0,
+      convergenceZoneSize: zones.length > 0 ? zones[0].length : 1,
+      hasReactivationPotential: false,
+      neighborCount: neighbors.length,
+      activeNeighborCount: undefined,
+    };
+  }, [spatialGeometry, slug]);
+  const spatialNarrative = useMemo(() => {
+    if (!spatialContext) return null;
+    const signals = deriveSpatialSignals(spatialContext);
+    return buildSpatialNarrative(signals);
+  }, [spatialContext]);
+
+  // Phase 14: coordination narratives
+  const coordinationNarratives = useCoordinationNarratives(slug, district.id, summary, undefined);
 
   return (
     <motion.div
@@ -104,7 +140,7 @@ function DistrictPage() {
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-background pb-16"
     >
-      {/* Top bar */}
+      {/* Top bar with breadcrumb */}
       <div className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border/40">
         <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 sm:px-6 h-12">
           <Link
@@ -114,7 +150,15 @@ function DistrictPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <span className="text-sm font-semibold text-muted-foreground truncate">Distrito</span>
+          <nav className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Link to="/app" className="hover:text-foreground transition-colors">
+              Inicio
+            </Link>
+            <span aria-hidden>/</span>
+            <span className="text-foreground font-medium truncate max-w-[200px]">
+              {district.displayName}
+            </span>
+          </nav>
         </div>
       </div>
 
@@ -154,21 +198,54 @@ function DistrictPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-8">
-        {/* Civic narrative / state */}
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-5 sm:space-y-8">
+        {/* Territorial narrative — unified civic memory, spatial, and coordination context */}
         <section
           className="rounded-lg border border-border/40 bg-card/40 p-4 sm:p-5"
           aria-label="Memoria cívica"
         >
           <div className="flex items-start gap-3">
             <Sparkles className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-            <p className="text-sm leading-relaxed text-foreground/90">{activityCopy.description}</p>
+            <div className="space-y-1 flex-1 min-w-0">
+              <p className="text-sm leading-relaxed text-foreground/90">
+                {vitality.narrative}
+              </p>
+              {vitality.dormantDays !== null && vitality.dormantDays > 60 && (
+                <p className="text-xs text-muted-foreground/70">
+                  {vitality.dormantDays} días sin actividad registrada.
+                </p>
+              )}
+              {spatialNarrative && (
+                <div className="flex items-start gap-2 pt-2 mt-2 border-t border-border/20">
+                  <Compass className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs leading-relaxed text-foreground/80">
+                      {spatialNarrative}
+                    </p>
+                    {spatialContext && spatialContext.neighborCount != null && (
+                      <p className="text-[11px] text-muted-foreground/70">
+                        {spatialContext.neighborCount} distrito{spatialContext.neighborCount !== 1 ? "s" : ""} vecino{spatialContext.neighborCount !== 1 ? "s" : ""} en el territorio.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {coordinationNarratives.length > 0 && (
+                <div className="pt-2 mt-2 border-t border-border/20 space-y-1.5">
+                  {coordinationNarratives.slice(0, 1).map((n, i) => (
+                    <p key={i} className="text-xs leading-relaxed text-foreground/70">
+                      {n.message}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
         {/* Stats grid */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label="Resumen territorial">
-          {statsLoading ? (
+          {intelligenceLoading ? (
             <>
               <StatSkeleton />
               <StatSkeleton />
@@ -181,9 +258,7 @@ function DistrictPage() {
                 label="Misiones"
                 value={summary.missionCount}
                 hint={
-                  summary.upcomingMissionCount > 0
-                    ? `${summary.upcomingMissionCount} próximas`
-                    : null
+                  summary.missionCount > 0 ? `${summary.completedMissionCount} completadas` : null
                 }
               />
               <StatTile
@@ -328,24 +403,37 @@ function DistrictPage() {
               </div>
             }
           >
-            <DistrictActivityFeed activities={activity} currentUserId={currentUserId} />
+            <DistrictActivityFeed
+              events={activity.map(
+                (a: DistrictActivity) => districtActivityToTerritorial(a, district.id, district.region),
+              )}
+              currentUserId={currentUserId}
+            />
           </Suspense>
         )}
 
         {/* District meta footer */}
-        <footer className="text-xs text-muted-foreground pt-4 border-t border-border/40">
-          <p>
-            Distrito en el catálogo KUSQA.
-            {district.latitude !== null && district.longitude !== null && (
-              <>
-                {" "}
-                Coordenadas: {district.latitude.toFixed(3)}, {district.longitude.toFixed(3)}.
-              </>
+        <footer className="text-xs text-muted-foreground pt-4 border-t border-border/40 flex items-center justify-between">
+          <div>
+            <p>
+              Distrito en el catálogo KUSQA.
+              {district.latitude !== null && district.longitude !== null && (
+                <>
+                  {" "}
+                  Coordenadas: {district.latitude.toFixed(3)}, {district.longitude.toFixed(3)}.
+                </>
+              )}
+            </p>
+            {summary.lastActivityAt && (
+              <p className="mt-1">Última actividad: {formatRelativeDate(summary.lastActivityAt)}.</p>
             )}
-          </p>
-          {summary.lastActivityAt && (
-            <p className="mt-1">Última actividad: {formatRelativeDate(summary.lastActivityAt)}.</p>
-          )}
+          </div>
+          <Link
+            to="/app/mapa"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline shrink-0"
+          >
+            <MapPin className="h-3 w-3" /> Ver en el mapa
+          </Link>
         </footer>
       </main>
     </motion.div>

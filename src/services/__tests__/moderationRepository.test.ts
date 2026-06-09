@@ -31,18 +31,27 @@ const validInput = {
 describe("moderationRepository", () => {
   describe("report()", () => {
     it("submits a moderation report and returns the row", async () => {
-      mock.queue.tableResponse("moderation_reports", {
-        data: {
-          id: "99999999-9999-9999-9999-999999999999",
-          reporter_id: validInput.reporterId,
-          target_type: validInput.targetType,
-          target_id: validInput.targetId,
-          reason_code: validInput.reasonCode,
-          description: validInput.description,
-          status: "pending",
-          created_at: "2026-06-07T10:00:00Z",
-        },
-        error: null,
+      let callCount = 0;
+      mock.queue.tableResponse("moderation_reports", () => {
+        callCount += 1;
+        if (callCount === 1) {
+          // First call: duplicate check — return no existing report
+          return { data: null, error: null };
+        }
+        // Second call: the actual insert
+        return {
+          data: {
+            id: "99999999-9999-9999-9999-999999999999",
+            reporter_id: validInput.reporterId,
+            target_type: validInput.targetType,
+            target_id: validInput.targetId,
+            reason_code: validInput.reasonCode,
+            description: validInput.description,
+            status: "pending",
+            created_at: "2026-06-07T10:00:00Z",
+          },
+          error: null,
+        };
       });
 
       const row = await moderationRepository.report(validInput);
@@ -51,9 +60,13 @@ describe("moderationRepository", () => {
     });
 
     it("throws on supabase error", async () => {
-      mock.queue.tableResponse("moderation_reports", {
-        data: null,
-        error: { message: "duplicate report" },
+      let callCount = 0;
+      mock.queue.tableResponse("moderation_reports", () => {
+        callCount += 1;
+        if (callCount === 1) {
+          return { data: null, error: null };
+        }
+        return { data: null, error: { message: "duplicate report" } };
       });
 
       await expect(moderationRepository.report(validInput)).rejects.toThrow(

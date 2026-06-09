@@ -10,7 +10,7 @@
 
 import type { KusqaDomainEvent } from "@/domain/events";
 import { appendToRegistry } from "@/domain/eventRegistry";
-import { appendEventToStore } from "@/domain/eventStore";
+import { appendEventToStore } from "@/services/eventStoreRepository";
 
 type EventHandler = (event: KusqaDomainEvent) => void;
 

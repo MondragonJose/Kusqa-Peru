@@ -30,6 +30,18 @@ const mockStats = {
   lastActivityAt: "2026-06-07T10:00:00Z",
 };
 
+const mockIntelligence = {
+  missionCount: 5,
+  completedMissionCount: 3,
+  proposalCount: 3,
+  activeProposalCount: 1,
+  uniqueSupporterCount: 20,
+  acceptedCollaboratorCount: 0,
+  lastActivityAt: "2026-06-07T10:00:00Z",
+  recentProposalCount: 0,
+  recentCompletionCount: 0,
+};
+
 const mockFeed = {
   activeProposals: [],
   recentMissions: [],
@@ -40,18 +52,20 @@ const mockTopSupporters: unknown[] = [];
 
 function setupMocks(overrides: {
   useDistrict?: () => unknown;
-  useDistrictStats?: () => unknown;
+  useDistrictIntelligence?: () => unknown;
   useDistrictFeed?: () => unknown;
   useDistrictActivity?: () => unknown;
   useDistrictTopSupporters?: () => unknown;
+  useTerritorialGeometry?: () => unknown;
 }) {
   vi.resetModules();
   vi.doMock("@/features/districts/hooks", () => ({
     useDistrict: overrides.useDistrict ?? (() => ({ data: mockDistrict, isLoading: false, isError: false })),
-    useDistrictStats: overrides.useDistrictStats ?? (() => ({ data: mockStats, isLoading: false })),
+    useDistrictIntelligence: overrides.useDistrictIntelligence ?? (() => ({ data: mockIntelligence, isLoading: false })),
     useDistrictFeed: overrides.useDistrictFeed ?? (() => ({ data: mockFeed, isLoading: false })),
     useDistrictActivity: overrides.useDistrictActivity ?? (() => ({ data: mockActivity })),
     useDistrictTopSupporters: overrides.useDistrictTopSupporters ?? (() => ({ data: mockTopSupporters })),
+    useTerritorialGeometry: overrides.useTerritorialGeometry ?? (() => ({ data: [] })),
   }));
   vi.doMock("@/features/auth", () => ({
     useCurrentUserId: () => "u1",

@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { MissionRealtimeSync } from "@/components/MissionRealtimeSync";
 import { useAuthState } from "@/features/auth";
-import { useEventPropagation } from "@/domain/eventHandlers";
+import { useEventPropagation } from "@/hooks/useEventPropagation";
 import { useEventHydrationBootstrap } from "@/hooks/useEventHydrationBootstrap";
 
 /**

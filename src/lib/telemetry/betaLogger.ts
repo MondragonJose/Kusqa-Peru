@@ -16,7 +16,14 @@ type BetaEvent =
   | { type: "mission_join_error"; missionId: string; error: string }
   | { type: "profile_update_start"; field: string }
   | { type: "profile_update_success"; field: string }
-  | { type: "profile_update_error"; field: string; error: string };
+  | { type: "profile_update_start"; field: string }
+  | { type: "profile_update_success"; field: string }
+  | { type: "profile_update_error"; field: string; error: string }
+  | { type: "evidence_submit"; missionId: string; evidenceType: "text" | "photo" }
+  | { type: "evidence_submit_success"; missionId: string }
+  | { type: "evidence_submit_error"; missionId: string; error: string }
+  | { type: "mission_completion"; missionId: string; userId: string }
+  | { type: "lifecycle_transition"; missionId: string; from: string; to: string };
 
 const BETA_LOG_PREFIX = "[KUSQA BETA]";
 
@@ -46,4 +53,14 @@ export const betaEvents = {
   profileUpdateSuccess: (field: string) => logBetaEvent({ type: "profile_update_success", field }),
   profileUpdateError: (field: string, error: string) =>
     logBetaEvent({ type: "profile_update_error", field, error }),
+  evidenceSubmit: (missionId: string, evidenceType: "text" | "photo") =>
+    logBetaEvent({ type: "evidence_submit", missionId, evidenceType }),
+  evidenceSubmitSuccess: (missionId: string) =>
+    logBetaEvent({ type: "evidence_submit_success", missionId }),
+  evidenceSubmitError: (missionId: string, error: string) =>
+    logBetaEvent({ type: "evidence_submit_error", missionId, error }),
+  missionCompletion: (missionId: string, userId: string) =>
+    logBetaEvent({ type: "mission_completion", missionId, userId }),
+  lifecycleTransition: (missionId: string, from: string, to: string) =>
+    logBetaEvent({ type: "lifecycle_transition", missionId, from, to }),
 };

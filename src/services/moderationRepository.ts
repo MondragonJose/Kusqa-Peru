@@ -41,6 +41,19 @@ export const moderationRepository = {
   async report(input: z.infer<typeof REPORT_INPUT_SCHEMA>): Promise<ModerationReportRow> {
     const parsed = REPORT_INPUT_SCHEMA.parse(input);
 
+    const { data: existing } = await supabase
+      .from("moderation_reports")
+      .select("id")
+      .eq("reporter_id", parsed.reporterId)
+      .eq("target_type", parsed.targetType)
+      .eq("target_id", parsed.targetId)
+      .in("status", ["pending", "reviewing"])
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error("You have already reported this content");
+    }
+
     const { data, error } = await supabase
       .from("moderation_reports")
       .insert({

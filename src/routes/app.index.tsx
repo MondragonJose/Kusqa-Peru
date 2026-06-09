@@ -114,85 +114,33 @@ function Dashboard() {
   const feedItems = useMemo(() => selectFeedItems(allEntities), [allEntities]);
   const entityStats = useMemo(() => calculateEntityStats(allEntities), [allEntities]);
 
-  // Domain logic: territory building
-  const territories = useMemo(
-    () => [
-      buildTerritory(
-        allEntities,
-        "sierra",
-        "valle-sagrado",
-        "Sierra & Andes",
-        "Sembrando agua y reforestando las cuencas de los abuelos.",
-        "Medio ambiente",
-        "🏔️",
-      ),
-      buildTerritory(
-        allEntities,
-        "costa",
-        "barranco",
-        "Lima & Costa",
-        "Rescatando la memoria visual y comunitaria en el litoral.",
-        "Arte & cultura",
-        "🌊",
-      ),
-      buildTerritory(
-        allEntities,
-        "selva",
-        "selva",
-        "Amazonía & Selva",
-        "Uniendo brigadas fluviales para limpiar nuestros ríos sagrados.",
-        "Comunidad",
-        "🌿",
-      ),
-    ],
-    [allEntities],
-  );
-
-  // Dev logging (kept for debugging)
-  if (import.meta.env.DEV) {
-    console.log(
-      "[KUSQA MISSION TRACE] Dashboard: Featured selection:",
-      featured.length,
-      "missions (hidden:",
-      allEntities.length - featured.length,
-      ")",
-    );
-    console.log(
-      "[KUSQA ENTITY TRACE] Dashboard: Nearby selection (userRegion:",
-      userRegion,
-      "):",
-      nearby.length,
-      "entities (hidden:",
-      allEntities.length - nearby.length,
-      ")",
-    );
-    console.log(
-      "[KUSQA ENTITY TRACE] Dashboard: Feed selection:",
-      feedItems.length,
-      "entities (hidden:",
-      allEntities.length - feedItems.length,
-      ")",
-    );
-    const visibleInDashboard = new Set([...featured, ...nearby, ...feedItems]).size;
-    const visiblePercent =
-      allEntities.length > 0 ? ((visibleInDashboard / allEntities.length) * 100).toFixed(1) : "0";
-    const missionCount = allEntities.filter((e) => e.entityType === "mission").length;
-    const proposalCount = allEntities.filter((e) => e.entityType === "proposal").length;
-    console.log(
-      "[KUSQA ENTITY TRACE] Dashboard visibility summary:",
-      visibleInDashboard,
-      "unique entities visible of",
-      allEntities.length,
-      "total (" + visiblePercent + "% visible)",
-    );
-    console.log(
-      "[KUSQA ENTITY TRACE] Entity breakdown:",
-      missionCount,
-      "missions +",
-      proposalCount,
-      "proposals",
-    );
-  }
+  // Domain logic: territory building — data-driven from available regions
+  const territories = useMemo(() => {
+    const regions = new Set<Region>();
+    const regionDistricts = new Map<Region, Set<string>>();
+    for (const e of allEntities) {
+      if (e.region) {
+        regions.add(e.region);
+        if (!regionDistricts.has(e.region)) regionDistricts.set(e.region, new Set());
+        if (e.district) regionDistricts.get(e.region)!.add(e.district);
+      }
+    }
+    const regionConfig: Record<Region, { id: string; name: string; quote: string; category: string; emoji: string }> = {
+      costa: { id: "costa", name: "Lima & Costa", quote: "Rescatando la memoria visual y comunitaria en el litoral.", category: "Arte & cultura", emoji: "🌊" },
+      sierra: { id: "sierra", name: "Sierra & Andes", quote: "Sembrando agua y reforestando las cuencas de los abuelos.", category: "Medio ambiente", emoji: "🏔️" },
+      selva: { id: "selva", name: "Amazonía & Selva", quote: "Uniendo brigadas fluviales para limpiar nuestros ríos sagrados.", category: "Comunidad", emoji: "🌿" },
+    };
+    return Array.from(regions)
+      .sort()
+      .map((r) => {
+        const cfg = regionConfig[r];
+        const territory = buildTerritory(allEntities, r, cfg?.id ?? r, cfg?.name ?? r, cfg?.quote ?? "", cfg?.category ?? "Comunidad", cfg?.emoji ?? "📍");
+        return {
+          ...territory,
+          districtCount: regionDistricts.get(r)?.size ?? 0,
+        };
+      });
+  }, [allEntities]);
 
   return (
     <>
@@ -309,12 +257,6 @@ function Dashboard() {
                 Rutas activas en cada territorio del Perú.
               </p>
             </div>
-            <Link
-              to="/app/mapa"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 shrink-0"
-            >
-              Ver mapa <ArrowRight className="h-3 w-3" />
-            </Link>
           </div>
 
           {isLoading ? (
@@ -380,17 +322,24 @@ function Dashboard() {
 
                       <div className="flex items-center justify-between text-[11px] pt-2 border-t border-border/30">
                         <span className="text-muted-foreground">{t.leadCategory}</span>
-                        <span
-                          className={
-                            t.activeMissionsCount > 0
-                              ? "font-semibold text-foreground/80 tabular-nums"
-                              : "font-medium text-muted-foreground/70"
-                          }
-                        >
-                          {t.activeMissionsCount > 0
-                            ? `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
-                            : "Próximamente"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {(t as any).districtCount > 0 && (
+                            <span className="text-muted-foreground/70">
+                              {(t as any).districtCount} distrito{(t as any).districtCount !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                          <span
+                            className={
+                              t.activeMissionsCount > 0
+                                ? "font-semibold text-foreground/80 tabular-nums"
+                                : "font-medium text-muted-foreground/70"
+                            }
+                          >
+                            {t.activeMissionsCount > 0
+                              ? `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
+                              : "Próximamente"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -415,9 +364,14 @@ function Dashboard() {
 
         {/* En movimiento — unified feed, simplified */}
         <section className="space-y-2">
-          <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-            <Sparkles className="h-5 w-5 text-accent" /> En movimiento
-          </h2>
+          <div className="flex items-baseline justify-between gap-2 pl-1">
+            <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-accent" /> En movimiento
+            </h2>
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {feedItems.length} iniciativa{feedItems.length !== 1 ? "s" : ""} activa{feedItems.length !== 1 ? "s" : ""}
+            </span>
+          </div>
           <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
             {feedItems.length > 0 ? (
               feedItems.map((item) => {
@@ -427,28 +381,28 @@ function Dashboard() {
                   <button
                     key={item.id}
                     onClick={() => setSelectedEntity(item)}
-                    className="flex items-start gap-2.5 lg:gap-3 p-2.5 lg:p-3 hover:bg-secondary/30 transition-colors w-full text-left"
+                    className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left"
                   >
                     <div
-                      className={`h-9 lg:h-10 w-9 lg:w-10 rounded-xl grid place-items-center text-base lg:text-lg shrink-0 border ${
+                      className={`h-10 w-10 rounded-xl grid place-items-center text-lg shrink-0 border ${
                         isProposalEntity
                           ? "bg-violet-50 dark:bg-violet-950/30 border-violet-100 dark:border-violet-900/30"
                           : "bg-secondary border-border/30"
                       }`}
                     >
-                      {item.emoji || "🗺️"}
+                      {isProposalEntity ? "🌱" : (item.emoji || "🗺️")}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs lg:text-sm text-foreground font-bold truncate flex items-center gap-1">
+                      <div className="text-xs sm:text-sm text-foreground font-bold truncate flex items-center gap-1.5">
                         {item.title}
                         {isProposalEntity && (
-                          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-bold">
-                            Propuesta
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-bold shrink-0">
+                            Semilla cívica
                           </span>
                         )}
                       </div>
-                      <div className="text-[9px] lg:text-[10px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
-                        <MapPin className="h-2.5 w-2.5 opacity-60" />{" "}
+                      <div className="text-[10px] sm:text-[11px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
+                        <MapPin className="h-3 w-3 opacity-60" />{" "}
                         <Link
                           to="/app/distrito/$slug"
                           params={{ slug: districtSlugify(item.district) }}
@@ -462,14 +416,14 @@ function Dashboard() {
                         {isMissionEntity && (
                           <>
                             <span className="opacity-45">•</span>
-                            <Users className="h-2.5 w-2.5 opacity-60" />{" "}
+                            <Users className="h-3 w-3 opacity-60" />{" "}
                             <span>{item.participants}</span>
                           </>
                         )}
                         {isProposalEntity && (
                           <>
                             <span className="opacity-45">•</span>
-                            <span className="truncate">En apoyo</span>
+                            <span className="truncate text-violet-600 dark:text-violet-400 font-semibold">Buscando apoyo</span>
                           </>
                         )}
                       </div>
@@ -484,8 +438,22 @@ function Dashboard() {
                   Tu territorio está en calma
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
-                  Explora el mapa y activa nuevas rutas.
+                  Aún no hay iniciativas activas en tu zona.
                 </p>
+                <div className="flex items-center justify-center gap-3 mt-4">
+                  <Link
+                    to="/app/mapa"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border/60 text-xs font-bold text-foreground hover:bg-secondary/50 transition-colors"
+                  >
+                    <MapPin className="h-3.5 w-3.5" /> Explorar mapa
+                  </Link>
+                  <Link
+                    to="/app/crear"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-xs font-bold hover:opacity-90 transition-opacity"
+                  >
+                    Crear propuesta
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -545,9 +513,9 @@ function Dashboard() {
                                 : { missionId: selectedEntity.id }
                             }
                             onClick={() => setSelectedEntity(null)}
-                            className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white py-3.5 font-semibold text-sm shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-primary text-white py-3.5 font-semibold text-sm shadow-sm hover:bg-primary/90 active:scale-[0.98] transition-all"
                           >
-                            {isProposalEntity ? "Ver propuesta" : "Explorar ruta"}
+                            {isProposalEntity ? "Apoyar iniciativa" : "Explorar ruta"}
                           </Link>
                         </div>
 
@@ -558,8 +526,11 @@ function Dashboard() {
                           </p>
 
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Users className="h-3.5 w-3.5" />
-                            <span>{selectedEntity.participants} personas en esta ruta</span>
+                            {isProposalEntity ? (
+                              <><Sparkles className="h-3.5 w-3.5 text-violet-500" /><span className="text-violet-600 dark:text-violet-400">Iniciativa en busca de apoyo ciudadano</span></>
+                            ) : (
+                              <><Users className="h-3.5 w-3.5" /><span>{selectedEntity.participants} personas en esta ruta</span></>
+                            )}
                           </div>
                         </div>
                       </>

@@ -4,6 +4,7 @@ import { useCurrentUser, useUserXpProgress } from "@/features/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { HeaderBellBadge } from "./HeaderBellBadge";
+import { ConnectivityBanner } from "./ConnectivityBanner";
 
 type NavItem = {
   to: string;
@@ -116,8 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Top bar */}
         <header className="flex-shrink-0 sticky top-0 z-20 glass border-b border-border/60 px-5 lg:px-10 py-3 flex items-center gap-3">
           <Link
-            to="/"
-            search={{ redirect: undefined }}
+            to="/app"
             className="lg:hidden flex items-center gap-2"
           >
             <div className="h-8 w-8 rounded-lg bg-gradient-sunrise grid place-items-center text-white font-bold">
@@ -142,8 +142,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
-          <ErrorBoundary>
+          <div className="flex-1 overflow-y-auto">
+            <ConnectivityBanner />
+            <ErrorBoundary>
             <motion.div
               key={path}
               initial={{ opacity: 0, y: 8 }}

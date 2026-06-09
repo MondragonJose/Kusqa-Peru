@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, CalendarDays, Sparkles } from "lucide-react";
-import { formatProposedDate } from "@/utils/date";
+import { MapPin, CalendarDays, Sparkles, Clock } from "lucide-react";
+import { formatProposedDate, formatRelativeDate } from "@/utils/date";
 import type { Proposal } from "@/services/proposalContract";
 import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
 
@@ -108,6 +108,10 @@ export function ProposalHero({ proposal }: ProposalHeroProps) {
           <div className="inline-flex items-center gap-2 rounded-xl bg-secondary/30 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{phaseCopy.label}</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-xl bg-secondary/20 px-3 py-2">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Creada {formatRelativeDate(proposal.createdAt)}</span>
           </div>
         </div>
       </div>

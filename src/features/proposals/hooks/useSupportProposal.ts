@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { proposalRepository } from "@/services/proposalRepository";
-import { proposalSupportKeys } from "@/lib/queryKeys";
+import { proposalKeys, proposalSupportKeys } from "@/lib/queryKeys";
 import { userRepository } from "@/services/userRepository";
 import { toast } from "sonner";
+import { consumeRateLimit } from "@/lib/rateLimiter";
 import { proposalSupportCountQueryOptions } from "../queryOptions";
 
 export function useSupportedProposalIds() {
@@ -32,25 +33,40 @@ export function useSupportProposal() {
     mutationFn: (proposalId: string) => proposalRepository.supportProposal(proposalId),
     onMutate: async (proposalId: string) => {
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.byUser("current") });
+      await queryClient.cancelQueries({ queryKey: proposalSupportKeys.count(proposalId) });
+      await queryClient.cancelQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
+
       const previous = queryClient.getQueryData<string[]>(proposalSupportKeys.byUser("current"));
+
       queryClient.setQueryData<string[]>(proposalSupportKeys.byUser("current"), (old) =>
         old ? [...old, proposalId] : [proposalId],
       );
+
+      queryClient.setQueryData<number>(proposalSupportKeys.count(proposalId), (old) =>
+        old != null ? old + 1 : undefined,
+      );
+
       return { previous };
     },
-    onError: (_err, _proposalId, context) => {
+    onError: (_err, proposalId, context) => {
       if (context?.previous) {
         queryClient.setQueryData(proposalSupportKeys.byUser("current"), context.previous);
       }
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.count(proposalId) });
       toast.error("No se pudo apoyar la iniciativa. Intenta de nuevo.");
     },
-    onSuccess: () => {
+    onSuccess: (_, proposalId) => {
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.count(proposalId) });
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
       toast.success("¡Gracias por apoyar esta iniciativa!", {
         description: "Tu apoyo ayuda a movilizar la comunidad",
       });
     },
-    onSettled: () => {
+    onSettled: (_, __, proposalId) => {
       queryClient.invalidateQueries({ queryKey: proposalSupportKeys.byUser("current") });
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.count(proposalId) });
+      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
+      queryClient.invalidateQueries({ queryKey: proposalKeys.detail(proposalId) });
     },
   });
 
@@ -58,6 +74,10 @@ export function useSupportProposal() {
     if (supportMutation.isPending) return;
     if (supportedIds.includes(proposalId)) {
       toast.info("Ya apoyaste esta iniciativa");
+      return;
+    }
+    if (!consumeRateLimit("toggleSupport")) {
+      toast.error("Demasiadas acciones. Espera un momento antes de apoyar más iniciativas.");
       return;
     }
     supportMutation.mutate(proposalId);

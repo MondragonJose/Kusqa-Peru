@@ -1,7 +1,3 @@
-/**
- * Operational telemetry — Sentry / PostHog ready, DEV structured logs always available.
- */
-
 const IS_DEV = import.meta.env.DEV;
 
 export type OperationalMetricName =
@@ -21,6 +17,35 @@ type MetricPayload = Record<string, string | number | boolean | undefined>;
 
 const metricCounters = new Map<string, number>();
 
+let sentryInitPromise: Promise<void> | null = null;
+let posthogInitPromise: Promise<void> | null = null;
+
+async function ensureSentryReady(): Promise<void> {
+  if (sentryInitPromise) return sentryInitPromise;
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  if (!dsn) return;
+
+  sentryInitPromise = (async () => {
+    const mod = await import("@/lib/telemetry/sentryShim");
+    mod.initSentry(dsn, IS_DEV ? "development" : "production");
+  })();
+
+  return sentryInitPromise;
+}
+
+async function ensurePostHogReady(): Promise<void> {
+  if (posthogInitPromise) return posthogInitPromise;
+  const key = import.meta.env.VITE_POSTHOG_KEY;
+  if (!key) return;
+
+  posthogInitPromise = (async () => {
+    const mod = await import("@/lib/telemetry/posthogShim");
+    mod.initPostHog(key, "https://app.posthog.com");
+  })();
+
+  return posthogInitPromise;
+}
+
 export function trackOperationalMetric(name: OperationalMetricName, payload?: MetricPayload): void {
   metricCounters.set(name, (metricCounters.get(name) ?? 0) + 1);
 
@@ -30,15 +55,13 @@ export function trackOperationalMetric(name: OperationalMetricName, payload?: Me
 
   if (!import.meta.env.VITE_TELEMETRY_ENABLED) return;
 
-  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-  if (sentryDsn && typeof window !== "undefined") {
+  void ensureSentryReady().then(() => {
     void import("@/lib/telemetry/sentryShim").then((mod) => mod.captureMetric(name, payload));
-  }
+  });
 
-  const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
-  if (posthogKey && typeof window !== "undefined") {
+  void ensurePostHogReady().then(() => {
     void import("@/lib/telemetry/posthogShim").then((mod) => mod.captureMetric(name, payload));
-  }
+  });
 }
 
 export function captureOperationalException(error: Error, context?: MetricPayload): void {
@@ -48,7 +71,13 @@ export function captureOperationalException(error: Error, context?: MetricPayloa
 
   if (!import.meta.env.VITE_TELEMETRY_ENABLED) return;
 
-  void import("@/lib/telemetry/sentryShim").then((mod) => mod.captureException(error, context));
+  void ensureSentryReady().then(() => {
+    void import("@/lib/telemetry/sentryShim").then((mod) => mod.captureException(error, context));
+  });
+
+  void ensurePostHogReady().then(() => {
+    void import("@/lib/telemetry/posthogShim").then((mod) => mod.captureException(error, context));
+  });
 }
 
 export function getOperationalMetricCounters(): ReadonlyMap<string, number> {

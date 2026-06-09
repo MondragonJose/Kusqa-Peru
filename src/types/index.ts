@@ -5,7 +5,6 @@
 
 export * from "./common";
 export * from "./domain";
-export * from "./gamification";
 export * from "./supabase";
 export * from "./userProgress";
 export * from "./evidence";

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,12 +19,14 @@ import {
   PERU_LOCAL_PLACES,
 } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
-import { useCreateProposal } from "@/features/proposals";
+import { useCreateProposal, useAllProposals } from "@/features/proposals";
 import type { ProposalResult } from "@/features/proposals";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "@/features/auth";
 import { toast } from "sonner";
-import { calculateMapDistance } from "@/utils/map";
+import { calculateDistance } from "@/domain/territorial";
+import { detectSimilarProposals } from "@/domain/proposalGovernance";
+import type { ExistingProposal } from "@/domain/proposalGovernance";
 
 export const Route = createFileRoute("/app/crear")({
   component: CreateProject,
@@ -43,10 +45,14 @@ const CATS = ["Medio ambiente", "Educación", "Arte & cultura", "Comunidad", "Sa
 function CreateProject() {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
+  const searchRecord = useSearch({ from: "/app/crear" }) as Record<string, unknown>;
+  const districtFromSearch = typeof searchRecord.district === "string" ? searchRecord.district : undefined;
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState("Medio ambiente");
-  const [district, setDistrict] = useState(currentUser?.district || "");
+  const [district, setDistrict] = useState(
+    districtFromSearch ?? currentUser?.district ?? "",
+  );
   const [region, setRegion] = useState<"costa" | "sierra" | "selva">(
     (currentUser?.region as "costa" | "sierra" | "selva") || "costa",
   );
@@ -59,6 +65,8 @@ function CreateProject() {
   const [flowState, setFlowState] = useState<
     "idle" | "uploading_images" | "saving" | "success" | "partial_success" | "error"
   >("idle");
+  const [stepErrors, setStepErrors] = useState<Record<number, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -68,6 +76,50 @@ function CreateProject() {
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const createProposal = useCreateProposal();
+  const { data: allProposals = [] } = useAllProposals();
+
+  const similarProposals = title.trim() && district.trim()
+    ? detectSimilarProposals(
+        title,
+        district.split(",")[0].trim(),
+        allProposals.map((p): ExistingProposal => ({
+          id: p.id,
+          title: p.title,
+          district: p.district,
+        })),
+      )
+    : [];
+
+  const validateStep = (stepNum: number): string | null => {
+    switch (stepNum) {
+      case 1:
+        if (!title.trim()) return "El título de la propuesta es obligatorio";
+        return null;
+      case 2:
+        if (!district.trim()) return "Selecciona un distrito para tu propuesta";
+        return null;
+      case 3:
+        if (team < 3 || team > 80) return "El equipo debe tener entre 3 y 80 personas";
+        return null;
+      case 4:
+        return null;
+      case 5:
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const handleNextStep = () => {
+    const error = validateStep(step);
+    if (error) {
+      setStepErrors((prev) => ({ ...prev, [step]: error }));
+      setTouched((prev) => ({ ...prev, [`step-${step}`]: true }));
+      return;
+    }
+    setStepErrors((prev) => ({ ...prev, [step]: "" }));
+    setStep((s) => Math.min(STEPS.length, s + 1));
+  };
 
   const {
     suggestions,
@@ -199,7 +251,7 @@ function CreateProject() {
       );
 
       if (matchedPlace) {
-        const distance = calculateMapDistance(coords, matchedPlace.coords);
+        const distance = calculateDistance(coords, matchedPlace.coords);
         if (distance > 50) {
           warnings.push(
             `Las coordenadas parecen estar a ${distance.toFixed(0)} km del distrito seleccionado. Verifica la ubicación.`,
@@ -270,6 +322,9 @@ function CreateProject() {
     }
 
     setIsSubmitting(false);
+    toast.success("Propuesta publicada", {
+      description: "Tu iniciativa ya aparece en el feed y el mapa.",
+    });
     navigate({ to: "/app" });
   };
 
@@ -277,8 +332,8 @@ function CreateProject() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display font-bold text-3xl">Crea tu misión</h1>
-          <p className="text-sm text-muted-foreground">Lidera un proyecto que mueva a tu cuadra.</p>
+          <h1 className="font-display font-bold text-3xl">Propuesta ciudadana</h1>
+          <p className="text-sm text-muted-foreground">Plantea una idea que necesite apoyo de la comunidad.</p>
         </div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
           Paso {step} / {STEPS.length}
@@ -335,13 +390,26 @@ function CreateProject() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-semibold">Nombre de la misión</label>
+                    <label className="text-sm font-semibold">Nombre de la propuesta</label>
                     <input
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setTouched((prev) => ({ ...prev, title: true }));
+                        if (e.target.value.trim()) {
+                          setStepErrors((prev) => ({ ...prev, [1]: "" }));
+                        }
+                      }}
+                      className={`mt-2 w-full rounded-xl border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 ${
+                        touched.title && !title.trim() ? "border-red-400 dark:border-red-500/50" : "border-border"
+                      }`}
                       placeholder="Ej: Reforestación del acantilado en Barranco..."
                     />
+                    {touched.title && !title.trim() && (
+                      <p className="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> El título es obligatorio
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-semibold">Causa principal</label>
@@ -402,10 +470,23 @@ function CreateProject() {
                   <label className="text-sm font-semibold">Distrito</label>
                   <input
                     value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                    onChange={(e) => {
+                      setDistrict(e.target.value);
+                      setTouched((prev) => ({ ...prev, district: true }));
+                      if (e.target.value.trim()) {
+                        setStepErrors((prev) => ({ ...prev, [2]: "" }));
+                      }
+                    }}
+                    className={`mt-2 w-full rounded-xl border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 ${
+                      touched.district && !district.trim() ? "border-red-400 dark:border-red-500/50" : "border-border"
+                    }`}
                     placeholder="Busca y selecciona un distrito en Perú..."
                   />
+                  {touched.district && !district.trim() && (
+                    <p className="mt-1.5 text-[11px] text-red-500 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Selecciona un distrito válido
+                    </p>
+                  )}
                   {suggestions.length > 0 && (
                     <div className="absolute top-[108%] left-0 right-0 bg-card border border-border/40 rounded-xl shadow-lift overflow-hidden z-50">
                       {suggestions.map((s, idx) => (
@@ -449,26 +530,32 @@ function CreateProject() {
                   Paso 3
                 </div>
                 <h2 className="font-display font-bold text-3xl mt-2">¿Cuántos seremos?</h2>
-                <p className="text-muted-foreground mt-2">Define el tamaño ideal del equipo.</p>
+                <p className="text-muted-foreground mt-2">Define el tamaño del equipo para esta iniciativa.</p>
                 <div className="mt-8 text-center">
                   <div className="font-display font-bold text-7xl text-gradient-sunrise">
                     {team}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">jóvenes en tu equipo</div>
+                  <div className="text-sm text-muted-foreground mt-1">personas en el equipo</div>
                 </div>
                 <input
                   type="range"
                   min="3"
                   max="80"
                   value={team}
-                  onChange={(e) => setTeam(Number(e.target.value))}
+                  onChange={(e) => {
+                    setTeam(Number(e.target.value));
+                    setStepErrors((prev) => ({ ...prev, [3]: "" }));
+                  }}
                   className="mt-6 w-full accent-accent"
                 />
                 <div className="mt-6 grid grid-cols-4 gap-2">
                   {[5, 15, 30, 50].map((n) => (
                     <button
                       key={n}
-                      onClick={() => setTeam(n)}
+                      onClick={() => {
+                        setTeam(n);
+                        setStepErrors((prev) => ({ ...prev, [3]: "" }));
+                      }}
                       className="rounded-xl border border-border py-3 text-sm font-semibold hover:bg-secondary transition-smooth"
                     >
                       {n}
@@ -484,7 +571,7 @@ function CreateProject() {
                   Paso 4
                 </div>
                 <h2 className="font-display font-bold text-3xl mt-2">Detalles finales</h2>
-                <p className="text-muted-foreground mt-2">Cuenta más sobre tu misión.</p>
+                <p className="text-muted-foreground mt-2">Cuenta más sobre tu propuesta.</p>
 
                 <label className="mt-6 block text-sm font-semibold">
                   Resumen{" "}
@@ -528,15 +615,18 @@ function CreateProject() {
 
                 <label className="mt-4 block text-sm font-semibold">
                   Descripción completa{" "}
-                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                  <span className="text-muted-foreground font-normal">(opcional, máx. 2000)</span>
                 </label>
                 <textarea
                   rows={5}
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value.slice(0, 2000))}
                   placeholder="Detalla logística, materiales, frecuencia, aliados. Esta información se puede desplegar en la ficha."
                   className="mt-2 w-full rounded-2xl border border-border bg-surface p-4 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 resize-none"
                 />
+                <div className="mt-1 text-[10px] text-muted-foreground text-right">
+                  {description.length}/2000
+                </div>
 
                 {/* Image Upload */}
                 <div className="mt-4">
@@ -611,19 +701,39 @@ function CreateProject() {
                 >
                   ✨
                 </motion.div>
-                <h2 className="font-display font-bold text-3xl mt-6">¡Tu misión está lista!</h2>
+                <h2 className="font-display font-bold text-3xl mt-6">¡Tu propuesta está lista!</h2>
                 <p className="text-muted-foreground mt-3 max-w-md mx-auto">
                   Aparecerá en el mapa de{" "}
                   <span className="font-semibold text-foreground">{district}</span> y notificaremos
-                  a jóvenes de tu zona.
+                  a tu red cívica.
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
-                  Has ganado <span className="font-bold text-accent">+150 XP</span> por liderar 🚀
+                  Has ganado <span className="font-bold text-accent">+150 XP</span> por tu liderazgo 🚀
                 </div>
+                {similarProposals.length > 0 && (
+                  <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 px-4 py-3 text-left">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="text-xs text-amber-700 dark:text-amber-300">
+                      <span className="font-semibold">Propuesta similar detectada:</span>{" "}
+                      "{similarProposals[0].title}" en {similarProposals[0].district}.
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
         </AnimatePresence>
+
+        {stepErrors[step] && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 px-4 py-2.5"
+          >
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+            <span className="text-xs text-red-600 dark:text-red-400 font-medium">{stepErrors[step]}</span>
+          </motion.div>
+        )}
       </div>
 
       <div className="mt-6 flex justify-between gap-3">
@@ -638,9 +748,9 @@ function CreateProject() {
           onClick={
             step === STEPS.length
               ? handlePublish
-              : () => setStep((s) => Math.min(STEPS.length, s + 1))
+              : handleNextStep
           }
-          disabled={isSubmitting}
+          disabled={isSubmitting || (step < STEPS.length && !!validateStep(step))}
           className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-6 py-3 font-semibold shadow-sm hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {flowState === "uploading_images"
@@ -650,7 +760,7 @@ function CreateProject() {
               : isSubmitting
                 ? "Publicando..."
                 : step === STEPS.length
-                  ? "Publicar misión"
+                  ? "Publicar propuesta"
                   : "Continuar"}{" "}
           <ArrowRight className="h-4 w-4" />
         </button>

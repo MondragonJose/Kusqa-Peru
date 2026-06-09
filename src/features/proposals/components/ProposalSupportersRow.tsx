@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
-import { Users, Heart, Sparkles } from "lucide-react";
+import { Users, Heart, Sparkles, Target } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSupportersPreview, useSupportCount } from "@/features/proposals";
 import { useSupportProposal } from "@/features/proposals/hooks/useSupportProposal";
+import { useProposal } from "@/features/proposals/hooks/useProposals";
+import { getProposalThreshold, getSupportProgress } from "@/domain/proposalLifecycle";
 
 interface ProposalSupportersRowProps {
   proposalId: string;
@@ -18,9 +20,14 @@ function initialsFor(s: { firstName: string; username: string }): string {
 }
 
 export function ProposalSupportersRow({ proposalId }: ProposalSupportersRowProps) {
+  const { data: proposal } = useProposal(proposalId);
   const { data: supporters = [], isLoading } = useSupportersPreview(proposalId, 10);
   const { data: totalCount = 0 } = useSupportCount(proposalId);
   const { isSupported } = useSupportProposal();
+
+  const teamSize = proposal?.teamSize ?? 5;
+  const threshold = getProposalThreshold(teamSize);
+  const progress = getSupportProgress({ supportCount: totalCount, threshold });
 
   const visibleSupporters = supporters.slice(0, MAX_VISIBLE_AVATARS);
   const overflow = Math.max(0, totalCount - visibleSupporters.length);
@@ -38,14 +45,31 @@ export function ProposalSupportersRow({ proposalId }: ProposalSupportersRowProps
       transition={{ duration: 0.4 }}
       className="px-5 sm:px-8 py-5 border-b border-border/40"
     >
-      <div className="flex items-baseline justify-between gap-2 mb-3">
-        <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold inline-flex items-center gap-1.5">
-          <Users className="h-3.5 w-3.5" /> Comunidad
-        </h2>
-        <span className="text-xs font-bold text-foreground/80 tabular-nums">
-          {totalCount} {totalCount === 1 ? "apoyo" : "apoyos"}
-        </span>
-      </div>
+      {/* Progress toward coalition threshold */}
+      {proposal && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold inline-flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" /> Coalición
+            </h2>
+            <span className="text-xs font-bold tabular-nums">
+              {totalCount} / {threshold} apoyos
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-violet-100 dark:bg-violet-900/30 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600 transition-all duration-700"
+              style={{ width: `${Math.min(100, progress * 100)}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[10px] text-violet-600 dark:text-violet-400 font-medium flex items-center gap-1">
+            <Target className="h-3 w-3" />
+            {progress >= 1
+              ? "Umbral alcanzado — la propuesta puede movilizarse"
+              : `Se necesitan ${threshold - totalCount} apoyo${threshold - totalCount !== 1 ? "s" : ""} más para movilizar`}
+          </p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center gap-2">
@@ -63,38 +87,40 @@ export function ProposalSupportersRow({ proposalId }: ProposalSupportersRowProps
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex -space-x-2.5">
-            {visibleSupporters.map((s) => (
-              <Avatar
-                key={s.userId}
-                className="h-9 w-9 border-2 border-background ring-1 ring-border/30"
-                title={`@${s.username}`}
-              >
-                {s.avatarUrl ? <AvatarImage src={s.avatarUrl} alt={s.firstName} /> : null}
-                <AvatarFallback className="text-[10px] font-bold bg-accent/15 text-accent">
-                  {initialsFor(s)}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {overflow > 0 && (
-              <div className="h-9 w-9 rounded-full border-2 border-background bg-muted text-muted-foreground grid place-items-center text-[10px] font-bold ring-1 ring-border/30">
-                +{overflow}
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground/90 leading-snug">
-              {namesLine}
-              {totalCount > 3 && (
-                <span className="text-muted-foreground"> y {totalCount - 3} más</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex -space-x-2.5">
+              {visibleSupporters.map((s) => (
+                <Avatar
+                  key={s.userId}
+                  className="h-9 w-9 border-2 border-background ring-1 ring-border/30"
+                  title={`@${s.username}`}
+                >
+                  {s.avatarUrl ? <AvatarImage src={s.avatarUrl} alt={s.firstName} /> : null}
+                  <AvatarFallback className="text-[10px] font-bold bg-accent/15 text-accent">
+                    {initialsFor(s)}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {overflow > 0 && (
+                <div className="h-9 w-9 rounded-full border-2 border-background bg-muted text-muted-foreground grid place-items-center text-[10px] font-bold ring-1 ring-border/30">
+                  +{overflow}
+                </div>
               )}
-            </p>
-            {isSupported(proposalId) && (
-              <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-medium">
-                <Sparkles className="h-3 w-3" /> Tú ya apoyas esta iniciativa
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-foreground/90 leading-snug">
+                {namesLine}
+                {totalCount > 3 && (
+                  <span className="text-muted-foreground"> y {totalCount - 3} más</span>
+                )}
               </p>
-            )}
+              {isSupported(proposalId) && (
+                <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-medium">
+                  <Sparkles className="h-3 w-3" /> Tú ya apoyas esta iniciativa
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

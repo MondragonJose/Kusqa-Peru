@@ -1,23 +1,13 @@
 import { MessageCircle, Heart, Activity } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRelativeDate } from "@/utils/date";
-import type { DistrictActivity } from "@/services/districtRepository";
+import type { TerritorialEvent } from "@/domain/territorialEvent";
+import { TERRITORIAL_EVENT_VERB } from "@/domain/territorialEvent";
 
 interface DistrictActivityFeedProps {
-  activities: DistrictActivity[];
+  events: TerritorialEvent[];
   currentUserId: string | null;
 }
-
-const ACTIVITY_LABELS: Record<string, string> = {
-  join: "se sumó a",
-  join_idempotent: "ya participaba en",
-  complete: "completó",
-  complete_idempotent: "ya había completado",
-  xp_granted: "recibió XP de",
-  rollback_critical: "se revirtió",
-  comment: "comentó en",
-  support: "apoyó",
-};
 
 const ACTIVITY_ICONS: Record<string, typeof Activity> = {
   comment: MessageCircle,
@@ -25,7 +15,7 @@ const ACTIVITY_ICONS: Record<string, typeof Activity> = {
 };
 
 export function DistrictActivityFeed({
-  activities,
+  events,
   currentUserId: _currentUserId,
 }: DistrictActivityFeedProps) {
   return (
@@ -35,34 +25,40 @@ export function DistrictActivityFeed({
         Actividad reciente
       </h2>
       <ul className="space-y-2">
-        {activities.map((a) => {
-          const Icon = ACTIVITY_ICONS[a.activityType] ?? null;
-          const label = ACTIVITY_LABELS[a.activityType] ?? a.activityType;
-          const isMission = a.entityType === "mission";
+        {events.map((e) => {
+          const verb = TERRITORIAL_EVENT_VERB[e.type] ?? e.type;
+          const isMission = e.entityType === "mission";
+          const Icon = ACTIVITY_ICONS[
+            e.type === "proposal.comment_added"
+              ? "comment"
+              : e.type === "proposal.supported"
+                ? "support"
+                : "__none__"
+          ];
           return (
             <li
-              key={a.id}
+              key={e.id}
               className="flex items-start gap-2 rounded-md border border-border/30 p-2"
             >
               <Avatar className="h-7 w-7 shrink-0">
-                <AvatarImage src={a.actorAvatarUrl ?? undefined} alt={a.actorFirstName} />
+                <AvatarImage src={e.actor.avatarUrl ?? undefined} alt={e.actor.firstName} />
                 <AvatarFallback className="text-xs">
-                  {a.actorFirstName.slice(0, 2).toUpperCase()}
+                  {e.actor.firstName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 space-y-0.5">
                 <p className="text-xs leading-relaxed">
-                  <span className="font-medium">{a.actorFirstName}</span>{" "}
-                  <span className="text-muted-foreground">{label}</span>{" "}
-                  <span className="font-medium">{isMission ? "una misión" : "una propuesta"}</span>
-                  {a.detail && (
+                  <span className="font-medium">{e.actor.firstName}</span>{" "}
+                  <span className="text-muted-foreground">{verb}</span>{" "}
+                  <span className="font-medium">{isMission ? "una misión territorial" : "una propuesta ciudadana"}</span>
+                  {e.entityTitle && (
                     <>
-                      : <span className="italic text-foreground/80">"{a.detail}"</span>
+                      : <span className="italic text-foreground/80">"{e.entityTitle}"</span>
                     </>
                   )}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {formatRelativeDate(a.occurredAt)}
+                  {formatRelativeDate(e.createdAt)}
                 </p>
               </div>
               {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}

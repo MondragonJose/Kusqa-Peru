@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import {
@@ -13,7 +14,9 @@ import {
 import { BadgeCard, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
-import { useSupportedProposalIds } from "@/features/proposals";
+import { useSupportedProposalIds, useCurrentUserProposals, proposalKeys } from "@/features/proposals";
+import { proposalRepository } from "@/services/proposalRepository";
+import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
 import {
   MapPin,
   Sparkles,
@@ -29,6 +32,7 @@ import {
   X,
   Zap,
   Upload,
+  Flag,
 } from "lucide-react";
 import { formatRelativeDate } from "@/utils/date";
 
@@ -60,6 +64,13 @@ export function Profile() {
   const completedMissions: Mission[] = timeline?.missions ?? [];
 
   const { data: supportedIds = [] } = useSupportedProposalIds();
+  const { data: supportedProposals = [] } = useQuery({
+    queryKey: [...proposalKeys.supported(supportedIds), "page1"] as const,
+    queryFn: () => proposalRepository.getProposalsByIds(supportedIds, { limit: 100 }),
+    enabled: supportedIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: ownProposals = [] } = useCurrentUserProposals();
 
   const [momentOpen, setMomentOpen] = useState(false);
   const [activeMoment, setActiveMoment] = useState<KusqaMomentData | null>(null);
@@ -220,12 +231,6 @@ export function Profile() {
                 <span className="text-border/80">•</span>
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-primary/70" /> {user.district}
-                  <button
-                    onClick={handleOpenDistrictEdit}
-                    className="text-xs text-primary hover:underline ml-1 px-2 py-1 rounded hover:bg-primary/10 transition-colors min-h-[32px]"
-                  >
-                    Editar
-                  </button>
                 </span>
               </div>
 
@@ -236,12 +241,12 @@ export function Profile() {
             </div>
 
             <div className="flex gap-2 pb-1 z-10 w-full sm:w-auto">
-              <button
-                onClick={handleTriggerCelebration}
-                className="flex-1 sm:flex-initial rounded-xl bg-gradient-sunrise text-white border border-transparent px-4 py-2.5 text-xs font-black shadow-glow hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              <Link
+                to="/app/mapa"
+                className="flex-1 sm:flex-initial rounded-xl bg-primary text-white border border-transparent px-4 py-2.5 text-xs font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
-                <Award className="h-4 w-4" /> Celebrar Hito
-              </button>
+                <MapPin className="h-4 w-4" /> Explorar territorio
+              </Link>
             </div>
           </div>
 
@@ -286,6 +291,28 @@ export function Profile() {
           <Heart className="h-5 w-5 text-rose-500" /> Huella en el territorio
         </h2>
         <div className="rounded-3xl border border-border/80 bg-card overflow-hidden shadow-sm">
+          {/* Territorial Footprint Summary */}
+          <div className="p-5 border-b border-border/40 bg-gradient-to-br from-muted/20 to-transparent">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Distritos alcanzados", value: new Set([
+                  ...completedMissions.map(m => m.district),
+                  ...supportedProposals.map(p => p.district),
+                  ...ownProposals.map(p => p.district),
+                ]).size, icon: "📍" },
+                { label: "Iniciativas apoyadas", value: supportedIds.length, icon: "🤝" },
+                { label: "Propuestas creadas", value: ownProposals.length, icon: "📋" },
+                { label: "Misiones completadas", value: completedMissions.length, icon: "✅" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl bg-card/60 border border-border/30 p-3 text-center">
+                  <span className="text-lg block mb-0.5">{s.icon}</span>
+                  <div className="font-display font-bold text-lg text-foreground tabular-nums">{s.value}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Categories */}
           <div className="p-5 border-b border-border/40">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
@@ -296,6 +323,12 @@ export function Profile() {
                 const categoryCounts: Record<string, number> = {};
                 completedMissions.forEach((m) => {
                   categoryCounts[m.category] = (categoryCounts[m.category] || 0) + 1;
+                });
+                supportedProposals.forEach((p) => {
+                  categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
+                });
+                ownProposals.forEach((p) => {
+                  categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
                 });
                 const sorted = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]) as [
                   string,
@@ -343,6 +376,12 @@ export function Profile() {
                 completedMissions.forEach((m) => {
                   districtCounts[m.district] = (districtCounts[m.district] || 0) + 1;
                 });
+                supportedProposals.forEach((p) => {
+                  districtCounts[p.district] = (districtCounts[p.district] || 0) + 1;
+                });
+                ownProposals.forEach((p) => {
+                  districtCounts[p.district] = (districtCounts[p.district] || 0) + 1;
+                });
                 const sorted = Object.entries(districtCounts).sort((a, b) => b[1] - a[1]) as [
                   string,
                   number,
@@ -367,15 +406,100 @@ export function Profile() {
           {/* Supported Proposals */}
           <div className="p-5">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-              Iniciativas que apoyas
+              Coaliciones que apoyas
             </div>
-            {supportedIds.length > 0 ? (
-              <div className="text-sm font-medium text-violet-600 dark:text-violet-400">
-                {supportedIds.length} iniciativa{supportedIds.length !== 1 ? "s" : ""} apoyada
-                {supportedIds.length !== 1 ? "s" : ""}
+            {supportedProposals.length > 0 ? (
+              <div className="space-y-2">
+                {supportedProposals.slice(0, 5).map((p) => {
+                  const phase = getProposalPhase(p.status);
+                  const phaseCopy = getProposalPhaseCopy(phase);
+                  const phaseEmoji =
+                    phase === "open" ? "🌱" :
+                    phase === "ready" ? "✨" :
+                    phase === "mobilizing" ? "🚶" :
+                    phase === "converted" ? "🔄" :
+                    phase === "completed" ? "✅" : "📄";
+                  return (
+                    <Link
+                      key={p.id}
+                      to="/app/propuesta/$proposalId"
+                      params={{ proposalId: p.id }}
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-violet-100 dark:border-violet-900/30 bg-violet-50/30 dark:bg-violet-950/10 hover:bg-violet-100/50 dark:hover:bg-violet-900/20 transition-colors group"
+                    >
+                      <span className="text-lg shrink-0">{phaseEmoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-foreground truncate group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">
+                          {p.title}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-2.5 w-2.5" /> {p.district}
+                          <span className="opacity-40">·</span>
+                          <span className="text-violet-500 dark:text-violet-400">{phaseCopy.shortLabel}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-700/30 font-semibold">
+                        {phaseCopy.shortLabel}
+                      </span>
+                    </Link>
+                  );
+                })}
+                {supportedIds.length > 5 && (
+                  <p className="text-[10px] text-muted-foreground text-center pt-1">
+                    +{supportedIds.length - 5} iniciativa{supportedIds.length - 5 !== 1 ? "s" : ""} más
+                  </p>
+                )}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">Aún sin apoyos</div>
+            )}
+          </div>
+
+          {/* Own Proposals with Lifecycle */}
+          <div className="p-5 border-t border-border/40">
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+              Tus iniciativas
+            </div>
+            {ownProposals.length > 0 ? (
+              <div className="space-y-2">
+                {ownProposals.slice(0, 5).map((p) => {
+                  const phase = getProposalPhase(p.status);
+                  const phaseCopy = getProposalPhaseCopy(phase);
+                  const created = new Date(p.createdAt);
+                  const daysSince = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <Link
+                      key={p.id}
+                      to="/app/propuesta/$proposalId"
+                      params={{ proposalId: p.id }}
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors group"
+                    >
+                      <span className="text-lg shrink-0">📋</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
+                          {p.title}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-2.5 w-2.5" /> {p.district}
+                          <span className="opacity-40">·</span>
+                          <span>{phaseCopy.shortLabel}</span>
+                          <span className="opacity-40">·</span>
+                          <span>{daysSince}d</span>
+                        </div>
+                        {phase === "ready" && (
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                            ✨ Lista para convertir en misión
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-semibold">
+                        {phaseCopy.shortLabel}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Aún no has creado propuestas</div>
             )}
           </div>
         </div>

@@ -2,12 +2,12 @@
  * Mission evidence upload + submission hooks.
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { evidenceKeys } from "@/lib/queryKeys";
 import { EVIDENCE_FEED_STALE_MS, EVIDENCE_FEED_GC_MS } from "@/lib/queryCache";
 import { submitEvidence, verifyEvidence } from "@/services/missions";
 import { evidenceRepository } from "@/services/evidenceRepository";
-import { userSessionQueryOptions } from "@/features/auth/queryOptions";
+import { consumeRateLimit, getRateLimitResetMs } from "@/lib/rateLimiter";
 import type { Evidence, EvidenceType, CompletionState } from "@/types";
 
 // ─── Query hooks ──────────────────────────────────────────────────────────
@@ -53,14 +53,8 @@ type SubmitEvidenceInput = {
 };
 
 export function useSubmitEvidence() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (input: SubmitEvidenceInput) => {
-      const userId = await queryClient.fetchQuery(userSessionQueryOptions());
-      if (!userId) throw new Error("No authenticated user");
-      return submitEvidence({ ...input, userId });
-    },
+    mutationFn: (input: SubmitEvidenceInput) => submitEvidence(input),
     // Propagation handled centrally by eventHandlers on EvidenceSubmitted
   });
 }
@@ -76,14 +70,13 @@ type UploadMissionEvidenceInput = {
 };
 
 export function useUploadMissionEvidence() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (input: UploadMissionEvidenceInput) => {
-      const userId = await queryClient.fetchQuery(userSessionQueryOptions());
-      if (!userId) throw new Error("No authenticated user");
+    mutationFn: (input: UploadMissionEvidenceInput) => {
+      if (!consumeRateLimit("uploadEvidence")) {
+        const resetMs = getRateLimitResetMs("uploadEvidence");
+        throw new Error(`Demasiadas subidas. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`);
+      }
       return submitEvidence({
-        userId,
         missionId: input.missionId,
         type: input.type ?? "photo",
         caption: input.caption,
@@ -104,14 +97,9 @@ type VerifyEvidenceInput = {
 };
 
 export function useVerifyEvidence() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (input: VerifyEvidenceInput) => {
-      const userId = await queryClient.fetchQuery(userSessionQueryOptions());
-      if (!userId) throw new Error("No authenticated user");
-      return verifyEvidence(input.evidenceId, userId, input.status, input.rejectionReason);
-    },
+    mutationFn: (input: VerifyEvidenceInput) =>
+      verifyEvidence(input.evidenceId, input.status, input.rejectionReason),
     // Propagation handled centrally by eventHandlers on EvidenceVerified / EvidenceRejected
   });
 }

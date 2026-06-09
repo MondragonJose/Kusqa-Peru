@@ -6,6 +6,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import { resolveAuthenticatedUserId } from "@/services/_resolveAuth";
 import {
   dbEvidenceToDomain,
   evidenceToDbInsert,
@@ -82,11 +83,11 @@ export const evidenceRepository = {
    */
   async createTextEvidence(
     missionId: string,
-    userId: string,
     type: EvidenceType,
     description: string,
     options?: { caption?: string; locationLat?: number; locationLng?: number },
   ): Promise<Evidence> {
+    const userId = await resolveAuthenticatedUserId();
     const insert = evidenceToDbInsert(missionId, userId, type, {
       description,
       caption: options?.caption,
@@ -114,7 +115,6 @@ export const evidenceRepository = {
    */
   async createPhotoEvidence(
     missionId: string,
-    userId: string,
     type: EvidenceType,
     evidenceId: string,
     storagePath: string,
@@ -128,6 +128,7 @@ export const evidenceRepository = {
       heightPx?: number;
     },
   ): Promise<Evidence> {
+    const userId = await resolveAuthenticatedUserId();
     const insert = evidenceToDbInsert(missionId, userId, type, {
       storagePath,
       mimeType,
@@ -159,10 +160,10 @@ export const evidenceRepository = {
    */
   async verifyEvidence(
     evidenceId: string,
-    verifierId: string,
     status: "verified" | "rejected",
     rejectionReason?: string,
   ): Promise<Evidence> {
+    const verifierId = await resolveAuthenticatedUserId();
     const update: Record<string, unknown> = {
       moderation_status: mapEvidenceToModeration(status),
       verified_by: verifierId,

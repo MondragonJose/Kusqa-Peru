@@ -11,7 +11,7 @@ export type CivicNotificationType =
   | "insignia" // badge desbloqueado
   | "nivel" // subida de nivel
   | "comunidad" // actividad colectiva del distrito
-  | "social" // acción de otro usuario
+  | "cívica"
   | "presencia" // señal de actividad cercana
   | "logro"; // hito o achievement
 
@@ -47,7 +47,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<CivicNotificationType, string> = {
   insignia: "Insignias",
   nivel: "Expedición",
   comunidad: "Comunidad",
-  social: "Social",
+  cívica: "Cívica",
   presencia: "Actividad cercana",
   logro: "Logros",
 };
@@ -58,7 +58,7 @@ export const NOTIFICATION_TYPE_GRADIENT: Record<CivicNotificationType, string> =
   insignia: "bg-gradient-sunrise",
   nivel: "bg-gradient-andes",
   comunidad: "bg-gradient-jungle",
-  social: "bg-accent",
+  cívica: "bg-accent",
   presencia: "bg-gradient-terrain-costa",
   logro: "bg-gradient-cumbre",
 };

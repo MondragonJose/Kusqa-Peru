@@ -168,6 +168,29 @@ export const proposalConversionRepository = {
   },
 
   /**
+   * Reverse lookup: find the proposal that originated a mission.
+   * Queries lifecycle events where converted_mission_id matches.
+   * Returns the proposal_id if found, null otherwise.
+   */
+  async findProposalByMissionId(
+    missionId: string,
+  ): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from("proposal_lifecycle_events")
+        .select("proposal_id")
+        .eq("converted_mission_id", missionId)
+        .eq("event_type", "mission_created")
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return (data as { proposal_id: string }).proposal_id;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Public-safe list of lifecycle events for a proposal. Used by the
    * conversion history section on the proposal detail page.
    */

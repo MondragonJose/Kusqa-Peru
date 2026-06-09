@@ -35,7 +35,7 @@ const FILTER_TABS: Array<{ key: FilterTab; label: string }> = [
   { key: "presencia", label: "Presencia" },
   { key: "misión", label: "Misiones" },
   { key: "comunidad", label: "Comunidad" },
-  { key: "social", label: "Exploradores" },
+  { key: "cívica", label: "Exploradores" },
   { key: "insignia", label: "Insignias" },
 ];
 

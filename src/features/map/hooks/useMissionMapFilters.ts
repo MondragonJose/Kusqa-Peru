@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import type { Mission, MapCoords, Region, MissionCategory, MissionDifficulty } from "@/types";
 import type { MapFilterState } from "../types";
 import type { CivicEntity } from "@/types/entity";
+import { isMission } from "@/types/entity";
 import { calculateHaversineDistance, isValidLatLng } from "../utils/projection";
 import { sortByLifecyclePriority } from "@/domain/lifecycle";
 
@@ -31,33 +32,33 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
     setFilters(INITIAL_FILTER_STATE);
   }, []);
 
-  // Extract dynamic filter options based on available entities
+  // Only missions have difficulty/category enums — skip proposals for filter options
+  const missions = entities.filter(isMission);
+
   const availableRegions = useMemo(() => {
     const regions = new Set<Region>();
-    entities.forEach((m) => regions.add(m.region));
+    missions.forEach((m) => regions.add(m.region));
     return Array.from(regions);
-  }, [entities]);
+  }, [missions]);
 
   const availableCategories = useMemo(() => {
-    const categories = new Set<MissionCategory>();
-    entities.forEach((m) => categories.add(m.category));
+    const categories = new Set<string>();
+    missions.forEach((m) => categories.add(m.category));
     return Array.from(categories);
-  }, [entities]);
+  }, [missions]);
 
   const availableDifficulties = useMemo(() => {
     const difficulties = new Set<MissionDifficulty>();
-    entities.forEach((m) => difficulties.add(m.difficulty));
+    missions.forEach((m) => difficulties.add(m.difficulty));
     return Array.from(difficulties);
-  }, [entities]);
+  }, [missions]);
 
-  // Dynamic districts derived from real activity
   const availableDistricts = useMemo(() => {
     const districtCounts = new Map<string, number>();
     entities.forEach((m) => {
       const count = districtCounts.get(m.district) || 0;
       districtCounts.set(m.district, count + 1);
     });
-    // Convert to array and sort by activity count
     return Array.from(districtCounts.entries())
       .map(([district, count]) => ({ district, count }))
       .sort((a, b) => b.count - a.count);
@@ -85,10 +86,11 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
         hiddenReason = `category filter (mission.category=${mission.category}, filter=${filters.category})`;
       }
 
-      // 4. Difficulty filter
+      // 4. Difficulty filter — only missions have difficulty
       if (
         !hiddenReason &&
         filters.difficulty !== "todas" &&
+        isMission(mission) &&
         mission.difficulty !== filters.difficulty
       ) {
         hiddenReason = `difficulty filter (mission.difficulty=${mission.difficulty}, filter=${filters.difficulty})`;
@@ -98,7 +100,7 @@ export function useMissionMapFilters(entities: CivicEntity[], userCoords?: MapCo
       if (!hiddenReason && filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase().trim();
         const titleMatch = mission.title.toLowerCase().includes(query);
-        const descMatch = mission.description.toLowerCase().includes(query);
+        const descMatch = mission.description?.toLowerCase().includes(query) ?? false;
         const districtMatch = mission.district.toLowerCase().includes(query);
         if (!titleMatch && !descMatch && !districtMatch) {
           hiddenReason = `search query (query="${filters.searchQuery}")`;

@@ -1,7 +1,13 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Flag, Archive } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useProposal } from "@/features/proposals";
+import { useCurrentUserId } from "@/features/auth";
+import { canArchiveProposal, canReportProposal } from "@/domain/proposalGovernance";
+import { moderationRepository } from "@/services/moderationRepository";
+import { proposalRepository } from "@/services/proposalRepository";
 import { ProposalHero } from "@/features/proposals/components/ProposalHero";
 import { ProposalStickyCTA } from "@/features/proposals/components/ProposalStickyCTA";
 import { ProposalImagesCarousel } from "@/features/proposals/components/ProposalImagesCarousel";
@@ -10,6 +16,7 @@ import {
   ConversionCta,
   ProposalLifecycleTimeline,
 } from "@/features/proposals/components/ConversionCta";
+import { ProposalMomentum } from "@/features/proposals/components/ProposalMomentum";
 
 export const Route = createFileRoute("/app/propuesta/$proposalId")({
   component: ProposalDetail,
@@ -18,6 +25,47 @@ export const Route = createFileRoute("/app/propuesta/$proposalId")({
 function ProposalDetail() {
   const { proposalId } = useParams({ from: "/app/propuesta/$proposalId" });
   const { data: proposal, isLoading, isError, error } = useProposal(proposalId);
+  const currentUserId = useCurrentUserId();
+  const [archiving, setArchiving] = useState(false);
+  const [reporting, setReporting] = useState(false);
+
+  const handleArchive = async () => {
+    if (!proposal || archiving) return;
+    setArchiving(true);
+    try {
+      const result = await proposalRepository.updateProposal(proposal.id, { status: "rejected" });
+      if (result.status === "error") {
+        toast.error("No se pudo archivar", { description: result.error });
+      } else {
+        toast.success("Propuesta archivada");
+      }
+    } catch {
+      toast.error("Error al archivar");
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!proposal || !currentUserId || reporting) return;
+    setReporting(true);
+    try {
+      await moderationRepository.report({
+        reporterId: currentUserId,
+        targetType: "proposal",
+        targetId: proposal.id,
+        reasonCode: "inappropriate",
+        description: "",
+      });
+      toast.success("Reporte enviado", {
+        description: "Gracias por ayudar a mantener la comunidad.",
+      });
+    } catch {
+      toast.error("Error al enviar reporte");
+    } finally {
+      setReporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -70,10 +118,35 @@ function ProposalDetail() {
       <article className="max-w-3xl mx-auto bg-background">
         <ProposalImagesCarousel proposal={proposal} />
         <ProposalHero proposal={proposal} />
+        <ProposalMomentum proposal={proposal} />
         <div className="px-4 sm:px-6 pb-6 space-y-4">
           <ProposalTabs proposal={proposal} />
           <ConversionCta proposalId={proposal.id} />
           <ProposalLifecycleTimeline proposalId={proposal.id} />
+          {currentUserId && (
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/20">
+              {canArchiveProposal(proposal.userId, currentUserId!, proposal.status) && (
+                <button
+                  onClick={handleArchive}
+                  disabled={archiving}
+                  className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <Archive className="h-3 w-3" />
+                  {archiving ? "Archivando..." : "Archivar propuesta"}
+                </button>
+              )}
+              {canReportProposal(currentUserId!, proposal.userId) && (
+                <button
+                  onClick={handleReport}
+                  disabled={reporting}
+                  className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+                >
+                  <Flag className="h-3 w-3" />
+                  {reporting ? "Enviando..." : "Reportar"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </article>
 

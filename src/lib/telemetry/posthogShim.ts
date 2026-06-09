@@ -1,11 +1,31 @@
-/**
- * Lazy PostHog shim — loads only when VITE_POSTHOG_KEY is set.
- */
+import posthog from "posthog-js";
 
 type MetricPayload = Record<string, string | number | boolean | undefined>;
 
+let initialized = false;
+
+export function initPostHog(apiKey: string, apiHost: string): void {
+  if (initialized) return;
+  initialized = true;
+
+  posthog.init(apiKey, {
+    api_host: apiHost,
+    capture_pageview: false,
+    loaded: (ph) => {
+      ph.identify(undefined);
+    },
+  });
+}
+
 export function captureMetric(name: string, payload?: MetricPayload): void {
-  if (import.meta.env.DEV) {
-    console.debug("[kusqa:posthog:metric]", name, payload);
-  }
+  posthog.capture(name, payload);
+}
+
+export function captureException(error: Error, context?: MetricPayload): void {
+  posthog.capture("$exception", {
+    ...context,
+    $exception_message: error.message,
+    $exception_type: error.name,
+    $exception_stack: error.stack,
+  });
 }

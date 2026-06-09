@@ -73,7 +73,7 @@ export type Notification = {
   id: string;
   title: string;
   body: string; // Unified: single description/body field
-  type: "mission" | "badge" | "achievement" | "event" | "social" | "level" | "community";
+  type: "mission" | "badge" | "achievement" | "event" | "civic" | "level" | "community";
   timestamp: string; // Unified: single time field (e.g. "hace 2h")
   read: boolean; // Unified: single read/unread field (true = already read)
   emoji?: string;

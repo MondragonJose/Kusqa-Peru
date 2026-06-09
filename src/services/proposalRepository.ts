@@ -13,6 +13,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { z } from "zod";
+import { getProposalThreshold } from "@/domain/proposalLifecycle";
 import {
   type Proposal,
   type CreateProposalDTO,
@@ -42,6 +43,11 @@ export type {
   ProposalSupportStats,
   ProposalCoalition,
   ProposalCollaborator,
+};
+
+export type PaginationParams = {
+  limit?: number;
+  offset?: number;
 };
 
 // ─── Zod schemas (validate snake_case DB payloads ONLY) ────────────────────
@@ -135,6 +141,10 @@ function toDomain(db: DbProposalRow): Proposal {
     locationLabel: db.location_label,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
+    readyAt: db.ready_at ?? null,
+    convertedAt: db.converted_at ?? null,
+    completedAt: db.completed_at ?? null,
+    hasConvertedMissionId: db.has_converted_mission_id ?? null,
   };
 }
 
@@ -246,12 +256,15 @@ export const proposalRepository = {
     return toDomain(assertDbRow(rawData));
   },
 
-  async getProposalsByUserId(userId: string): Promise<Proposal[]> {
+  async getProposalsByUserId(userId: string, pg?: PaginationParams): Promise<Proposal[]> {
+    const limit = pg?.limit ?? 50;
+    const offset = pg?.offset ?? 0;
     const { data: rawData, error } = await supabase
       .from("proposals")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error("[KUSQA PROPOSAL TRACE] Error fetching user proposals:", error);
@@ -261,16 +274,44 @@ export const proposalRepository = {
     return assertDbRows(rawData).map(toDomain);
   },
 
-  async getAllProposals(filters?: {
-    region?: ProposalRegion;
-    status?: ProposalStatus;
-    district?: string;
-  }): Promise<Proposal[]> {
+  async getProposalsByIds(ids: string[], pg?: PaginationParams): Promise<Proposal[]> {
+    if (ids.length === 0) return [];
+    const limit = pg?.limit ?? 100;
+    const offset = pg?.offset ?? 0;
+    const { data: rawData, error } = await supabase
+      .from("proposals")
+      .select("*")
+      .in("id", ids)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error("[KUSQA PROPOSAL TRACE] Error fetching proposals by ids:", error);
+      throw new Error(`Failed to fetch proposals by ids: ${error.message}`);
+    }
+
+    return assertDbRows(rawData).map(toDomain);
+  },
+
+  async getAllProposals(
+    filters?: {
+      region?: ProposalRegion;
+      status?: ProposalStatus;
+      district?: string;
+      districtId?: string;
+    },
+    pg?: PaginationParams,
+  ): Promise<Proposal[]> {
+    const limit = pg?.limit ?? 50;
+    const offset = pg?.offset ?? 0;
     let query = supabase.from("proposals").select("*").order("created_at", { ascending: false });
 
     if (filters?.region) query = query.eq("region", filters.region);
     if (filters?.status) query = query.eq("status", filters.status);
+    if (filters?.districtId) query = query.eq("district_id", filters.districtId);
     if (filters?.district) query = query.ilike("district", `%${filters.district}%`);
+
+    query = query.range(offset, offset + limit - 1);
 
     const { data: rawData, error } = await query;
 
@@ -320,10 +361,19 @@ export const proposalRepository = {
       return { status: "error", error: `Datos inválidos: ${msg}` };
     }
 
+    let userId: string;
+    try {
+      userId = await resolveUserId();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Auth failed";
+      return { status: "error", error: msg };
+    }
+
     const { data: rawData, error } = await supabase
       .from("proposals")
       .update(validatedPayload)
       .eq("id", id)
+      .eq("user_id", userId)
       .select()
       .maybeSingle();
 
@@ -341,7 +391,15 @@ export const proposalRepository = {
   },
 
   async deleteProposal(id: string): Promise<ProposalResult<void>> {
-    const { error } = await supabase.from("proposals").delete().eq("id", id);
+    let userId: string;
+    try {
+      userId = await resolveUserId();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Auth failed";
+      return { status: "error", error: msg };
+    }
+
+    const { error } = await supabase.from("proposals").delete().eq("id", id).eq("user_id", userId);
 
     if (error) {
       console.error("[KUSQA PROPOSAL TRACE] Error deleting proposal:", error);
@@ -353,6 +411,11 @@ export const proposalRepository = {
 
   // ─── Proposal supports ───────────────────────────────────────────────────
 
+  /**
+   * Add support + lifecycle-aware threshold check.
+   * Phase 10B: if this support crosses the threshold, logs a
+   * `coalition_threshold_reached` event and persists ready_at.
+   */
   async supportProposal(proposalId: string): Promise<ProposalResult<void>> {
     let userId: string;
     try {
@@ -362,16 +425,62 @@ export const proposalRepository = {
       return { status: "error", error: msg };
     }
 
+    // Get proposal + current count before inserting
+    const [existing, currentCount] = await Promise.all([
+      this.getProposalById(proposalId),
+      this.getSupportCount(proposalId),
+    ]);
+
+    if (!existing) {
+      return { status: "error", error: "Propuesta no encontrada" };
+    }
+    if (existing.status !== "pending" && existing.status !== "active") {
+      return { status: "error", error: "Esta propuesta ya no acepta apoyos" };
+    }
+
+    const threshold = getProposalThreshold(existing.teamSize);
+    const wasBelowThreshold = currentCount < threshold;
+    const newCount = currentCount + 1;
+
+    // Insert support (idempotent on duplicate)
     const { error } = await supabase
       .from("proposal_supports")
       .insert({ user_id: userId, proposal_id: proposalId });
 
     if (error) {
       if (error.code === "23505") {
+        // Already supported — that's fine, return success
         return { status: "success", data: undefined as void };
       }
       console.error("[KUSQA PROPOSAL TRACE] Error supporting proposal:", error);
       return { status: "error", error: `DB error: ${error.message}` };
+    }
+
+    // Phase 10B: if threshold was just crossed, log lifecycle event + persist ready_at
+    if (wasBelowThreshold && newCount >= threshold && !existing.readyAt) {
+      try {
+        await supabase
+          .from("proposals")
+          .update({ ready_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .eq("id", proposalId)
+          .is("ready_at", null); // Phase 11: guard against duplicate crossings
+
+        await supabase.rpc("log_proposal_lifecycle_event", {
+          p_proposal_id: proposalId,
+          p_event_type: "coalition_threshold_reached",
+          p_actor_id: userId,
+          p_from_status: existing.status,
+          p_to_status: existing.status,
+          p_payload: JSON.stringify({
+            support_count: newCount,
+            threshold,
+          }),
+        });
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          console.error("[KUSQA PROPOSAL TRACE] Failed to log threshold event:", e);
+        }
+      }
     }
 
     return { status: "success", data: undefined as void };
@@ -415,17 +524,9 @@ export const proposalRepository = {
   },
 
   async getSupportCount(proposalId: string): Promise<number> {
-    const { count, error } = await supabase
-      .from("proposal_supports")
-      .select("*", { count: "exact", head: true })
-      .eq("proposal_id", proposalId);
-
-    if (error) {
-      console.error("[KUSQA PROPOSAL TRACE] Error counting proposal supports:", error);
-      return 0;
-    }
-
-    return count ?? 0;
+    // Use the support stats view (single query) for consistency
+    const stats = await this.getSupportStats(proposalId);
+    return stats.supportCount;
   },
 
   /**

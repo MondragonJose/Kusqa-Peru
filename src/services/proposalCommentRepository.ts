@@ -12,6 +12,7 @@
  */
 
 import { supabase } from "@/lib/supabase";
+import { resolveAuthenticatedUserId } from "@/services/_resolveAuth";
 import { DB_DEFAULTS } from "@/services/proposalContract";
 import type {
   CreateCommentDTO,
@@ -79,6 +80,19 @@ const PAGE_SIZE_DEFAULT = 20;
 const PAGE_SIZE_MAX = 50;
 
 export const proposalCommentRepository = {
+  async count(proposalId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from("proposal_comments")
+      .select("*", { count: "exact", head: true })
+      .eq("proposal_id", proposalId)
+      .is("deleted_at", null);
+
+    if (error) {
+      console.error("[KUSQA COMMENT TRACE] Error counting comments:", error);
+      return 0;
+    }
+    return count ?? 0;
+  },
   /**
    * List comments for a proposal, paginated, threaded (1 level only).
    * Returns top-level comments in created_at ASC order with their
@@ -175,8 +189,9 @@ export const proposalCommentRepository = {
    * Post a new comment or reply. Caller is the author.
    */
   async create(
-    input: CreateCommentDTO & { authorId: string },
+    input: CreateCommentDTO,
   ): Promise<ProposalResult<ProposalComment>> {
+    const authorId = await resolveAuthenticatedUserId();
     const trimmed = input.content.trim();
     if (trimmed.length < DB_DEFAULTS.COMMENT_MIN) {
       return { status: "error", error: "El comentario no puede estar vacío." };
@@ -192,7 +207,7 @@ export const proposalCommentRepository = {
       .from("proposal_comments")
       .insert({
         proposal_id: input.proposalId,
-        user_id: input.authorId,
+        user_id: authorId,
         parent_comment_id: input.parentCommentId ?? null,
         content: trimmed,
       })
@@ -215,7 +230,7 @@ export const proposalCommentRepository = {
     }
     return {
       status: "success",
-      data: toDomain(parsed.data, { currentUserId: input.authorId, now: Date.now() }),
+      data: toDomain(parsed.data, { currentUserId: authorId, now: Date.now() }),
     };
   },
 

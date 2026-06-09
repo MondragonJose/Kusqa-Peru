@@ -3,7 +3,6 @@
  * Uses services/missions.ts which correctly uses mission_participants table.
  */
 
-import { resolveAuthenticatedUserId } from "@/features/auth/mutations/authMutationContext";
 import {
   applyOptimisticJoin,
   createMissionMutation,
@@ -17,16 +16,13 @@ type JoinUserMissionInput = {
 
 export const useJoinUserMission = createMissionMutation<JoinUserMissionInput, boolean>({
   kind: "joinMission",
-  mutationFn: async (queryClient, { missionId }) => {
-    const userId = await resolveAuthenticatedUserId(queryClient);
-    return joinMissionService(missionId, userId);
+  mutationFn: async (_queryClient, { missionId }) => {
+    return joinMissionService(missionId);
   },
-  writeContext: ({ missionId }, userId) => ({
-    userId,
+  writeContext: ({ missionId }) => ({
     missionIds: [missionId],
   }),
-  invalidate: ({ missionId }, _output, userId) => ({
-    userId,
+  invalidate: ({ missionId }, _output, _userId) => ({
     missionIds: [missionId],
   }),
   optimistic: (queryClient, { missionId }, userId) => {

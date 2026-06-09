@@ -4,6 +4,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 import type { RealtimeChannel } from "@supabase/realtime-js";
+import { captureOperationalException } from "@/lib/telemetry";
 import {
   hasLocalWriteInFlight,
   reconcileCache,
@@ -90,6 +91,7 @@ function enqueueRemoteEvent(
 export function subscribeMissionRealtime(queryClient: QueryClient, userId: string): () => void {
   const state = getBridgeState(queryClient);
   const generation = ++state.generation;
+  let wasDisconnected = false;
 
   if (state.channel) {
     void supabase.removeChannel(state.channel);
@@ -131,7 +133,12 @@ export function subscribeMissionRealtime(queryClient: QueryClient, userId: strin
         if (event) enqueueRemoteEvent(queryClient, userId, event);
       },
     )
-    .on("postgres_changes", { event: "*", schema: "public", table: "missions" }, (payload) => {
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "missions" }, (payload) => {
+      if (generation !== state.generation) return;
+      const event = mapRealtimePayloadToDomainEvent("missions", payload, userId);
+      if (event) enqueueRemoteEvent(queryClient, userId, event);
+    })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "missions" }, (payload) => {
       if (generation !== state.generation) return;
       const event = mapRealtimePayloadToDomainEvent("missions", payload, userId);
       if (event) enqueueRemoteEvent(queryClient, userId, event);
@@ -139,9 +146,23 @@ export function subscribeMissionRealtime(queryClient: QueryClient, userId: strin
     .subscribe((status) => {
       if (status === "SUBSCRIBED") {
         trackOperationalMetric("realtime.channel.subscribed", { userId });
+        // Phase 11C: on reconnect after disconnect, flush pending events
+        // to reconcile state missed during the disconnect window.
+        if (wasDisconnected) {
+          wasDisconnected = false;
+          flushPendingEvents(queryClient, userId);
+        }
       }
       if (status === "CHANNEL_ERROR") {
         trackOperationalMetric("realtime.channel.error", { userId });
+        captureOperationalException(
+          new Error(`Realtime channel error for user ${userId}`),
+          { userId, channel: `kusqa-sync:${userId}` },
+        );
+        wasDisconnected = true;
+      }
+      if (status === "CLOSED") {
+        wasDisconnected = true;
       }
     });
 

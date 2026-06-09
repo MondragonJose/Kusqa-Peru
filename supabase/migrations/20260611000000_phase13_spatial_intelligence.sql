@@ -1,0 +1,299 @@
+-- KUSQA Phase 13 — Spatial Intelligence & Territorial Navigation
+--
+-- Transforms the spatial layer from approximate GeoJSON storage into
+-- real territorial infrastructure with authoritative boundaries and
+-- spatial query capability.
+--
+-- What this migration does:
+--   1. Enables PostGIS extension (if available)
+--   2. Adds geometry column to districts with GIST spatial index
+--   3. Seeds real district boundary polygons from INEI data (via pe-atlas)
+--   4. Creates haversine-based spatial query RPCs (PostGIS-independent)
+--   5. Adds territory-level navigation RPC
+--
+-- All operations are additive and idempotent.
+
+set search_path = public;
+
+-- ===========================================================================
+-- 1) PostGIS extension (optional — enables ST_DWithin, ST_Contains, etc.)
+-- ===========================================================================
+
+create extension if not exists postgis schema public;
+
+-- ===========================================================================
+-- 2) Add geometry column to districts + spatial index
+-- ===========================================================================
+
+alter table public.districts
+  add column if not exists geometry geometry(Geometry, 4326) null;
+
+create index if not exists districts_geometry_gist_idx
+  on public.districts using gist (geometry);
+
+comment on column public.districts.geometry is
+  'PostGIS geometry (SRID 4326) for the district boundary. Populated from boundary GeoJSON. NULL for districts without authoritative polygon data.';
+
+-- Populate geometry from existing boundary GeoJSON where possible
+update public.districts
+set geometry = ST_GeomFromGeoJSON(boundary->>'geometry')
+where boundary is not null
+  and boundary->'geometry' is not null
+  and geometry is null;
+
+-- ===========================================================================
+-- 3) Real district boundary polygons from INEI data (via pe-atlas, MIT license)
+-- ===========================================================================
+
+-- [seed_boundary_data.sql content]
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-71.4206,-16.3206],[-71.4812,-16.38],[-71.5166,-16.4028],[-71.5286,-16.3906],[-71.4106,-16.2963],[-71.4206,-16.3206]]]}}'::jsonb where slug = 'miraflores';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.018,-12.1313],[-77.0161,-12.1556],[-77.0263,-12.1573],[-77.0294,-12.1401],[-77.018,-12.1313]]]}}'::jsonb where slug = 'barranco';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0228,-12.0908],[-77.0099,-12.0891],[-77.0104,-12.1073],[-77.0274,-12.1029],[-77.056,-12.1109],[-77.0607,-12.1076],[-77.055,-12.0919],[-77.0485,-12.0851],[-77.0228,-12.0908]]]}}'::jsonb where slug = 'san-isidro';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.7476,-6.3925],[-77.7451,-6.4273],[-77.7797,-6.4652],[-77.8608,-6.4797],[-77.8748,-6.4231],[-77.9242,-6.3573],[-77.8977,-6.3542],[-77.8461,-6.3874],[-77.7476,-6.3925]]]}}'::jsonb where slug = 'magdalena';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-73.8449,-12.953],[-73.863,-12.9859],[-73.8346,-12.9991],[-73.8364,-13.0319],[-73.8548,-13.0553],[-73.836,-13.1081],[-73.8533,-13.1342],[-73.9173,-13.1156],[-73.9443,-13.1286],[-73.9688,-13.1729],[-74.0363,-13.0985],[-74.0659,-13.0321],[-74.0774,-12.985],[-74.0112,-12.9903],[-73.9822,-12.959],[-73.9288,-12.9469],[-73.9,-12.9],[-73.8704,-12.905],[-73.8449,-12.953]]]}}'::jsonb where slug = 'san-miguel';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0497,-12.0703],[-77.0631,-12.0866],[-77.0721,-12.0837],[-77.0777,-12.0685],[-77.0612,-12.0675],[-77.0497,-12.0703]]]}}'::jsonb where slug = 'pueblo-libre';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0362,-12.0798],[-77.0485,-12.0851],[-77.055,-12.0919],[-77.0631,-12.0866],[-77.0497,-12.0703],[-77.0456,-12.0652],[-77.0362,-12.0798]]]}}'::jsonb where slug = 'jesus-maria';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0228,-12.0908],[-77.0485,-12.0851],[-77.0362,-12.0798],[-77.0281,-12.0787],[-77.0228,-12.0908]]]}}'::jsonb where slug = 'lince';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.9817,-12.0846],[-76.9936,-12.1113],[-77.0104,-12.1073],[-77.0099,-12.0891],[-77.0042,-12.084],[-76.9873,-12.08],[-76.9817,-12.0846]]]}}'::jsonb where slug = 'san-borja';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.9478,-12.1175],[-76.9807,-12.1388],[-76.9864,-12.1675],[-77.0161,-12.1556],[-77.018,-12.1313],[-77.0026,-12.1265],[-76.9936,-12.1113],[-76.9817,-12.0846],[-76.9763,-12.0782],[-76.9478,-12.1175]]]}}'::jsonb where slug = 'surco';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.8892,-12.0593],[-76.884,-12.0899],[-76.9107,-12.1223],[-76.9408,-12.1221],[-76.9478,-12.1175],[-76.9763,-12.0782],[-76.8892,-12.0593]]]}}'::jsonb where slug = 'la-molina';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.9314,-11.9421],[-76.9694,-11.9948],[-76.9527,-12.0212],[-77.0097,-12.0307],[-77.0129,-12.0373],[-77.0307,-11.9963],[-77.0283,-11.9606],[-76.989,-11.9168],[-76.9879,-11.8972],[-76.9423,-11.8608],[-76.896,-11.8641],[-76.9147,-11.9262],[-76.9314,-11.9421]]]}}'::jsonb where slug = 'san-juan-de-lurigancho';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0615,-12.0084],[-77.053,-12.011],[-77.0435,-12.0388],[-77.0829,-12.0364],[-77.0934,-12.0384],[-77.0873,-12.0157],[-77.1184,-11.9917],[-77.1286,-11.9375],[-77.0952,-11.9496],[-77.084,-11.9368],[-77.0797,-12.0128],[-77.0615,-12.0084]]]}}'::jsonb where slug = 'san-martin-de-porres';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-74.993,-11.8168],[-75.0157,-11.8212],[-75.0624,-11.889],[-75.0735,-11.8725],[-75.0922,-11.8341],[-75.1292,-11.8423],[-75.1606,-11.8207],[-75.1794,-11.7932],[-75.221,-11.8046],[-75.2507,-11.8099],[-75.2663,-11.8124],[-75.2625,-11.7905],[-75.2182,-11.7647],[-75.1953,-11.7764],[-75.1911,-11.718],[-75.2239,-11.6608],[-75.2115,-11.6249],[-75.1949,-11.6253],[-75.1723,-11.6573],[-75.1367,-11.6491],[-75.1263,-11.6843],[-75.0841,-11.6967],[-75.0879,-11.6531],[-75.0651,-11.6528],[-75.0684,-11.5986],[-75.093,-11.5887],[-75.1067,-11.5497],[-75.1328,-11.5244],[-75.0983,-11.4967],[-75.0356,-11.4728],[-74.9994,-11.4268],[-74.973,-11.4381],[-74.9149,-11.4801],[-74.9542,-11.5039],[-74.9709,-11.5711],[-74.9326,-11.5559],[-74.9098,-11.5671],[-74.8985,-11.6438],[-74.8766,-11.6564],[-74.8978,-11.6852],[-74.9377,-11.6868],[-74.9608,-11.7802],[-74.993,-11.8168]]]}}'::jsonb where slug = 'comas';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.891,-12.2078],[-76.911,-12.2335],[-76.9523,-12.1851],[-76.9578,-12.1426],[-76.9408,-12.1221],[-76.9107,-12.1223],[-76.8812,-12.1679],[-76.891,-12.2078]]]}}'::jsonb where slug = 'villa-maria-del-triunfo';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-77.0129,-12.0373],[-77.0435,-12.0388],[-77.053,-12.011],[-77.0307,-11.9963],[-77.0129,-12.0373]]]}}'::jsonb where slug = 'rimac';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-76.911,-12.2335],[-76.9399,-12.2477],[-76.9759,-12.2307],[-76.9729,-12.195],[-76.9523,-12.1851],[-76.911,-12.2335]]]}}'::jsonb where slug = 'villa-el-salvador';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-79.033,-8.0873],[-79.0159,-8.0862],[-78.9914,-8.0888],[-78.9828,-8.1269],[-79.0268,-8.1512],[-79.061,-8.1186],[-79.05,-8.0831],[-79.033,-8.0873]]]}}'::jsonb where slug = 'trujillo';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-78.946,-7.8963],[-78.9219,-7.9674],[-78.9627,-8.0152],[-78.9854,-8.0172],[-79.0355,-8.0542],[-79.0506,-8.0395],[-79.0861,-8.0566],[-79.05,-8.0831],[-79.061,-8.1186],[-79.0702,-8.1327],[-79.1156,-8.0967],[-79.1301,-8.0598],[-79.2108,-7.9989],[-79.1495,-7.9437],[-79.1269,-7.9375],[-79.1059,-7.982],[-79.0399,-7.9882],[-79.0123,-7.9597],[-78.9851,-7.8936],[-78.946,-7.8963]]]}}'::jsonb where slug = 'huanchaco';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-71.9292,-13.436],[-71.9317,-13.4675],[-71.9463,-13.4787],[-71.9408,-13.5278],[-71.9711,-13.5274],[-71.9868,-13.5223],[-72.0232,-13.5657],[-72.0539,-13.5314],[-72.0232,-13.4769],[-72.0007,-13.4441],[-71.9803,-13.4294],[-71.9292,-13.436]]]}}'::jsonb where slug = 'cusco-centro';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-71.9853,-13.3776],[-71.9716,-13.4078],[-71.9803,-13.4294],[-72.0007,-13.4441],[-72.0417,-13.4527],[-72.1032,-13.4267],[-72.117,-13.397],[-72.089,-13.3846],[-72.0646,-13.3663],[-71.9853,-13.3776]]]}}'::jsonb where slug = 'chinchero';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-72.0596,-13.215],[-72.0525,-13.2467],[-72.1014,-13.3126],[-72.1366,-13.3073],[-72.1687,-13.2769],[-72.2182,-13.2725],[-72.215,-13.2465],[-72.1746,-13.2174],[-72.1501,-13.1749],[-72.0983,-13.189],[-72.0596,-13.215]]]}}'::jsonb where slug = 'urubamba';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-72.1501,-13.1749],[-72.1746,-13.2174],[-72.215,-13.2465],[-72.2182,-13.2725],[-72.2318,-13.3285],[-72.2671,-13.3302],[-72.286,-13.3117],[-72.3444,-13.31],[-72.3624,-13.2848],[-72.3855,-13.3038],[-72.3712,-13.3613],[-72.4437,-13.3447],[-72.4513,-13.3626],[-72.5092,-13.3732],[-72.5409,-13.3674],[-72.5441,-13.3342],[-72.4876,-13.3245],[-72.4505,-13.2881],[-72.4242,-13.228],[-72.3832,-13.2156],[-72.4098,-13.1925],[-72.4006,-13.1727],[-72.3267,-13.1645],[-72.3055,-13.1172],[-72.2813,-13.1077],[-72.2306,-13.1434],[-72.2222,-13.0995],[-72.1907,-13.0962],[-72.1666,-13.1121],[-72.1501,-13.1749]]]}}'::jsonb where slug = 'ollantaytambo';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-71.7547,-13.4313],[-71.7763,-13.4221],[-71.7953,-13.4489],[-71.8136,-13.4346],[-71.852,-13.4631],[-71.8772,-13.4166],[-71.8518,-13.3549],[-71.8251,-13.3179],[-71.7946,-13.3174],[-71.7547,-13.3657],[-71.7251,-13.4208],[-71.7547,-13.4313]]]}}'::jsonb where slug = 'pisac';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-69.9203,-15.8795],[-69.9204,-15.9113],[-69.9587,-15.9152],[-69.9656,-15.9771],[-70.0157,-15.9685],[-70.0608,-16.0073],[-70.1429,-16.0238],[-70.1626,-15.9787],[-70.1786,-15.9069],[-70.1384,-15.8738],[-70.1383,-15.8075],[-70.0911,-15.7886],[-70.0512,-15.8026],[-70.0285,-15.7738],[-69.989,-15.82],[-70.0179,-15.8295],[-69.9985,-15.863],[-69.9648,-15.8524],[-69.9203,-15.8795]]]}}'::jsonb where slug = 'puno-ciudad';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-71.5286,-16.3906],[-71.5166,-16.4028],[-71.5133,-16.4104],[-71.515,-16.41],[-71.5446,-16.4223],[-71.5666,-16.4342],[-71.5523,-16.4076],[-71.5327,-16.3741],[-71.5286,-16.3906]]]}}'::jsonb where slug = 'arequipa-centro';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-73.2365,-3.7322],[-73.2602,-3.765],[-73.3022,-3.7313],[-73.3126,-3.7648],[-73.3464,-3.7875],[-73.3635,-3.7731],[-73.3945,-3.8119],[-73.3764,-3.8262],[-73.4298,-3.8547],[-73.4432,-3.8385],[-73.4725,-3.8657],[-73.4923,-3.8518],[-73.5551,-3.8586],[-73.5556,-3.8839],[-73.591,-3.8679],[-73.5152,-3.7194],[-73.4973,-3.7416],[-73.4285,-3.7372],[-73.3978,-3.7158],[-73.3537,-3.7121],[-73.3197,-3.6863],[-73.2922,-3.6929],[-73.2612,-3.7299],[-73.2365,-3.7322]]]}}'::jsonb where slug = 'iquitos';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-73.1605,-3.5694],[-73.1401,-3.5995],[-73.2043,-3.6438],[-73.2365,-3.7322],[-73.2612,-3.7299],[-73.2922,-3.6929],[-73.3197,-3.6863],[-73.3537,-3.7121],[-73.3978,-3.7158],[-73.4285,-3.7372],[-73.4973,-3.7416],[-73.5152,-3.7194],[-73.5474,-3.6991],[-73.5878,-3.6414],[-73.6252,-3.6205],[-73.6611,-3.494],[-73.627,-3.4127],[-73.6534,-3.3543],[-73.6487,-3.3228],[-73.4994,-3.2839],[-73.4716,-3.2905],[-73.4796,-3.3261],[-73.4347,-3.3984],[-73.3221,-3.4687],[-73.3197,-3.5264],[-73.2901,-3.5546],[-73.207,-3.5713],[-73.1605,-3.5694]]]}}'::jsonb where slug = 'punchana';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-73.0852,-3.8126],[-73.1716,-3.8095],[-73.2036,-3.8375],[-73.2623,-3.9133],[-73.2829,-3.9934],[-73.2803,-4.0403],[-73.3234,-4.0604],[-73.3857,-4.1058],[-73.3699,-4.0602],[-73.3713,-4.0047],[-73.3181,-3.9313],[-73.3175,-3.8676],[-73.2879,-3.8038],[-73.2489,-3.7885],[-73.2602,-3.765],[-73.2365,-3.7322],[-73.2043,-3.6438],[-73.1401,-3.5995],[-73.1198,-3.6264],[-73.0559,-3.6689],[-73.0556,-3.7106],[-73.0852,-3.8126]]]}}'::jsonb where slug = 'belen-iquitos';
+update public.districts set boundary = '{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-73.2602,-3.765],[-73.2489,-3.7885],[-73.2879,-3.8038],[-73.3175,-3.8676],[-73.3181,-3.9313],[-73.3713,-4.0047],[-73.3699,-4.0602],[-73.3857,-4.1058],[-73.3855,-4.1776],[-73.4002,-4.2386],[-73.4682,-4.2849],[-73.4882,-4.3237],[-73.5446,-4.3378],[-73.5927,-4.3818],[-73.6919,-4.4398],[-73.747,-4.449],[-73.8336,-4.4386],[-73.8836,-4.3884],[-73.9386,-4.369],[-73.9453,-4.3245],[-74.0588,-4.2476],[-74.1017,-4.177],[-74.1354,-4.0619],[-74.0389,-4.0533],[-73.9734,-4.0577],[-73.9412,-4.1012],[-73.8265,-4.1446],[-73.7181,-4.1754],[-73.669,-4.1545],[-73.6672,-3.8939],[-73.66,-3.911],[-73.6327,-3.8765],[-73.5966,-3.8853],[-73.591,-3.8679],[-73.5556,-3.8839],[-73.5551,-3.8586],[-73.4923,-3.8518],[-73.4725,-3.8657],[-73.4432,-3.8385],[-73.4298,-3.8547],[-73.3764,-3.8262],[-73.3945,-3.8119],[-73.3635,-3.7731],[-73.3464,-3.7875],[-73.3126,-3.7648],[-73.3022,-3.7313],[-73.2602,-3.765]]]}}'::jsonb where slug = 'san-juan-bautista-iquitos';
+
+-- Populate geometry from the new boundaries
+update public.districts
+set geometry = ST_GeomFromGeoJSON(boundary->>'geometry')
+where boundary is not null
+  and boundary->'geometry' is not null
+  and geometry is null;
+
+-- ===========================================================================
+-- 4) Find nearby proposals — uses Haversine formula (PostGIS-independent)
+-- ===========================================================================
+
+create or replace function public.find_nearby_proposals(
+  p_lat         double precision,
+  p_lng         double precision,
+  p_radius_km   double precision default 10,
+  p_limit       int default 20
+) returns table (
+  id              uuid,
+  title           text,
+  summary         text,
+  latitude        numeric,
+  longitude       numeric,
+  district        text,
+  district_slug   text,
+  status          text,
+  distance_km     double precision,
+  support_count   bigint
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    p.id,
+    p.title,
+    p.summary,
+    p.latitude,
+    p.longitude,
+    p.district,
+    d.slug as district_slug,
+    p.status,
+    (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(p.latitude::double precision)) *
+      cos(radians(p.longitude::double precision) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(p.latitude::double precision))
+    ))::double precision as distance_km,
+    (select count(*) from public.proposal_supports ps where ps.proposal_id = p.id) as support_count
+  from public.proposals p
+  left join public.districts d on d.id = p.district_id
+  where p.latitude is not null
+    and p.longitude is not null
+    and p.status in ('pending', 'active')
+    and (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(p.latitude::double precision)) *
+      cos(radians(p.longitude::double precision) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(p.latitude::double precision))
+    )) <= p_radius_km
+  order by distance_km
+  limit greatest(p_limit, 1);
+$$;
+
+revoke all on function public.find_nearby_proposals(double precision, double precision, double precision, int) from public;
+grant execute on function public.find_nearby_proposals(double precision, double precision, double precision, int) to anon, authenticated;
+
+-- ===========================================================================
+-- 5) Find nearby missions — same Haversine approach
+-- ===========================================================================
+
+create or replace function public.find_nearby_missions(
+  p_lat         double precision,
+  p_lng         double precision,
+  p_radius_km   double precision default 10,
+  p_limit       int default 20
+) returns table (
+  id              uuid,
+  title           text,
+  description     text,
+  district        text,
+  district_slug   text,
+  category        text,
+  latitude        double precision,
+  longitude       double precision,
+  distance_km     double precision,
+  participant_count bigint
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    m.id,
+    m.title,
+    m.description,
+    m.district,
+    d.slug as district_slug,
+    m.category,
+    m.latitude,
+    m.longitude,
+    (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(m.latitude)) *
+      cos(radians(m.longitude) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(m.latitude))
+    ))::double precision as distance_km,
+    (select count(*) from public.mission_participants mp where mp.mission_id = m.id) as participant_count
+  from public.missions m
+  left join public.districts d on d.id = m.district_id
+  where (6371 * acos(
+    cos(radians(p_lat)) * cos(radians(m.latitude)) *
+    cos(radians(m.longitude) - radians(p_lng)) +
+    sin(radians(p_lat)) * sin(radians(m.latitude))
+  )) <= p_radius_km
+  order by distance_km
+  limit greatest(p_limit, 1);
+$$;
+
+revoke all on function public.find_nearby_missions(double precision, double precision, double precision, int) from public;
+grant execute on function public.find_nearby_missions(double precision, double precision, double precision, int) to anon, authenticated;
+
+-- ===========================================================================
+-- 6) Find territories (districts) that contain or are near a point
+-- ===========================================================================
+
+create or replace function public.find_territories_intersecting(
+  p_lat         double precision,
+  p_lng         double precision,
+  p_radius_km   double precision default 10
+) returns table (
+  id              uuid,
+  slug            text,
+  display_name    text,
+  region          text,
+  department      text,
+  distance_km     double precision
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    d.id,
+    d.slug,
+    d.display_name,
+    d.region,
+    d.department,
+    (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(d.latitude::double precision)) *
+      cos(radians(d.longitude::double precision) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(d.latitude::double precision))
+    ))::double precision as distance_km
+  from public.districts d
+  where d.latitude is not null
+    and d.longitude is not null
+    and (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(d.latitude::double precision)) *
+      cos(radians(d.longitude::double precision) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(d.latitude::double precision))
+    )) <= p_radius_km
+  order by distance_km;
+$$;
+
+revoke all on function public.find_territories_intersecting(double precision, double precision, double precision) from public;
+grant execute on function public.find_territories_intersecting(double precision, double precision, double precision) to anon, authenticated;
+
+-- ===========================================================================
+-- 7) Get activity density for a territory — returns counts of nearby civic
+--    activity weighted by proximity (PostGIS only if available)
+-- ===========================================================================
+
+create or replace function public.get_territorial_density(
+  p_lat         double precision,
+  p_lng         double precision,
+  p_radius_km   double precision default 20
+) returns table (
+  entity_type       text,
+  total_count       bigint,
+  recent_count      bigint,
+  density_score     double precision
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  -- Proposals density
+  select
+    'proposal' as entity_type,
+    count(*)::bigint as total_count,
+    count(*) filter (where p.created_at >= now() - interval '30 days')::bigint as recent_count,
+    (count(*)::double precision / greatest(p_radius_km, 1)) as density_score
+  from public.proposals p
+  where p.latitude is not null
+    and p.longitude is not null
+    and p.status in ('pending', 'active')
+    and (6371 * acos(
+      cos(radians(p_lat)) * cos(radians(p.latitude::double precision)) *
+      cos(radians(p.longitude::double precision) - radians(p_lng)) +
+      sin(radians(p_lat)) * sin(radians(p.latitude::double precision))
+    )) <= p_radius_km
+
+  union all
+
+  -- Missions density
+  select
+    'mission' as entity_type,
+    count(*)::bigint as total_count,
+    count(*) filter (where m.created_at >= now() - interval '30 days')::bigint as recent_count,
+    (count(*)::double precision / greatest(p_radius_km, 1)) as density_score
+  from public.missions m
+  where (6371 * acos(
+    cos(radians(p_lat)) * cos(radians(m.latitude)) *
+    cos(radians(m.longitude) - radians(p_lng)) +
+    sin(radians(p_lat)) * sin(radians(m.latitude))
+  )) <= p_radius_km;
+$$;
+
+revoke all on function public.get_territorial_density(double precision, double precision, double precision) from public;
+grant execute on function public.get_territorial_density(double precision, double precision, double precision) to anon, authenticated;

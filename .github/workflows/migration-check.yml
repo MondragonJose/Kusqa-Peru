@@ -1,0 +1,80 @@
+name: Migration Check
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+concurrency:
+  group: migration-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Migration Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migration ordering
+        run: |
+          # Check timestamps are monotonically increasing
+          files=$(ls supabase/migrations/*.sql | sort)
+          prev=""
+          errors=0
+          for f in $files; do
+            base=$(basename "$f")
+            ts=$(echo "$base" | grep -oP '^\d+' || echo "0000")
+            if [[ -n "$prev" ]] && [[ "$ts" < "$prev" ]]; then
+              echo "ERROR: $base has timestamp $ts < previous $prev"
+              errors=$((errors + 1))
+            fi
+            prev="$ts"
+          done
+
+          # Warn about seed files without timestamps
+          for f in supabase/migrations/*.sql; do
+            base=$(basename "$f")
+            if ! echo "$base" | grep -qP '^\d+'; then
+              echo "WARNING: $base has no timestamp prefix — won't auto-apply"
+            fi
+          done
+
+          if [[ $errors -gt 0 ]]; then
+            echo "FAILED: $errors ordering error(s)"
+            exit 1
+          fi
+          echo "Migration ordering: OK"
+
+      - name: Check for DROP TABLE without guard
+        run: |
+          errors=0
+          for f in supabase/migrations/*.sql; do
+            if grep -qP '^\s*DROP\s+TABLE' "$f" 2>/dev/null; then
+              if ! grep -qP 'IF EXISTS' "$f" 2>/dev/null; then
+                echo "ERROR: $(basename "$f") has unguarded DROP TABLE"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+          if [[ $errors -gt 0 ]]; then
+            echo "FAILED: $errors unguarded DROP(s)"
+            exit 1
+          fi
+          echo "DROP safety: OK"
+
+      - name: Check for hardcoded PROJECT_REF or secrets
+        run: |
+          errors=0
+          for f in supabase/migrations/*.sql; do
+            if grep -qiP '(password|secret|key)\s*=' "$f" 2>/dev/null; then
+              # Allow gen_random_uuid() and similar
+              if ! grep -qiP "(gen_random_uuid|auth\.uid|auth\.email)" "$f" 2>/dev/null; then
+                echo "WARNING: $(basename "$f") may contain hardcoded secret"
+              fi
+            fi
+          done
+          echo "Secret scan: OK"

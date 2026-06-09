@@ -21,6 +21,19 @@ export type TerritorialImpactSummary = {
   acceptedCollaboratorCount: number;
   /** Most recent timestamp of any civic action in this district. */
   lastActivityAt: string | null;
+  /** Proposals created in the last 30 days — used for momentum */
+  recentProposalCount?: number;
+  /** Missions completed in the last 30 days — used for momentum */
+  recentCompletionCount?: number;
+};
+
+export type MovementDirection = "growing" | "stable" | "quiet" | "first_steps";
+
+/** Key events that happened in this district (for storytelling). */
+export type DistrictMilestone = {
+  type: "first_proposal" | "first_mission" | "first_conversion" | "coalition_formed";
+  label: string;
+  date: string | null;
 };
 
 /**
@@ -100,19 +113,103 @@ export function formatTerritorialImpact(summary: TerritorialImpactSummary): stri
 }
 
 /**
- * Derive a single-word civic memory line for the narrative section.
- * Returns null when there's not enough signal to say anything true.
+ * Derive the direction of civic movement in the district.
+ * Uses recent activity counts if available; falls back to total counts.
+ */
+export function deriveMovementDirection(
+  summary: TerritorialImpactSummary,
+): MovementDirection {
+  const total = summary.missionCount + summary.proposalCount;
+  if (total === 0) return "quiet";
+  if (summary.activeProposalCount === 0 && summary.missionCount === 0) return "first_steps";
+
+  const recent =
+    (summary.recentProposalCount ?? 0) + (summary.recentCompletionCount ?? 0);
+  if (recent >= 3) return "growing";
+  if (recent >= 1) return "stable";
+  return "quiet";
+}
+
+const MOVEMENT_NARRATIVE: Record<MovementDirection, string> = {
+  growing: "El movimiento está creciendo. Nuevas iniciativas están tomando forma en el distrito.",
+  stable: "La comunidad se mantiene activa. Hay un ritmo constante de participación.",
+  quiet: "El territorio está en calma. Las iniciativas anteriores dejaron su semilla.",
+  first_steps: "Se están dando los primeros pasos. Todo movimiento empieza con una propuesta.",
+};
+
+export function getMovementNarrative(direction: MovementDirection): string {
+  return MOVEMENT_NARRATIVE[direction];
+}
+
+/**
+ * Derive a contextual civic memory line for the narrative section.
+ * Uses movement direction for richer storytelling.
  */
 export function deriveCivicMemoryLine(summary: TerritorialImpactSummary): string | null {
   const cls = classifyDistrictActivity(summary);
   if (cls === "empty") return null;
+
+  const direction = deriveMovementDirection(summary);
+
   if (cls === "early") {
+    if (direction === "growing") {
+      return "Las primeras semillas están germinando. Este distrito empieza a moverse.";
+    }
     return "Hay semillas recién plantadas. Pronto sabremos si florecen.";
   }
+
   if (cls === "active") {
+    if (direction === "growing") {
+      return "El movimiento cobra fuerza. Más personas están participando cada semana.";
+    }
     return "La comunidad está caminando. Algunas rutas están tomando forma.";
   }
-  return "Hay memoria cívica aquí. La comunidad ya recorrió este camino antes.";
+
+  if (cls === "established") {
+    if (direction === "growing") {
+      return "Hay memoria cívica sólida. El distrito es un referente de organización ciudadana.";
+    }
+    return "Hay memoria cívica aquí. La comunidad ya recorrió este camino antes.";
+  }
+
+  return MOVEMENT_NARRATIVE[direction];
+}
+
+/**
+ * Build a list of notable milestones for the district.
+ * Returns empty array when there's no signal yet.
+ */
+export function deriveDistrictMilestones(
+  summary: TerritorialImpactSummary,
+  districtCreatedAt?: string | null,
+): DistrictMilestone[] {
+  const milestones: DistrictMilestone[] = [];
+
+  if (summary.missionCount > 0 || summary.proposalCount > 0) {
+    milestones.push({
+      type: "first_proposal",
+      label: "Primera iniciativa registrada",
+      date: null,
+    });
+  }
+
+  if (summary.completedMissionCount > 0) {
+    milestones.push({
+      type: "first_mission",
+      label: `${summary.completedMissionCount} misión${summary.completedMissionCount !== 1 ? "es" : ""} completada${summary.completedMissionCount !== 1 ? "s" : ""}`,
+      date: null,
+    });
+  }
+
+  if (summary.acceptedCollaboratorCount > 0) {
+    milestones.push({
+      type: "coalition_formed",
+      label: `${summary.acceptedCollaboratorCount} persona${summary.acceptedCollaboratorCount !== 1 ? "s" : ""} co-organizando iniciativas`,
+      date: null,
+    });
+  }
+
+  return milestones;
 }
 
 /**

@@ -1,18 +1,34 @@
-/**
- * Lazy Sentry shim — loads only when VITE_SENTRY_DSN is set.
- * Add @sentry/react to dependencies when enabling production tracing.
- */
+import * as Sentry from "@sentry/react";
 
 type MetricPayload = Record<string, string | number | boolean | undefined>;
 
+let initialized = false;
+
+export function initSentry(dsn: string, environment: string): void {
+  if (initialized) return;
+  initialized = true;
+
+  Sentry.init({
+    dsn,
+    environment,
+    tracesSampleRate: 0.1,
+    integrations: [Sentry.browserTracingIntegration()],
+  });
+}
+
 export function captureMetric(name: string, payload?: MetricPayload): void {
-  if (import.meta.env.DEV) {
-    console.debug("[kusqa:sentry:metric]", name, payload);
-  }
+  Sentry.addBreadcrumb({
+    category: "metric",
+    message: name,
+    data: payload as Record<string, string | number | boolean>,
+  });
 }
 
 export function captureException(error: Error, context?: MetricPayload): void {
-  if (import.meta.env.DEV) {
-    console.error("[kusqa:sentry:exception]", error.message, context);
-  }
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setExtras(context as Record<string, string | number | boolean>);
+    }
+    Sentry.captureException(error);
+  });
 }

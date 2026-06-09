@@ -23,7 +23,9 @@ import { useCurrentUser, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
+import { useProposalOriginByMissionId } from "@/features/districts/hooks";
 import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
+import { betaEvents } from "@/lib/telemetry/betaLogger";
 import {
   useMissionEvidence,
   useSubmitEvidence,
@@ -41,23 +43,17 @@ export const Route = createFileRoute("/app/mision/$missionId")({
 
 const REGION_THEMES: Record<
   Region,
-  { gradient: string; text: string; bgLight: string; border: string }
+  { bgLight: string; border: string }
 > = {
   costa: {
-    gradient: "bg-gradient-coast",
-    text: "text-amber-700 dark:text-amber-400",
     bgLight: "bg-amber-50 dark:bg-amber-950/20",
     border: "border-amber-200 dark:border-amber-800/40",
   },
   sierra: {
-    gradient: "bg-gradient-andes",
-    text: "text-orange-800 dark:text-orange-400",
     bgLight: "bg-orange-50 dark:bg-orange-950/20",
     border: "border-orange-200 dark:border-orange-800/40",
   },
   selva: {
-    gradient: "bg-gradient-jungle",
-    text: "text-emerald-700 dark:text-emerald-400",
     bgLight: "bg-emerald-50 dark:bg-emerald-950/20",
     border: "border-emerald-200 dark:border-emerald-800/40",
   },
@@ -87,6 +83,11 @@ function MissionDetail() {
   const isError = missionError && proposalError;
   const error = missionError || proposalError;
 
+  // Phase 9E: check if a real mission was born from a proposal
+  const { data: originProposalId } = useProposalOriginByMissionId(
+    isMissionEntity ? missionId : "",
+  );
+
   // Phase 1.5: redirect active proposals to their dedicated detail route.
   // This route is mission-only. If the id resolves to a proposal that is still
   // open / mobilizing, send the user to /app/propuesta/$proposalId where the
@@ -108,6 +109,7 @@ function MissionDetail() {
   const joinMutation = useJoinUserMission();
   const didFireError = useRef(false);
   const joiningRef = useRef(false);
+  const joinSuccessLogged = useRef(false);
 
   const { data: timeline } = useProfileMissionTimeline();
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
@@ -123,19 +125,23 @@ function MissionDetail() {
 
   const handleSubmitEvidence = () => {
     if (evidenceType === "text") {
+      betaEvents.evidenceSubmit(missionId, "text");
       submitEvidenceMutation.mutate(
         { missionId, type: "text", description: evidenceDescription || undefined },
         {
           onSuccess: () => {
+            betaEvents.evidenceSubmitSuccess(missionId);
             toast.success("Evidencia enviada", {
               description: "Tu participación será verificada.",
             });
             setEvidenceDescription("");
           },
-          onError: (err) =>
+          onError: (err) => {
+            betaEvents.evidenceSubmitError(missionId, err instanceof Error ? err.message : "unknown");
             toast.error("Error", {
               description: err instanceof Error ? err.message : "No se pudo enviar la evidencia",
-            }),
+            });
+          },
         },
       );
     } else {
@@ -143,23 +149,61 @@ function MissionDetail() {
         toast.error("Selecciona una foto");
         return;
       }
+      betaEvents.evidenceSubmit(missionId, "photo");
       uploadEvidenceMutation.mutate(
         { missionId, file: evidencePhoto, description: evidenceDescription || undefined },
         {
           onSuccess: () => {
+            betaEvents.evidenceSubmitSuccess(missionId);
             toast.success("Evidencia enviada", {
               description: "Tu participación será verificada.",
             });
             setEvidenceDescription("");
             setEvidencePhoto(null);
           },
-          onError: (err) =>
+          onError: (err) => {
+            betaEvents.evidenceSubmitError(missionId, err instanceof Error ? err.message : "unknown");
             toast.error("Error", {
               description: err instanceof Error ? err.message : "No se pudo enviar la evidencia",
-            }),
+            });
+          },
         },
       );
     }
+  };
+
+  const [bookmarked, setBookmarked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("kusqa_bookmarked_missions");
+    if (!stored) return false;
+    try {
+      const ids: string[] = JSON.parse(stored);
+      return ids.includes(missionId);
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleBookmark = () => {
+    const stored = localStorage.getItem("kusqa_bookmarked_missions");
+    let ids: string[] = [];
+    try {
+      ids = stored ? JSON.parse(stored) : [];
+    } catch {
+      ids = [];
+    }
+    const wasBookmarked = bookmarked;
+    if (wasBookmarked) {
+      ids = ids.filter((id) => id !== missionId);
+      toast.info("Eliminado de tu bitácora.");
+    } else {
+      ids.push(missionId);
+      toast.success("Guardado en tu bitácora.", {
+        description: "Esta misión está en tu expedición.",
+      });
+    }
+    localStorage.setItem("kusqa_bookmarked_missions", JSON.stringify(ids));
+    setBookmarked(!wasBookmarked);
   };
 
   const [storyOpen, setStoryOpen] = useState(false);
@@ -185,6 +229,7 @@ function MissionDetail() {
     if (joinMutation.isError && !didFireError.current && !crossingOpen) {
       didFireError.current = true;
       const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
+      betaEvents.missionJoinError(missionId, msg || "unknown");
       const isDuplicate =
         msg.includes("duplicate") || msg.includes("already") || msg.includes("Ya estás");
       if (isDuplicate) {
@@ -195,6 +240,14 @@ function MissionDetail() {
     }
     if (!joinMutation.isError) didFireError.current = false;
   }, [joinMutation.isError, joinMutation.error, crossingOpen]);
+
+  useEffect(() => {
+    if (joinMutation.isSuccess && !joinSuccessLogged.current) {
+      joinSuccessLogged.current = true;
+      betaEvents.missionJoinSuccess(missionId);
+    }
+    if (!joinMutation.isSuccess) joinSuccessLogged.current = false;
+  }, [joinMutation.isSuccess, missionId]);
 
   const similarMissions = useMemo(() => {
     if (!entity) return [];
@@ -230,6 +283,7 @@ function MissionDetail() {
       return;
     }
     if (alreadyJoined || joinMutation.isSuccess) return;
+    betaEvents.missionJoinStart(missionId);
     joiningRef.current = true;
     setCrossingOpen(true);
     joinMutation.mutate({ missionId });
@@ -481,15 +535,15 @@ function MissionDetail() {
           </div>
           <div className="hidden sm:flex gap-2">
             <button
-              onClick={() =>
-                toast("Guardado en tu bitácora.", {
-                  description: "Esta misión está en tu expedición.",
-                })
-              }
-              className="h-10 w-10 rounded-lg bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
-              title="Guardar misión"
+              onClick={toggleBookmark}
+              className={`h-10 w-10 rounded-lg backdrop-blur border grid place-items-center hover:bg-white/25 active:scale-95 transition-all cursor-pointer ${
+                bookmarked
+                  ? "bg-accent/40 border-accent/30 text-accent"
+                  : "bg-white/15 border-white/10 text-white"
+              }`}
+              title={bookmarked ? "Quitar de bitácora" : "Guardar en bitácora"}
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${bookmarked ? "fill-current" : ""}`} />
             </button>
             <button
               onClick={() => {
@@ -514,6 +568,20 @@ function MissionDetail() {
           </div>
         </div>
       </motion.div>
+
+      {originProposalId && (
+        <div className="mb-4 rounded-xl border border-violet-200 dark:border-violet-900/30 bg-violet-50/60 dark:bg-violet-950/20 p-3 sm:p-4">
+          <Link
+            to="/app/propuesta/$proposalId"
+            params={{ proposalId: originProposalId }}
+            className="flex items-center gap-2 text-xs text-violet-700 dark:text-violet-300 hover:underline font-medium"
+          >
+            <Sparkles className="h-3.5 w-3.5 shrink-0" />
+            <span>Esta misión nació de una propuesta ciudadana</span>
+            <ArrowRight className="h-3 w-3 ml-auto shrink-0" />
+          </Link>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-6">
         {/* Main Column */}
@@ -638,35 +706,17 @@ function MissionDetail() {
             </p>
           </section>
 
-          {/* Participants group — count-based, no fake avatars */}
+          {/* Participants group — honest count display, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-4 text-foreground">
               Participantes ({entity.participants})
             </h2>
             {entity.participants > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {(() => {
-                  const pool = ["🦙", "🌵", "🦅", "🐟", "🌺", "🌽", "☕", "🪕", "🌞", "⚽"];
-                  const show = Math.max(1, Math.min(entity.participants, pool.length));
-                  const remaining = entity.participants - show;
-                  return (
-                    <>
-                      {pool.slice(0, show).map((e, i) => (
-                        <div
-                          key={i}
-                          className="h-11 w-11 rounded-xl bg-secondary/80 hover:bg-secondary grid place-items-center text-lg hover:scale-110 transition-all select-none border border-border/10 cursor-default"
-                        >
-                          {e}
-                        </div>
-                      ))}
-                      {remaining > 0 && (
-                        <div className="h-11 px-4 rounded-xl bg-secondary/80 grid place-items-center text-xs font-black text-muted-foreground border border-border/10">
-                          +{remaining} más
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">
+                  {entity.participants} persona{entity.participants !== 1 ? "s" : ""} en esta ruta
+                </span>
               </div>
             ) : (
               <div className="text-sm text-muted-foreground font-medium bg-secondary/30 rounded-2xl p-4 text-center">

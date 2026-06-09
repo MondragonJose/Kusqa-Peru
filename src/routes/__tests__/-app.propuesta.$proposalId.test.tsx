@@ -29,6 +29,7 @@ async function loadRoute() {
   vi.doMock("@/features/proposals", () => ({
     useProposal: () => ({ data: mockProposal, isLoading: false, isError: false, error: null }),
     useProposalCoalition: () => ({ data: null }),
+    useSupportCount: () => ({ data: 0 }),
   }));
   vi.doMock("@/features/districts/hooks", () => ({
     useConvertProposal: () => ({ mutate: vi.fn(), isPending: false }),
@@ -41,6 +42,7 @@ async function loadRoute() {
   }));
   vi.doMock("@/features/proposals/hooks/useSupportProposal", () => ({
     useSupportProposal: () => ({ mutate: vi.fn(), isPending: false }),
+    useSupportCount: () => ({ data: 0 }),
   }));
   const mod = await import("../app.propuesta.$proposalId");
   return mod.Route.options.component as React.ComponentType;
@@ -52,6 +54,7 @@ describe("app.propuesta.$proposalId", () => {
     vi.doMock("@/features/proposals", () => ({
       useProposal: () => ({ isLoading: true, data: undefined }),
       useProposalCoalition: () => ({ data: null }),
+      useSupportCount: () => ({ data: 0 }),
     }));
     vi.doMock("@/features/districts/hooks", () => ({
       useConvertProposal: () => ({ mutate: vi.fn(), isPending: false }),
@@ -89,6 +92,7 @@ describe("app.propuesta.$proposalId", () => {
         data: undefined,
         error: new Error("No encontrado"),
       }),
+      useSupportCount: () => ({ data: 0 }),
     }));
     vi.doMock("@/features/districts/hooks", () => ({
       useConvertProposal: () => ({ mutate: vi.fn(), isPending: false }),

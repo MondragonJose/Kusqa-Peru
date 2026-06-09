@@ -13,7 +13,7 @@
 
 import type { KusqaDomainEvent } from "@/domain/events";
 import { seedRegistry, REGISTRY_MAX_SIZE } from "@/domain/eventRegistry";
-import { appendEventToStore } from "@/domain/eventStore";
+import { appendEventToStore } from "@/services/eventStoreRepository";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 

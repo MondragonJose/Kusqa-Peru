@@ -11,7 +11,7 @@ import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { z } from "zod";
 
 type DbMission = Database["public"]["Tables"]["missions"]["Row"];
-type DbCategory = Database["public"]["Enums"]["mission_category"];
+type DbCategory = "environment" | "infrastructure" | "community" | "education" | "health";
 
 const MISSION_ID_SCHEMA = z.string().uuid();
 
@@ -20,6 +20,7 @@ const DB_MISSION_SCHEMA = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   district: z.string().min(1),
+  district_id: z.string().uuid().nullable().optional(),
   category: z.enum(["environment", "infrastructure", "community", "education", "health"]),
   latitude: z.number(),
   longitude: z.number(),
@@ -94,6 +95,7 @@ function mapRowToMission(row: DbMission): Mission {
   const participants = row.current_progress ?? 0;
   const capacity = row.max_participants ?? 10;
   const spotsLeft = Math.max(0, capacity - participants);
+  const category = row.category as DbCategory;
   const startDate =
     "start_date" in row ? ((row as Record<string, unknown>).start_date as string | null) : null;
   const endDate =
@@ -104,8 +106,9 @@ function mapRowToMission(row: DbMission): Mission {
     title: row.title,
     description: row.description,
     district: row.district,
+    districtId: (row as Record<string, unknown>).district_id as string | null ?? null,
     region,
-    category: CATEGORY_LABEL[row.category],
+    category: CATEGORY_LABEL[category],
     xp: row.xp_reward ?? DEFAULT_XP,
     participants,
     spotsLeft,
@@ -121,16 +124,19 @@ function mapRowToMission(row: DbMission): Mission {
       avatar: "🦙",
     },
     coords,
-    emoji: CATEGORY_EMOJI[row.category],
+    emoji: CATEGORY_EMOJI[category],
   };
 }
 
 export const missionRepository = {
-  async findAll(): Promise<Mission[]> {
+  async findAll(pg?: { limit?: number; offset?: number }): Promise<Mission[]> {
+    const limit = pg?.limit ?? 100;
+    const offset = pg?.offset ?? 0;
     const { data, error } = await supabase
       .from("missions")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       throw new Error(`Failed to fetch missions: ${error.message}`);
@@ -206,17 +212,74 @@ export const missionRepository = {
     return rows.map((row: any) => mapRowToMission(parseDbMissionRow(row)));
   },
 
+  /**
+   * Find missions by district. Prefers district_id FK when available,
+   * falls back to text-based ILIKE for backward compatibility with
+   * legacy rows that have NULL district_id.
+   */
+  async findByDistrict(
+    displayName: string,
+    slug: string,
+    districtId?: string | null,
+    pg?: { limit?: number; offset?: number },
+  ): Promise<Mission[]> {
+    const limit = pg?.limit ?? 20;
+    const offset = pg?.offset ?? 0;
+
+    // When we have a district UUID, prefer FK-based query (indexed)
+    if (districtId) {
+      const { data, error } = await supabase
+        .from("missions")
+        .select("*")
+        .eq("district_id", districtId)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.error("[KUSQA MISSION TRACE] findByDistrict error:", error);
+        }
+        return [];
+      }
+
+      return (data ?? []).map((row: any) => mapRowToMission(parseDbMissionRow(row)));
+    }
+
+    // Fallback to text-based ILIKE for legacy rows
+    const { data, error } = await supabase
+      .from("missions")
+      .select("*")
+      .or(`district.ilike.${displayName},district.ilike.${slug}`)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("[KUSQA MISSION TRACE] findByDistrict error:", error);
+      }
+      return [];
+    }
+
+    return (data ?? []).map((row: any) => mapRowToMission(parseDbMissionRow(row)));
+  },
+
   async create(data: Omit<Mission, "id">): Promise<Mission> {
     const category = CATEGORY_TO_DB[data.category] ?? "community";
     const participants = data.participants ?? 0;
     const capacity = Math.max(participants + (data.spotsLeft ?? 0), participants, 1);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data: inserted, error } = await supabase
       .from("missions")
       .insert({
+        organizer_id: user?.id,
         title: data.title,
         description: data.description,
         district: data.district,
+        district_id: data.districtId ?? null,
         latitude: data.coords.lat,
         longitude: data.coords.lng,
         category,

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Mission, MapCoords } from "@/types";
 import type { CivicEntity } from "@/types/entity";
+import { isMission } from "@/types/entity";
 import {
   PERU_DEFAULT_CENTER,
   MAP_DEFAULT_ZOOM,
@@ -10,10 +11,12 @@ import {
   MAP_ATTRIBUTION,
 } from "../constants/mapConstants";
 import { TERRITORY_HIERARCHY, type TerritoryNode } from "../constants/territoryHierarchy";
+import { useTerritorialGeometry } from "@/features/districts/hooks";
+import { spatialRepository } from "@/services/spatialRepository";
 import { MapControls } from "./MapControls";
 import { isValidLatLng } from "../utils/projection";
 import { renderHeatmapLayer } from "../layers/useHeatmapLayer";
-import { renderDistrictLayer } from "../layers/useDistrictLayer";
+import { renderDistrictLayer, buildFeatureCollection } from "../layers/useDistrictLayer";
 import { renderMissionMarkers } from "../layers/useMissionMarkerLayer";
 import { createUserLocationPin } from "../layers/useUserLocationPin";
 import { MapPin, Flame, Eye, ChevronRight, Landmark, Zap, ShieldCheck } from "lucide-react";
@@ -70,8 +73,43 @@ export function MapView({
   // Deep Territorial Exploration State
   const [activeTerritoryPath, setActiveTerritoryPath] = useState<TerritoryNode[]>([]);
 
+  // Phase 12: load dynamic territorial hierarchy from DB, fall back to hardcoded
+  const { data: spatialGeometry } = useTerritorialGeometry();
+  const hierarchyTree = useMemo<Record<string, TerritoryNode[]>>(() => {
+    if (spatialGeometry && spatialGeometry.length > 0) {
+      return spatialRepository.buildHierarchyTree(spatialGeometry);
+    }
+    return TERRITORY_HIERARCHY;
+  }, [spatialGeometry]);
+
+  // Build district boundary polygons from spatial geometry, fall back to hardcoded
+  const districtPolygons = useMemo<{
+    type: "FeatureCollection";
+    features: Array<{
+      type: "Feature";
+      properties: Record<string, unknown>;
+      geometry: { type: "Polygon"; coordinates: number[][][] };
+    }>;
+  } | undefined>(() => {
+    if (!spatialGeometry || spatialGeometry.length === 0) return undefined;
+    const boundaries = spatialGeometry
+      .filter((g) => g.boundary?.geometry?.type === "Polygon")
+      .map((g) => ({
+        type: "Feature" as const,
+        properties: {
+          name: g.displayName,
+          region: g.region,
+          display_name: g.displayName,
+          ...g.boundary?.properties,
+        },
+        geometry: g.boundary!.geometry as { type: "Polygon"; coordinates: number[][][] },
+      }));
+    if (boundaries.length === 0) return undefined;
+    return buildFeatureCollection(boundaries);
+  }, [spatialGeometry]);
+
   // Calculate matching missions for active region/department/district
-  const getFilteredMissionsForSelectedTerritory = (): Mission[] => {
+  const getFilteredMissionsForSelectedTerritory = (): CivicEntity[] => {
     if (activeTerritoryPath.length === 0) return missions;
     const currentLeafNode = activeTerritoryPath[activeTerritoryPath.length - 1];
 
@@ -101,7 +139,10 @@ export function MapView({
 
   // Dynamic calculations for territorial discovery summaries
   const totalMissionsActive = territoryMissions.length;
-  const totalExploradores = territoryMissions.reduce((acc, m) => acc + m.participants, 0);
+  const totalExploradores = territoryMissions.reduce(
+    (acc, m) => acc + (m.entityType === "mission" ? m.participants : 0),
+    0,
+  );
 
   const getDominantCategory = (): string => {
     if (territoryMissions.length === 0) return "Ninguna";
@@ -233,12 +274,16 @@ export function MapView({
 
     // Render Heatmap density
     if (mapMode === "heatmap") {
-      renderHeatmapLayer({ L, map: heatmapGroup, missions: territoryMissions });
+      renderHeatmapLayer({
+        L,
+        map: heatmapGroup,
+        missions: territoryMissions.filter(isMission),
+      });
     }
 
     // Render District Boundaries
     if (mapMode === "districts") {
-      geojsonLayerRef.current = renderDistrictLayer({ L, map });
+      geojsonLayerRef.current = renderDistrictLayer({ L, map, polygons: districtPolygons });
     }
 
     // Render Mission Pins
@@ -246,7 +291,7 @@ export function MapView({
       renderMissionMarkers({
         L,
         clusterGroup,
-        missions: territoryMissions,
+        missions: territoryMissions.filter(isMission),
         selectedMissionId,
         onSelectMission,
         onRequestDetail,
@@ -449,19 +494,19 @@ export function MapView({
     if (node.type === "region") {
       nextPath = [node];
     } else if (node.type === "department") {
-      const regionNode = TERRITORY_HIERARCHY.root.find((r) => r.id === node.regionKey);
+      const regionNode = hierarchyTree.root.find((r) => r.id === node.regionKey);
       nextPath = regionNode ? [regionNode, node] : [node];
     } else if (node.type === "district") {
       // Find region
-      const regionNode = TERRITORY_HIERARCHY.root.find((r) => r.id === node.regionKey);
+      const regionNode = hierarchyTree.root.find((r) => r.id === node.regionKey);
       // Find department
       let deptNode: TerritoryNode | undefined;
-      for (const list of Object.values(TERRITORY_HIERARCHY)) {
-        const found = list.find(
-          (item) =>
-            item.type === "department" &&
-            TERRITORY_HIERARCHY[item.id]?.some((dst) => dst.id === node.id),
-        );
+      for (const list of Object.values(hierarchyTree)) {
+          const found = list.find(
+            (item) =>
+              item.type === "department" &&
+              hierarchyTree[item.id]?.some((dst) => dst.id === node.id),
+          );
         if (found) {
           deptNode = found;
           break;
@@ -505,10 +550,10 @@ export function MapView({
   // Get options for current hierarchy stage
   const getTerritoryOptions = (): TerritoryNode[] => {
     if (activeTerritoryPath.length === 0) {
-      return TERRITORY_HIERARCHY.root;
+      return hierarchyTree.root || [];
     }
     const lastNode = activeTerritoryPath[activeTerritoryPath.length - 1];
-    return TERRITORY_HIERARCHY[lastNode.id] || [];
+    return hierarchyTree[lastNode.id] || [];
   };
 
   const territoryOptions = getTerritoryOptions();
@@ -737,7 +782,7 @@ export function MapView({
                 Acciones activas aquí
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {territoryMissions.slice(0, 5).map((m) => (
+                {territoryMissions.filter(isMission).slice(0, 5).map((m) => (
                   <button
                     key={m.id}
                     onClick={() => onSelectMission(m.id)}
@@ -755,9 +800,9 @@ export function MapView({
                     <div className="text-[8px] font-black text-accent">+{m.xp} XP</div>
                   </button>
                 ))}
-                {territoryMissions.length > 5 && (
+                {territoryMissions.filter(isMission).length > 5 && (
                   <div className="text-[8px] text-center text-muted-foreground italic">
-                    +{territoryMissions.length - 5} más misiones
+                    +{territoryMissions.filter(isMission).length - 5} más misiones
                   </div>
                 )}
               </div>
