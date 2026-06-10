@@ -10,7 +10,7 @@ import type { Mission, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { inferRegionFromCoords } from "@/domain/territorial";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
-import { haversineDistance, type GeoCoords } from "@/domain/geo";
+import type { GeoCoords } from "@/domain/geo";
 import {
   CATEGORY_LABEL,
   CATEGORY_TO_DB,
@@ -90,6 +90,24 @@ async function resolveOrganizerForMission(
   }
 }
 
+async function resolveMissionImpact(missionId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_mission_impact_preview", {
+      p_mission_id: missionId,
+    });
+    if (error || !data) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    const r = row as { evidence_count?: number; latest_caption?: string | null; latest_description?: string | null };
+    const count = Number(r.evidence_count ?? 0);
+    if (count === 0) return null;
+    const text = r.latest_caption ?? r.latest_description;
+    if (text) return text;
+    return `${count} evidencias verificadas`;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveMissionDate(
   missionId: string,
   startDate: string | null,
@@ -128,7 +146,8 @@ function mapRowToMission(
   row: DbMission,
   organizer: { name: string; avatar: string } | null,
   date: string | null,
-  referenceCoords?: GeoCoords | null,
+  impact: string | null,
+  distanceKm: number | null,
 ): Mission {
   const coords = { lat: row.latitude, lng: row.longitude };
   const region = inferRegionFromCoords(coords);
@@ -144,12 +163,6 @@ function mapRowToMission(
   const rawDifficulty =
     "difficulty" in row ? ((row as Record<string, unknown>).difficulty as string | null) : null;
   const difficulty = isValidDifficulty(rawDifficulty) ? rawDifficulty : null;
-  // TODO: migrate to find_nearby_missions RPC when batch distance queries are needed.
-  // PostGIS is available in production (migration 20260611000000).
-  const distanceKm =
-    referenceCoords && coords.lat != null && coords.lng != null
-      ? Math.round(haversineDistance(referenceCoords, coords) * 10) / 10
-      : null;
 
   return {
     id: row.id,
@@ -164,7 +177,7 @@ function mapRowToMission(
     spotsLeft,
     date,
     distanceKm,
-    impact: null,
+    impact,
     difficulty,
     startDate,
     endDate,
@@ -367,20 +380,65 @@ export const missionRepository = {
 
 // ─── Batch resolution helpers ──────────────────────────────────────────────
 
+/**
+ * Resolve distances for a set of mission IDs via the PostGIS batch RPC.
+ * When the RPC is unavailable (offline / network error), falls back to
+ * null — never fabricates a distance.
+ */
+async function resolveMissionDistances(
+  missionIds: string[],
+  referenceCoords: GeoCoords,
+): Promise<Map<string, number>> {
+  try {
+    const { data, error } = await supabase.rpc("find_nearby_missions", {
+      p_lat: referenceCoords.lat,
+      p_lng: referenceCoords.lng,
+      p_limit: Math.max(missionIds.length, 500),
+    });
+    if (error || !data) return new Map();
+    const rows = Array.isArray(data) ? data : [data];
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      const r = row as { id: string; distance_km: number };
+      if (missionIds.includes(r.id)) {
+        map.set(r.id, Math.round(r.distance_km * 10) / 10);
+      }
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
 async function resolveMissions(rows: DbMission[], referenceCoords?: GeoCoords): Promise<Mission[]> {
   if (rows.length === 0) return [];
 
+  // Batch-resolve distances once for all missions when coords are available
+  const distanceMap = referenceCoords
+    ? await resolveMissionDistances(
+        rows.map((r) => r.id),
+        referenceCoords,
+      )
+    : null;
+
   const entries = await Promise.all(
     rows.map(async (row) => {
-      const [organizer, date] = await Promise.all([
+      const [organizer, date, impact] = await Promise.all([
         resolveOrganizerForMission(row.id),
         resolveMissionDate(row.id, row.start_date ?? null),
+        resolveMissionImpact(row.id),
       ]);
-      return { row, organizer, date };
+      return { row, organizer, date, impact };
     }),
   );
 
-  return entries.map(({ row, organizer, date }) =>
-    mapRowToMission(row, organizer, date, referenceCoords),
+  return entries.map(({ row, organizer, date, impact }) =>
+    mapRowToMission(
+      row,
+      organizer,
+      date,
+      impact,
+      distanceMap?.get(row.id) ?? null,
+    ),
   );
 }

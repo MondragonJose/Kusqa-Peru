@@ -29,6 +29,10 @@ function setDefaultMocks(): void {
     ],
     error: null,
   });
+  mock.queue.rpcResponse("get_mission_impact_preview", {
+    data: [{ evidence_count: 0, latest_caption: null, latest_description: null }],
+    error: null,
+  });
   mock.queue.tableResponse("proposal_lifecycle_events", { data: null, error: null });
   mock.queue.tableResponse("proposals", { data: null, error: null });
 }

@@ -21,8 +21,10 @@
 - When not provided → `null` (no fabricated distance)
 - The field is never rendered in any UI surface (confirmed by audit) — the type change is backwards-compatible
 
-**PostGIS verification:** Confirmed available in production — migration `20260611000000_phase13_spatial_intelligence.sql` enables it (`create extension if not exists postgis`) and defines the `find_nearby_missions` RPC.
+**PostGIS verification:** Confirmed available in production — migration `20260611000000_phase13_spatial_intelligence.sql` enables it (`create extension if not exists postgis`) and defines a first `find_nearby_missions` RPC (radius-filtered, haversine-based).
 
-**TODO (future):** Replace client-side haversine with the `find_nearby_missions` RPC when the "nearby" map feature requires batch distance queries. For the current use case (populating a single distance per mission), haversine is zero-network and acceptable.
+**Migration to PostGIS batch RPC (2026-06-15):** Client-side haversine has been replaced by a new `find_nearby_missions` overload (`p_lat, p_lng, p_limit`) that uses `ST_Distance(geography)` from PostGIS and returns ALL missions (no radius filter) ordered by proximity. The repository calls this RPC **once per batch** in `resolveMissionsDistances` — a single network round-trip regardless of batch size. The original radius-filtered overload is preserved for the "find nearby" map feature.
 
-**Result:** `distanceKm` is either `null` (no reference point available) or a real km value. No `0` placeholders.
+**Offline fallback:** When the RPC errors (network failure), `resolveMissionDistances` returns an empty map, and all missions get `distanceKm: null`. No haversine fallback is used — the system degrades honestly to null rather than fabricating a distance.
+
+**Result:** `distanceKm` is either `null` (no reference point available) or a real km value resolved via PostGIS in a single batch RPC. No `0` placeholders.
