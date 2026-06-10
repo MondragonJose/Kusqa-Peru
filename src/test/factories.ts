@@ -214,6 +214,53 @@ export function makePublicProfileRpc(overrides: Partial<PublicProfileRpc> = {}):
   });
 }
 
+// ---- Missions ---------------------------------------------------------
+
+export const missionRowSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  district: z.string().min(1),
+  district_id: z.string().uuid().nullable().optional(),
+  category: z.enum(["environment", "infrastructure", "community", "education", "health"]),
+  latitude: z.number(),
+  longitude: z.number(),
+  created_at: z.string(),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
+  current_progress: z.number().nullable().optional(),
+  max_participants: z.number().nullable().optional(),
+  xp_reward: z.number().int().nonnegative().optional(),
+  organizer_id: z.string().uuid().nullable().optional(),
+  difficulty: z.string().nullable().optional(),
+  impact: z.string().nullable().optional(),
+});
+
+export type MissionRow = z.infer<typeof missionRowSchema>;
+
+export function makeMissionRow(overrides: Partial<MissionRow> = {}): MissionRow {
+  return missionRowSchema.parse({
+    id: "66666666-6666-6666-6666-666666666666",
+    title: "Limpieza del río Huatanay",
+    description: "Jornada comunitaria de limpieza del río Huatanay en Cusco.",
+    district: "cusco-cusco",
+    district_id: "33333333-3333-3333-3333-333333333333",
+    category: "environment",
+    latitude: -13.5167,
+    longitude: -71.9789,
+    created_at: "2026-06-01T12:00:00Z",
+    start_date: "2026-07-15T10:00:00Z",
+    end_date: "2026-07-15T18:00:00Z",
+    current_progress: 5,
+    max_participants: 20,
+    xp_reward: 320,
+    organizer_id: "22222222-2222-2222-2222-222222222222",
+    difficulty: "Andina",
+    impact: null,
+    ...overrides,
+  });
+}
+
 // ---- User notification row --------------------------------------------
 
 export const userNotificationRowSchema = z.object({

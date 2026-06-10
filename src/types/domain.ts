@@ -45,11 +45,11 @@ export type Mission = {
   xp: number;
   participants: number;
   spotsLeft: number;
-  date: string;
-  distanceKm: number;
-  impact: string;
-  difficulty: MissionDifficulty;
-  organizer: MissionOrganizer;
+  date: string | null;
+  distanceKm: number | null;
+  impact: string | null;
+  difficulty: MissionDifficulty | null;
+  organizer: MissionOrganizer | null;
   coords: MapCoords;
   emoji: string;
   status?: "proposed" | "active" | "completed";

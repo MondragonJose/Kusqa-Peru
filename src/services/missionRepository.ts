@@ -1,13 +1,16 @@
 /**
  * Mission repository — Supabase read access for missions.
  * Maps generated DB rows to domain Mission types.
+ *
+ * Phase 0: Data correctness — no hardcoded/fallback values.
  */
 
 import { supabase } from "@/lib/supabase";
-import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
+import type { Mission, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { inferRegionFromCoords } from "@/domain/territorial";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
+import { haversineDistance, type GeoCoords } from "@/domain/geo";
 import {
   CATEGORY_LABEL,
   CATEGORY_TO_DB,
@@ -35,6 +38,9 @@ const DB_MISSION_SCHEMA = z.object({
   current_progress: z.number().nullable().optional(),
   max_participants: z.number().nullable().optional(),
   xp_reward: z.number().int().nonnegative().optional(),
+  organizer_id: z.string().uuid().nullable().optional(),
+  difficulty: z.string().nullable().optional(),
+  impact: z.string().nullable().optional(),
 });
 
 function assertValidMissionId(missionId: string): void {
@@ -53,7 +59,6 @@ function parseDbMissionRow(row: DbMission): DbMission {
 }
 
 const DEFAULT_XP = 320;
-const DEFAULT_DIFFICULTY: MissionDifficulty = "Suave";
 
 function formatMissionDate(iso: string): string {
   try {
@@ -69,7 +74,68 @@ function formatMissionDate(iso: string): string {
   }
 }
 
-function mapRowToMission(row: DbMission): Mission {
+async function resolveOrganizerForMission(
+  missionId: string,
+): Promise<{ name: string; avatar: string } | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_mission_organizer_preview", {
+      p_mission_id: missionId,
+    });
+    if (error || !data) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      name: String(
+        (row as { first_name?: string; username?: string }).first_name ??
+          (row as { username?: string }).username ??
+          "Kusqa",
+      ),
+      avatar: String((row as { avatar_url?: string | null }).avatar_url ?? ""),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveMissionDate(
+  missionId: string,
+  startDate: string | null,
+): Promise<string | null> {
+  if (startDate) {
+    return formatMissionDate(startDate);
+  }
+
+  try {
+    const { data: event } = await supabase
+      .from("proposal_lifecycle_events")
+      .select("proposal_id")
+      .eq("converted_mission_id", missionId)
+      .eq("event_type", "mission_created")
+      .maybeSingle();
+
+    if (!event) return null;
+
+    const { data: proposal } = await supabase
+      .from("proposals")
+      .select("proposed_date")
+      .eq("id", (event as { proposal_id: string }).proposal_id)
+      .maybeSingle();
+
+    if (proposal?.proposed_date) {
+      return formatMissionDate(proposal.proposed_date);
+    }
+  } catch {
+    // silent fallback
+  }
+
+  return null;
+}
+
+function mapRowToMission(
+  row: DbMission,
+  organizer: { name: string; avatar: string } | null,
+  date: string | null,
+  referenceCoords?: GeoCoords | null,
+): Mission {
   const coords = { lat: row.latitude, lng: row.longitude };
   const region = inferRegionFromCoords(coords);
   const participants = row.current_progress ?? 0;
@@ -80,6 +146,13 @@ function mapRowToMission(row: DbMission): Mission {
     "start_date" in row ? ((row as Record<string, unknown>).start_date as string | null) : null;
   const endDate =
     "end_date" in row ? ((row as Record<string, unknown>).end_date as string | null) : null;
+  const rawDifficulty =
+    "difficulty" in row ? ((row as Record<string, unknown>).difficulty as string | null) : null;
+  const difficulty = isValidDifficulty(rawDifficulty) ? rawDifficulty : null;
+  const distanceKm =
+    referenceCoords && coords.lat != null && coords.lng != null
+      ? Math.round(haversineDistance(referenceCoords, coords) * 10) / 10
+      : null;
 
   return {
     id: row.id,
@@ -92,24 +165,30 @@ function mapRowToMission(row: DbMission): Mission {
     xp: row.xp_reward ?? DEFAULT_XP,
     participants,
     spotsLeft,
-    date: formatMissionDate(row.created_at),
-    distanceKm: 0,
-    impact: row.description.slice(0, 80),
-    difficulty: DEFAULT_DIFFICULTY,
+    date,
+    distanceKm,
+    impact: null,
+    difficulty,
     startDate,
     endDate,
     lifecycleInfo: computeLifecycleInfo(startDate, endDate),
-    organizer: {
-      name: "Comunidad KUSQA",
-      avatar: "🦙",
-    },
+    organizer,
     coords,
     emoji: dbCategoryEmoji(category),
   };
 }
 
+function isValidDifficulty(v: string | null): v is MissionDifficulty {
+  if (!v) return false;
+  return ["Suave", "Andina", "Cumbre"].includes(v);
+}
+
 export const missionRepository = {
-  async findAll(pg?: { limit?: number; offset?: number }): Promise<Mission[]> {
+  async findAll(pg?: {
+    limit?: number;
+    offset?: number;
+    referenceCoords?: GeoCoords;
+  }): Promise<Mission[]> {
     const limit = pg?.limit ?? 100;
     const offset = pg?.offset ?? 0;
     const { data, error } = await supabase
@@ -122,9 +201,8 @@ export const missionRepository = {
       throw new Error(`Failed to fetch missions: ${error.message}`);
     }
 
-    const missions: Mission[] = (data ?? []).map((row: any) =>
-      mapRowToMission(parseDbMissionRow(row)),
-    );
+    const rows = (data ?? []).map(parseDbMissionRow);
+    const missions = await resolveMissions(rows, pg?.referenceCoords);
 
     if (import.meta.env.DEV) {
       console.log(
@@ -148,7 +226,7 @@ export const missionRepository = {
     return missions;
   },
 
-  async findById(missionId: string): Promise<Mission | null> {
+  async findById(missionId: string, referenceCoords?: GeoCoords): Promise<Mission | null> {
     assertValidMissionId(missionId);
 
     const { data, error } = await supabase
@@ -165,10 +243,12 @@ export const missionRepository = {
       return null;
     }
 
-    return mapRowToMission(parseDbMissionRow(data));
+    const rows = [parseDbMissionRow(data)];
+    const missions = await resolveMissions(rows, referenceCoords);
+    return missions[0] ?? null;
   },
 
-  async findAllByIds(missionIds: string[]): Promise<Mission[]> {
+  async findAllByIds(missionIds: string[], referenceCoords?: GeoCoords): Promise<Mission[]> {
     const uniqueIds = [...new Set(missionIds)];
     if (uniqueIds.length === 0) {
       return [];
@@ -184,12 +264,13 @@ export const missionRepository = {
 
     const rows = data ?? [];
     if (rows.length !== uniqueIds.length) {
-      const found = new Set(rows.map((row: any) => row.id));
+      const found = new Set(rows.map((row: DbMission) => row.id));
       const missing = uniqueIds.filter((id) => !found.has(id));
       throw new Error(`Missions not found: ${missing.join(", ")}`);
     }
 
-    return rows.map((row: any) => mapRowToMission(parseDbMissionRow(row)));
+    const parsed = rows.map(parseDbMissionRow);
+    return resolveMissions(parsed, referenceCoords);
   },
 
   /**
@@ -201,7 +282,7 @@ export const missionRepository = {
     displayName: string,
     slug: string,
     districtId?: string | null,
-    pg?: { limit?: number; offset?: number },
+    pg?: { limit?: number; offset?: number; referenceCoords?: GeoCoords },
   ): Promise<Mission[]> {
     const limit = pg?.limit ?? 20;
     const offset = pg?.offset ?? 0;
@@ -222,7 +303,8 @@ export const missionRepository = {
         return [];
       }
 
-      return (data ?? []).map((row: any) => mapRowToMission(parseDbMissionRow(row)));
+      const rows = (data ?? []).map(parseDbMissionRow);
+      return resolveMissions(rows, pg?.referenceCoords);
     }
 
     // Fallback to text-based ILIKE for legacy rows
@@ -240,7 +322,8 @@ export const missionRepository = {
       return [];
     }
 
-    return (data ?? []).map((row: any) => mapRowToMission(parseDbMissionRow(row)));
+    const rows = (data ?? []).map(parseDbMissionRow);
+    return resolveMissions(rows, pg?.referenceCoords);
   },
 
   async create(data: Omit<Mission, "id">): Promise<Mission> {
@@ -265,6 +348,8 @@ export const missionRepository = {
         category,
         max_participants: capacity,
         current_progress: participants,
+        start_date: data.startDate ?? null,
+        end_date: data.endDate ?? null,
       })
       .select()
       .single();
@@ -277,6 +362,28 @@ export const missionRepository = {
       throw new Error("Failed to create mission: empty response");
     }
 
-    return mapRowToMission(parseDbMissionRow(inserted));
+    const rows = [parseDbMissionRow(inserted)];
+    const missions = await resolveMissions(rows);
+    return missions[0];
   },
 };
+
+// ─── Batch resolution helpers ──────────────────────────────────────────────
+
+async function resolveMissions(rows: DbMission[], referenceCoords?: GeoCoords): Promise<Mission[]> {
+  if (rows.length === 0) return [];
+
+  const entries = await Promise.all(
+    rows.map(async (row) => {
+      const [organizer, date] = await Promise.all([
+        resolveOrganizerForMission(row.id),
+        resolveMissionDate(row.id, row.start_date ?? null),
+      ]);
+      return { row, organizer, date };
+    }),
+  );
+
+  return entries.map(({ row, organizer, date }) =>
+    mapRowToMission(row, organizer, date, referenceCoords),
+  );
+}

@@ -236,7 +236,7 @@ export function MissionStoryModal({ isOpen, onClose, missionId }: MissionStoryMo
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" /> {mission.date}
+                    <Calendar className="h-3.5 w-3.5" /> {mission.date ?? "—"}
                   </span>
                 </div>
               </div>
