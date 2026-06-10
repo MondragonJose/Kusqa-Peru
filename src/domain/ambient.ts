@@ -190,20 +190,23 @@ import type { Initiative } from "./initiative";
  * Converts Initiative[] to minimal TerritorialEvent[] for ambient derivation.
  */
 export function initiativesToAmbientEvents(initiatives: Initiative[]): TerritorialEvent[] {
-  return initiatives.map((i) => ({
-    id: `amb-${i.id}`,
-    type: (i.sourceType === "mission"
-      ? "mission.joined"
-      : "proposal.created") as TerritorialEvent["type"],
-    actor: { id: "", username: "", firstName: "", avatarUrl: null },
-    entityType: i.sourceType,
-    entityId: i.sourceId,
-    entityTitle: i.title,
-    districtId: i.location?.districtId ?? null,
-    region: i.region,
-    createdAt: i.temporalAnchor.referenceDate ?? "",
-    metadata: {},
-  }));
+  return initiatives
+    .map((i) => ({ i, refDate: i.temporalAnchor.referenceDate }))
+    .filter((entry): entry is { i: Initiative; refDate: string } => entry.refDate != null)
+    .map(({ i, refDate }) => ({
+      id: `amb-${i.id}`,
+      type: (i.sourceType === "mission"
+        ? "mission.joined"
+        : "proposal.created") as TerritorialEvent["type"],
+      actor: { id: "", username: "", firstName: "", avatarUrl: null },
+      entityType: i.sourceType,
+      entityId: i.sourceId,
+      entityTitle: i.title,
+      districtId: i.location?.districtId ?? null,
+      region: i.region,
+      createdAt: refDate,
+      metadata: {},
+    }));
 }
 
 /**

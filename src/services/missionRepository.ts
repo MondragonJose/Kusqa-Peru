@@ -58,8 +58,6 @@ function parseDbMissionRow(row: DbMission): DbMission {
   return row;
 }
 
-const DEFAULT_XP = 320;
-
 function formatMissionDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString("es-PE", {
@@ -83,14 +81,10 @@ async function resolveOrganizerForMission(
     });
     if (error || !data) return null;
     const row = Array.isArray(data) ? data[0] : data;
-    return {
-      name: String(
-        (row as { first_name?: string; username?: string }).first_name ??
-          (row as { username?: string }).username ??
-          "Kusqa",
-      ),
-      avatar: String((row as { avatar_url?: string | null }).avatar_url ?? ""),
-    };
+    const r = row as { first_name?: string | null; username?: string | null; avatar_url?: string | null };
+    const name = r.first_name ?? r.username;
+    if (!name) return null;
+    return { name, avatar: r.avatar_url ?? "" };
   } catch {
     return null;
   }
@@ -139,8 +133,9 @@ function mapRowToMission(
   const coords = { lat: row.latitude, lng: row.longitude };
   const region = inferRegionFromCoords(coords);
   const participants = row.current_progress ?? 0;
-  const capacity = row.max_participants ?? 10;
-  const spotsLeft = Math.max(0, capacity - participants);
+  const spotsLeft = row.max_participants != null
+    ? Math.max(0, row.max_participants - participants)
+    : null;
   const category = row.category as DbCategory;
   const startDate =
     "start_date" in row ? ((row as Record<string, unknown>).start_date as string | null) : null;
@@ -149,6 +144,8 @@ function mapRowToMission(
   const rawDifficulty =
     "difficulty" in row ? ((row as Record<string, unknown>).difficulty as string | null) : null;
   const difficulty = isValidDifficulty(rawDifficulty) ? rawDifficulty : null;
+  // TODO: migrate to find_nearby_missions RPC when batch distance queries are needed.
+  // PostGIS is available in production (migration 20260611000000).
   const distanceKm =
     referenceCoords && coords.lat != null && coords.lng != null
       ? Math.round(haversineDistance(referenceCoords, coords) * 10) / 10
@@ -162,7 +159,7 @@ function mapRowToMission(
     districtId: ((row as Record<string, unknown>).district_id as string | null) ?? null,
     region,
     category: CATEGORY_LABEL[category],
-    xp: row.xp_reward ?? DEFAULT_XP,
+    xp: row.xp_reward ?? null,
     participants,
     spotsLeft,
     date,

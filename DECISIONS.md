@@ -21,4 +21,8 @@
 - When not provided → `null` (no fabricated distance)
 - The field is never rendered in any UI surface (confirmed by audit) — the type change is backwards-compatible
 
+**PostGIS verification:** Confirmed available in production — migration `20260611000000_phase13_spatial_intelligence.sql` enables it (`create extension if not exists postgis`) and defines the `find_nearby_missions` RPC.
+
+**TODO (future):** Replace client-side haversine with the `find_nearby_missions` RPC when the "nearby" map feature requires batch distance queries. For the current use case (populating a single distance per mission), haversine is zero-network and acceptable.
+
 **Result:** `distanceKm` is either `null` (no reference point available) or a real km value. No `0` placeholders.

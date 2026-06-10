@@ -386,5 +386,69 @@ describe("missionRepository", () => {
       // date must be null — never created_at
       expect(missions[0].date).toBeNull();
     });
+
+    it("does not fabricate xp — null when xp_reward is missing", async () => {
+      setDefaultMocks();
+      const row = makeMissionRow();
+      delete (row as Record<string, unknown>).xp_reward;
+      mock.queue.tableResponse("missions", { data: [row], error: null });
+
+      const missions = await missionRepository.findAll();
+      expect(missions[0].xp).toBeNull();
+      // Must never be the old default (320)
+      expect(missions[0].xp).not.toBe(320);
+    });
+
+    it("does not fabricate spotsLeft — null when max_participants is missing", async () => {
+      setDefaultMocks();
+      const row = makeMissionRow();
+      delete (row as Record<string, unknown>).max_participants;
+      mock.queue.tableResponse("missions", { data: [row], error: null });
+
+      const missions = await missionRepository.findAll();
+      // spotsLeft derived from a fabricated capacity (10) would be Math.max(0, 10 - 5) = 5
+      // null means no default was injected
+      expect(missions[0].spotsLeft).toBeNull();
+      expect(missions[0].spotsLeft).not.toBe(5);
+    });
+
+    it("does not fabricate organizer — null when RPC returns row without name", async () => {
+      mock.queue.rpcResponse("get_mission_organizer_preview", {
+        data: [
+          {
+            user_id: "22222222-2222-2222-2222-222222222222",
+            first_name: null,
+            username: null,
+            avatar_url: null,
+          },
+        ],
+        error: null,
+      });
+      mock.queue.tableResponse("proposal_lifecycle_events", { data: null, error: null });
+      mock.queue.tableResponse("proposals", { data: null, error: null });
+      mock.queue.tableResponse("missions", { data: [makeMissionRow()], error: null });
+
+      const missions = await missionRepository.findAll();
+      // Must not contain "Kusqa" or any fabricated name
+      expect(missions[0].organizer).toBeNull();
+    });
+
+    it("never returns the old hardcoded organizer placeholder", async () => {
+      // RPC error → null, never { name: "Comunidad KUSQA", avatar: "🦙" }
+      mock.queue.rpcResponse("get_mission_organizer_preview", {
+        data: null,
+        error: { message: "not found" },
+      });
+      mock.queue.tableResponse("proposal_lifecycle_events", { data: null, error: null });
+      mock.queue.tableResponse("proposals", { data: null, error: null });
+      mock.queue.tableResponse("missions", { data: [makeMissionRow()], error: null });
+
+      const missions = await missionRepository.findAll();
+      expect(missions[0].organizer).not.toEqual({
+        name: "Comunidad KUSQA",
+        avatar: "🦙",
+      });
+      expect(missions[0].organizer).toBeNull();
+    });
   });
 });

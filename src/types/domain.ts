@@ -42,9 +42,9 @@ export type Mission = {
   districtId?: string | null;
   region: Region;
   category: MissionCategory;
-  xp: number;
+  xp: number | null;
   participants: number;
-  spotsLeft: number;
+  spotsLeft: number | null;
   date: string | null;
   distanceKm: number | null;
   impact: string | null;
