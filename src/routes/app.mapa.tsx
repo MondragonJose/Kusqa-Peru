@@ -7,7 +7,11 @@ import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
 import { useMapEntities } from "@/features/map/hooks/useMapEntities";
 import { MapView } from "@/features/map/components/MapView";
-import { isMissionEntity, buildMapEntitySummary, mapEntityToActionInitiative } from "@/features/map/projections/mapEntityProjection";
+import {
+  isMissionEntity,
+  buildMapEntitySummary,
+  mapEntityToActionInitiative,
+} from "@/features/map/projections/mapEntityProjection";
 import { Drawer } from "vaul";
 import type { MissionCategory } from "@/types";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
@@ -50,6 +54,8 @@ function MapPage() {
   } = useMissionMapFilters(allMapItems, userCoords);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showHuellas, setShowHuellas] = useState(true);
+  const [selectedHuellaId, setSelectedHuellaId] = useState<string | null>(null);
 
   // Sidebar only renders missions — proposals stay as map markers only
   const sidebarItems = filteredMissions.filter(isMissionEntity);
@@ -234,6 +240,10 @@ function MapPage() {
             userLocationLoading={userLocationLoading}
             onRequestUserLocation={requestUserLocation}
             districtWarmth={districtWarmth}
+            showHuellas={showHuellas}
+            onToggleHuellas={() => setShowHuellas((v) => !v)}
+            selectedHuellaId={selectedHuellaId}
+            onSelectHuella={setSelectedHuellaId}
           />
         </div>
 
@@ -262,7 +272,11 @@ function MapPage() {
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         <Link
                           to="/app/distrito/$slug"
-                          params={{ slug: districtSlugify(activeEntity.location?.district ?? activeEntity.region) }}
+                          params={{
+                            slug: districtSlugify(
+                              activeEntity.location?.district ?? activeEntity.region,
+                            ),
+                          }}
                           className="truncate hover:underline"
                         >
                           {activeEntity.location?.district ?? activeEntity.region}
@@ -315,12 +329,19 @@ function MapPage() {
                   <InitiativeActionBar
                     initiative={mapEntityToActionInitiative(activeEntity)}
                     relationship="visitor"
-                    variant="popup"
+                    variant="row"
+                    maxVisible={2}
                     onAction={(action: InitiativeAction) => {
                       if (action === "support") {
-                        navigate({ to: "/app/propuesta/$proposalId", params: { proposalId: activeEntity.sourceId } });
+                        navigate({
+                          to: "/app/propuesta/$proposalId",
+                          params: { proposalId: activeEntity.sourceId },
+                        });
                       } else if (action === "join") {
-                        navigate({ to: "/app/mision/$missionId", params: { missionId: activeEntity.id } });
+                        navigate({
+                          to: "/app/mision/$missionId",
+                          params: { missionId: activeEntity.id },
+                        });
                       } else if (action === "share") {
                         shareInitiative(activeEntity.title, window.location.href);
                       }
@@ -381,7 +402,11 @@ function MapPage() {
                               <MapPin className="h-3 w-3" />{" "}
                               <Link
                                 to="/app/distrito/$slug"
-                                params={{ slug: districtSlugify(activeEntity.location?.district ?? activeEntity.region) }}
+                                params={{
+                                  slug: districtSlugify(
+                                    activeEntity.location?.district ?? activeEntity.region,
+                                  ),
+                                }}
                                 className="truncate hover:underline"
                               >
                                 {activeEntity.location?.district ?? activeEntity.region}
@@ -396,12 +421,18 @@ function MapPage() {
                           <InitiativeActionBar
                             initiative={mapEntityToActionInitiative(activeEntity)}
                             relationship="visitor"
-                            variant="popup"
+                            variant="compact"
                             onAction={(action: InitiativeAction) => {
                               if (action === "support") {
-                                navigate({ to: "/app/propuesta/$proposalId", params: { proposalId: activeEntity.sourceId } });
+                                navigate({
+                                  to: "/app/propuesta/$proposalId",
+                                  params: { proposalId: activeEntity.sourceId },
+                                });
                               } else if (action === "join") {
-                                navigate({ to: "/app/mision/$missionId", params: { missionId: activeEntity.id } });
+                                navigate({
+                                  to: "/app/mision/$missionId",
+                                  params: { missionId: activeEntity.id },
+                                });
                               } else if (action === "share") {
                                 shareInitiative(activeEntity.title, window.location.href);
                               }

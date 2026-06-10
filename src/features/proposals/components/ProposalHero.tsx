@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CalendarDays, Sparkles, Clock } from "lucide-react";
 import type { Proposal } from "@/services/proposalContract";
-import { getProposalPhase, getProposalPhaseCopy, getProposalThreshold } from "@/domain/proposalLifecycle";
+import {
+  getProposalPhase,
+  getProposalPhaseCopy,
+  getProposalThreshold,
+} from "@/domain/proposalLifecycle";
 import { computeProposalAnchor } from "@/domain/initiative";
 import { regionGradient, regionLabel, type Region } from "@/domain/regions";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
-
-
 
 interface ProposalHeroProps {
   proposal: Proposal;

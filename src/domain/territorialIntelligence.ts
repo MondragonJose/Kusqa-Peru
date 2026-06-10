@@ -114,7 +114,11 @@ export function computeVitalityScore(summary: TerritorialImpactSummary): number 
     else if (daysSince < 90) score += 1;
   }
 
-  if (summary.activeProposalCount > 0 && summary.recentCompletionCount && summary.recentCompletionCount > 0) {
+  if (
+    summary.activeProposalCount > 0 &&
+    summary.recentCompletionCount &&
+    summary.recentCompletionCount > 0
+  ) {
     score += 2;
   } else if (summary.activeProposalCount > 0 || summary.missionCount > 0) {
     score += 1;
@@ -147,12 +151,15 @@ export function classifyTerritorialVitality(
   existingClass: DistrictActivityClass,
 ): TerritorialActivityLevel {
   const total = summary.missionCount + summary.proposalCount;
-  const conversionProxy = total > 0
-    ? summary.completedMissionCount / Math.max(1, total)
-    : 0;
+  const conversionProxy = total > 0 ? summary.completedMissionCount / Math.max(1, total) : 0;
 
   // Reactivating: dormant district with recent new proposals (check before dormant)
-  if (total > 0 && summary.lastActivityAt && summary.recentProposalCount && summary.recentProposalCount > 0) {
+  if (
+    total > 0 &&
+    summary.lastActivityAt &&
+    summary.recentProposalCount &&
+    summary.recentProposalCount > 0
+  ) {
     const daysSince = daysAgo(summary.lastActivityAt);
     if (daysSince > 60 && summary.activeProposalCount === 0) {
       return "reactivating";
@@ -193,9 +200,7 @@ export function classifyTerritorialVitality(
 
 export type CoalitionDensity = "none" | "forming" | "emerging" | "consolidated";
 
-export function classifyCoalitionDensity(
-  summary: TerritorialImpactSummary,
-): CoalitionDensity {
+export function classifyCoalitionDensity(summary: TerritorialImpactSummary): CoalitionDensity {
   const supporters = summary.uniqueSupporterCount;
   const collaborators = summary.acceptedCollaboratorCount;
 
@@ -207,7 +212,9 @@ export function classifyCoalitionDensity(
 
 export type RecurringSupportPattern = "none" | "some" | "strong";
 
-export function classifyRecurringSupport(summary: TerritorialImpactSummary): RecurringSupportPattern {
+export function classifyRecurringSupport(
+  summary: TerritorialImpactSummary,
+): RecurringSupportPattern {
   const total = summary.proposalCount + summary.missionCount;
   if (total === 0 || summary.uniqueSupporterCount === 0) return "none";
   // If supporters outnumber initiatives, some people support multiple things
@@ -219,7 +226,9 @@ export function classifyRecurringSupport(summary: TerritorialImpactSummary): Rec
 
 export type OrganizerContinuityLevel = "none" | "early" | "established";
 
-export function classifyOrganizerContinuity(summary: TerritorialImpactSummary): OrganizerContinuityLevel {
+export function classifyOrganizerContinuity(
+  summary: TerritorialImpactSummary,
+): OrganizerContinuityLevel {
   if (summary.missionCount === 0 && summary.proposalCount === 0) return "none";
   // Ratio of completed cycles to total initiatives
   const total = summary.missionCount + summary.proposalCount;
@@ -231,7 +240,9 @@ export function classifyOrganizerContinuity(summary: TerritorialImpactSummary): 
 
 export type InitiativeReinforcement = "none" | "some" | "converging";
 
-export function classifyInitiativeReinforcement(summary: TerritorialImpactSummary): InitiativeReinforcement {
+export function classifyInitiativeReinforcement(
+  summary: TerritorialImpactSummary,
+): InitiativeReinforcement {
   const total = summary.proposalCount + summary.missionCount;
   if (total === 0) return "none";
   // When supporters and collaborators both exist, initiatives reinforce each other
@@ -268,7 +279,9 @@ export function detectDormancy(summary: TerritorialImpactSummary): DormancyStatu
 
 export type InitiativePersistence = "fragile" | "forming" | "persistent" | "established";
 
-export function classifyInitiativePersistence(summary: TerritorialImpactSummary): InitiativePersistence {
+export function classifyInitiativePersistence(
+  summary: TerritorialImpactSummary,
+): InitiativePersistence {
   if (summary.proposalCount === 0 && summary.missionCount === 0) return "forming";
 
   const hasConversions = summary.completedMissionCount > 0;
@@ -314,9 +327,7 @@ export function deriveDistrictVitality(
   const dormantDays = summary.lastActivityAt ? daysAgo(summary.lastActivityAt) : null;
 
   const activeInitiatives =
-    summary.activeProposalCount +
-    summary.missionCount -
-    summary.completedMissionCount;
+    summary.activeProposalCount + summary.missionCount - summary.completedMissionCount;
 
   const baseNarrative = buildVitalityNarrative({
     activityLevel,
@@ -334,9 +345,7 @@ export function deriveDistrictVitality(
     ? buildSpatialNarrative(deriveSpatialSignals(spatialContext))
     : null;
 
-  const narrative = spatialNarrative
-    ? `${baseNarrative} ${spatialNarrative}`
-    : baseNarrative;
+  const narrative = spatialNarrative ? `${baseNarrative} ${spatialNarrative}` : baseNarrative;
 
   return {
     score: computeVitalityScore(summary),
@@ -457,15 +466,17 @@ export function buildVitalityNarrative(input: NarrativeInput): string {
 
 import type { TerritorialEvent } from "./territorialEvent";
 
-export function summarizeEventsToImpact(events: TerritorialEvent[]): Partial<TerritorialImpactSummary> {
+export function summarizeEventsToImpact(
+  events: TerritorialEvent[],
+): Partial<TerritorialImpactSummary> {
   const now = Date.now();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
   let lastActivityAt: string | null = null;
   let recentProposalCount = 0;
-  let uniqueSupporters = new Set<string>();
-  let uniqueCollaborators = new Set<string>();
-  let proposals = new Set<string>();
-  let missions = new Set<string>();
+  const uniqueSupporters = new Set<string>();
+  const uniqueCollaborators = new Set<string>();
+  const proposals = new Set<string>();
+  const missions = new Set<string>();
 
   for (const ev of events) {
     if (!lastActivityAt || ev.createdAt > lastActivityAt) {

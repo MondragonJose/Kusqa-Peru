@@ -266,9 +266,7 @@ export const districtRepository = {
    * Lightweight: ~13 columns, ~200 rows.
    */
   async getAllDistrictStats(): Promise<DistrictStats[]> {
-    const { data, error } = await supabase
-      .from("district_stats")
-      .select("*");
+    const { data, error } = await supabase.from("district_stats").select("*");
 
     if (error) {
       if (import.meta.env.DEV) {
@@ -351,11 +349,11 @@ export const districtRepository = {
     }
 
     const [proposals, missions] = await Promise.all([
-      proposalRepository.getAllProposals(
-        { districtId: district.id },
-        { limit: 20, offset: 0 },
-      ),
-      missionRepository.findByDistrict(district.displayName, district.slug, district.id, { limit: 10, offset: 0 }),
+      proposalRepository.getAllProposals({ districtId: district.id }, { limit: 20, offset: 0 }),
+      missionRepository.findByDistrict(district.displayName, district.slug, district.id, {
+        limit: 10,
+        offset: 0,
+      }),
     ]);
 
     return {

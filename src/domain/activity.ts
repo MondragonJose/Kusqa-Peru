@@ -112,20 +112,14 @@ export function formatJoinMessage(count: number, initiativeTitle: string): strin
 /**
  * Message for support milestones.
  */
-export function formatSupportMessage(
-  initiativeTitle: string,
-  currentCount: number,
-): string {
+export function formatSupportMessage(initiativeTitle: string, currentCount: number): string {
   return `"${initiativeTitle}" tiene ${currentCount} apoyo${currentCount !== 1 ? "s" : ""}`;
 }
 
 /**
  * District-level awakening message.
  */
-export function formatAwakeningMessage(
-  activeCount: number,
-  districtName: string,
-): string {
+export function formatAwakeningMessage(activeCount: number, districtName: string): string {
   if (activeCount === 0) return `${districtName} está en calma`;
   if (activeCount <= 2) return `${districtName} está despertando`;
   return `${districtName} está en movimiento`;

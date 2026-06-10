@@ -130,17 +130,15 @@ export function buildMapEntitySummary(entities: InitiativeMapEntity[]): Territor
     uniqueSupporterCount: 0,
     acceptedCollaboratorCount: 0,
     lastActivityAt,
-      recentProposalCount: recentProposalCount > 0 ? recentProposalCount : undefined,
-    };
-  }
+    recentProposalCount: recentProposalCount > 0 ? recentProposalCount : undefined,
+  };
+}
 /**
  * Converts InitiativeMapEntity to Initiative for use with action domain.
  * Fields not present on InitiativeMapEntity (participantsCount) are mapped
  * from the closest equivalent (participants).
  */
-export function mapEntityToActionInitiative(
-  entity: InitiativeMapEntity,
-): Initiative {
+export function mapEntityToActionInitiative(entity: InitiativeMapEntity): Initiative {
   return {
     id: entity.id,
     sourceType: entity.sourceType,

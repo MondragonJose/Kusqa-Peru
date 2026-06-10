@@ -106,7 +106,10 @@ function Dashboard() {
                 </span>
               </div>
               <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05]">
-                {feedItems.length > 0 && !isLoading ? "Tu territorio" : "Descubre lo que puede empezar"} <br />
+                {feedItems.length > 0 && !isLoading
+                  ? "Tu territorio"
+                  : "Descubre lo que puede empezar"}{" "}
+                <br />
                 <span className="bg-clip-text text-transparent bg-gradient-sunrise">
                   {feedItems.length > 0 && !isLoading ? "está en movimiento." : "cerca de ti."}
                 </span>
@@ -233,7 +236,8 @@ function Dashboard() {
                         <div className="flex items-center gap-2">
                           {(t as any).districtCount > 0 && (
                             <span className="text-muted-foreground/70">
-                              {(t as any).districtCount} distrito{(t as any).districtCount !== 1 ? "s" : ""}
+                              {(t as any).districtCount} distrito
+                              {(t as any).districtCount !== 1 ? "s" : ""}
                             </span>
                           )}
                           <span
@@ -243,9 +247,16 @@ function Dashboard() {
                                 : "font-medium text-muted-foreground/70"
                             }
                           >
-                            {t.activeMissionsCount > 0
-                              ? `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
-                              : <>Sin datos aún · <Link to="/app/crear" className="text-accent hover:underline">Sé el primero</Link></>}
+                            {t.activeMissionsCount > 0 ? (
+                              `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
+                            ) : (
+                              <>
+                                Sin datos aún ·{" "}
+                                <Link to="/app/crear" className="text-accent hover:underline">
+                                  Sé el primero
+                                </Link>
+                              </>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -286,13 +297,10 @@ function Dashboard() {
                     {ambientSignal.energy}/10
                   </span>
                 </div>
-                <p className="text-sm leading-relaxed text-foreground/85">
-                  {ambientSignal.tone}
-                </p>
+                <p className="text-sm leading-relaxed text-foreground/85">{ambientSignal.tone}</p>
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
                   <span>
-                    Ritmo:{" "}
-                    {ambientSignal.cadence.pulse === "calm" && "En calma"}
+                    Ritmo: {ambientSignal.cadence.pulse === "calm" && "En calma"}
                     {ambientSignal.cadence.pulse === "steady" && "Constante"}
                     {ambientSignal.cadence.pulse === "lively" && "Animado"}
                     {ambientSignal.cadence.pulse === "intense" && "Intenso"}
@@ -300,7 +308,10 @@ function Dashboard() {
                   <span aria-hidden>·</span>
                   <span>{ambientSignal.cadence.eventsLast7d} eventos recientes</span>
                   <span aria-hidden>·</span>
-                  <span>{ambientSignal.cadence.diversity} tipo{ambientSignal.cadence.diversity !== 1 ? "s" : ""} de actividad</span>
+                  <span>
+                    {ambientSignal.cadence.diversity} tipo
+                    {ambientSignal.cadence.diversity !== 1 ? "s" : ""} de actividad
+                  </span>
                 </div>
               </div>
             </div>
@@ -330,7 +341,8 @@ function Dashboard() {
               <Sparkles className="h-5 w-5 text-accent" /> En movimiento
             </h2>
             <span className="text-[10px] text-muted-foreground shrink-0">
-              {feedItems.length} iniciativa{feedItems.length !== 1 ? "s" : ""} activa{feedItems.length !== 1 ? "s" : ""}
+              {feedItems.length} iniciativa{feedItems.length !== 1 ? "s" : ""} activa
+              {feedItems.length !== 1 ? "s" : ""}
             </span>
           </div>
           <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
@@ -354,7 +366,7 @@ function Dashboard() {
                           : "bg-secondary border-border/30"
                       }`}
                     >
-                      {isProposalEntity ? "🌱" : (item.emoji || "🗺️")}
+                      {isProposalEntity ? "🌱" : item.emoji || "🗺️"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs sm:text-sm text-foreground font-bold truncate flex items-center gap-1.5">
@@ -380,14 +392,15 @@ function Dashboard() {
                         {isMissionEntity && (
                           <>
                             <span className="opacity-45">•</span>
-                            <Users className="h-3 w-3 opacity-60" />{" "}
-                            <span>{participants}</span>
+                            <Users className="h-3 w-3 opacity-60" /> <span>{participants}</span>
                           </>
                         )}
                         {isProposalEntity && (
                           <>
                             <span className="opacity-45">•</span>
-                            <span className="truncate text-violet-600 dark:text-violet-400 font-semibold">Buscando apoyo</span>
+                            <span className="truncate text-violet-600 dark:text-violet-400 font-semibold">
+                              Buscando apoyo
+                            </span>
                           </>
                         )}
                       </div>
@@ -472,12 +485,10 @@ function Dashboard() {
                             <InitiativeActionBar
                               initiative={selectedEntity}
                               relationship={
-                                isSupported(selectedEntity.sourceId)
-                                  ? "supporter"
-                                  : "visitor"
+                                isSupported(selectedEntity.sourceId) ? "supporter" : "visitor"
                               }
-                              variant="row"
-                              maxVisible={2}
+                              variant="compact"
+                              maxVisible={1}
                               onAction={(action: InitiativeAction) => {
                                 switch (action) {
                                   case "support":
@@ -486,7 +497,10 @@ function Dashboard() {
                                     }
                                     break;
                                   case "join":
-                                    navigate({ to: "/app/mision/$missionId", params: { missionId: selectedEntity.sourceId } });
+                                    navigate({
+                                      to: "/app/mision/$missionId",
+                                      params: { missionId: selectedEntity.sourceId },
+                                    });
                                     break;
                                   case "share":
                                     shareInitiative(selectedEntity.title, window.location.href);
@@ -501,9 +515,7 @@ function Dashboard() {
                                   : "/app/mision/$missionId"
                               }
                               params={
-                                isProposalEntity
-                                  ? { proposalId: linkId }
-                                  : { missionId: linkId }
+                                isProposalEntity ? { proposalId: linkId } : { missionId: linkId }
                               }
                               onClick={() => setSelectedEntity(null)}
                               className="text-xs text-muted-foreground/60 hover:text-foreground underline underline-offset-2 transition-colors"
@@ -520,9 +532,17 @@ function Dashboard() {
 
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             {isProposalEntity ? (
-                              <><Sparkles className="h-3.5 w-3.5 text-violet-500" /><span className="text-violet-600 dark:text-violet-400">Iniciativa en busca de apoyo ciudadano</span></>
+                              <>
+                                <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                                <span className="text-violet-600 dark:text-violet-400">
+                                  Iniciativa en busca de apoyo ciudadano
+                                </span>
+                              </>
                             ) : (
-                              <><Users className="h-3.5 w-3.5" /><span>{participants} personas en esta ruta</span></>
+                              <>
+                                <Users className="h-3.5 w-3.5" />
+                                <span>{participants} personas en esta ruta</span>
+                              </>
                             )}
                           </div>
                         </div>

@@ -188,9 +188,7 @@ export const proposalCommentRepository = {
   /**
    * Post a new comment or reply. Caller is the author.
    */
-  async create(
-    input: CreateCommentDTO,
-  ): Promise<ProposalResult<ProposalComment>> {
+  async create(input: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> {
     const authorId = await resolveAuthenticatedUserId();
     const trimmed = input.content.trim();
     if (trimmed.length < DB_DEFAULTS.COMMENT_MIN) {

@@ -146,5 +146,4 @@ describe("proposalRepository", () => {
       expect(result.status).toBe("success");
     });
   });
-
 });

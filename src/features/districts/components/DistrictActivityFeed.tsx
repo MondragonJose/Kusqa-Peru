@@ -28,13 +28,14 @@ export function DistrictActivityFeed({
         {events.map((e) => {
           const verb = TERRITORIAL_EVENT_VERB[e.type] ?? e.type;
           const isMission = e.entityType === "mission";
-          const Icon = ACTIVITY_ICONS[
-            e.type === "proposal.comment_added"
-              ? "comment"
-              : e.type === "proposal.supported"
-                ? "support"
-                : "__none__"
-          ];
+          const Icon =
+            ACTIVITY_ICONS[
+              e.type === "proposal.comment_added"
+                ? "comment"
+                : e.type === "proposal.supported"
+                  ? "support"
+                  : "__none__"
+            ];
           return (
             <li
               key={e.id}
@@ -50,7 +51,9 @@ export function DistrictActivityFeed({
                 <p className="text-xs leading-relaxed">
                   <span className="font-medium">{e.actor.firstName}</span>{" "}
                   <span className="text-muted-foreground">{verb}</span>{" "}
-                  <span className="font-medium">{isMission ? "una misión territorial" : "una propuesta ciudadana"}</span>
+                  <span className="font-medium">
+                    {isMission ? "una misión territorial" : "una propuesta ciudadana"}
+                  </span>
                   {e.entityTitle && (
                     <>
                       : <span className="italic text-foreground/80">"{e.entityTitle}"</span>

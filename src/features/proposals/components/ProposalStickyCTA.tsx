@@ -5,6 +5,7 @@ import { KusqaButton } from "@/components/ui/kusqa-button";
 import { toast } from "sonner";
 import { useSupportProposal } from "@/features/proposals/hooks/useSupportProposal";
 import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
+import { actionToLabel } from "@/domain/initiativeActions";
 import type { Proposal } from "@/services/proposalContract";
 import { QuieroCoOrganizarModal } from "./QuieroCoOrganizarModal";
 import { useCurrentUserId } from "@/features/auth";
@@ -51,14 +52,18 @@ export function ProposalStickyCTA({ proposal }: ProposalStickyCTAProps) {
             onClick={() => supportProposal({ proposalId: proposal.id })}
             disabled={isSupporting || isSupported(proposal.id)}
             className="flex-1 text-sm py-3.5"
-            aria-label={copy.ctaPrimary}
+            aria-label={actionToLabel("support")}
           >
             {isSupported(proposal.id) ? (
               <Check className="h-4 w-4 mr-2" />
             ) : (
               <Heart className={`h-4 w-4 mr-2 ${isSupported(proposal.id) ? "fill-current" : ""}`} />
             )}
-            {isSupported(proposal.id) ? "Ya apoyas" : isSupporting ? "Apoyando…" : copy.ctaPrimary}
+            {isSupported(proposal.id)
+              ? "Ya apoyas"
+              : isSupporting
+                ? "Apoyando…"
+                : actionToLabel("support")}
           </KusqaButton>
         )}
 
@@ -116,11 +121,11 @@ export function ProposalStickyCTA({ proposal }: ProposalStickyCTAProps) {
             variant="outline"
             size="lg"
             onClick={handleShare}
-            aria-label="Compartir propuesta"
+            aria-label={actionToLabel("share")}
             className="shrink-0"
           >
             <Share2 className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">Compartir</span>
+            <span className="hidden sm:inline ml-2">{actionToLabel("share")}</span>
           </Button>
         )}
       </div>

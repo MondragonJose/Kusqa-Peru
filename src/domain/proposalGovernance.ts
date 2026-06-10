@@ -55,9 +55,17 @@ export function canArchiveProposal(
   return currentStatus !== "rejected" && currentStatus !== "resolved";
 }
 
-export function canReportProposal(
-  currentUserId: string,
-  proposalAuthorId: string,
-): boolean {
-  return currentUserId !== proposalAuthorId;
+import { deriveRelationship, getAvailableInitiativeActions } from "./initiativeActions";
+
+export function canReportProposal(currentUserId: string, proposalAuthorId: string): boolean {
+  const relationship = deriveRelationship(
+    { sourceType: "proposal", sourceId: "" },
+    { currentUserId, isOwner: currentUserId === proposalAuthorId },
+  );
+  const actions = getAvailableInitiativeActions({
+    lifecycle: "active",
+    relationship,
+    sourceType: "proposal",
+  });
+  return actions.includes("report");
 }

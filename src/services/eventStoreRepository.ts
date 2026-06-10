@@ -18,7 +18,10 @@ export function appendEventToStore(event: KusqaDomainEvent): void {
   supabase
     .from("event_log")
     .insert(row as Record<string, unknown>)
-    .then(() => {}, () => {});
+    .then(
+      () => {},
+      () => {},
+    );
 }
 
 export async function fetchEventsByEntity(entityId: string): Promise<readonly KusqaDomainEvent[]> {

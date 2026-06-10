@@ -318,13 +318,19 @@ describe("buildMapEntity — missing / edge case fields", () => {
 
 describe("safe helpers", () => {
   it("entityRoute returns mission route for mission source", () => {
-    const entity = buildMapEntity({ type: "mission", mission: makeMission() }) as InitiativeMapEntity;
+    const entity = buildMapEntity({
+      type: "mission",
+      mission: makeMission(),
+    }) as InitiativeMapEntity;
 
     expect(entityRoute(entity)).toBe("/app/mision/mission-uuid-1");
   });
 
   it("entityRoute returns proposal route for proposal source", () => {
-    const entity = buildMapEntity({ type: "proposal", proposal: makeProposal() }) as InitiativeMapEntity;
+    const entity = buildMapEntity({
+      type: "proposal",
+      proposal: makeProposal(),
+    }) as InitiativeMapEntity;
 
     expect(entityRoute(entity)).toBe("/app/propuesta/proposal-uuid-1");
   });

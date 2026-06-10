@@ -8,7 +8,12 @@ import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { inferRegionFromCoords } from "@/domain/territorial";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
-import { CATEGORY_LABEL, CATEGORY_TO_DB, dbCategoryEmoji, type DbCategory } from "@/domain/categories";
+import {
+  CATEGORY_LABEL,
+  CATEGORY_TO_DB,
+  dbCategoryEmoji,
+  type DbCategory,
+} from "@/domain/categories";
 import { z } from "zod";
 
 type DbMission = Database["public"]["Tables"]["missions"]["Row"];
@@ -81,7 +86,7 @@ function mapRowToMission(row: DbMission): Mission {
     title: row.title,
     description: row.description,
     district: row.district,
-    districtId: (row as Record<string, unknown>).district_id as string | null ?? null,
+    districtId: ((row as Record<string, unknown>).district_id as string | null) ?? null,
     region,
     category: CATEGORY_LABEL[category],
     xp: row.xp_reward ?? DEFAULT_XP,

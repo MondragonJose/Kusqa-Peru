@@ -47,13 +47,12 @@ function CreateProject() {
   const currentUser = useCurrentUser();
   if (!currentUser) throw redirect({ to: "/app" });
   const searchRecord = useSearch({ from: "/app/crear" }) as Record<string, unknown>;
-  const districtFromSearch = typeof searchRecord.district === "string" ? searchRecord.district : undefined;
+  const districtFromSearch =
+    typeof searchRecord.district === "string" ? searchRecord.district : undefined;
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [cat, setCat] = useState("Medio ambiente");
-  const [district, setDistrict] = useState(
-    districtFromSearch ?? currentUser?.district ?? "",
-  );
+  const [district, setDistrict] = useState(districtFromSearch ?? currentUser?.district ?? "");
   const [region, setRegion] = useState<"costa" | "sierra" | "selva">(
     (currentUser?.region as "costa" | "sierra" | "selva") || "costa",
   );
@@ -79,17 +78,20 @@ function CreateProject() {
   const createProposal = useCreateProposal();
   const { data: allProposals = [] } = useAllProposals();
 
-  const similarProposals = title.trim() && district.trim()
-    ? detectSimilarProposals(
-        title,
-        district.split(",")[0].trim(),
-        allProposals.map((p): ExistingProposal => ({
-          id: p.id,
-          title: p.title,
-          district: p.district,
-        })),
-      )
-    : [];
+  const similarProposals =
+    title.trim() && district.trim()
+      ? detectSimilarProposals(
+          title,
+          district.split(",")[0].trim(),
+          allProposals.map(
+            (p): ExistingProposal => ({
+              id: p.id,
+              title: p.title,
+              district: p.district,
+            }),
+          ),
+        )
+      : [];
 
   const validateStep = (stepNum: number): string | null => {
     switch (stepNum) {
@@ -334,7 +336,9 @@ function CreateProject() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-display font-bold text-3xl">Propuesta ciudadana</h1>
-          <p className="text-sm text-muted-foreground">Plantea una idea que necesite apoyo de la comunidad.</p>
+          <p className="text-sm text-muted-foreground">
+            Plantea una idea que necesite apoyo de la comunidad.
+          </p>
         </div>
         <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
           Paso {step} / {STEPS.length}
@@ -402,7 +406,9 @@ function CreateProject() {
                         }
                       }}
                       className={`mt-2 w-full rounded-xl border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 ${
-                        touched.title && !title.trim() ? "border-red-400 dark:border-red-500/50" : "border-border"
+                        touched.title && !title.trim()
+                          ? "border-red-400 dark:border-red-500/50"
+                          : "border-border"
                       }`}
                       placeholder="Ej: Reforestación del acantilado en Barranco..."
                     />
@@ -479,7 +485,9 @@ function CreateProject() {
                       }
                     }}
                     className={`mt-2 w-full rounded-xl border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 ${
-                      touched.district && !district.trim() ? "border-red-400 dark:border-red-500/50" : "border-border"
+                      touched.district && !district.trim()
+                        ? "border-red-400 dark:border-red-500/50"
+                        : "border-border"
                     }`}
                     placeholder="Busca y selecciona un distrito en Perú..."
                   />
@@ -531,7 +539,9 @@ function CreateProject() {
                   Paso 3
                 </div>
                 <h2 className="font-display font-bold text-3xl mt-2">¿Cuántos seremos?</h2>
-                <p className="text-muted-foreground mt-2">Define el tamaño del equipo para esta iniciativa.</p>
+                <p className="text-muted-foreground mt-2">
+                  Define el tamaño del equipo para esta iniciativa.
+                </p>
                 <div className="mt-8 text-center">
                   <div className="font-display font-bold text-7xl text-gradient-sunrise">
                     {team}
@@ -709,14 +719,15 @@ function CreateProject() {
                   a tu red cívica.
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
-                  Has ganado <span className="font-bold text-accent">+150 XP</span> por tu liderazgo 🚀
+                  Has ganado <span className="font-bold text-accent">+150 XP</span> por tu liderazgo
+                  🚀
                 </div>
                 {similarProposals.length > 0 && (
                   <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 px-4 py-3 text-left">
                     <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                     <div className="text-xs text-amber-700 dark:text-amber-300">
-                      <span className="font-semibold">Propuesta similar detectada:</span>{" "}
-                      "{similarProposals[0].title}" en {similarProposals[0].district}.
+                      <span className="font-semibold">Propuesta similar detectada:</span> "
+                      {similarProposals[0].title}" en {similarProposals[0].district}.
                     </div>
                   </div>
                 )}
@@ -732,7 +743,9 @@ function CreateProject() {
             className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 px-4 py-2.5"
           >
             <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-            <span className="text-xs text-red-600 dark:text-red-400 font-medium">{stepErrors[step]}</span>
+            <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+              {stepErrors[step]}
+            </span>
           </motion.div>
         )}
       </div>
@@ -746,11 +759,7 @@ function CreateProject() {
           <ArrowLeft className="h-4 w-4" /> Atrás
         </button>
         <button
-          onClick={
-            step === STEPS.length
-              ? handlePublish
-              : handleNextStep
-          }
+          onClick={step === STEPS.length ? handlePublish : handleNextStep}
           disabled={isSubmitting || (step < STEPS.length && !!validateStep(step))}
           className="inline-flex items-center gap-2 rounded-xl bg-primary text-white px-6 py-3 font-semibold shadow-sm hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >

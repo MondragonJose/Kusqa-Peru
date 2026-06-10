@@ -48,5 +48,27 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["src/domain/civicJourney.ts", "src/domain/civicJourneyNarrative.ts", "src/domain/civicJourneyExport.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "server-only",
+              message:
+                "TanStack Start does not use the Next.js `server-only` package. Rename the module to `*.server.ts` or mark it with `@tanstack/react-start/server-only`.",
+            },
+          ],
+          patterns: [
+            { group: ["react"], message: "Domain layer must not import React." },
+            { group: ["@supabase/*"], message: "Domain layer must not import Supabase." },
+            { group: ["@/services/*"], message: "Domain layer must not import services." },
+          ],
+        },
+      ],
+    },
+  },
   eslintPluginPrettier,
 );

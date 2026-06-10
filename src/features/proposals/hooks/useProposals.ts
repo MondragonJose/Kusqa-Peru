@@ -98,7 +98,9 @@ export function useCreateProposal() {
     mutationFn: async (dto: CreateProposalDTO): Promise<ProposalResult> => {
       if (!consumeRateLimit("createProposal")) {
         const resetMs = getRateLimitResetMs("createProposal");
-        throw new Error(`Demasiadas propuestas. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`);
+        throw new Error(
+          `Demasiadas propuestas. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`,
+        );
       }
       betaEvents.proposalCreateStart();
       if (import.meta.env.DEV) {
@@ -205,8 +207,9 @@ export function useInviteCollaborator() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (dto: CreateCollaboratorInvitationDTO): Promise<ProposalResult<ProposalCollaborator>> =>
-      proposalCollaboratorRepository.invite(dto),
+    mutationFn: (
+      dto: CreateCollaboratorInvitationDTO,
+    ): Promise<ProposalResult<ProposalCollaborator>> => proposalCollaboratorRepository.invite(dto),
     onSuccess: (result, dto) => {
       if (result.status === "success") {
         queryClient.invalidateQueries({
@@ -266,7 +269,9 @@ export function useCreateComment() {
     mutationFn: (dto: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> => {
       if (!consumeRateLimit("createComment")) {
         const resetMs = getRateLimitResetMs("createComment");
-        throw new Error(`Demasiados comentarios. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`);
+        throw new Error(
+          `Demasiados comentarios. Intenta de nuevo en ${Math.ceil(resetMs / 1000)}s.`,
+        );
       }
       return proposalCommentRepository.create(dto);
     },

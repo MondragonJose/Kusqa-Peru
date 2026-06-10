@@ -78,9 +78,7 @@ describe("app.notificaciones", () => {
     renderWithProviders(<Page />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /Ajustes de alertas/i }),
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: /Ajustes de alertas/i })).toBeDisabled();
     });
   });
 });

@@ -56,8 +56,6 @@ function useAnimatedCounter(target: number, duration = 2000, start = false) {
   return count;
 }
 
-
-
 function StatCounter({
   icon: Icon,
   label,
@@ -531,60 +529,62 @@ function Landing(): JSX.Element {
 
       {/* ── CIVIC OBSERVATORY ── */}
       {stats.some((s) => s.value > 0) && (
-      <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-sunrise opacity-85" />
-        <div className="absolute inset-0 bg-mesh opacity-15" />
+        <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-sunrise opacity-85" />
+          <div className="absolute inset-0 bg-mesh opacity-15" />
 
-        <div className="relative mx-auto max-w-7xl text-white">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-14"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-white/80 mb-5">
-              <span className="h-1.5 w-1.5 rounded-full bg-sun animate-pulse" />
-              En tiempo real
-            </div>
-            <h2 className="font-display font-bold text-4xl lg:text-5xl leading-tight">
-              El Perú en movimiento.
-            </h2>
-            <p className="mt-4 text-white/70 text-lg max-w-lg mx-auto leading-relaxed">
-              Cada número representa una historia real de impacto colectivo.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
-            {stats.map((s: any, i: number) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <StatCounter {...s} />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Soft CTA */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-14 text-center"
-          >
-            <p className="text-white/60 text-sm mb-4">¿Quieres ser parte de estas estadísticas?</p>
-            <button
-              onClick={loginWithGoogle}
-              className="inline-flex items-center gap-2 rounded-xl bg-white text-foreground px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-card"
+          <div className="relative mx-auto max-w-7xl text-white">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-14"
             >
-              Crea tu cuenta gratis <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </motion.div>
-        </div>
-      </section>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-white/80 mb-5">
+                <span className="h-1.5 w-1.5 rounded-full bg-sun animate-pulse" />
+                En tiempo real
+              </div>
+              <h2 className="font-display font-bold text-4xl lg:text-5xl leading-tight">
+                El Perú en movimiento.
+              </h2>
+              <p className="mt-4 text-white/70 text-lg max-w-lg mx-auto leading-relaxed">
+                Cada número representa una historia real de impacto colectivo.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-12">
+              {stats.map((s: any, i: number) => (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <StatCounter {...s} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Soft CTA */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="mt-14 text-center"
+            >
+              <p className="text-white/60 text-sm mb-4">
+                ¿Quieres ser parte de estas estadísticas?
+              </p>
+              <button
+                onClick={loginWithGoogle}
+                className="inline-flex items-center gap-2 rounded-xl bg-white text-foreground px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-card"
+              >
+                Crea tu cuenta gratis <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+          </div>
+        </section>
       )}
 
       {/* ── EL MOVIMIENTO ── */}
@@ -744,55 +744,72 @@ function Landing(): JSX.Element {
 
           {/* Mission grid */}
           {featuredMissions.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {featuredMissions.map((initiative, i) => (
-              <InitiativeCard key={initiative.id} initiative={initiative} index={i} />
-            ))}
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {featuredMissions.map((initiative, i) => (
+                <InitiativeCard key={initiative.id} initiative={initiative} index={i} />
+              ))}
+            </div>
           ) : (
-          <>
-            {/* Warm fallback intro */}
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-muted-foreground text-base max-w-xl mb-8 leading-relaxed"
-            >
-              Cada iniciativa empieza con alguien que mira su barrio y dice: aquí algo puede
-              cambiar. Las primeras misiones nacen así — de vecinos que deciden ser el primer
-              paso. ¿Y si ese alguien fueras tú?
-            </motion.p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { emoji: "🎨", title: "Mural colectivo", place: "Barranco · Lima", gradient: "from-accent/20 to-sun/20" },
-              { emoji: "🌱", title: "Reforestación", place: "Chinchero · Cusco", gradient: "from-jungle/20 to-sierra/20" },
-              { emoji: "🛶", title: "Limpieza del río", place: "Iquitos · Loreto", gradient: "from-coast/20 to-jungle/20" },
-            ].map((c, i) => (
-              <motion.div
-                key={c.title}
-                initial={{ opacity: 0, y: 20 }}
+            <>
+              {/* Warm fallback intro */}
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-strong rounded-2xl p-5 shadow-card"
+                className="text-muted-foreground text-base max-w-xl mb-8 leading-relaxed"
               >
-                <div className={`h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-5xl mb-4`}>
-                  {c.emoji}
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                  <MapPin className="h-3 w-3" /> {c.place}
-                </div>
-                <div className="font-display font-semibold text-base mb-4">{c.title}</div>
-                <button
-                  onClick={loginWithGoogle}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 text-xs font-semibold hover:opacity-90 transition-smooth"
-                >
-                  Sé quien inicia algo aquí <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
-          </>
+                Cada iniciativa empieza con alguien que mira su barrio y dice: aquí algo puede
+                cambiar. Las primeras misiones nacen así — de vecinos que deciden ser el primer
+                paso. ¿Y si ese alguien fueras tú?
+              </motion.p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {[
+                  {
+                    emoji: "🎨",
+                    title: "Mural colectivo",
+                    place: "Barranco · Lima",
+                    gradient: "from-accent/20 to-sun/20",
+                  },
+                  {
+                    emoji: "🌱",
+                    title: "Reforestación",
+                    place: "Chinchero · Cusco",
+                    gradient: "from-jungle/20 to-sierra/20",
+                  },
+                  {
+                    emoji: "🛶",
+                    title: "Limpieza del río",
+                    place: "Iquitos · Loreto",
+                    gradient: "from-coast/20 to-jungle/20",
+                  },
+                ].map((c, i) => (
+                  <motion.div
+                    key={c.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="glass-strong rounded-2xl p-5 shadow-card"
+                  >
+                    <div
+                      className={`h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-5xl mb-4`}
+                    >
+                      {c.emoji}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                      <MapPin className="h-3 w-3" /> {c.place}
+                    </div>
+                    <div className="font-display font-semibold text-base mb-4">{c.title}</div>
+                    <button
+                      onClick={loginWithGoogle}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 text-xs font-semibold hover:opacity-90 transition-smooth"
+                    >
+                      Sé quien inicia algo aquí <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Soft join CTA */}

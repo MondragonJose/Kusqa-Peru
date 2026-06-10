@@ -72,7 +72,9 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
       } shadow-soft hover:shadow-card transition-smooth group overflow-hidden`}
     >
       {isMission && <div className={`h-1.5 w-full ${bandClass}`} />}
-      {isProposal && <div className="h-1.5 w-full bg-gradient-to-r from-violet-400 to-violet-600 opacity-50" />}
+      {isProposal && (
+        <div className="h-1.5 w-full bg-gradient-to-r from-violet-400 to-violet-600 opacity-50" />
+      )}
 
       <div className="flex flex-col flex-1 p-5 gap-3">
         <div className="flex items-start gap-3">
@@ -127,9 +129,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               <MapPin className="h-3 w-3" />
               {district}
             </span>
-            <span className="flex items-center gap-1">
-              {initiative.temporalAnchor.label}
-            </span>
+            <span className="flex items-center gap-1">{initiative.temporalAnchor.label}</span>
           </div>
           {isMission && initiative.participantsCount != null && (
             <span className="flex items-center gap-1">
@@ -140,7 +140,9 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
           {isProposal && supportCount > 0 && (
             <span className="flex items-center gap-1">
               <Heart className="h-3 w-3 text-violet-500" />
-              <span className="text-violet-600 dark:text-violet-400">{supportCount} apoyo{supportCount !== 1 ? "s" : ""}</span>
+              <span className="text-violet-600 dark:text-violet-400">
+                {supportCount} apoyo{supportCount !== 1 ? "s" : ""}
+              </span>
             </span>
           )}
         </div>
@@ -167,8 +169,9 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                 <span className="text-xs font-bold text-accent">+{xp} XP</span>
               </>
             )}
-            {isMission && spotsLeft != null && (
-              isFull ? (
+            {isMission &&
+              spotsLeft != null &&
+              (isFull ? (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/15 text-destructive font-semibold">
                   Lleno
                 </span>
@@ -176,8 +179,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface text-muted-foreground">
                   {spotsLeft} lugares
                 </span>
-              )
-            )}
+              ))}
             {isProposal && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-semibold">
                 En apoyo
@@ -187,8 +189,8 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
           <InitiativeActionBar
             initiative={initiative}
             relationship={relationship}
-            variant="row"
-            maxVisible={2}
+            variant="compact"
+            maxVisible={1}
             onAction={handleAction}
           />
         </div>

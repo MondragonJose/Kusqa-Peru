@@ -11,12 +11,7 @@ import {
   findConvergenceZones,
 } from "../spatialRelationships";
 
-function makeGeo(
-  slug: string,
-  lat: number,
-  lng: number,
-  displayName?: string,
-): DistrictGeometry {
+function makeGeo(slug: string, lat: number, lng: number, displayName?: string): DistrictGeometry {
   return {
     id: slug,
     slug,
@@ -72,9 +67,7 @@ describe("buildGeometryCoordMap", () => {
   });
 
   it("skips entries with null lat/lng", () => {
-    const geometries = [
-      { ...makeGeo("ok", -13.0, -72.0), latitude: null as unknown as number },
-    ];
+    const geometries = [{ ...makeGeo("ok", -13.0, -72.0), latitude: null as unknown as number }];
     const map = buildGeometryCoordMap(geometries);
     expect(map.has("ok")).toBe(false);
   });
@@ -137,10 +130,7 @@ describe("detectCorridor", () => {
 
 describe("detectIsolation", () => {
   it("returns true when district has no active neighbors", () => {
-    const geometries = [
-      makeGeo("active", -13.5, -72.0),
-      makeGeo("far", -10.0, -75.0),
-    ];
+    const geometries = [makeGeo("active", -13.5, -72.0), makeGeo("far", -10.0, -75.0)];
     const map = buildAdjacencyMap(geometries, 20);
     expect(detectIsolation("active", ["active"], map)).toBe(true);
   });

@@ -82,7 +82,10 @@ export function resolveSvgCoords(
 }
 
 /** Aggregate mission timeline into a Footprint — pure, memoizable. */
-export function computeFootprint(missions: Mission[], geometrySvgCoords?: SvgCoordMap | null): Footprint {
+export function computeFootprint(
+  missions: Mission[],
+  geometrySvgCoords?: SvgCoordMap | null,
+): Footprint {
   const districtMap = new Map<string, { count: number; region: Region }>();
   const regionCount = new Map<Region, number>();
 

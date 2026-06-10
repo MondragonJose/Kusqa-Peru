@@ -34,7 +34,9 @@ export function useSupportProposal() {
     onMutate: async (proposalId: string) => {
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.byUser("current") });
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.count(proposalId) });
-      await queryClient.cancelQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
+      await queryClient.cancelQueries({
+        queryKey: proposalSupportKeys.supportersPreview(proposalId, 10),
+      });
 
       const previous = queryClient.getQueryData<string[]>(proposalSupportKeys.byUser("current"));
 
@@ -57,7 +59,9 @@ export function useSupportProposal() {
     },
     onSuccess: (_, proposalId) => {
       queryClient.invalidateQueries({ queryKey: proposalSupportKeys.count(proposalId) });
-      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
+      queryClient.invalidateQueries({
+        queryKey: proposalSupportKeys.supportersPreview(proposalId, 10),
+      });
       toast.success("¡Gracias por apoyar esta iniciativa!", {
         description: "Tu apoyo ayuda a movilizar la comunidad",
       });
@@ -65,7 +69,9 @@ export function useSupportProposal() {
     onSettled: (_, __, proposalId) => {
       queryClient.invalidateQueries({ queryKey: proposalSupportKeys.byUser("current") });
       queryClient.invalidateQueries({ queryKey: proposalSupportKeys.count(proposalId) });
-      queryClient.invalidateQueries({ queryKey: proposalSupportKeys.supportersPreview(proposalId, 10) });
+      queryClient.invalidateQueries({
+        queryKey: proposalSupportKeys.supportersPreview(proposalId, 10),
+      });
       queryClient.invalidateQueries({ queryKey: proposalKeys.detail(proposalId) });
     },
   });

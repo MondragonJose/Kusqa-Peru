@@ -80,9 +80,7 @@ export function aggregateByRegion(initiatives: Initiative[]): TerritorySummary[]
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const leadCategory = sorted[0]?.[0] ?? cfg.category;
 
-    const preview = pool[0]
-      ? { emoji: pool[0].emoji, title: pool[0].title }
-      : null;
+    const preview = pool[0] ? { emoji: pool[0].emoji, title: pool[0].title } : null;
 
     return {
       id: cfg.id,

@@ -31,9 +31,7 @@ export interface LifecyclePresentation {
   isHidden: boolean;
 }
 
-export function getLifecyclePresentation(
-  lifecycle: InitiativeLifecycle,
-): LifecyclePresentation {
+export function getLifecyclePresentation(lifecycle: InitiativeLifecycle): LifecyclePresentation {
   switch (lifecycle) {
     case "forming":
       return {

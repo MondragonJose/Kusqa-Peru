@@ -1,9 +1,21 @@
 import type { RelatedTerritorialActivity } from "./nearbyCoordination";
-import type { CoalitionProximity, NeighboringDistrictAwareness, TemporalContinuity } from "./civicPresence";
-import type { AdjacentCoalitionEmergence, NeighboringMissionContinuity } from "./nearbyCoordination";
+import type {
+  CoalitionProximity,
+  NeighboringDistrictAwareness,
+  TemporalContinuity,
+} from "./civicPresence";
+import type {
+  AdjacentCoalitionEmergence,
+  NeighboringMissionContinuity,
+} from "./nearbyCoordination";
 
 export type CoordinationNarrative = {
-  category: "nearby_activity" | "coalition_proximity" | "temporal_pattern" | "territorial_awareness" | "coordination_signal";
+  category:
+    | "nearby_activity"
+    | "coalition_proximity"
+    | "temporal_pattern"
+    | "territorial_awareness"
+    | "coordination_signal";
   message: string;
   priority: number;
 };
@@ -123,7 +135,8 @@ export function buildMissionContinuityNarrative(
 
   let message: string;
   if (continuity.corridorForming) {
-    message = "Las misiones se extienden a través de distritos vecinos. Se forma un corredor cívico.";
+    message =
+      "Las misiones se extienden a través de distritos vecinos. Se forma un corredor cívico.";
   } else {
     message = "Misiones activas en distritos vecinos mantienen continuidad territorial.";
   }

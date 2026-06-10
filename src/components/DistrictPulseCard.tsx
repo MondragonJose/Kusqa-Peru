@@ -65,7 +65,10 @@ export function DistrictPulseCard({ pulse }: DistrictPulseCardProps) {
           {recentSignals.map((signal) => {
             const Icon = SIGNAL_ICON[signal.type] ?? Sparkles;
             return (
-              <li key={signal.id} className="flex items-start gap-2.5 text-xs text-muted-foreground">
+              <li
+                key={signal.id}
+                className="flex items-start gap-2.5 text-xs text-muted-foreground"
+              >
                 <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
                 <span className="flex-1 min-w-0">{signal.message}</span>
                 <span className="shrink-0 text-[10px] text-muted-foreground/50">

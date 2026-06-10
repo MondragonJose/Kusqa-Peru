@@ -154,13 +154,17 @@ describe("classifyCoalitionDensity", () => {
 
   it("returns 'emerging' with 1 collaborator", () => {
     expect(
-      classifyCoalitionDensity(makeSummary({ acceptedCollaboratorCount: 1, uniqueSupporterCount: 3 })),
+      classifyCoalitionDensity(
+        makeSummary({ acceptedCollaboratorCount: 1, uniqueSupporterCount: 3 }),
+      ),
     ).toBe("emerging");
   });
 
   it("returns 'consolidated' with 3+ collaborators", () => {
     expect(
-      classifyCoalitionDensity(makeSummary({ acceptedCollaboratorCount: 3, uniqueSupporterCount: 10 })),
+      classifyCoalitionDensity(
+        makeSummary({ acceptedCollaboratorCount: 3, uniqueSupporterCount: 10 }),
+      ),
     ).toBe("consolidated");
   });
 });
@@ -213,15 +217,18 @@ describe("classifyInitiativeReinforcement", () => {
   });
 
   it("returns 'some' when 2+ initiatives exist without cross-participation", () => {
-    expect(
-      classifyInitiativeReinforcement(makeSummary({ proposalCount: 2 })),
-    ).toBe("some");
+    expect(classifyInitiativeReinforcement(makeSummary({ proposalCount: 2 }))).toBe("some");
   });
 
   it("returns 'converging' when supporters and collaborators overlap across initiatives", () => {
     expect(
       classifyInitiativeReinforcement(
-        makeSummary({ proposalCount: 2, missionCount: 1, uniqueSupporterCount: 5, acceptedCollaboratorCount: 1 }),
+        makeSummary({
+          proposalCount: 2,
+          missionCount: 1,
+          uniqueSupporterCount: 5,
+          acceptedCollaboratorCount: 1,
+        }),
       ),
     ).toBe("converging");
   });
@@ -250,11 +257,20 @@ describe("summarizeEventsToImpact", () => {
   });
 });
 
-function makeEvent(type: TerritorialEventType, entityId: string, actorId?: string): TerritorialEvent {
+function makeEvent(
+  type: TerritorialEventType,
+  entityId: string,
+  actorId?: string,
+): TerritorialEvent {
   return {
     id: crypto.randomUUID(),
     type,
-    actor: { id: actorId ?? crypto.randomUUID(), username: "test", firstName: "Test", avatarUrl: null },
+    actor: {
+      id: actorId ?? crypto.randomUUID(),
+      username: "test",
+      firstName: "Test",
+      avatarUrl: null,
+    },
     entityType: entityId.startsWith("miss") ? "mission" : "proposal",
     entityId,
     entityTitle: null,
@@ -271,15 +287,15 @@ describe("detectDormancy", () => {
   });
 
   it("returns 'active' for recent activity", () => {
-    expect(
-      detectDormancy(makeSummary({ missionCount: 1, lastActivityAt: daysAgo(5) })),
-    ).toBe("active");
+    expect(detectDormancy(makeSummary({ missionCount: 1, lastActivityAt: daysAgo(5) }))).toBe(
+      "active",
+    );
   });
 
   it("returns 'dormant' for old activity with no active proposals", () => {
-    expect(
-      detectDormancy(makeSummary({ missionCount: 2, lastActivityAt: daysAgo(90) })),
-    ).toBe("dormant");
+    expect(detectDormancy(makeSummary({ missionCount: 2, lastActivityAt: daysAgo(90) }))).toBe(
+      "dormant",
+    );
   });
 
   it("returns 'reviving' when a dormant district gets new proposals", () => {
@@ -297,9 +313,7 @@ describe("classifyInitiativePersistence", () => {
   });
 
   it("returns 'fragile' for 3+ proposals with no conversions", () => {
-    expect(
-      classifyInitiativePersistence(makeSummary({ proposalCount: 3 })),
-    ).toBe("fragile");
+    expect(classifyInitiativePersistence(makeSummary({ proposalCount: 3 }))).toBe("fragile");
   });
 
   it("returns 'persistent' for proposals with some completions", () => {
@@ -312,9 +326,7 @@ describe("classifyInitiativePersistence", () => {
 
   it("returns 'established' for 3+ completions", () => {
     expect(
-      classifyInitiativePersistence(
-        makeSummary({ missionCount: 4, completedMissionCount: 3 }),
-      ),
+      classifyInitiativePersistence(makeSummary({ missionCount: 4, completedMissionCount: 3 })),
     ).toBe("established");
   });
 });
@@ -464,9 +476,7 @@ describe("deriveSpatialSignals", () => {
   });
 
   it("detects neighboring activity when active neighbors exist", () => {
-    const adjacencyMap: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }]],
-    ]);
+    const adjacencyMap: AdjacencyMap = new Map([["a", [{ slug: "b", name: "B", distanceKm: 10 }]]]);
     const signals = deriveSpatialSignals({
       districtSlug: "a",
       adjacencyMap,
@@ -479,7 +489,13 @@ describe("deriveSpatialSignals", () => {
 
   it("detects corridor when 3+ active neighbors in convergence", () => {
     const adjacencyMap: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }, { slug: "c", name: "C", distanceKm: 15 }]],
+      [
+        "a",
+        [
+          { slug: "b", name: "B", distanceKm: 10 },
+          { slug: "c", name: "C", distanceKm: 15 },
+        ],
+      ],
     ]);
     const signals = deriveSpatialSignals({
       districtSlug: "a",
@@ -494,9 +510,7 @@ describe("deriveSpatialSignals", () => {
   });
 
   it("detects quiet neighborhood when no active neighbors", () => {
-    const adjacencyMap: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }]],
-    ]);
+    const adjacencyMap: AdjacencyMap = new Map([["a", [{ slug: "b", name: "B", distanceKm: 10 }]]]);
     const signals = deriveSpatialSignals({
       districtSlug: "a",
       adjacencyMap,

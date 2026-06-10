@@ -99,12 +99,9 @@ export async function submitEvidence(input: {
     );
   } else {
     // text or checkpoint
-    evidence = await evidenceRepository.createTextEvidence(
-      missionId,
-      type,
-      description ?? "",
-      { caption },
-    );
+    evidence = await evidenceRepository.createTextEvidence(missionId, type, description ?? "", {
+      caption,
+    });
   }
 
   emit(createEvidenceSubmittedEvent(evidence.id, userId, missionId, userId));
@@ -160,11 +157,7 @@ export async function verifyEvidence(
   }
 
   // C. Update evidence row via evidenceRepository
-  const evidence = await evidenceRepository.verifyEvidence(
-    evidenceId,
-    status,
-    rejectionReason,
-  );
+  const evidence = await evidenceRepository.verifyEvidence(evidenceId, status, rejectionReason);
 
   // D. Emit event
   if (status === "verified") {
@@ -220,7 +213,9 @@ export async function getCompletionState(
  * evidence system is fully deployed.
  */
 export async function completeMission(missionId: string, userId: string): Promise<boolean> {
-  logDev(`[evidenceService] User ${userId} completing mission ${missionId} (legacy direct path)...`);
+  logDev(
+    `[evidenceService] User ${userId} completing mission ${missionId} (legacy direct path)...`,
+  );
 
   // Lifecycle validation: only active/ending_soon missions can be completed
   const mission = await getMissionById(missionId);

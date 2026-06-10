@@ -19,7 +19,14 @@ import type { DistrictGeometry, RegionMetadata, TerritoryNode } from "@/services
 import type { TerritorialImpactSummary } from "@/domain/territoryAggregations";
 import type { SpatialContext } from "@/domain/territorialIntelligence";
 import { classifyDistrictActivity } from "@/domain/territoryAggregations";
-import { buildAdjacencyMap, buildGeometryCoordMap, detectIsolation, findConvergenceZones, checkContiguity, computeTerritorialSpread } from "@/domain/spatialRelationships";
+import {
+  buildAdjacencyMap,
+  buildGeometryCoordMap,
+  detectIsolation,
+  findConvergenceZones,
+  checkContiguity,
+  computeTerritorialSpread,
+} from "@/domain/spatialRelationships";
 import { proposalLifecycleKeys } from "@/lib/queryKeys";
 import {
   allDistrictsActivityQueryOptions,
@@ -204,12 +211,10 @@ export function useSpatialContext(slug: string): {
     const activeNeighborCount = neighbors.filter((n) => activeSlugs.includes(n.slug)).length;
     const isIsolated = detectIsolation(slug, activeSlugs, adjacencyMap);
     const zones = findConvergenceZones(activeSlugs, adjacencyMap);
-    const contiguityStatus = activeSlugs.length > 1
-      ? checkContiguity(activeSlugs, adjacencyMap)
-      : undefined;
-    const spreadLevel = activeSlugs.length > 1
-      ? computeTerritorialSpread(activeSlugs, coordMap).level
-      : undefined;
+    const contiguityStatus =
+      activeSlugs.length > 1 ? checkContiguity(activeSlugs, adjacencyMap) : undefined;
+    const spreadLevel =
+      activeSlugs.length > 1 ? computeTerritorialSpread(activeSlugs, coordMap).level : undefined;
 
     const currentZone = zones.find((z) => z.includes(slug));
     const convergenceZoneSize = currentZone?.length;

@@ -142,11 +142,7 @@ export function deriveTerritorialPresence(
   }
 
   const continuityStatus: TerritorialPresence["continuityStatus"] =
-    clusters <= 1 && activeCount >= 2
-      ? "sustained"
-      : clusters <= 2
-        ? "emerging"
-        : "fragmented";
+    clusters <= 1 && activeCount >= 2 ? "sustained" : clusters <= 2 ? "emerging" : "fragmented";
 
   return {
     region,
@@ -159,10 +155,17 @@ export function deriveTerritorialPresence(
 
 export function computeTemporalContinuity(summary: TerritorialImpactSummary): TemporalContinuity {
   if (!summary.lastActivityAt && summary.missionCount === 0 && summary.proposalCount === 0) {
-    return { hasSustainedActivity: false, totalActiveWeeks: 0, gapWeeks: 0, pattern: "first_steps" };
+    return {
+      hasSustainedActivity: false,
+      totalActiveWeeks: 0,
+      gapWeeks: 0,
+      pattern: "first_steps",
+    };
   }
 
-  const lastActivity = summary.lastActivityAt ? new Date(summary.lastActivityAt).getTime() : Date.now();
+  const lastActivity = summary.lastActivityAt
+    ? new Date(summary.lastActivityAt).getTime()
+    : Date.now();
   const now = Date.now();
   const daysSinceLastActivity = (now - lastActivity) / (1000 * 60 * 60 * 24);
   const totalActive = summary.missionCount + summary.proposalCount;
@@ -200,7 +203,9 @@ export function computeCoalitionProximityInfo(
   let minDistance = Infinity;
 
   for (const n of neighbors) {
-    const s = neighborSummaries.find((ns: TerritorialImpactSummary) => ns.acceptedCollaboratorCount > 0);
+    const s = neighborSummaries.find(
+      (ns: TerritorialImpactSummary) => ns.acceptedCollaboratorCount > 0,
+    );
     if (!s) continue;
     if (s.acceptedCollaboratorCount > 0) {
       nearbyCoalitions++;

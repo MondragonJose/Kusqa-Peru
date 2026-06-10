@@ -31,11 +31,18 @@ describe("deriveCivicPresence", () => {
   });
 
   it("detects coordination signal when neighbors have coalition activity", () => {
-    const map: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }]],
-    ]);
+    const map: AdjacencyMap = new Map([["a", [{ slug: "b", name: "B", distanceKm: 10 }]]]);
     const summaries = new Map([
-      ["b", makeSummary({ missionCount: 2, proposalCount: 1, acceptedCollaboratorCount: 2, uniqueSupporterCount: 5, lastActivityAt: new Date().toISOString() })],
+      [
+        "b",
+        makeSummary({
+          missionCount: 2,
+          proposalCount: 1,
+          acceptedCollaboratorCount: 2,
+          uniqueSupporterCount: 5,
+          lastActivityAt: new Date().toISOString(),
+        }),
+      ],
     ]);
     const presence = deriveCivicPresence("a", map, ["b"], summaries);
     expect(presence.hasCoordinationSignal).toBe(true);
@@ -100,7 +107,13 @@ describe("deriveNeighboringAwareness", () => {
 
   it("computes activity ratio", () => {
     const map: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }, { slug: "c", name: "C", distanceKm: 15 }]],
+      [
+        "a",
+        [
+          { slug: "b", name: "B", distanceKm: 10 },
+          { slug: "c", name: "C", distanceKm: 15 },
+        ],
+      ],
     ]);
     const a = deriveNeighboringAwareness(map, "a", ["b"]);
     expect(a.totalNeighbors).toBe(2);

@@ -23,7 +23,11 @@ import {
   isFirstMovementNeeded,
   deriveMovementDirection,
 } from "@/domain/territoryAggregations";
-import { deriveDistrictVitality, deriveSpatialSignals, buildSpatialNarrative } from "@/domain/territorialIntelligence";
+import {
+  deriveDistrictVitality,
+  deriveSpatialSignals,
+  buildSpatialNarrative,
+} from "@/domain/territorialIntelligence";
 import { useCoordinationNarratives } from "@/features/coordination/hooks/useCoordinationNarratives";
 import { useCurrentUserId } from "@/features/auth";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
@@ -59,7 +63,9 @@ export const Route = createFileRoute("/app/distrito/$slug")({
 function DistrictPage() {
   const { slug } = useParams({ from: "/app/distrito/$slug" });
   const { data: district, isLoading: districtLoading, isError: districtError } = useDistrict(slug);
-  const { data: intelligence, isLoading: intelligenceLoading } = useDistrictIntelligence(district?.id ?? "");
+  const { data: intelligence, isLoading: intelligenceLoading } = useDistrictIntelligence(
+    district?.id ?? "",
+  );
   const { data: feed, isLoading: feedLoading } = useDistrictFeed(slug);
   const { data: activity } = useDistrictActivity(district?.id ?? "", 12);
   const { data: topSupporters } = useDistrictTopSupporters(district?.id ?? "", 8);
@@ -124,8 +130,8 @@ function DistrictPage() {
   // DistrictPulse derivation from TerritorialEvent
   const territorialEvents = useMemo(() => {
     if (!activity || activity.length === 0) return [];
-    return activity.map(
-      (a: DistrictActivity) => districtActivityToTerritorial(a, district.id, district.region),
+    return activity.map((a: DistrictActivity) =>
+      districtActivityToTerritorial(a, district.id, district.region),
     );
   }, [activity, district?.id, district?.region]);
 
@@ -255,9 +261,7 @@ function DistrictPage() {
           <div className="flex items-start gap-3">
             <Sparkles className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
             <div className="space-y-1 flex-1 min-w-0">
-              <p className="text-sm leading-relaxed text-foreground/90">
-                {vitality.narrative}
-              </p>
+              <p className="text-sm leading-relaxed text-foreground/90">{vitality.narrative}</p>
               {vitality.dormantDays !== null && vitality.dormantDays > 60 && (
                 <p className="text-xs text-muted-foreground/70">
                   {vitality.dormantDays} días sin actividad registrada.
@@ -267,12 +271,12 @@ function DistrictPage() {
                 <div className="flex items-start gap-2 pt-2 mt-2 border-t border-border/20">
                   <Compass className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
                   <div className="space-y-0.5">
-                    <p className="text-xs leading-relaxed text-foreground/80">
-                      {spatialNarrative}
-                    </p>
+                    <p className="text-xs leading-relaxed text-foreground/80">{spatialNarrative}</p>
                     {spatialContext && spatialContext.neighborCount != null && (
                       <p className="text-[11px] text-muted-foreground/70">
-                        {spatialContext.neighborCount} distrito{spatialContext.neighborCount !== 1 ? "s" : ""} vecino{spatialContext.neighborCount !== 1 ? "s" : ""} en el territorio.
+                        {spatialContext.neighborCount} distrito
+                        {spatialContext.neighborCount !== 1 ? "s" : ""} vecino
+                        {spatialContext.neighborCount !== 1 ? "s" : ""} en el territorio.
                       </p>
                     )}
                   </div>
@@ -365,8 +369,7 @@ function DistrictPage() {
                 </p>
                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
                   <span>
-                    Ritmo:{" "}
-                    {cadence.pulse === "calm" && "En calma"}
+                    Ritmo: {cadence.pulse === "calm" && "En calma"}
                     {cadence.pulse === "steady" && "Constante"}
                     {cadence.pulse === "lively" && "Animado"}
                     {cadence.pulse === "intense" && "Intenso"}
@@ -376,7 +379,9 @@ function DistrictPage() {
                   {cadence.uniqueActors > 0 && (
                     <>
                       <span aria-hidden>·</span>
-                      <span>{cadence.uniqueActors} actor{cadence.uniqueActors !== 1 ? "es" : ""}</span>
+                      <span>
+                        {cadence.uniqueActors} actor{cadence.uniqueActors !== 1 ? "es" : ""}
+                      </span>
                     </>
                   )}
                 </div>
@@ -530,7 +535,9 @@ function DistrictPage() {
               )}
             </p>
             {summary.lastActivityAt && (
-              <p className="mt-1">Última actividad: {formatRelativeDate(summary.lastActivityAt)}.</p>
+              <p className="mt-1">
+                Última actividad: {formatRelativeDate(summary.lastActivityAt)}.
+              </p>
             )}
           </div>
           <Link

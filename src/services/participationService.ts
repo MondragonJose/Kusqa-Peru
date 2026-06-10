@@ -16,12 +16,7 @@ import { buildCausalChain } from "@/domain/eventCausality";
 import { reduceEntityState } from "@/domain/eventReducer";
 import { validateEntityState } from "@/domain/entityInvariants";
 import { projectToUserMission } from "@/domain/entityStateProjection";
-import type {
-  Mission,
-  UserMission,
-  CompletionState,
-  EvidenceStatus,
-} from "@/types";
+import type { Mission, UserMission, CompletionState, EvidenceStatus } from "@/types";
 import type { MissionRow, MissionParticipantRow } from "@/types/supabase";
 import type { CausalEnrichedEvent, KusqaDomainEvent } from "@/domain/events";
 import { MissionRowSchema, transformMissionRow } from "@/services/missions";
@@ -174,11 +169,12 @@ export async function getUserMissions(userId: string): Promise<UserMission[]> {
             });
 
           if (validation && !validation.valid) {
-            if (import.meta.env.DEV) console.warn("[participationService/getUserMissions] Invariant violation", {
-              missionId: participant.missionId,
-              violations: validation.violations,
-              severity: validation.severity,
-            });
+            if (import.meta.env.DEV)
+              console.warn("[participationService/getUserMissions] Invariant violation", {
+                missionId: participant.missionId,
+                violations: validation.violations,
+                severity: validation.severity,
+              });
             userMission.__invariantViolations = [...validation.violations];
           }
 

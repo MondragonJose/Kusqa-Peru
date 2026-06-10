@@ -14,7 +14,12 @@
  *   When enabled, consumers can switch to the unified Initiative shape.
  */
 
-import type { Initiative, InitiativeLifecycle, InitiativeLocation, TemporalAnchor } from "@/domain/initiative";
+import type {
+  Initiative,
+  InitiativeLifecycle,
+  InitiativeLocation,
+  TemporalAnchor,
+} from "@/domain/initiative";
 import {
   deriveLifecycleFromMission,
   deriveLifecycleFromProposal,
@@ -77,9 +82,10 @@ function proposalToInitiative(proposal: Proposal): Initiative {
     district: proposal.district,
     districtId: proposal.districtId ?? null,
     region: proposal.region,
-    coords: proposal.latitude != null && proposal.longitude != null
-      ? { lat: Number(proposal.latitude), lng: Number(proposal.longitude) }
-      : null,
+    coords:
+      proposal.latitude != null && proposal.longitude != null
+        ? { lat: Number(proposal.latitude), lng: Number(proposal.longitude) }
+        : null,
     locationLabel: proposal.locationLabel ?? null,
   };
 
@@ -111,9 +117,7 @@ function proposalToInitiative(proposal: Proposal): Initiative {
 
 // ─── Enricher: fills live counts from repositories ──────────────────────────
 
-async function enrichInitiative(
-  initiative: Initiative,
-): Promise<Initiative> {
+async function enrichInitiative(initiative: Initiative): Promise<Initiative> {
   if (initiative.sourceType === "mission") {
     try {
       const stats = await proposalRepository.getSupportStats(initiative.sourceId);
@@ -209,17 +213,13 @@ async function resolveById(initiativeId: string): Promise<Initiative | null> {
   return null;
 }
 
-async function resolveWithEnrichment(
-  initiativeId: string,
-): Promise<Initiative | null> {
+async function resolveWithEnrichment(initiativeId: string): Promise<Initiative | null> {
   const base = await resolveById(initiativeId);
   if (!base) return null;
   return enrichInitiative(base);
 }
 
-async function resolveAllWithEnrichment(
-  filters?: InitiativeFilter,
-): Promise<Initiative[]> {
+async function resolveAllWithEnrichment(filters?: InitiativeFilter): Promise<Initiative[]> {
   const base = await resolveAll(filters);
   return Promise.all(base.map(enrichInitiative));
 }

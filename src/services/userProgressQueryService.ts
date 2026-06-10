@@ -14,7 +14,8 @@ export const userProgressQueryService = {
     try {
       return await getUserMissions(userId);
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, returning empty user missions");
+      if (import.meta.env.DEV)
+        console.warn("[KUSQA] mission_participants unavailable, returning empty user missions");
       return [];
     }
   },
@@ -24,7 +25,10 @@ export const userProgressQueryService = {
       const userMissions = await getUserMissions(userId);
       return userMissions.filter((um) => um.status === "completed");
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, returning empty completed missions");
+      if (import.meta.env.DEV)
+        console.warn(
+          "[KUSQA] mission_participants unavailable, returning empty completed missions",
+        );
       return [];
     }
   },
@@ -42,7 +46,8 @@ export const userProgressQueryService = {
       const userMissions = await getUserMissions(userId);
       completedCount = userMissions.filter((um) => um.status === "completed").length;
     } catch (e) {
-      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, counting 0 completed missions");
+      if (import.meta.env.DEV)
+        console.warn("[KUSQA] mission_participants unavailable, counting 0 completed missions");
     }
 
     return {

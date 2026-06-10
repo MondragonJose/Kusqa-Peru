@@ -111,10 +111,7 @@ export const participationRepository = {
    * Get raw completed_at value for a user-mission pair.
    * Returns null if not found or not completed.
    */
-  async getCompletedAt(
-    missionId: string,
-    userId: string,
-  ): Promise<string | null> {
+  async getCompletedAt(missionId: string, userId: string): Promise<string | null> {
     const { data, error } = await supabase
       .from("mission_participants")
       .select("completed_at")

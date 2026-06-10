@@ -77,9 +77,7 @@ describe("app.propuesta.$proposalId", () => {
     });
 
     await waitFor(() => {
-      expect(
-        document.body.querySelector(".animate-spin"),
-      ).toBeTruthy();
+      expect(document.body.querySelector(".animate-spin")).toBeTruthy();
     });
     expect(screen.queryByText("Propuesta")).not.toBeInTheDocument();
   });

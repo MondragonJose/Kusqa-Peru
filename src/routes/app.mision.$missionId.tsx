@@ -7,7 +7,6 @@ import {
   Users,
   ArrowLeft,
   ArrowRight,
-  Share2,
   Heart,
   Compass,
   Sparkles,
@@ -35,16 +34,26 @@ import type { Mission, Region, Evidence } from "@/types";
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
 import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/initiative";
-import type { Initiative, InitiativeLifecycle, InitiativeLocation, TemporalAnchor } from "@/domain/initiative";
+import type {
+  Initiative,
+  InitiativeLifecycle,
+  InitiativeLocation,
+  TemporalAnchor,
+} from "@/domain/initiative";
+import type { InitiativeAction } from "@/domain/initiativeActions";
+import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { shareInitiative } from "@/features/actions/shareInitiative";
+import { useDistricts, useSpatialContext } from "@/features/districts/hooks";
+import { deriveCivicTrace } from "@/domain/civicTrace";
+import type { CivicTrace, CivicTraceInput } from "@/domain/civicTrace";
+import { traceToNarrative } from "@/domain/civicTraceNarrative";
+import type { CivicTraceNarrativeCtx } from "@/domain/civicTraceNarrative";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
   component: MissionDetail,
 });
 
-const REGION_THEMES: Record<
-  Region,
-  { bgLight: string; border: string }
-> = {
+const REGION_THEMES: Record<Region, { bgLight: string; border: string }> = {
   costa: {
     bgLight: "bg-amber-50 dark:bg-amber-950/20",
     border: "border-amber-200 dark:border-amber-800/40",
@@ -56,6 +65,54 @@ const REGION_THEMES: Record<
   selva: {
     bgLight: "bg-emerald-50 dark:bg-emerald-950/20",
     border: "border-emerald-200 dark:border-emerald-800/40",
+  },
+};
+
+const STRENGTH_META: Record<
+  CivicTrace["strength"],
+  { label: string; emoji: string; color: string }
+> = {
+  faint: {
+    label: "Tenue",
+    emoji: "🌱",
+    color:
+      "text-stone-500 bg-stone-100 dark:bg-stone-900/30 border-stone-200 dark:border-stone-800/30",
+  },
+  settled: {
+    label: "Visible",
+    emoji: "🌿",
+    color:
+      "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40",
+  },
+  landmark: {
+    label: "Hito",
+    emoji: "🌳",
+    color:
+      "text-amber-600 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40",
+  },
+};
+
+const VITALITY_META: Record<
+  CivicTrace["vitality"],
+  { label: string; emoji: string; color: string }
+> = {
+  fresh: {
+    label: "Reciente",
+    emoji: "✨",
+    color:
+      "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40",
+  },
+  settling: {
+    label: "Asentándose",
+    emoji: "⏳",
+    color:
+      "text-amber-600 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40",
+  },
+  dormant: {
+    label: "Dormida",
+    emoji: "💤",
+    color:
+      "text-slate-500 bg-slate-100 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800/30",
   },
 };
 
@@ -89,7 +146,11 @@ function MissionDetail() {
         region: mission.region,
         lifecycle: deriveLifecycleFromMission(mission.lifecycleInfo.lifecycle),
         participantsCount: mission.participants,
-        temporalAnchor: computeMissionAnchor(mission.lifecycleInfo, mission.startDate, mission.endDate),
+        temporalAnchor: computeMissionAnchor(
+          mission.lifecycleInfo,
+          mission.startDate,
+          mission.endDate,
+        ),
         emoji: mission.emoji,
         location,
       };
@@ -103,9 +164,7 @@ function MissionDetail() {
   const error = missionError || proposalError;
 
   // Phase 9E: check if a real mission was born from a proposal
-  const { data: originProposalId } = useProposalOriginByMissionId(
-    isMissionEntity ? missionId : "",
-  );
+  const { data: originProposalId } = useProposalOriginByMissionId(isMissionEntity ? missionId : "");
 
   // Phase 1.5: redirect active proposals to their dedicated detail route.
   // This route is mission-only. If the id resolves to a proposal that is still
@@ -156,7 +215,10 @@ function MissionDetail() {
             setEvidenceDescription("");
           },
           onError: (err) => {
-            betaEvents.evidenceSubmitError(missionId, err instanceof Error ? err.message : "unknown");
+            betaEvents.evidenceSubmitError(
+              missionId,
+              err instanceof Error ? err.message : "unknown",
+            );
             toast.error("Error", {
               description: err instanceof Error ? err.message : "No se pudo enviar la evidencia",
             });
@@ -181,7 +243,10 @@ function MissionDetail() {
             setEvidencePhoto(null);
           },
           onError: (err) => {
-            betaEvents.evidenceSubmitError(missionId, err instanceof Error ? err.message : "unknown");
+            betaEvents.evidenceSubmitError(
+              missionId,
+              err instanceof Error ? err.message : "unknown",
+            );
             toast.error("Error", {
               description: err instanceof Error ? err.message : "No se pudo enviar la evidencia",
             });
@@ -190,6 +255,48 @@ function MissionDetail() {
       );
     }
   };
+
+  // Huella: district lookup for slug + narrative
+  const { data: districts = [] } = useDistricts();
+  const districtData = useMemo(() => {
+    if (!mission) return null;
+    return (
+      districts.find((d) => d.id === mission.districtId) ??
+      districts.find((d) => d.displayName === mission.district) ??
+      null
+    );
+  }, [mission, districts]);
+
+  // Huella: derive trace from mission + verified evidence
+  const huellaTrace = useMemo(() => {
+    if (!mission || mission.status !== "completed") return null;
+    const verified = evidenceList.filter((e) => e.verificationStatus === "verified").length;
+    if (verified < 1) return null;
+    const input: CivicTraceInput = {
+      initiativeId: mission.id,
+      title: mission.title,
+      districtSlug: districtData?.slug ?? mission.district.toLowerCase().replace(/\s+/g, "-"),
+      district: mission.district,
+      region: mission.region,
+      category: mission.category,
+      coords: mission.coords ?? null,
+      boundary: null,
+      completedAt: mission.endDate ?? null,
+      verifiedCount: verified,
+    };
+    return deriveCivicTrace(input);
+  }, [mission, evidenceList, districtData]);
+
+  // Huella: spatial context for territorial narrative
+  const { spatialContext } = useSpatialContext(districtData?.slug ?? "");
+  const huellaNarrativeCtx = useMemo<CivicTraceNarrativeCtx | null>(() => {
+    if (!huellaTrace || !spatialContext) return null;
+    return {
+      activeSlugs: spatialContext.activeSlugs,
+      adjacency: spatialContext.adjacencyMap,
+      districtNarrative: districtData?.narrative ?? null,
+    };
+  }, [huellaTrace, spatialContext, districtData]);
 
   const [bookmarked, setBookmarked] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -272,7 +379,9 @@ function MissionDetail() {
     if (!initiative) return [];
     return allMissions
       .filter(
-        (x) => x.id !== initiative.sourceId && (x.region === initiative.region || x.category === initiative.category),
+        (x) =>
+          x.id !== initiative.sourceId &&
+          (x.region === initiative.region || x.category === initiative.category),
       )
       .slice(0, 2);
   }, [initiative, allMissions]);
@@ -306,6 +415,24 @@ function MissionDetail() {
     joiningRef.current = true;
     setCrossingOpen(true);
     joinMutation.mutate({ missionId });
+  };
+
+  const handleActionBar = (action: InitiativeAction) => {
+    switch (action) {
+      case "join":
+        handleJoinMission();
+        break;
+      case "share":
+        shareInitiative(initiative?.title ?? "", window.location.href);
+        break;
+      case "report":
+        toast.info("Reporta esta iniciativa desde el menú de opciones.");
+        break;
+      case "comment":
+        // Scroll to comments section
+        document.getElementById("comments")?.scrollIntoView({ behavior: "smooth" });
+        break;
+    }
   };
 
   const handleCrossingComplete = () => {
@@ -507,52 +634,18 @@ function MissionDetail() {
                 <Users className="h-3.5 w-3.5" /> {initiative.participantsCount} participantes
               </span>
             </div>
-            {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
-            <div className="mt-4 sm:mt-6">
-              <motion.button
-                onClick={handleJoinMission}
-                disabled={
-                  !isMissionEntity ||
-                  alreadyJoined ||
-                  joinMutation.isPending ||
-                  joinMutation.isSuccess
-                }
-                className={`inline-flex items-center gap-2 rounded-2xl bg-gradient-sunrise text-white px-6 py-3 font-black text-xs shadow-glow transition-all ${
-                  !isMissionEntity || alreadyJoined || joinMutation.isSuccess
-                    ? "opacity-90 cursor-default"
-                    : "cursor-pointer"
-                } ${joinMutation.isPending ? "opacity-70 cursor-wait hover:scale-100" : "hover:scale-[1.02]"}`}
-                whileHover={
-                  isMissionEntity && !alreadyJoined && !joinMutation.isPending
-                    ? { scale: 1.02 }
-                    : {}
-                }
-                whileTap={
-                  isMissionEntity && !alreadyJoined && !joinMutation.isPending
-                    ? { scale: 0.98 }
-                    : {}
-                }
-              >
-                {!isMissionEntity ? (
-                  <span className="flex items-center gap-2">
-                    Ver propuesta <ArrowRight className="h-4 w-4" />
-                  </span>
-                ) : joinMutation.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full border-2 border-foreground/40 border-t-foreground animate-spin" />
-                    Ingresando...
-                  </span>
-                ) : alreadyJoined || joinMutation.isSuccess ? (
-                  <span className="flex items-center gap-2">✨ Ya estás en ruta</span>
-                ) : (
-                  <>
-                    Iniciar ruta <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </motion.button>
+            <div className="mt-4 sm:mt-6 flex items-center gap-2">
+              {initiative && (
+                <InitiativeActionBar
+                  initiative={initiative}
+                  relationship={initiative.ownerId ? "organizer" : "visitor"}
+                  variant="row"
+                  onAction={handleActionBar}
+                />
+              )}
             </div>
           </div>
-          <div className="hidden sm:flex gap-2">
+          <div className="hidden sm:flex gap-2 items-start">
             <button
               onClick={toggleBookmark}
               className={`h-10 w-10 rounded-lg backdrop-blur border grid place-items-center hover:bg-white/25 active:scale-95 transition-all cursor-pointer ${
@@ -563,26 +656,6 @@ function MissionDetail() {
               title={bookmarked ? "Quitar de bitácora" : "Guardar en bitácora"}
             >
               <Heart className={`h-4 w-4 ${bookmarked ? "fill-current" : ""}`} />
-            </button>
-            <button
-              onClick={() => {
-                if (navigator.clipboard && window.location.href) {
-                  navigator.clipboard
-                    .writeText(window.location.href)
-                    .then(() => {
-                      toast.success("Enlace copiado.", {
-                        description: "Comparte esta misión con tu red cívica.",
-                      });
-                    })
-                    .catch(() => toast("Comparte esta URL con tu red cívica."));
-                } else {
-                  toast("Comparte esta URL con tu red cívica.");
-                }
-              }}
-              className="h-10 w-10 rounded-lg bg-white/15 backdrop-blur border border-white/10 grid place-items-center hover:bg-white/25 active:scale-95 transition-all text-white cursor-pointer"
-              title="Compartir misión"
-            >
-              <Share2 className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -734,7 +807,8 @@ function MissionDetail() {
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">
-                  {initiative.participantsCount} persona{initiative.participantsCount !== 1 ? "s" : ""} en esta ruta
+                  {initiative.participantsCount} persona
+                  {initiative.participantsCount !== 1 ? "s" : ""} en esta ruta
                 </span>
               </div>
             ) : (
@@ -930,6 +1004,40 @@ function MissionDetail() {
               </div>
             )}
 
+            {/* Huella — civic trace for completed missions */}
+            {huellaTrace && (
+              <div className="rounded-2xl p-4 border border-amber-200/40 dark:border-amber-800/30 bg-amber-50/40 dark:bg-amber-950/10">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <span className="text-xs">👣</span> Huella territorial
+                </div>
+                <p className="text-xs text-foreground/80 leading-relaxed mb-3 font-medium">
+                  {huellaNarrativeCtx
+                    ? traceToNarrative(huellaTrace, huellaNarrativeCtx)
+                    : huellaTrace.narrative}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${STRENGTH_META[huellaTrace.strength].color}`}
+                  >
+                    {STRENGTH_META[huellaTrace.strength].emoji}{" "}
+                    {STRENGTH_META[huellaTrace.strength].label}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${VITALITY_META[huellaTrace.vitality].color}`}
+                  >
+                    {VITALITY_META[huellaTrace.vitality].emoji}{" "}
+                    {VITALITY_META[huellaTrace.vitality].label}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground font-medium">
+                  {huellaTrace.verifiedCount} evidencia
+                  {huellaTrace.verifiedCount !== 1 ? "s" : ""} verificada
+                  {huellaTrace.verifiedCount !== 1 ? "s" : ""}
+                  {huellaTrace.completedAt && <> · {formatRelativeDate(huellaTrace.completedAt)}</>}
+                </div>
+              </div>
+            )}
+
             <div className="h-px bg-border/60" />
 
             <div className="space-y-3 text-xs">
@@ -943,7 +1051,9 @@ function MissionDetail() {
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Organizador</span>
-                <span className="font-bold text-foreground">{mission!.organizer?.name || "N/A"}</span>
+                <span className="font-bold text-foreground">
+                  {mission!.organizer?.name || "N/A"}
+                </span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Impacto</span>

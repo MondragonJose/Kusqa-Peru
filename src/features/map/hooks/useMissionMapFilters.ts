@@ -23,7 +23,9 @@ const ENTITY_LIFECYCLE_PRIORITY: Record<string, number> = {
 };
 
 function sortByEntityPriority(a: InitiativeMapEntity, b: InitiativeMapEntity): number {
-  return (ENTITY_LIFECYCLE_PRIORITY[a.lifecycle] ?? 99) - (ENTITY_LIFECYCLE_PRIORITY[b.lifecycle] ?? 99);
+  return (
+    (ENTITY_LIFECYCLE_PRIORITY[a.lifecycle] ?? 99) - (ENTITY_LIFECYCLE_PRIORITY[b.lifecycle] ?? 99)
+  );
 }
 
 export function useMissionMapFilters(
@@ -115,7 +117,9 @@ export function useMissionMapFilters(
         const query = filters.searchQuery.toLowerCase().trim();
         const titleMatch = entity.title.toLowerCase().includes(query);
         const summaryMatch = entity.summary.toLowerCase().includes(query);
-        const districtMatch = (entity.location?.district ?? entity.region).toLowerCase().includes(query);
+        const districtMatch = (entity.location?.district ?? entity.region)
+          .toLowerCase()
+          .includes(query);
         if (!titleMatch && !summaryMatch && !districtMatch) {
           hiddenReason = `search query`;
         }

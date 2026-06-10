@@ -19,7 +19,10 @@
 
 import type { Region } from "@/domain/regions";
 
-export { CATEGORIES as PROPOSAL_CATEGORIES, type MissionCategory as ProposalCategory } from "@/domain/categories";
+export {
+  CATEGORIES as PROPOSAL_CATEGORIES,
+  type MissionCategory as ProposalCategory,
+} from "@/domain/categories";
 
 export const PROPOSAL_STATUSES = ["pending", "active", "resolved", "rejected"] as const;
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
@@ -65,7 +68,6 @@ export type DbProposalRow = {
   /** Phase 3B: FK to the mission created from this proposal. */
   has_converted_mission_id: string | null;
 };
-
 
 // ─── Domain model (camelCase, what the app works with) ─────────────────────
 
@@ -144,7 +146,6 @@ export type ProposalResult<T = Proposal> =
   | { status: "error"; error: string };
 
 // ─── Proposal support types ─────────────────────────────────────────────────
-
 
 export type ProposalSupporterPreview = {
   userId: string;

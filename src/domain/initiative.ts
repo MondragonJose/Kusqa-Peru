@@ -16,19 +16,12 @@ import type { ProposalStatus } from "@/services/proposalContract";
 
 // ─── Unified lifecycle ──────────────────────────────────────────────────────
 
-export type InitiativeLifecycle =
-  | "forming"
-  | "active"
-  | "ending"
-  | "completed"
-  | "archived";
+export type InitiativeLifecycle = "forming" | "active" | "ending" | "completed" | "archived";
 
 /**
  * Derive InitiativeLifecycle from a mission's lifecycle.
  */
-export function deriveLifecycleFromMission(
-  ml: MissionLifecycle,
-): InitiativeLifecycle {
+export function deriveLifecycleFromMission(ml: MissionLifecycle): InitiativeLifecycle {
   switch (ml) {
     case "upcoming":
       return "forming";
@@ -60,7 +53,7 @@ export function deriveLifecycleFromProposal(
       return "active";
     case "resolved":
       if (completedAt) return "completed";
-      return "completed";
+      return "active";
     case "rejected":
       return "archived";
   }
@@ -126,9 +119,16 @@ export function computeMissionAnchor(
       const days = daysUntil(startDate);
       if (startDate && days !== null) {
         if (days <= 1) return { label: "Mañana", kind: "countdown", referenceDate: startDate };
-        if (days <= 7) return { label: `Este ${dayName(startDate)}`, kind: "scheduled", referenceDate: startDate };
-        if (days <= 14) return { label: "Esta semana", kind: "scheduled", referenceDate: startDate };
-        if (days <= 30) return { label: `Comienza en ${days} días`, kind: "countdown", referenceDate: startDate };
+        if (days <= 7)
+          return {
+            label: `Este ${dayName(startDate)}`,
+            kind: "scheduled",
+            referenceDate: startDate,
+          };
+        if (days <= 14)
+          return { label: "Esta semana", kind: "scheduled", referenceDate: startDate };
+        if (days <= 30)
+          return { label: `Comienza en ${days} días`, kind: "countdown", referenceDate: startDate };
         return { label: "Próximamente", kind: "scheduled", referenceDate: startDate };
       }
       return { label: "Próximamente", kind: "indefinite", referenceDate: null };
@@ -146,7 +146,8 @@ export function computeMissionAnchor(
       const remaining = daysUntil(endDate);
       if (endDate && remaining !== null) {
         if (remaining <= 0) return { label: "Hoy", kind: "active", referenceDate: endDate };
-        if (remaining === 1) return { label: "Termina mañana", kind: "ending", referenceDate: endDate };
+        if (remaining === 1)
+          return { label: "Termina mañana", kind: "ending", referenceDate: endDate };
         return { label: `Termina en ${remaining} días`, kind: "ending", referenceDate: endDate };
       }
       return { label: "Finalizando", kind: "ending", referenceDate: null };
@@ -155,8 +156,10 @@ export function computeMissionAnchor(
       const days = daysSince(endDate);
       if (endDate && days !== null) {
         if (days <= 1) return { label: "Finalizó ayer", kind: "recent", referenceDate: endDate };
-        if (days <= 7) return { label: "Finalizó esta semana", kind: "recent", referenceDate: endDate };
-        if (days <= 14) return { label: "Finalizó hace 2 semanas", kind: "recent", referenceDate: endDate };
+        if (days <= 7)
+          return { label: "Finalizó esta semana", kind: "recent", referenceDate: endDate };
+        if (days <= 14)
+          return { label: "Finalizó hace 2 semanas", kind: "recent", referenceDate: endDate };
         return { label: "Completada", kind: "completed", referenceDate: endDate };
       }
       return { label: "Completada", kind: "completed", referenceDate: null };
@@ -185,8 +188,10 @@ export function computeProposalAnchor(
   if (completedAt) {
     const days = daysSince(completedAt);
     if (completedAt && days !== null) {
-      if (days <= 1) return { label: "Se completó ayer", kind: "recent", referenceDate: completedAt };
-      if (days <= 7) return { label: "Completada esta semana", kind: "recent", referenceDate: completedAt };
+      if (days <= 1)
+        return { label: "Se completó ayer", kind: "recent", referenceDate: completedAt };
+      if (days <= 7)
+        return { label: "Completada esta semana", kind: "recent", referenceDate: completedAt };
       return { label: "Completada", kind: "completed", referenceDate: completedAt };
     }
     return { label: "Completada", kind: "completed", referenceDate: completedAt };
@@ -207,17 +212,27 @@ export function computeProposalAnchor(
     if (proposedDate) {
       const days = daysSince(proposedDate);
       if (proposedDate && days !== null) {
-        if (days <= 1) return { label: "Recién propuesta", kind: "recent", referenceDate: proposedDate };
-        if (days <= 7) return { label: "Propuesta esta semana", kind: "recent", referenceDate: proposedDate };
+        if (days <= 1)
+          return { label: "Recién propuesta", kind: "recent", referenceDate: proposedDate };
+        if (days <= 7)
+          return { label: "Propuesta esta semana", kind: "recent", referenceDate: proposedDate };
       }
-      return { label: "Buscando personas para empezar", kind: "indefinite", referenceDate: proposedDate };
+      return {
+        label: "Buscando personas para empezar",
+        kind: "indefinite",
+        referenceDate: proposedDate,
+      };
     }
     const days = daysSince(createdAt);
     if (createdAt && days !== null) {
       if (days <= 1) return { label: "Recién propuesta", kind: "recent", referenceDate: createdAt };
       if (days <= 7) return { label: "Nueva propuesta", kind: "recent", referenceDate: createdAt };
     }
-    return { label: "Buscando personas para empezar", kind: "indefinite", referenceDate: createdAt };
+    return {
+      label: "Buscando personas para empezar",
+      kind: "indefinite",
+      referenceDate: createdAt,
+    };
   }
 
   if (status === "active") {
@@ -240,6 +255,21 @@ export type InitiativeLocation = {
 // ─── Initiative — the unified read model ────────────────────────────────────
 
 export type InitiativeSourceType = "mission" | "proposal";
+
+/**
+ * Returns true when the initiative is in a non-terminal lifecycle
+ * (forming/active/ending) but has had no activity for >60 days.
+ * Reuses the 60-day threshold from detectDormancy in territorialIntelligence.
+ */
+export function isDormant(
+  initiative: Pick<Initiative, "lifecycle" | "temporalAnchor">,
+): boolean {
+  if (initiative.lifecycle === "archived" || initiative.lifecycle === "completed") return false;
+  if (!initiative.temporalAnchor.referenceDate) return false;
+  const days = daysSince(initiative.temporalAnchor.referenceDate);
+  if (days === null) return false;
+  return days > 60;
+}
 
 export type Initiative = {
   id: string;
@@ -264,4 +294,6 @@ export type Initiative = {
   location?: InitiativeLocation;
 
   vitalityScore?: number;
+
+  ownerId?: string;
 };

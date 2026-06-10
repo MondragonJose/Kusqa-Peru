@@ -38,9 +38,9 @@ describe("auth boundaries", () => {
         data: null,
         error: { message: "permission denied" },
       });
-      await expect(
-        notificationRepository.findInboxByUserId("other-user-id"),
-      ).rejects.toThrow("Failed to fetch notifications");
+      await expect(notificationRepository.findInboxByUserId("other-user-id")).rejects.toThrow(
+        "Failed to fetch notifications",
+      );
     });
 
     it("returns the data RLS allowed (app trusts DB)", async () => {
@@ -92,7 +92,27 @@ describe("auth boundaries", () => {
   describe("supportProposal idempotency", () => {
     it("treats 23505 duplicate key as success (idempotent)", async () => {
       mock.queue.tableResponse("proposals", {
-        data: { id: "proposal-id", user_id: "test-user-id", title: "Test", description: null, category: "test", district: "test", region: "sierra", team_size: 5, images: null, status: "active", latitude: null, longitude: null, proposed_date: null, district_id: null, summary: null, why: null, location_label: null, created_at: "2026-01-01", updated_at: "2026-01-01" },
+        data: {
+          id: "proposal-id",
+          user_id: "test-user-id",
+          title: "Test",
+          description: null,
+          category: "test",
+          district: "test",
+          region: "sierra",
+          team_size: 5,
+          images: null,
+          status: "active",
+          latitude: null,
+          longitude: null,
+          proposed_date: null,
+          district_id: null,
+          summary: null,
+          why: null,
+          location_label: null,
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+        },
         error: null,
       });
       mock.queue.tableResponse("proposal_supports", {
@@ -105,7 +125,27 @@ describe("auth boundaries", () => {
 
     it("returns error on a non-23505 failure", async () => {
       mock.queue.tableResponse("proposals", {
-        data: { id: "proposal-id", user_id: "test-user-id", title: "Test", description: null, category: "test", district: "test", region: "sierra", team_size: 5, images: null, status: "active", latitude: null, longitude: null, proposed_date: null, district_id: null, summary: null, why: null, location_label: null, created_at: "2026-01-01", updated_at: "2026-01-01" },
+        data: {
+          id: "proposal-id",
+          user_id: "test-user-id",
+          title: "Test",
+          description: null,
+          category: "test",
+          district: "test",
+          region: "sierra",
+          team_size: 5,
+          images: null,
+          status: "active",
+          latitude: null,
+          longitude: null,
+          proposed_date: null,
+          district_id: null,
+          summary: null,
+          why: null,
+          location_label: null,
+          created_at: "2026-01-01",
+          updated_at: "2026-01-01",
+        },
         error: null,
       });
       mock.queue.tableResponse("proposal_supports", {

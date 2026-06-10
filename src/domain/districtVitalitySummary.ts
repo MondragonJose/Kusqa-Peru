@@ -7,10 +7,7 @@ export type DistrictSummary = {
   sampleEmoji: string;
 };
 
-export function selectTopDistricts(
-  initiatives: Initiative[],
-  topN = 5,
-): DistrictSummary[] {
+export function selectTopDistricts(initiatives: Initiative[], topN = 5): DistrictSummary[] {
   const districtMap = new Map<string, { count: number; active: number; emoji: string }>();
 
   for (const init of initiatives) {

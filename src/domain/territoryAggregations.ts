@@ -10,8 +10,6 @@
  * placeholder metrics.
  */
 
-
-
 export type DistrictActivityClass = "empty" | "early" | "active" | "established";
 
 export type TerritorialImpactSummary = {
@@ -118,15 +116,12 @@ export function formatTerritorialImpact(summary: TerritorialImpactSummary): stri
  * Derive the direction of civic movement in the district.
  * Uses recent activity counts if available; falls back to total counts.
  */
-export function deriveMovementDirection(
-  summary: TerritorialImpactSummary,
-): MovementDirection {
+export function deriveMovementDirection(summary: TerritorialImpactSummary): MovementDirection {
   const total = summary.missionCount + summary.proposalCount;
   if (total === 0) return "quiet";
   if (summary.activeProposalCount === 0 && summary.missionCount === 0) return "first_steps";
 
-  const recent =
-    (summary.recentProposalCount ?? 0) + (summary.recentCompletionCount ?? 0);
+  const recent = (summary.recentProposalCount ?? 0) + (summary.recentCompletionCount ?? 0);
   if (recent >= 3) return "growing";
   if (recent >= 1) return "stable";
   return "quiet";
@@ -221,5 +216,3 @@ export function deriveDistrictMilestones(
 export function isFirstMovementNeeded(summary: TerritorialImpactSummary): boolean {
   return summary.missionCount === 0 && summary.proposalCount === 0;
 }
-
-

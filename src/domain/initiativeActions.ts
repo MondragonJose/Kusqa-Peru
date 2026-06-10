@@ -1,12 +1,6 @@
 import type { Initiative, InitiativeLifecycle } from "./initiative";
 
-export type InitiativeAction =
-  | "support"
-  | "join"
-  | "comment"
-  | "share"
-  | "edit"
-  | "report";
+export type InitiativeAction = "support" | "join" | "comment" | "share" | "edit" | "report";
 
 export type UserRelationship =
   | "visitor"
@@ -21,6 +15,7 @@ export type ActionContext = {
   relationship: UserRelationship;
 };
 
+export function deriveRelationship(userId: string | null, initiative: Initiative): UserRelationship;
 export function deriveRelationship(
   initiative: Pick<Initiative, "sourceType" | "sourceId">,
   context?: {
@@ -29,7 +24,32 @@ export function deriveRelationship(
     isParticipant?: boolean;
     isOwner?: boolean;
   },
+): UserRelationship;
+export function deriveRelationship(
+  first: string | null | Pick<Initiative, "sourceType" | "sourceId">,
+  second?:
+    | Initiative
+    | {
+        currentUserId?: string;
+        isSupported?: boolean;
+        isParticipant?: boolean;
+        isOwner?: boolean;
+      },
 ): UserRelationship {
+  if (first === null) return "visitor";
+  if (typeof first === "string") {
+    const initiative = second as Initiative;
+    if (initiative.ownerId === first) return "organizer";
+    return "visitor";
+  }
+  const context = second as
+    | {
+        currentUserId?: string;
+        isSupported?: boolean;
+        isParticipant?: boolean;
+        isOwner?: boolean;
+      }
+    | undefined;
   if (context?.isOwner) return "organizer";
   if (context?.isParticipant) return "participant";
   if (context?.isSupported) return "supporter";
@@ -39,18 +59,27 @@ export function deriveRelationship(
 export const ACTION_PRIORITY: Record<InitiativeAction, number> = {
   support: 1,
   join: 2,
-  edit: 3,
-  comment: 4,
-  share: 5,
+  comment: 3,
+  share: 4,
+  edit: 5,
   report: 6,
 };
 
-export function actionToLabel(action: InitiativeAction): string {
+export function actionToLabel(
+  action: InitiativeAction,
+  lifecycle?: InitiativeLifecycle,
+  sourceType?: "mission" | "proposal",
+  dormant?: boolean,
+): string {
   switch (action) {
     case "support":
       return "Apoyar";
     case "join":
-      return "Unirme";
+      if (lifecycle === "completed") return "Ver resultados";
+      if (sourceType === "proposal") return "Ver misión";
+      if (lifecycle === "forming") return "Unirme";
+      if (dormant) return "Reactivar";
+      return "Participar";
     case "comment":
       return "Comentar";
     case "share":
@@ -79,9 +108,7 @@ export function actionToIcon(action: InitiativeAction): string {
   }
 }
 
-export function getAvailableInitiativeActions(
-  context: ActionContext,
-): InitiativeAction[] {
+export function getAvailableInitiativeActions(context: ActionContext): InitiativeAction[] {
   const { lifecycle, relationship } = context;
 
   if (lifecycle === "archived") return [];
@@ -133,19 +160,19 @@ export function getAvailableInitiativeActions(
     case "completed":
       switch (relationship) {
         case "visitor":
-          actions.push("report");
+          actions.push("join", "report");
           break;
         case "participant":
-          actions.push("comment");
+          actions.push("join", "comment");
           break;
         case "supporter":
-          actions.push("comment");
+          actions.push("join", "comment");
           break;
         case "collaborator":
-          actions.push("comment");
+          actions.push("join", "comment");
           break;
         case "organizer":
-          actions.push("edit");
+          actions.push("join", "edit");
           break;
       }
       break;

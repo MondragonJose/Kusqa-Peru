@@ -1,6 +1,11 @@
 import { Clock, Sparkles, Target } from "lucide-react";
 import { useSupportCount } from "@/features/proposals";
-import { getProposalMomentum, getMomentumMessage, getProposalAgeContext, getProposalThreshold } from "@/domain/proposalLifecycle";
+import {
+  getProposalMomentum,
+  getMomentumMessage,
+  getProposalAgeContext,
+  getProposalThreshold,
+} from "@/domain/proposalLifecycle";
 import type { Proposal } from "@/services/proposalContract";
 
 interface ProposalMomentumProps {
@@ -13,9 +18,7 @@ export function ProposalMomentum({ proposal }: ProposalMomentumProps) {
   const momentum = getProposalMomentum(proposal.createdAt, supportCount);
   const message = getMomentumMessage(proposal.createdAt, supportCount, threshold);
 
-  const ageContext = momentum
-    ? getProposalAgeContext(momentum.daysActive)
-    : null;
+  const ageContext = momentum ? getProposalAgeContext(momentum.daysActive) : null;
 
   return (
     <section className="px-4 sm:px-8 py-4 border-b border-border/40">

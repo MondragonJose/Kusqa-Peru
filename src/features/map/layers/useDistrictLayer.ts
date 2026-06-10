@@ -27,24 +27,27 @@ type DistrictLayerOptions = {
   warmth?: Record<string, TerritorialActivityLevel>;
 };
 
-const WARMTH_COLORS: Record<TerritorialActivityLevel, { fill: string; stroke: string; label: string }> = {
-  dormant:      { fill: "#8B9DAF", stroke: "#6B7D8F", label: "En calma" },
-  fragmented:   { fill: "#C4A87C", stroke: "#A4885C", label: "Fragmentado" },
+const WARMTH_COLORS: Record<
+  TerritorialActivityLevel,
+  { fill: string; stroke: string; label: string }
+> = {
+  dormant: { fill: "#8B9DAF", stroke: "#6B7D8F", label: "En calma" },
+  fragmented: { fill: "#C4A87C", stroke: "#A4885C", label: "Fragmentado" },
   reactivating: { fill: "#8FAE7C", stroke: "#6F8E5C", label: "Reactivando" },
-  emerging:     { fill: "#C4B86A", stroke: "#A4984A", label: "Emergente" },
-  organizing:   { fill: "#C99A4A", stroke: "#A97A2A", label: "Organizando" },
-  active:       { fill: "#C47A4A", stroke: "#A45A2A", label: "Activo" },
-  resilient:    { fill: "#6B9E7A", stroke: "#4B7E5A", label: "Resiliente" },
+  emerging: { fill: "#C4B86A", stroke: "#A4984A", label: "Emergente" },
+  organizing: { fill: "#C99A4A", stroke: "#A97A2A", label: "Organizando" },
+  active: { fill: "#C47A4A", stroke: "#A45A2A", label: "Activo" },
+  resilient: { fill: "#6B9E7A", stroke: "#4B7E5A", label: "Resiliente" },
 };
 
 const WARMTH_OPACITY: Record<TerritorialActivityLevel, number> = {
-  dormant:      0.08,
-  fragmented:   0.12,
+  dormant: 0.08,
+  fragmented: 0.12,
   reactivating: 0.15,
-  emerging:     0.18,
-  organizing:   0.22,
-  active:       0.28,
-  resilient:    0.35,
+  emerging: 0.18,
+  organizing: 0.22,
+  active: 0.28,
+  resilient: 0.35,
 };
 
 function getWarmth(
@@ -75,14 +78,16 @@ export function renderDistrictLayer({
   polygons,
   warmth,
 }: DistrictLayerOptions): LeafletInstance {
-  const source = polygons ?? (DISTRICT_POLYGONS as unknown as {
-    type: "FeatureCollection";
-    features: Array<{
-      type: "Feature";
-      properties: Record<string, unknown>;
-      geometry: { type: "Polygon"; coordinates: number[][][] };
-    }>;
-  });
+  const source =
+    polygons ??
+    (DISTRICT_POLYGONS as unknown as {
+      type: "FeatureCollection";
+      features: Array<{
+        type: "Feature";
+        properties: Record<string, unknown>;
+        geometry: { type: "Polygon"; coordinates: number[][][] };
+      }>;
+    });
 
   const geojsonLayer = L.geoJSON(source as any, {
     style: (feature: any) => {
@@ -118,7 +123,10 @@ export function renderDistrictLayer({
 
       layer.on({
         mouseover: (e: any) => {
-          e.target.setStyle({ fillOpacity: Math.min(0.45, WARMTH_OPACITY[level] + 0.12), weight: 3 });
+          e.target.setStyle({
+            fillOpacity: Math.min(0.45, WARMTH_OPACITY[level] + 0.12),
+            weight: 3,
+          });
         },
         mouseout: (e: any) => {
           geojsonLayer.resetStyle(e.target);

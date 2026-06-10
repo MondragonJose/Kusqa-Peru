@@ -16,10 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { resolveAuthenticatedUserId } from "@/features/auth/mutations/authMutationContext";
-import {
-  trackOperationalMetric,
-  captureOperationalException,
-} from "@/lib/telemetry";
+import { trackOperationalMetric, captureOperationalException } from "@/lib/telemetry";
 import {
   reportMutationError,
   reportMutationPending,

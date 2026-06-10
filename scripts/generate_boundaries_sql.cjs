@@ -6,20 +6,41 @@
 const fs = require("fs");
 const topojson = require("topojson-client");
 
-const topology = JSON.parse(
-  fs.readFileSync("node_modules/pe-atlas/districts-100k.json", "utf-8"),
-);
+const topology = JSON.parse(fs.readFileSync("node_modules/pe-atlas/districts-100k.json", "utf-8"));
 
 // The 33 KUSQA districts (display_name from districts table seed)
 const KUSQA_DISTRICTS = [
-  "Miraflores", "Barranco", "San Isidro", "Magdalena", "San Miguel",
-  "Pueblo Libre", "Jesús María", "Lince", "San Borja", "Santiago de Surco",
-  "La Molina", "San Juan de Lurigancho", "San Martín de Porres", "Comas",
-  "Villa María del Triunfo", "Rímac", "Villa El Salvador",
-  "Trujillo", "Huanchaco",
-  "Cusco", "Chinchero", "Urubamba", "Ollantaytambo", "Pisac",
-  "Puno", "Arequipa Centro", "Caucaya",
-  "Iquitos", "Punchana", "Belén", "San Juan Bautista",
+  "Miraflores",
+  "Barranco",
+  "San Isidro",
+  "Magdalena",
+  "San Miguel",
+  "Pueblo Libre",
+  "Jesús María",
+  "Lince",
+  "San Borja",
+  "Santiago de Surco",
+  "La Molina",
+  "San Juan de Lurigancho",
+  "San Martín de Porres",
+  "Comas",
+  "Villa María del Triunfo",
+  "Rímac",
+  "Villa El Salvador",
+  "Trujillo",
+  "Huanchaco",
+  "Cusco",
+  "Chinchero",
+  "Urubamba",
+  "Ollantaytambo",
+  "Pisac",
+  "Puno",
+  "Arequipa Centro",
+  "Caucaya",
+  "Iquitos",
+  "Punchana",
+  "Belén",
+  "San Juan Bautista",
 ];
 
 // Try to match each KUSQA district to a pe-atlas district by name
@@ -67,40 +88,47 @@ for (const kusqa of KUSQA_DISTRICTS) {
   if (best && bestScore >= 0.5) {
     // Map pe-atlas names to KUSQA canonical slug
     const slugMap = {
-      "Miraflores": "miraflores",
-      "Barranco": "barranco",
+      Miraflores: "miraflores",
+      Barranco: "barranco",
       "San Isidro": "san-isidro",
-      "Magdalena": "magdalena",
+      Magdalena: "magdalena",
       "San Miguel": "san-miguel",
       "Pueblo Libre": "pueblo-libre",
       "Jesús María": "jesus-maria",
-      "Lince": "lince",
+      Lince: "lince",
       "San Borja": "san-borja",
       "Santiago de Surco": "surco",
       "La Molina": "la-molina",
       "San Juan de Lurigancho": "san-juan-de-lurigancho",
       "San Martín de Porres": "san-martin-de-porres",
-      "Comas": "comas",
+      Comas: "comas",
       "Villa María del Triunfo": "villa-maria-del-triunfo",
-      "Rímac": "rimac",
+      Rímac: "rimac",
       "Villa El Salvador": "villa-el-salvador",
-      "Trujillo": "trujillo",
-      "Huanchaco": "huanchaco",
-      "Cusco": "cusco-centro",
-      "Chinchero": "chinchero",
-      "Urubamba": "urubamba",
-      "Ollantaytambo": "ollantaytambo",
-      "Pisac": "pisac",
-      "Puno": "puno-ciudad",
+      Trujillo: "trujillo",
+      Huanchaco: "huanchaco",
+      Cusco: "cusco-centro",
+      Chinchero: "chinchero",
+      Urubamba: "urubamba",
+      Ollantaytambo: "ollantaytambo",
+      Pisac: "pisac",
+      Puno: "puno-ciudad",
       "Arequipa Centro": "arequipa-centro",
-      "Iquitos": "iquitos",
-      "Punchana": "punchana",
-      "Belén": "belen-iquitos",
+      Iquitos: "iquitos",
+      Punchana: "punchana",
+      Belén: "belen-iquitos",
       "San Juan Bautista": "san-juan-bautista-iquitos",
     };
-    const slug = slugMap[kusqa] || kusqa.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const slug =
+      slugMap[kusqa] ||
+      kusqa
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
     matches.push({ kusqa, peAtlas: best.properties.name, slug, geometry: best.geometry });
-    console.log(`  ✓ "${kusqa}" → "${best.properties.name}" (score:${(bestScore*100).toFixed(0)}%)`);
+    console.log(
+      `  ✓ "${kusqa}" → "${best.properties.name}" (score:${(bestScore * 100).toFixed(0)}%)`,
+    );
   } else {
     console.log(`  ✗ "${kusqa}" — NO MATCH`);
   }
@@ -139,4 +167,6 @@ for (const m of matches) {
 const outPath = "supabase/migrations/seed_boundary_data.sql";
 fs.writeFileSync(outPath, sql);
 console.log(`\nWrote ${matches.length} boundary updates to ${outPath}`);
-console.log(`${KUSQA_DISTRICTS.length - matches.length} districts without matches will keep coarse bounding boxes.`);
+console.log(
+  `${KUSQA_DISTRICTS.length - matches.length} districts without matches will keep coarse bounding boxes.`,
+);

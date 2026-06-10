@@ -61,11 +61,14 @@ function setupMocks(overrides: {
 }) {
   vi.resetModules();
   vi.doMock("@/features/districts/hooks", () => ({
-    useDistrict: overrides.useDistrict ?? (() => ({ data: mockDistrict, isLoading: false, isError: false })),
-    useDistrictIntelligence: overrides.useDistrictIntelligence ?? (() => ({ data: mockIntelligence, isLoading: false })),
+    useDistrict:
+      overrides.useDistrict ?? (() => ({ data: mockDistrict, isLoading: false, isError: false })),
+    useDistrictIntelligence:
+      overrides.useDistrictIntelligence ?? (() => ({ data: mockIntelligence, isLoading: false })),
     useDistrictFeed: overrides.useDistrictFeed ?? (() => ({ data: mockFeed, isLoading: false })),
     useDistrictActivity: overrides.useDistrictActivity ?? (() => ({ data: mockActivity })),
-    useDistrictTopSupporters: overrides.useDistrictTopSupporters ?? (() => ({ data: mockTopSupporters })),
+    useDistrictTopSupporters:
+      overrides.useDistrictTopSupporters ?? (() => ({ data: mockTopSupporters })),
     useTerritorialGeometry: overrides.useTerritorialGeometry ?? (() => ({ data: [] })),
     useSpatialContext: overrides.useSpatialContext ?? (() => ({ spatialContext: null })),
   }));

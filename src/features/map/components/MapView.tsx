@@ -12,13 +12,17 @@ import {
 } from "../constants/mapConstants";
 import { TERRITORY_HIERARCHY, type TerritoryNode } from "../constants/territoryHierarchy";
 import { useTerritorialGeometry } from "@/features/districts/hooks";
+import { useHuellas } from "@/features/map/hooks/useHuellas";
+import type { BBox } from "@/services/traceRepository";
 import { spatialRepository } from "@/services/spatialRepository";
 import { MapControls } from "./MapControls";
 import { isValidLatLng } from "../utils/projection";
 import { renderDistrictLayer, buildFeatureCollection } from "../layers/useDistrictLayer";
 import { renderMissionMarkers } from "../layers/useMissionMarkerLayer";
 import { createUserLocationPin } from "../layers/useUserLocationPin";
-import { MapPin, Eye, ChevronRight, Landmark, Zap, ShieldCheck } from "lucide-react";
+import { renderHuellaMarkers } from "../layers/useHuellaLayer";
+import { buildAdjacencyMap } from "@/domain/spatialRelationships";
+import { MapPin, Eye, ChevronRight, Landmark, Zap, ShieldCheck, Footprints } from "lucide-react";
 import type { TerritorialActivityLevel } from "@/domain/territorialIntelligence";
 
 // Import Leaflet styles directly for compilation
@@ -37,6 +41,11 @@ type MapViewProps = {
   focalCoords?: MapCoords | null;
   /** Per-district warmth levels for polygon coloring. */
   districtWarmth?: Record<string, TerritorialActivityLevel>;
+  /** Huella (trace) layer */
+  showHuellas?: boolean;
+  onToggleHuellas?: () => void;
+  selectedHuellaId?: string | null;
+  onSelectHuella?: (id: string) => void;
 };
 
 type MapMode = "pins" | "districts";
@@ -52,6 +61,10 @@ export function MapView({
   onRequestUserLocation,
   focalCoords = null,
   districtWarmth,
+  showHuellas = true,
+  onToggleHuellas,
+  selectedHuellaId = null,
+  onSelectHuella,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -61,6 +74,8 @@ export function MapView({
   const userCircleRef = useRef<any>(null);
   const geojsonLayerRef = useRef<any>(null);
   const markersMapRef = useRef<Map<string, any>>(new Map());
+  const huellaClusterRef = useRef<any>(null);
+  const huellaBoundaryRef = useRef<{ current: any | null }>({ current: null });
 
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [LInstance, setLInstance] = useState<any>(null);
@@ -85,14 +100,17 @@ export function MapView({
   }, [spatialGeometry]);
 
   // Build district boundary polygons from spatial geometry, fall back to hardcoded
-  const districtPolygons = useMemo<{
-    type: "FeatureCollection";
-    features: Array<{
-      type: "Feature";
-      properties: Record<string, unknown>;
-      geometry: { type: "Polygon"; coordinates: number[][][] };
-    }>;
-  } | undefined>(() => {
+  const districtPolygons = useMemo<
+    | {
+        type: "FeatureCollection";
+        features: Array<{
+          type: "Feature";
+          properties: Record<string, unknown>;
+          geometry: { type: "Polygon"; coordinates: number[][][] };
+        }>;
+      }
+    | undefined
+  >(() => {
     if (!spatialGeometry || spatialGeometry.length === 0) return undefined;
     const boundaries = spatialGeometry
       .filter((g) => g.boundary?.geometry?.type === "Polygon")
@@ -109,6 +127,33 @@ export function MapView({
     if (boundaries.length === 0) return undefined;
     return buildFeatureCollection(boundaries);
   }, [spatialGeometry]);
+
+  // Huella spatial context (memoized from spatialGeometry)
+  const huellaAdjacency = useMemo(() => {
+    if (!spatialGeometry || spatialGeometry.length === 0) return new Map();
+    return buildAdjacencyMap(spatialGeometry);
+  }, [spatialGeometry]);
+
+  const huellaNarratives = useMemo(() => {
+    const map = new Map<string, string | null>();
+    if (spatialGeometry) {
+      for (const g of spatialGeometry) {
+        map.set(g.slug, g.narrative);
+      }
+    }
+    return map;
+  }, [spatialGeometry]);
+
+  // Huella layer: debounced bbox-based query
+  const [debouncedBbox, setDebouncedBbox] = useState<BBox | undefined>(undefined);
+  const [currentZoom, setCurrentZoom] = useState(MAP_DEFAULT_ZOOM);
+  const [showDormantHuellas, setShowDormantHuellas] = useState(true);
+  const bboxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: huellas = [] } = useHuellas(debouncedBbox);
+
+  const huellaActiveSlugs = useMemo(() => {
+    return [...new Set(huellas.map((t) => t.districtSlug))];
+  }, [huellas]);
 
   // Calculate matching missions for active region/department/district
   const getFilteredMissionsForSelectedTerritory = (): InitiativeMapEntity[] => {
@@ -206,6 +251,27 @@ export function MapView({
     };
     attrControl.addTo(map);
 
+    // Huella Cluster Group (added first so missions render on top)
+    const huellaCluster = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 120,
+      iconCreateFunction: (cluster: any) => {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="relative flex items-center justify-center w-12 h-12 rounded-full bg-stone-400/30 dark:bg-stone-700/40 border-2 border-stone-300 dark:border-stone-500 text-stone-600 dark:text-stone-300 font-display font-bold text-xs" style="filter: sepia(0.3) saturate(0.6);">
+            <span class="relative z-10">${count}</span>
+          </div>`,
+          className: "custom-huella-cluster",
+          iconSize: [48, 48],
+          iconAnchor: [24, 24],
+        });
+      },
+    });
+    map.addLayer(huellaCluster);
+    huellaClusterRef.current = huellaCluster;
+
     // Marker Clusters
     const clusterGroup = L.markerClusterGroup({
       showCoverageOnHover: false,
@@ -228,13 +294,40 @@ export function MapView({
     clusterGroupRef.current = clusterGroup;
 
     mapRef.current = map;
+
+    // Huella: debounced bbox + zoom sync
+    const updateBbox = () => {
+      const bounds = map.getBounds();
+      const bbox: BBox = {
+        minLat: bounds.getSouth(),
+        maxLat: bounds.getNorth(),
+        minLng: bounds.getWest(),
+        maxLng: bounds.getEast(),
+      };
+      if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current);
+      bboxTimerRef.current = setTimeout(() => setDebouncedBbox(bbox), 300);
+    };
+    const updateZoom = () => setCurrentZoom(map.getZoom());
+    map.on("moveend", updateBbox);
+    map.on("zoomend", updateZoom);
+    updateBbox();
+    updateZoom();
+
     updateLayersAndStyles();
 
     return () => {
+      map.off("moveend", updateBbox);
+      map.off("zoomend", updateZoom);
+      if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current);
       if (mapRef.current) {
+        if (huellaBoundaryRef.current.current) {
+          mapRef.current.removeLayer(huellaBoundaryRef.current.current);
+          huellaBoundaryRef.current.current = null;
+        }
         mapRef.current.remove();
         mapRef.current = null;
         clusterGroupRef.current = null;
+        huellaClusterRef.current = null;
         geojsonLayerRef.current = null;
         userMarkerRef.current = null;
         userCircleRef.current = null;
@@ -284,6 +377,28 @@ export function MapView({
         onSelectMission,
         onRequestDetail,
         markersMap: markersMapRef.current,
+      });
+    }
+
+    // Render Huella Pins
+    if (huellaClusterRef.current) {
+      huellaClusterRef.current.clearLayers();
+    }
+    if (showHuellas && huellas.length > 0 && huellaClusterRef.current) {
+      renderHuellaMarkers({
+        L,
+        clusterGroup: huellaClusterRef.current,
+        huellas,
+        selectedHuellaId,
+        onSelectHuella: (id: string) => onSelectHuella?.(id),
+        boundaryLayerRef: huellaBoundaryRef,
+        map,
+        activeSlugs: huellaActiveSlugs,
+        adjacencyMap: huellaAdjacency,
+        districtNarratives: huellaNarratives,
+        zoom: currentZoom,
+        showDormant: showDormantHuellas,
+        spatialGeometry,
       });
     }
 
@@ -344,6 +459,15 @@ export function MapView({
     mapStyle,
     isExploradorMode,
     activeTerritoryPath,
+    huellas,
+    showHuellas,
+    selectedHuellaId,
+    huellaActiveSlugs,
+    huellaAdjacency,
+    huellaNarratives,
+    currentZoom,
+    showDormantHuellas,
+    spatialGeometry,
   ]);
 
   // Center selected mission changes
@@ -351,15 +475,11 @@ export function MapView({
     if (!leafletLoaded || !mapRef.current || !selectedMissionId) return;
     const selectedMission = missions.find((m) => m.id === selectedMissionId);
     const selectedCoords = selectedMission?.location?.coords;
-    if (
-      selectedCoords &&
-      isValidLatLng(selectedCoords.lat, selectedCoords.lng)
-    ) {
-      mapRef.current.setView(
-        [selectedCoords.lat, selectedCoords.lng],
-        MAP_DETAIL_ZOOM,
-        { animate: true, duration: 1.0 },
-      );
+    if (selectedCoords && isValidLatLng(selectedCoords.lat, selectedCoords.lng)) {
+      mapRef.current.setView([selectedCoords.lat, selectedCoords.lng], MAP_DETAIL_ZOOM, {
+        animate: true,
+        duration: 1.0,
+      });
       const marker = markersMapRef.current.get(selectedMissionId);
       if (marker) {
         setTimeout(() => {
@@ -411,9 +531,11 @@ export function MapView({
 
     if (distanceFromDefault < 0.1) {
       const avgLat =
-        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lat, 0) / missionsWithCoords.length;
+        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lat, 0) /
+        missionsWithCoords.length;
       const avgLng =
-        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lng, 0) / missionsWithCoords.length;
+        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lng, 0) /
+        missionsWithCoords.length;
 
       // Center on centroid with appropriate zoom
       const zoom = missionsWithCoords.length > 5 ? 7 : 9;
@@ -489,11 +611,10 @@ export function MapView({
       // Find department
       let deptNode: TerritoryNode | undefined;
       for (const list of Object.values(hierarchyTree)) {
-          const found = list.find(
-            (item) =>
-              item.type === "department" &&
-              hierarchyTree[item.id]?.some((dst) => dst.id === node.id),
-          );
+        const found = list.find(
+          (item) =>
+            item.type === "department" && hierarchyTree[item.id]?.some((dst) => dst.id === node.id),
+        );
         if (found) {
           deptNode = found;
           break;
@@ -614,6 +735,26 @@ export function MapView({
                     <span className="hidden sm:inline sm:ml-1">{m.label}</span>
                   </button>
                 ))}
+              </div>
+
+              {/* Huellas toggle */}
+              <div className="flex self-end rounded-lg border border-border/30 bg-surface/70 shadow-soft p-0.5 backdrop-blur-md text-[7px] font-black uppercase tracking-wider gap-0.5">
+                <button
+                  onClick={() => onToggleHuellas?.()}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer flex items-center gap-1 ${showHuellas ? "bg-amber-600/20 text-amber-700 dark:text-amber-300" : "text-muted-foreground hover:bg-secondary/20"}`}
+                >
+                  <Footprints className="h-3 w-3" />
+                  <span>Huellas</span>
+                </button>
+                {showHuellas && (
+                  <button
+                    onClick={() => setShowDormantHuellas((v) => !v)}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer text-[7px] ${showDormantHuellas ? "text-stone-500" : "text-muted-foreground/40"}`}
+                    title={showDormantHuellas ? "Ocultar dormidas" : "Mostrar dormidas"}
+                  >
+                    💤
+                  </button>
+                )}
               </div>
 
               {/* Theme toggle */}
@@ -768,31 +909,42 @@ export function MapView({
                 Acciones activas aquí
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {territoryMissions.filter(isMissionEntity).slice(0, 5).map((m) => {
-                  const anchorLabel = m.temporalAnchor.label;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => onSelectMission(m.id)}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-card border ${
-                        selectedMissionId === m.id ? "border-accent bg-accent/5" : "border-border/20"
-                      } hover:border-accent/40 text-left transition-all cursor-pointer`}
-                    >
-                      <span className="text-lg">{m.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-bold text-foreground truncate">
-                          {m.title}
+                {territoryMissions
+                  .filter(isMissionEntity)
+                  .slice(0, 5)
+                  .map((m) => {
+                    const anchorLabel = m.temporalAnchor.label;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => onSelectMission(m.id)}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-card border ${
+                          selectedMissionId === m.id
+                            ? "border-accent bg-accent/5"
+                            : "border-border/20"
+                        } hover:border-accent/40 text-left transition-all cursor-pointer`}
+                      >
+                        <span className="text-lg">{m.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold text-foreground truncate">
+                            {m.title}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[7px] text-muted-foreground truncate">
+                              {m.location?.district ?? m.region}
+                            </span>
+                            <span className="text-[7px] text-muted-foreground/40">·</span>
+                            <span className="text-[7px] text-muted-foreground/60">
+                              +{m.xp ?? 0} XP
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[7px] text-muted-foreground truncate">{m.location?.district ?? m.region}</span>
-                          <span className="text-[7px] text-muted-foreground/40">·</span>
-                          <span className="text-[7px] text-muted-foreground/60">+{m.xp ?? 0} XP</span>
+                        <div className="text-[9px] font-semibold text-accent text-right leading-tight">
+                          {anchorLabel}
                         </div>
-                      </div>
-                      <div className="text-[9px] font-semibold text-accent text-right leading-tight">{anchorLabel}</div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
                 {territoryMissions.filter(isMissionEntity).length > 5 && (
                   <div className="text-[8px] text-center text-muted-foreground italic">
                     +{territoryMissions.filter(isMissionEntity).length - 5} más misiones

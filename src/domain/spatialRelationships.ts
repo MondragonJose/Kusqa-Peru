@@ -57,9 +57,7 @@ export function buildAdjacencyMap(
   return map;
 }
 
-export function buildGeometryCoordMap(
-  geometries: DistrictGeometry[],
-): Map<string, MapCoords> {
+export function buildGeometryCoordMap(geometries: DistrictGeometry[]): Map<string, MapCoords> {
   const map = new Map<string, MapCoords>();
   for (const g of geometries) {
     const c = toCoords(g);
@@ -95,10 +93,7 @@ export function computeTerritorialSpread(
   return { spreadKm: Math.round(maxDist * 10) / 10, level };
 }
 
-export function checkContiguity(
-  slugs: string[],
-  adjacencyMap: AdjacencyMap,
-): ContinuityStatus {
+export function checkContiguity(slugs: string[], adjacencyMap: AdjacencyMap): ContinuityStatus {
   if (slugs.length <= 1) return "isolated";
 
   const visited = new Set<string>();

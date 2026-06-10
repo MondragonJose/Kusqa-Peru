@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, AlertCircle, Flag, Archive } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Archive } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useProposal } from "@/features/proposals";
 import { useCurrentUserId } from "@/features/auth";
-import { canArchiveProposal, canReportProposal } from "@/domain/proposalGovernance";
+import { canArchiveProposal } from "@/domain/proposalGovernance";
 import { moderationRepository } from "@/services/moderationRepository";
 import { proposalRepository } from "@/services/proposalRepository";
 import { ProposalHero } from "@/features/proposals/components/ProposalHero";
@@ -17,6 +17,12 @@ import {
   ProposalLifecycleTimeline,
 } from "@/features/proposals/components/ConversionCta";
 import { ProposalMomentum } from "@/features/proposals/components/ProposalMomentum";
+import type { Initiative } from "@/domain/initiative";
+import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/initiative";
+import type { InitiativeAction } from "@/domain/initiativeActions";
+import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { shareInitiative } from "@/features/actions/shareInitiative";
+import { categoryEmoji, type MissionCategory } from "@/domain/categories";
 
 export const Route = createFileRoute("/app/propuesta/$proposalId")({
   component: ProposalDetail,
@@ -64,6 +70,51 @@ function ProposalDetail() {
       toast.error("Error al enviar reporte");
     } finally {
       setReporting(false);
+    }
+  };
+
+  const initiativeForBar: Initiative | null = useMemo(() => {
+    if (!proposal) return null;
+    return {
+      id: `proposal_${proposal.id}`,
+      sourceType: "proposal" as const,
+      sourceId: proposal.id,
+      title: proposal.title,
+      summary: proposal.summary ?? proposal.description ?? proposal.title,
+      category: proposal.category as MissionCategory,
+      region: proposal.region,
+      lifecycle: deriveLifecycleFromProposal(
+        proposal.status,
+        proposal.convertedAt,
+        proposal.completedAt,
+      ),
+      temporalAnchor: computeProposalAnchor(
+        proposal.status,
+        proposal.proposedDate,
+        proposal.createdAt,
+        proposal.convertedAt,
+        proposal.completedAt,
+        0,
+        3,
+      ),
+      emoji: categoryEmoji(proposal.category as MissionCategory),
+    };
+  }, [proposal]);
+
+  const handleActionBar = (action: InitiativeAction) => {
+    if (!proposal) return;
+    switch (action) {
+      case "support":
+        // Support is handled by ProposalStickyCTA
+        break;
+      case "share":
+        shareInitiative(proposal.title, window.location.href);
+        break;
+      case "report":
+        if (currentUserId) {
+          handleReport();
+        }
+        break;
     }
   };
 
@@ -123,28 +174,29 @@ function ProposalDetail() {
           <ProposalTabs proposal={proposal} />
           <ConversionCta proposalId={proposal.id} />
           <ProposalLifecycleTimeline proposalId={proposal.id} />
-          {currentUserId && (
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/20">
-              {canArchiveProposal(proposal.userId, currentUserId!, proposal.status) && (
-                <button
-                  onClick={handleArchive}
-                  disabled={archiving}
-                  className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  <Archive className="h-3 w-3" />
-                  {archiving ? "Archivando..." : "Archivar propuesta"}
-                </button>
-              )}
-              {canReportProposal(currentUserId!, proposal.userId) && (
-                <button
-                  onClick={handleReport}
-                  disabled={reporting}
-                  className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-                >
-                  <Flag className="h-3 w-3" />
-                  {reporting ? "Enviando..." : "Reportar"}
-                </button>
-              )}
+          {currentUserId && initiativeForBar && (
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/20">
+              <div className="flex items-center gap-1">
+                <InitiativeActionBar
+                  initiative={initiativeForBar}
+                  relationship="visitor"
+                  variant="compact"
+                  maxVisible={2}
+                  onAction={handleActionBar}
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                {canArchiveProposal(proposal.userId, currentUserId!, proposal.status) && (
+                  <button
+                    onClick={handleArchive}
+                    disabled={archiving}
+                    className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <Archive className="h-3 w-3" />
+                    {archiving ? "Archivando..." : "Archivar propuesta"}
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

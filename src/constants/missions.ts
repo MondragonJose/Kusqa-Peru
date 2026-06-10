@@ -3,5 +3,3 @@
  */
 
 export { CATEGORIES as MISSION_CATEGORIES, type MissionCategory } from "@/domain/categories";
-
-

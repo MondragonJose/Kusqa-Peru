@@ -106,7 +106,12 @@ function eventToSignal(event: TerritorialEvent, districtSlug: string): ActivityS
     type,
     message: buildMessage(event),
     timestamp: event.createdAt,
-    sourceType: event.entityType === "mission" ? "mission" : event.entityType === "proposal" ? "proposal" : "participation",
+    sourceType:
+      event.entityType === "mission"
+        ? "mission"
+        : event.entityType === "proposal"
+          ? "proposal"
+          : "participation",
     sourceId: event.entityId,
     districtSlug,
     entityTitle: event.entityTitle ?? undefined,

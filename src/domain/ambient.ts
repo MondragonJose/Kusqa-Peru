@@ -28,12 +28,7 @@ export type AmbientCadence = {
 
 // ─── AmbientSignal ────────────────────────────────────────────────────
 
-export type AmbientMood =
-  | "quiet"
-  | "hopeful"
-  | "awakening"
-  | "vibrant"
-  | "determined";
+export type AmbientMood = "quiet" | "hopeful" | "awakening" | "vibrant" | "determined";
 
 export type AmbientSignal = {
   mood: AmbientMood;
@@ -133,7 +128,11 @@ function deriveMood(events: TerritorialEvent[], cadence: AmbientCadence): Ambien
   return "awakening";
 }
 
-function deriveEnergy(events: TerritorialEvent[], cadence: AmbientCadence, vitalityScore?: number): number {
+function deriveEnergy(
+  events: TerritorialEvent[],
+  cadence: AmbientCadence,
+  vitalityScore?: number,
+): number {
   if (vitalityScore != null) return vitalityScore;
 
   // Lightweight energy estimation from cadence
@@ -193,7 +192,9 @@ import type { Initiative } from "./initiative";
 export function initiativesToAmbientEvents(initiatives: Initiative[]): TerritorialEvent[] {
   return initiatives.map((i) => ({
     id: `amb-${i.id}`,
-    type: (i.sourceType === "mission" ? "mission.joined" : "proposal.created") as TerritorialEvent["type"],
+    type: (i.sourceType === "mission"
+      ? "mission.joined"
+      : "proposal.created") as TerritorialEvent["type"],
     actor: { id: "", username: "", firstName: "", avatarUrl: null },
     entityType: i.sourceType,
     entityId: i.sourceId,

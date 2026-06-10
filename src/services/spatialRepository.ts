@@ -85,7 +85,9 @@ export const spatialRepository = {
   async getAllGeometry(): Promise<DistrictGeometry[]> {
     const { data, error } = await supabase
       .from("districts")
-      .select("id, slug, display_name, region, department, latitude, longitude, boundary, svg_x, svg_y, narrative")
+      .select(
+        "id, slug, display_name, region, department, latitude, longitude, boundary, svg_x, svg_y, narrative",
+      )
       .not("latitude", "is", null)
       .order("sort_order", { ascending: true })
       .order("display_name", { ascending: true });
@@ -101,7 +103,9 @@ export const spatialRepository = {
   async getDistrictGeometry(slug: string): Promise<DistrictGeometry | null> {
     const { data, error } = await supabase
       .from("districts")
-      .select("id, slug, display_name, region, department, latitude, longitude, boundary, svg_x, svg_y, narrative")
+      .select(
+        "id, slug, display_name, region, department, latitude, longitude, boundary, svg_x, svg_y, narrative",
+      )
       .eq("slug", slug)
       .maybeSingle();
 
@@ -176,21 +180,31 @@ export const spatialRepository = {
 
   regionCenter(region: Region): { lat: number; lng: number } {
     switch (region) {
-      case "costa": return { lat: -10.0, lng: -77.5 };
-      case "sierra": return { lat: -13.5, lng: -71.9 };
-      case "selva": return { lat: -3.7, lng: -73.2 };
+      case "costa":
+        return { lat: -10.0, lng: -77.5 };
+      case "sierra":
+        return { lat: -13.5, lng: -71.9 };
+      case "selva":
+        return { lat: -3.7, lng: -73.2 };
     }
   },
 
   regionDisplayName(region: Region): string {
     switch (region) {
-      case "costa": return "Costa";
-      case "sierra": return "Sierra";
-      case "selva": return "Selva";
+      case "costa":
+        return "Costa";
+      case "sierra":
+        return "Sierra";
+      case "selva":
+        return "Selva";
     }
   },
 
-  svgCoords(geometry: DistrictGeometry[], slug: string, region: Region): { x: number; y: number } | null {
+  svgCoords(
+    geometry: DistrictGeometry[],
+    slug: string,
+    region: Region,
+  ): { x: number; y: number } | null {
     const district = geometry.find((g) => g.slug === slug);
     if (district?.svgX != null && district.svgY != null) {
       return { x: district.svgX, y: district.svgY };

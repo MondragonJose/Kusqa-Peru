@@ -58,8 +58,6 @@ export type Mission = {
   lifecycleInfo: MissionLifecycleInfo;
 };
 
-
-
 /** Progreso territorial del usuario (tabla user_progress) */
 export type UserTerritoryProgress = {
   userId: string;
@@ -83,5 +81,3 @@ export type UserMission = {
   xpEarned: number | null;
   mission: Mission;
 };
-
-

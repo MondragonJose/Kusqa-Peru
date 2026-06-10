@@ -155,10 +155,10 @@ export function subscribeMissionRealtime(queryClient: QueryClient, userId: strin
       }
       if (status === "CHANNEL_ERROR") {
         trackOperationalMetric("realtime.channel.error", { userId });
-        captureOperationalException(
-          new Error(`Realtime channel error for user ${userId}`),
-          { userId, channel: `kusqa-sync:${userId}` },
-        );
+        captureOperationalException(new Error(`Realtime channel error for user ${userId}`), {
+          userId,
+          channel: `kusqa-sync:${userId}`,
+        });
         wasDisconnected = true;
       }
       if (status === "CLOSED") {

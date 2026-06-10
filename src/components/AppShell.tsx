@@ -18,7 +18,13 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/app", label: "Inicio", labelMobile: "Inicio", icon: Compass, exact: true },
   { to: "/app/mapa", label: "Mapa", labelMobile: "Mapa", icon: Map },
-  { to: "/app/crear", label: "Crear proyecto", labelMobile: "Crear", icon: Plus, requiresAuth: true },
+  {
+    to: "/app/crear",
+    label: "Crear proyecto",
+    labelMobile: "Crear",
+    icon: Plus,
+    requiresAuth: true,
+  },
   { to: "/app/perfil", label: "Perfil", labelMobile: "Mi perfil", icon: User, requiresAuth: true },
 ];
 
@@ -127,10 +133,7 @@ export function AppShell({ children, isAnonymous = false }: AppShellProps) {
       <main className="flex-1 min-w-0 pb-20 lg:pb-8 lg:ml-72 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex-shrink-0 sticky top-0 z-20 glass border-b border-border/60 px-5 lg:px-10 py-3 flex items-center gap-3">
-          <Link
-            to="/app"
-            className="lg:hidden flex items-center gap-2"
-          >
+          <Link to="/app" className="lg:hidden flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-sunrise grid place-items-center text-white font-bold">
               K
             </div>
@@ -140,9 +143,9 @@ export function AppShell({ children, isAnonymous = false }: AppShellProps) {
           </div>
         </header>
 
-          <div className="flex-1 overflow-y-auto">
-            <ConnectivityBanner />
-            <ErrorBoundary>
+        <div className="flex-1 overflow-y-auto">
+          <ConnectivityBanner />
+          <ErrorBoundary>
             <motion.div
               key={path}
               initial={{ opacity: 0, y: 8 }}

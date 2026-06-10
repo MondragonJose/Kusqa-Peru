@@ -10,8 +10,18 @@
  * assembles DistrictPulse objects.
  */
 
-import type { DistrictPulse, ActivitySignal, ActivitySignalType, ActivityFeedItem } from "@/domain/activity";
-import { formatJoinMessage, formatSupportMessage, formatAwakeningMessage, SIGNAL_TEMPLATES } from "@/domain/activity";
+import type {
+  DistrictPulse,
+  ActivitySignal,
+  ActivitySignalType,
+  ActivityFeedItem,
+} from "@/domain/activity";
+import {
+  formatJoinMessage,
+  formatSupportMessage,
+  formatAwakeningMessage,
+  SIGNAL_TEMPLATES,
+} from "@/domain/activity";
 import { supabase } from "@/lib/supabase";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -48,9 +58,7 @@ type RawSupport = {
   proposal_title?: string;
 };
 
-async function buildJoinSignals(
-  districtSlug: string,
-): Promise<ActivitySignal[]> {
+async function buildJoinSignals(districtSlug: string): Promise<ActivitySignal[]> {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
@@ -112,9 +120,7 @@ async function buildJoinSignals(
   }
 }
 
-async function buildSupportSignals(
-  districtSlug: string,
-): Promise<ActivitySignal[]> {
+async function buildSupportSignals(districtSlug: string): Promise<ActivitySignal[]> {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
@@ -175,10 +181,7 @@ function computeVitality(signals: ActivitySignal[]): number {
   return 10;
 }
 
-function buildNarrative(
-  signals: ActivitySignal[],
-  districtName: string,
-): string | null {
+function buildNarrative(signals: ActivitySignal[], districtName: string): string | null {
   if (signals.length === 0) return null;
 
   const joinCount = signals.filter((s) => s.type === "member_joined").length;
@@ -195,9 +198,7 @@ function buildNarrative(
   return formatAwakeningMessage(signals.length, districtName);
 }
 
-function buildFeedItems(
-  signals: ActivitySignal[],
-): ActivityFeedItem[] {
+function buildFeedItems(signals: ActivitySignal[]): ActivityFeedItem[] {
   return signals.map((s) => ({
     id: s.id,
     signal: s,

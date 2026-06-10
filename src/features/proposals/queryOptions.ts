@@ -35,7 +35,10 @@ export function proposalDetailQueryOptions(proposalId: string) {
   };
 }
 
-export function userProposalsQueryOptions(userId: string, pg?: { limit?: number; offset?: number }) {
+export function userProposalsQueryOptions(
+  userId: string,
+  pg?: { limit?: number; offset?: number },
+) {
   return {
     queryKey: [...proposalKeys.userProposals(userId), pg ?? {}] as const,
     queryFn: () => proposalRepository.getProposalsByUserId(userId, pg),

@@ -1,8 +1,17 @@
 import { useMemo } from "react";
 import { useTerritorialGeometry } from "@/features/districts/hooks";
 import { buildAdjacencyMap } from "@/domain/spatialRelationships";
-import { deriveCivicPresence, computeTemporalContinuity, deriveNeighboringAwareness, computeCoalitionProximityInfo } from "@/domain/civicPresence";
-import { findRelatedTerritorialActivity, detectAdjacentCoalitionEmergence, checkNeighboringMissionContinuity } from "@/domain/nearbyCoordination";
+import {
+  deriveCivicPresence,
+  computeTemporalContinuity,
+  deriveNeighboringAwareness,
+  computeCoalitionProximityInfo,
+} from "@/domain/civicPresence";
+import {
+  findRelatedTerritorialActivity,
+  detectAdjacentCoalitionEmergence,
+  checkNeighboringMissionContinuity,
+} from "@/domain/nearbyCoordination";
 import { deriveCoordinationNarratives } from "@/domain/coordinationNarratives";
 import type { CoordinationNarrative } from "@/domain/coordinationNarratives";
 import type { AdjacencyMap } from "@/domain/spatialRelationships";
@@ -51,14 +60,41 @@ export function useCoordinationNarratives(
     }
 
     const activeSlugs = districtSlug ? [districtSlug] : [];
-    const presence = deriveCivicPresence(districtSlug, adjacencyMap, activeSlugs, neighborSummaries as Map<string, any>);
+    const presence = deriveCivicPresence(
+      districtSlug,
+      adjacencyMap,
+      activeSlugs,
+      neighborSummaries as Map<string, any>,
+    );
     const continuity = computeTemporalContinuity(summary);
     const awareness = deriveNeighboringAwareness(adjacencyMap, districtSlug, activeSlugs);
-    const related = findRelatedTerritorialActivity(districtSlug, Array.from(neighborSummaries.values()), adjacencyMap);
-    const proximity = computeCoalitionProximityInfo(neighbors, Array.from(neighborSummaries.values()));
-    const emergence = detectAdjacentCoalitionEmergence(districtSlug, adjacencyMap, neighborSummaries as Map<string, any>);
-    const missionContinuity = checkNeighboringMissionContinuity(initiatives ?? [], adjacencyMap, districtSlug);
+    const related = findRelatedTerritorialActivity(
+      districtSlug,
+      Array.from(neighborSummaries.values()),
+      adjacencyMap,
+    );
+    const proximity = computeCoalitionProximityInfo(
+      neighbors,
+      Array.from(neighborSummaries.values()),
+    );
+    const emergence = detectAdjacentCoalitionEmergence(
+      districtSlug,
+      adjacencyMap,
+      neighborSummaries as Map<string, any>,
+    );
+    const missionContinuity = checkNeighboringMissionContinuity(
+      initiatives ?? [],
+      adjacencyMap,
+      districtSlug,
+    );
 
-    return deriveCoordinationNarratives(related, proximity, continuity, awareness, emergence, missionContinuity);
+    return deriveCoordinationNarratives(
+      related,
+      proximity,
+      continuity,
+      awareness,
+      emergence,
+      missionContinuity,
+    );
   }, [geometry, districtSlug, districtId, summary, initiatives]);
 }

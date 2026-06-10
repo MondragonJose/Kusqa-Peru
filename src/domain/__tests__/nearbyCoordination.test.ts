@@ -30,9 +30,7 @@ describe("findRelatedTerritorialActivity", () => {
 
 describe("detectAdjacentCoalitionEmergence", () => {
   it("detects emerging coalition in neighbor", () => {
-    const map: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }]],
-    ]);
+    const map: AdjacencyMap = new Map([["a", [{ slug: "b", name: "B", distanceKm: 10 }]]]);
     const summaries = new Map([
       ["b", makeSummary({ proposalCount: 2, acceptedCollaboratorCount: 1 })],
     ]);
@@ -42,12 +40,8 @@ describe("detectAdjacentCoalitionEmergence", () => {
   });
 
   it("returns false when no neighbor has coalitions", () => {
-    const map: AdjacencyMap = new Map([
-      ["a", [{ slug: "b", name: "B", distanceKm: 10 }]],
-    ]);
-    const summaries = new Map([
-      ["b", makeSummary()],
-    ]);
+    const map: AdjacencyMap = new Map([["a", [{ slug: "b", name: "B", distanceKm: 10 }]]]);
+    const summaries = new Map([["b", makeSummary()]]);
     const e = detectAdjacentCoalitionEmergence("a", map, summaries);
     expect(e.hasAdjacentCoalitions).toBe(false);
   });

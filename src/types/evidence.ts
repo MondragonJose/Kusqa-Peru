@@ -29,7 +29,6 @@ export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
   mixed: "Relato con foto",
 };
 
-
 // ─── Evidence status (domain canonical) ────────────────────────────────────
 
 export const EVIDENCE_STATUSES = ["pending", "verified", "rejected", "flagged"] as const;
@@ -90,7 +89,6 @@ export type DbEvidenceInsert = {
   description?: string | null;
   media_urls?: string[];
 };
-
 
 // ─── Domain model (camelCase, what the app works with) ─────────────────────
 

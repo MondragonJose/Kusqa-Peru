@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { WifiOff } from "lucide-react";
 
 export function ConnectivityBanner() {
-  const [online, setOnline] = useState(
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
+  const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   useEffect(() => {
     const goOnline = () => setOnline(true);

@@ -4,10 +4,16 @@
  * Consumes InitiativeMapEntity as the single rendering contract.
  */
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
-import { projectMapMarker, getEntityPresentation, isProposalEntity, entityDetailRoute } from "../projections/mapEntityProjection";
+import {
+  projectMapMarker,
+  getEntityPresentation,
+  isProposalEntity,
+} from "../projections/mapEntityProjection";
 import { isValidLatLng } from "../utils/projection";
 import { regionGradient, regionChipBg, type Region } from "@/domain/regions";
-import { getAvailableInitiativeActions, ACTION_PRIORITY, actionToLabel } from "@/domain/initiativeActions";
+import { createRoot, type Root } from "react-dom/client";
+import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { mapEntityToActionInitiative } from "../projections/mapEntityProjection";
 
 type LeafletInstance = any;
 
@@ -40,6 +46,8 @@ export function renderMissionMarkers({
   onRequestDetail,
   markersMap,
 }: MarkerLayerOptions): void {
+  const popupRoots = new Map<string, Root>();
+
   entities.forEach((entity) => {
     const projection = projectMapMarker(entity);
     if (!projection) return;
@@ -61,7 +69,9 @@ export function renderMissionMarkers({
       isProposal ? proposalShape : missionShape,
       pres.containerClass,
       pres.animationClass,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
     const emojiColorClass = isProposal ? "text-violet-500" : "";
 
     const htmlContent = `
@@ -84,16 +94,6 @@ export function renderMissionMarkers({
       iconAnchor: [iconSize / 2, iconSize / 2],
     });
 
-    const availableActions = getAvailableInitiativeActions({
-      lifecycle: entity.lifecycle,
-      sourceType: entity.sourceType,
-      relationship: "visitor",
-    });
-    const primaryAction = availableActions
-      .sort((a, b) => ACTION_PRIORITY[a] - ACTION_PRIORITY[b])[0];
-    const ctaLabel = primaryAction ? actionToLabel(primaryAction) : pres.ctaLabel;
-    const detailHref = entityDetailRoute(entity);
-
     const popupHtml = `
       <div class="p-2.5 text-xs w-56 font-sans">
         <div class="flex items-start justify-between gap-1.5 pb-1.5 border-b border-border/40">
@@ -107,18 +107,8 @@ export function renderMissionMarkers({
           </div>
           <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${projection.region}</span>
         </div>
-        <div class="flex items-center gap-1.5 mt-2">
-          <a
-            href="${detailHref}"
-            class="flex-1 inline-flex justify-center items-center gap-1 rounded-lg text-white py-1.5 text-[8px] font-bold transition-all shadow-sm ${
-              isProposal
-                ? "bg-violet-600 hover:bg-violet-700"
-                : "bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-95"
-            }"
-            style="color: #ffffff; text-shadow: 0 1px 1px rgba(0,0,0,0.15);"
-          >
-            ${ctaLabel}
-          </a>
+        <div id="action-bar-popup-${projection.id}" class="mt-2"></div>
+        <div class="flex mt-1.5">
           <button
             class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30"
           >
@@ -137,11 +127,33 @@ export function renderMissionMarkers({
     });
     marker.on("click", () => onSelectMission(projection.id));
 
-    if (onRequestDetail) {
-      marker.on("popupopen", () => {
-        const popup: any = marker.getPopup();
-        const popupEl: HTMLElement | null = popup?.getElement();
-        if (!popupEl) return;
+    marker.on("popupopen", () => {
+      const popup: any = marker.getPopup();
+      const popupEl: HTMLElement | null = popup?.getElement();
+      if (!popupEl) return;
+
+      // Clean up any stale root from a previous popup lifecycle
+      const staleRoot = popupRoots.get(projection.id);
+      if (staleRoot) staleRoot.unmount();
+
+      // Mount InitiativeActionBar into the action-bar container
+      const container = popupEl.querySelector<HTMLElement>(`#action-bar-popup-${projection.id}`);
+      if (container) {
+        const root = createRoot(container);
+        root.render(
+          <InitiativeActionBar
+            initiative={mapEntityToActionInitiative(entity)}
+            relationship="visitor"
+            variant="popup"
+            maxVisible={2}
+            onAction={() => onRequestDetail?.(projection.id)}
+          />,
+        );
+        popupRoots.set(projection.id, root);
+      }
+
+      // Wire up the "Ver más" detail button
+      if (onRequestDetail) {
         const btn: HTMLElement | null = popupEl.querySelector(".kusqa-detail-btn");
         if (btn) {
           btn.onclick = (e: Event) => {
@@ -150,8 +162,16 @@ export function renderMissionMarkers({
             onRequestDetail(projection.id);
           };
         }
-      });
-    }
+      }
+    });
+
+    marker.on("popupclose", () => {
+      const root = popupRoots.get(projection.id);
+      if (root) {
+        root.unmount();
+        popupRoots.delete(projection.id);
+      }
+    });
 
     clusterGroup.addLayer(marker);
     markersMap.set(projection.id, marker);

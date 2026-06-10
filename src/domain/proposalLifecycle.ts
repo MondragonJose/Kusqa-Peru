@@ -22,8 +22,15 @@
 
 import { DB_DEFAULTS, type ProposalStatus } from "@/services/proposalContract";
 import type { Proposal } from "@/services/proposalContract";
+import type { InitiativeLifecycle } from "@/domain/initiative";
 
-export type ProposalPhase = "open" | "ready" | "mobilizing" | "converted" | "completed" | "archived";
+export type ProposalPhase =
+  | "open"
+  | "ready"
+  | "mobilizing"
+  | "converted"
+  | "completed"
+  | "archived";
 
 /**
  * Derive the user-facing phase from DB status + support context.
@@ -38,10 +45,14 @@ export type ProposalPhase = "open" | "ready" | "mobilizing" | "converted" | "com
  */
 export function getProposalPhase(status: ProposalStatus): ProposalPhase {
   switch (status) {
-    case "pending": return "open";
-    case "active": return "mobilizing";
-    case "resolved": return "converted";
-    case "rejected": return "archived";
+    case "pending":
+      return "open";
+    case "active":
+      return "mobilizing";
+    case "resolved":
+      return "converted";
+    case "rejected":
+      return "archived";
   }
 }
 
@@ -87,7 +98,8 @@ export const PROPOSAL_PHASE_COPY: Record<ProposalPhase, ProposalPhaseCopy> = {
     shortLabel: "Lista",
     ctaPrimary: "Apoyar",
     ctaSecondary: "Compartir",
-    blurb: "Esta propuesta ya tiene los apoyos necesarios. El siguiente paso es convertirla en misión.",
+    blurb:
+      "Esta propuesta ya tiene los apoyos necesarios. El siguiente paso es convertirla en misión.",
     action: "support",
   },
   mobilizing: {
@@ -126,6 +138,30 @@ export const PROPOSAL_PHASE_COPY: Record<ProposalPhase, ProposalPhaseCopy> = {
 
 export function getProposalPhaseCopy(phase: ProposalPhase) {
   return PROPOSAL_PHASE_COPY[phase];
+}
+
+/**
+ * Map ProposalPhase to InitiativeLifecycle for use with InitiativeActionBar.
+ *
+ * open/ready    → forming  (gathering support)
+ * mobilizing    → active   (mission being formed)
+ * converted     → active   (mission exists — show "Ver misión")
+ * completed     → completed (mission completed — show "Ver resultados")
+ * archived      → archived (terminal)
+ */
+export function mapProposalPhaseToLifecycle(phase: ProposalPhase): InitiativeLifecycle {
+  switch (phase) {
+    case "open":
+    case "ready":
+      return "forming";
+    case "mobilizing":
+    case "converted":
+      return "active";
+    case "completed":
+      return "completed";
+    case "archived":
+      return "archived";
+  }
 }
 
 // ─── Phase 2A: Real state-machine predicates ────────────────────────────────
@@ -260,11 +296,7 @@ export function getFeedChip(
   if (phase === "mobilizing") return "en_marcha";
   if (phase === "converted") return "convertida";
   if (phase === "completed") return "cumplida";
-  if (
-    supportCount !== undefined &&
-    threshold !== undefined &&
-    supportCount >= threshold
-  ) {
+  if (supportCount !== undefined && threshold !== undefined && supportCount >= threshold) {
     return "lista";
   }
   return "en_apoyo";
@@ -304,7 +336,8 @@ export function getMomentumMessage(
   }
 
   if (supportCount >= threshold) {
-    if (momentum.daysActive <= 7) return `Alcanzó el umbral en ${momentum.daysActive} día${momentum.daysActive !== 1 ? "s" : ""}.`;
+    if (momentum.daysActive <= 7)
+      return `Alcanzó el umbral en ${momentum.daysActive} día${momentum.daysActive !== 1 ? "s" : ""}.`;
     return `Reunió los apoyos necesarios en ${momentum.daysActive} días.`;
   }
 

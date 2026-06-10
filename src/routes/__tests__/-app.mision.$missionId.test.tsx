@@ -36,13 +36,11 @@ const mockMission = {
   },
 };
 
-function setupMocks(overrides: {
-  useMission?: () => unknown;
-  useProposal?: () => unknown;
-}) {
+function setupMocks(overrides: { useMission?: () => unknown; useProposal?: () => unknown }) {
   vi.resetModules();
   vi.doMock("@/hooks/useMissions", () => ({
-    useMission: overrides.useMission ?? (() => ({ data: undefined, isLoading: false, isError: false })),
+    useMission:
+      overrides.useMission ?? (() => ({ data: undefined, isLoading: false, isError: false })),
     useMissions: () => ({ data: [] }),
   }));
   vi.doMock("@/features/proposals", () => ({
@@ -92,9 +90,7 @@ describe("app.mision.$missionId", () => {
       initialEntries: ["/app/mision/m1"],
     });
     await waitFor(() => {
-      expect(
-        screen.getByText("No se pudo cargar la misión."),
-      ).toBeInTheDocument();
+      expect(screen.getByText("No se pudo cargar la misión.")).toBeInTheDocument();
     });
   });
 

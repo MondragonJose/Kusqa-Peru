@@ -13,7 +13,12 @@ import { computeLifecycleInfo } from "@/domain/lifecycle";
 import { z } from "zod";
 
 export { joinMission, getUserMissions } from "@/services/participationService";
-export { submitEvidence, verifyEvidence, getCompletionState, completeMission } from "@/services/evidenceService";
+export {
+  submitEvidence,
+  verifyEvidence,
+  getCompletionState,
+  completeMission,
+} from "@/services/evidenceService";
 
 const logDev = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
@@ -298,4 +303,3 @@ export async function createMission(data: Omit<Mission, "id">): Promise<Mission>
     throw error;
   }
 }
-

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
@@ -14,30 +14,24 @@ import {
 import { BadgeCard, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
-import { useSupportedProposalIds, useCurrentUserProposals, proposalKeys } from "@/features/proposals";
-import { proposalRepository } from "@/services/proposalRepository";
-import { getProposalPhase, getProposalPhaseCopy, getProposalThreshold } from "@/domain/proposalLifecycle";
 import {
-  MapPin,
-  Sparkles,
-  Pencil,
-  Heart,
-  Users,
-  Map,
-  Clock,
-  ArrowRight,
-  Award,
-  Calendar,
-  ShieldCheck,
-  X,
-  Zap,
-  Upload,
-  Flag,
-} from "lucide-react";
-import { formatRelativeDate } from "@/utils/date";
+  useSupportedProposalIds,
+  useCurrentUserProposals,
+  proposalKeys,
+} from "@/features/proposals";
+import { proposalRepository } from "@/services/proposalRepository";
+import {
+  getProposalPhase,
+  getProposalPhaseCopy,
+  getProposalThreshold,
+} from "@/domain/proposalLifecycle";
+import { MapPin, Sparkles, Heart, Map, Clock, ArrowRight, X, Download } from "lucide-react";
 import { computeProposalAnchor } from "@/domain/initiative";
+import { deriveCivicJourney, type CivicJourneyInput } from "@/domain/civicJourney";
+import { beatToNarrative, phaseToHeadline } from "@/domain/civicJourneyNarrative";
+import { toInstitutionalRecord, toExport, type ExportFormat } from "@/domain/civicJourneyExport";
 
-import type { Mission, UserMission } from "@/types";
+import type { Mission } from "@/types";
 import type { PlaceSuggestion } from "@/services/googleMaps";
 import { getPlaceSuggestions } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
@@ -64,7 +58,6 @@ export function Profile() {
   const queryClient = useQueryClient();
 
   const { data: timeline } = useProfileMissionTimeline();
-  const joinedMissions: UserMission[] = timeline?.userMissions ?? [];
   const completedMissions: Mission[] = timeline?.missions ?? [];
 
   const { data: supportedIds = [] } = useSupportedProposalIds();
@@ -94,8 +87,31 @@ export function Profile() {
     delay: 400,
   });
 
-  // Derive active regions + badge earning from real mission data
-  const activeRegions = Array.from(new Set(completedMissions.map((m) => m.region)));
+  if (!user) {
+    throw redirect({ to: "/app" });
+  }
+
+  const journey = useMemo(() => {
+    const input: CivicJourneyInput = {
+      userMissions: timeline?.userMissions ?? [],
+      supportedProposals: supportedProposals.map((p) => ({
+        id: p.id,
+        title: p.title,
+        createdAt: p.createdAt,
+      })),
+      userProposals: ownProposals.map((p) => ({
+        id: p.id,
+        title: p.title,
+        status: p.status,
+        createdAt: p.createdAt,
+        convertedAt: p.convertedAt,
+      })),
+      userDistrict: user.district,
+    };
+    return deriveCivicJourney(input);
+  }, [timeline, supportedProposals, ownProposals, user.district]);
+
+  const activeRegions = journey.footprint.regions;
   const earnedBadgeIds = new Set<string>();
   if (completedMissions.length >= 1) earnedBadgeIds.add("primer-paso");
   if (activeRegions.includes("sierra")) earnedBadgeIds.add("explorador-andino");
@@ -113,14 +129,10 @@ export function Profile() {
     earned: earnedBadgeIds.has(b.id),
   }));
 
-  if (!user) {
-    throw redirect({ to: "/app" });
-  }
-
   // Derive civic trust status from real participation data
   const trustStatus = deriveCivicTrust({
     missionsDone: user.missionsDone || 0,
-    distinctDistricts: activeRegions.length,
+    distinctDistricts: journey.footprint.regions.length,
     hasLedProject: supportedIds.length > 0,
     streak: 0,
   });
@@ -183,6 +195,19 @@ export function Profile() {
     setStoryOpen(true);
   };
 
+  const handleExport = (format: ExportFormat) => {
+    const record = toInstitutionalRecord(journey);
+    const content = toExport(record, format);
+    const mime = format === "json" ? "application/json" : "text/csv;charset=utf-8";
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `acta-civica.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-24 lg:pb-12">
       {/* Cover / Profile Card */}
@@ -210,7 +235,8 @@ export function Profile() {
                 <span
                   className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${regionBadgeStyle(user.region as Region)}`}
                 >
-                  {REGION_META[user.region as Region].emoji} {REGION_META[user.region as Region].name}
+                  {REGION_META[user.region as Region].emoji}{" "}
+                  {REGION_META[user.region as Region].name}
                 </span>
 
                 {/* Civic Trust Reputation Badge */}
@@ -244,6 +270,20 @@ export function Profile() {
               >
                 <MapPin className="h-4 w-4" /> Explorar territorio
               </Link>
+              <button
+                onClick={() => handleExport("json")}
+                className="rounded-xl border border-border/60 px-3 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
+                title="Exportar acta cívica (JSON)"
+              >
+                <Download className="h-4 w-4" /> JSON
+              </button>
+              <button
+                onClick={() => handleExport("csv")}
+                className="rounded-xl border border-border/60 px-3 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
+                title="Exportar acta cívica (CSV)"
+              >
+                <Download className="h-4 w-4" /> CSV
+              </button>
             </div>
           </div>
 
@@ -255,7 +295,7 @@ export function Profile() {
             {[
               { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
               { l: "Rutas", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
-              { l: "Regiones", v: activeRegions.length, i: "🏔️", color: "text-accent" },
+              { l: "Regiones", v: journey.footprint.regions.length, i: "🏔️", color: "text-accent" },
               { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
             ].map((s) => (
               <div
@@ -292,19 +332,26 @@ export function Profile() {
           <div className="p-5 border-b border-border/40 bg-gradient-to-br from-muted/20 to-transparent">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: "Distritos alcanzados", value: new Set([
-                  ...completedMissions.map(m => m.district),
-                  ...supportedProposals.map(p => p.district),
-                  ...ownProposals.map(p => p.district),
-                ]).size, icon: "📍" },
+                {
+                  label: "Distritos alcanzados",
+                  value: journey.footprint.districtCount,
+                  icon: "📍",
+                },
                 { label: "Iniciativas apoyadas", value: supportedIds.length, icon: "🤝" },
                 { label: "Propuestas creadas", value: ownProposals.length, icon: "📋" },
                 { label: "Misiones completadas", value: completedMissions.length, icon: "✅" },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl bg-card/60 border border-border/30 p-3 text-center">
+                <div
+                  key={s.label}
+                  className="rounded-xl bg-card/60 border border-border/30 p-3 text-center"
+                >
                   <span className="text-lg block mb-0.5">{s.icon}</span>
-                  <div className="font-display font-bold text-lg text-foreground tabular-nums">{s.value}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</div>
+                  <div className="font-display font-bold text-lg text-foreground tabular-nums">
+                    {s.value}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">
+                    {s.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -411,11 +458,17 @@ export function Profile() {
                   const phase = getProposalPhase(p.status);
                   const phaseCopy = getProposalPhaseCopy(phase);
                   const phaseEmoji =
-                    phase === "open" ? "🌱" :
-                    phase === "ready" ? "✨" :
-                    phase === "mobilizing" ? "🚶" :
-                    phase === "converted" ? "🔄" :
-                    phase === "completed" ? "✅" : "📄";
+                    phase === "open"
+                      ? "🌱"
+                      : phase === "ready"
+                        ? "✨"
+                        : phase === "mobilizing"
+                          ? "🚶"
+                          : phase === "converted"
+                            ? "🔄"
+                            : phase === "completed"
+                              ? "✅"
+                              : "📄";
                   return (
                     <Link
                       key={p.id}
@@ -431,7 +484,9 @@ export function Profile() {
                         <div className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <MapPin className="h-2.5 w-2.5" /> {p.district}
                           <span className="opacity-40">·</span>
-                          <span className="text-violet-500 dark:text-violet-400">{phaseCopy.shortLabel}</span>
+                          <span className="text-violet-500 dark:text-violet-400">
+                            {phaseCopy.shortLabel}
+                          </span>
                         </div>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-700/30 font-semibold">
@@ -442,7 +497,8 @@ export function Profile() {
                 })}
                 {supportedIds.length > 5 && (
                   <p className="text-[10px] text-muted-foreground text-center pt-1">
-                    +{supportedIds.length - 5} iniciativa{supportedIds.length - 5 !== 1 ? "s" : ""} más
+                    +{supportedIds.length - 5} iniciativa{supportedIds.length - 5 !== 1 ? "s" : ""}{" "}
+                    más
                   </p>
                 )}
               </div>
@@ -521,22 +577,25 @@ export function Profile() {
             <StageCard stage={currentStage} status="current" userXp={user.xp} />
           </section>
 
-          {/* Civic History - Timeline entries are clickable to show documentary narrative modal */}
+          {/* Civic History — narrative beats derived from actual participation */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
-              <Clock className="h-5 w-5 text-sky-500" /> Bitácora
+              <Clock className="h-5 w-5 text-sky-500" />{" "}
+              {phaseToHeadline(journey.arc, journey.footprint)}
             </h2>
             <p className="text-sm text-muted-foreground pl-1">Tu bitácora de expediciones.</p>
 
-            {joinedMissions.length > 0 ? (
+            {journey.arc.beats.length > 0 ? (
               <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
-                {joinedMissions.map((um, i) => {
-                  const m = um.mission;
-                  const nodeColor = regionGradient(m.region) || "bg-stone-500";
-                  const completionState = um.completionState;
-                  return (
+                {journey.arc.beats
+                  .sort((a, b) => {
+                    const ta = new Date(a.timestamp).getTime();
+                    const tb = new Date(b.timestamp).getTime();
+                    return tb - ta;
+                  })
+                  .map((beat, i) => (
                     <motion.div
-                      key={um.id}
+                      key={`${beat.sourceType}-${beat.sourceId}-${i}`}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
@@ -544,89 +603,63 @@ export function Profile() {
                     >
                       {/* Timeline Node Icon */}
                       <button
-                        onClick={() => handleOpenMissionStory(m.id)}
-                        className={`absolute -left-[35px] top-0.5 h-[18px] w-[18px] rounded-full border-4 border-card ${nodeColor} ring-2 ring-stone-250 dark:ring-stone-850 flex items-center justify-center cursor-pointer hover:scale-125 transition-transform`}
-                        title="Ver Bitácora de la Misión"
-                      />
+                        onClick={() => {
+                          if (beat.sourceType === "mission" && beat.sourceId)
+                            handleOpenMissionStory(beat.sourceId);
+                        }}
+                        className={`absolute -left-[35px] top-0.5 h-[18px] w-[18px] rounded-full border-4 border-card bg-sky-500 ring-2 ring-stone-250 dark:ring-stone-850 flex items-center justify-center cursor-pointer hover:scale-125 transition-transform text-[9px]`}
+                        title={
+                          beat.sourceType === "mission"
+                            ? "Ver Bitácora de la Misión"
+                            : beat.sourceType === "proposal"
+                              ? "Ir a la propuesta"
+                              : ""
+                        }
+                      >
+                        <span className="scale-[0.6]">{beat.emoji}</span>
+                      </button>
 
                       {/* Card container */}
                       <div
-                        onClick={() => handleOpenMissionStory(m.id)}
-                        className="rounded-3xl bg-card border border-border/80 p-5 flex gap-4 hover:shadow-soft hover:border-accent/40 dark:hover:border-accent/30 transition-all duration-300 relative group cursor-pointer"
-                        title="Haz clic para abrir el archivo documental de esta misión"
+                        onClick={() => {
+                          if (beat.sourceType === "mission" && beat.sourceId)
+                            handleOpenMissionStory(beat.sourceId);
+                        }}
+                        className={`rounded-3xl bg-card border border-border/80 p-5 flex gap-4 transition-all duration-300 relative group ${
+                          beat.sourceType === "mission"
+                            ? "hover:shadow-soft hover:border-accent/40 dark:hover:border-accent/30 cursor-pointer"
+                            : ""
+                        }`}
+                        title={
+                          beat.sourceType === "mission"
+                            ? "Haz clic para abrir el archivo documental de esta misión"
+                            : ""
+                        }
                       >
                         <div
-                          className={`h-14 w-14 rounded-2xl ${nodeColor} text-white grid place-items-center text-2xl shrink-0 border border-white/10 group-hover:scale-105 transition-transform duration-300 shadow-sm`}
+                          className={`h-14 w-14 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 grid place-items-center text-2xl shrink-0 border border-sky-200 dark:border-sky-800/30 group-hover:scale-105 transition-transform duration-300 shadow-sm`}
                         >
-                          {m.emoji}
+                          {beat.emoji}
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                              {m.title}
-                            </span>
-
-                            {/* Completion State Badge — now evidence-aware */}
-                            {completionState === "completed" ? (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shrink-0">
-                                <ShieldCheck className="h-2.5 w-2.5" /> Completada
-                              </span>
-                            ) : completionState === "awaiting_verification" ? (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-[9px] font-bold text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 shrink-0">
-                                <Upload className="h-2.5 w-2.5" /> En verificación
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-[9px] font-bold text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 shrink-0">
-                                <Clock className="h-2.5 w-2.5" /> En ruta
-                              </span>
-                            )}
+                        <div className="flex-1 min-w-0 self-center">
+                          <div className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                            {beat.title}
                           </div>
-
-                          <div className="text-xs text-muted-foreground mt-1 truncate font-medium flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5 opacity-60" />
-                            <span>{m.district}</span>
-                            <span className="opacity-40">•</span>
-                            <Calendar className="h-3.5 w-3.5 opacity-60" />
-                            <span>{formatRelativeDate(um.joinedAt || m.date)}</span>
+                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {beatToNarrative(beat)}
                           </div>
-
-                          <div className="mt-3 text-xs text-muted-foreground/80 font-medium leading-relaxed">
-                            {completionState === "completed"
-                              ? `Formaste parte de una jornada de ${m.category.toLowerCase()} en ${m.district}.`
-                              : completionState === "awaiting_verification"
-                                ? `Evidencia enviada — esperando verificación de tu participación en ${m.district}.`
-                                : `Estás participando en una jornada de ${m.category.toLowerCase()} en ${m.district}.`}
-                          </div>
-
-                          <div className="mt-3 flex gap-4 text-xs text-muted-foreground/80 font-semibold">
-                            <span className="inline-flex items-center gap-1 text-sky-500/90">
-                              <Users className="h-3 w-3" /> {m.participants} exploradores
-                            </span>
-                            {um.xpEarned != null && (
-                              <span className="inline-flex items-center gap-1 text-amber-500/90">
-                                <Zap className="h-3 w-3" /> +{um.xpEarned} XP
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0 self-center">
-                          <div className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                            {completionState === "completed"
-                              ? "Completado"
-                              : completionState === "awaiting_verification"
-                                ? "Verificando"
-                                : "Iniciado"}
-                          </div>
-                          <div className="font-display font-black text-accent text-lg">
-                            {formatRelativeDate(um.joinedAt || m.date)}
+                          <div className="text-[10px] text-muted-foreground/60 mt-2 font-medium">
+                            {new Date(beat.timestamp).toLocaleDateString("es-PE", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
                           </div>
                         </div>
                       </div>
                     </motion.div>
-                  );
-                })}
+                  ))}
               </div>
             ) : (
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
@@ -683,8 +716,8 @@ export function Profile() {
               <Map className="h-3.5 w-3.5 text-primary/70" />
               <span>
                 Has dejado huella en{" "}
-                <strong className="text-foreground">{activeRegions.length}</strong> de las 3
-                regiones.
+                <strong className="text-foreground">{journey.footprint.regions.length}</strong> de
+                las 3 regiones.
               </span>
             </div>
           </section>

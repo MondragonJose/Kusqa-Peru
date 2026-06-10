@@ -172,9 +172,7 @@ export const proposalConversionRepository = {
    * Queries lifecycle events where converted_mission_id matches.
    * Returns the proposal_id if found, null otherwise.
    */
-  async findProposalByMissionId(
-    missionId: string,
-  ): Promise<string | null> {
+  async findProposalByMissionId(missionId: string): Promise<string | null> {
     try {
       const { data, error } = await supabase
         .from("proposal_lifecycle_events")
