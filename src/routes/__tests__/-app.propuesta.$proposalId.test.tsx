@@ -9,7 +9,7 @@ const mockProposal = {
   description: "Una descripción",
   category: "ambiente",
   district: "Cusco",
-  region: "cusco" as const,
+  region: "costa" as const,
   teamSize: 3,
   images: [],
   status: "active" as const,

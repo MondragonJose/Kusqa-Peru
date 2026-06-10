@@ -1,12 +1,12 @@
 /**
  * User progress query service — read-only aggregation (repositories + domain).
- * Uses mission_participants table via services/missions.ts for user-mission relationships.
+ * Uses mission_participants table via participationService for user-mission relationships.
  * No mock fallbacks — all data derives from real participation.
  */
 
 import { userRepository } from "@/services/userRepository";
 import { userProgressDomainService } from "@/services/userProgressDomainService";
-import { getUserMissions } from "@/services/missions";
+import { getUserMissions } from "@/services/participationService";
 import type { ProfileMissionTimelineView, UserMission, UserTerritoryProgressView } from "@/types";
 
 export const userProgressQueryService = {
@@ -14,7 +14,7 @@ export const userProgressQueryService = {
     try {
       return await getUserMissions(userId);
     } catch (e) {
-      console.warn("[KUSQA] mission_participants unavailable, returning empty user missions");
+      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, returning empty user missions");
       return [];
     }
   },
@@ -24,7 +24,7 @@ export const userProgressQueryService = {
       const userMissions = await getUserMissions(userId);
       return userMissions.filter((um) => um.status === "completed");
     } catch (e) {
-      console.warn("[KUSQA] mission_participants unavailable, returning empty completed missions");
+      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, returning empty completed missions");
       return [];
     }
   },
@@ -42,7 +42,7 @@ export const userProgressQueryService = {
       const userMissions = await getUserMissions(userId);
       completedCount = userMissions.filter((um) => um.status === "completed").length;
     } catch (e) {
-      console.warn("[KUSQA] mission_participants unavailable, counting 0 completed missions");
+      if (import.meta.env.DEV) console.warn("[KUSQA] mission_participants unavailable, counting 0 completed missions");
     }
 
     return {

@@ -6,14 +6,6 @@ import { useAuthState } from "@/features/auth";
 import { useEventPropagation } from "@/hooks/useEventPropagation";
 import { useEventHydrationBootstrap } from "@/hooks/useEventHydrationBootstrap";
 
-/**
- * /app route — Requiere autenticación
- *
- * Usa el estado centralizado para:
- * 1. Esperar bootstrap de sesión (initializing)
- * 2. Validar autenticación sin race conditions
- * 3. Redirigir si no autenticado (después de que isReady = true)
- */
 function AppRouteComponent() {
   const queryClient = useQueryClient();
   useEventPropagation(queryClient);
@@ -21,15 +13,8 @@ function AppRouteComponent() {
   useEventHydrationBootstrap(user?.id);
   const location = useLocation();
 
-  if (import.meta.env.DEV) {
-    console.log("[KUSQA ROUTE APP] State machine check:", { state, isReady, userId: user?.id });
-  }
-
   // Estado 1: initializing → Mostrar loading (AuthProvider restaurando sesión)
   if (state === "initializing") {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA ROUTE APP] Initializing state: waiting for session bootstrap");
-    }
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -40,39 +25,25 @@ function AppRouteComponent() {
     );
   }
 
-  // Estado 2: unauthenticated → Redirigir a login (solo después de isReady)
-  if (state === "unauthenticated" && isReady) {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA ROUTE APP] Unauthenticated state: redirecting to /");
-    }
-    // Solo pasar redirect param si no es /app mismo para evitar loop
-    // Si usuario intentó acceder a /app directamente, no crear loop
-    const currentPath = location.pathname;
-    const shouldRedirect = currentPath !== "/app" && currentPath !== "/app/";
-    throw redirect({
-      to: "/",
-      search: { redirect: shouldRedirect ? location.href : "" },
-    });
-  }
+  // The following routes require authentication for their functionality,
+  // but the layout itself does not gate them — individual route components
+  // handle auth requirements with intent-based guards (redirect or CTA gating).
+  //
+  // Anonymous users can browse:
+  //   /app, /app/mapa, /app/mision/:id, /app/propuesta/:id,
+  //   /app/perfil/:userId, /app/distrito/:slug
+  //
+  // Personal routes guard themselves:
+  //   /app/perfil, /app/progreso, /app/notificaciones, /app/crear
 
-  // Estado 3: authenticated → Renderizar app
-  if (state === "authenticated") {
-    if (import.meta.env.DEV) {
-      console.log("[KUSQA ROUTE APP] Authenticated state: rendering app", { userId: user?.id });
-    }
-    return (
-      <AppShell>
-        <MissionRealtimeSync />
-        <Outlet />
-      </AppShell>
-    );
-  }
+  const isAnonymous = state === "unauthenticated" && isReady;
 
-  // Fallback defensivo (no debería ocurrir)
-  if (import.meta.env.DEV) {
-    console.warn("[KUSQA ROUTE APP] Unexpected state:", state);
-  }
-  return null;
+  return (
+    <AppShell isAnonymous={isAnonymous}>
+      <MissionRealtimeSync />
+      <Outlet />
+    </AppShell>
+  );
 }
 
 export const Route = createFileRoute("/app")({

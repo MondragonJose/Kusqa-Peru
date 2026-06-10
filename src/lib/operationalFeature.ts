@@ -19,3 +19,7 @@ export function isTelemetryEnabled(): boolean {
 export function isEvidenceUploadEnabled(): boolean {
   return envFlag(import.meta.env.VITE_EVIDENCE_UPLOAD_ENABLED) && isLiveUserEnabled();
 }
+
+export function isInitiativeReadModelEnabled(): boolean {
+  return envFlag(import.meta.env.VITE_USE_INITIATIVE_READ_MODEL);
+}

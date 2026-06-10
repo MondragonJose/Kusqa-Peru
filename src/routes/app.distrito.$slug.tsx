@@ -14,7 +14,7 @@ import {
   useDistrictFeed,
   useDistrictIntelligence,
   useDistrictTopSupporters,
-  useTerritorialGeometry,
+  useSpatialContext,
 } from "@/features/districts/hooks";
 import {
   classifyDistrictActivity,
@@ -24,15 +24,19 @@ import {
   deriveMovementDirection,
 } from "@/domain/territoryAggregations";
 import { deriveDistrictVitality, deriveSpatialSignals, buildSpatialNarrative } from "@/domain/territorialIntelligence";
-import { buildAdjacencyMap, findConvergenceZones, detectIsolation } from "@/domain/spatialRelationships";
-import type { SpatialContext } from "@/domain/territorialIntelligence";
 import { useCoordinationNarratives } from "@/features/coordination/hooks/useCoordinationNarratives";
 import { useCurrentUserId } from "@/features/auth";
-import { PublicMissionCard } from "@/features/missions/components/PublicMissionCard";
-import { missionToEntity } from "@/services/entityAdapter";
+import { InitiativeCard } from "@/features/home/components/InitiativeCard";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/initiative";
+import type { Initiative } from "@/domain/initiative";
 import { formatRelativeDate } from "@/utils/date";
 import { districtActivityToTerritorial } from "@/domain/territorialEvent";
 import type { DistrictActivity } from "@/services/districtRepository";
+import { DistrictPulseCard } from "@/components/DistrictPulseCard";
+import { buildDistrictPulse } from "@/services/activityFeedResolver";
+import { deriveAmbientPulse } from "@/domain/ambient";
+import { useAmbientCadence } from "@/hooks/useAmbientCadence";
+import type { AmbientPulseCadence } from "@/domain/ambient";
 
 // Lazy-load the activity feed (avatars + timestamps can grow the bundle)
 const DistrictActivityFeed = lazy(() =>
@@ -105,33 +109,77 @@ function DistrictPage() {
   const firstMovement = isFirstMovementNeeded(summary);
   const vitality = deriveDistrictVitality(summary, activityClass, deriveMovementDirection(summary));
 
-  // Phase 13G: spatial narrative — geometry-aware context
-  const { data: spatialGeometry } = useTerritorialGeometry();
-  const spatialContext = useMemo<SpatialContext | null>(() => {
-    if (!spatialGeometry || spatialGeometry.length === 0) return null;
-    const adjacencyMap = buildAdjacencyMap(spatialGeometry);
-    const neighbors = adjacencyMap.get(slug) ?? [];
-    const zones = findConvergenceZones([slug], adjacencyMap);
-    return {
-      districtSlug: slug,
-      adjacencyMap,
-      activeSlugs: [],
-      dormantSlugs: [],
-      isIsolated: neighbors.length === 0,
-      convergenceZoneSize: zones.length > 0 ? zones[0].length : 1,
-      hasReactivationPotential: false,
-      neighborCount: neighbors.length,
-      activeNeighborCount: undefined,
-    };
-  }, [spatialGeometry, slug]);
-  const spatialNarrative = useMemo(() => {
+  // Phase 13G: spatial narrative — geometry-aware context from real data
+  const { spatialContext } = useSpatialContext(slug);
+  const spatialSignals = useMemo(() => {
     if (!spatialContext) return null;
-    const signals = deriveSpatialSignals(spatialContext);
-    return buildSpatialNarrative(signals);
+    return deriveSpatialSignals(spatialContext);
   }, [spatialContext]);
+
+  const spatialNarrative = useMemo(() => {
+    if (!spatialSignals) return null;
+    return buildSpatialNarrative(spatialSignals);
+  }, [spatialSignals]);
+
+  // DistrictPulse derivation from TerritorialEvent
+  const territorialEvents = useMemo(() => {
+    if (!activity || activity.length === 0) return [];
+    return activity.map(
+      (a: DistrictActivity) => districtActivityToTerritorial(a, district.id, district.region),
+    );
+  }, [activity, district?.id, district?.region]);
+
+  const districtPulse = useMemo(() => {
+    if (territorialEvents.length === 0) return null;
+    return buildDistrictPulse(territorialEvents, slug, district.displayName, {
+      score: vitality.score,
+      narrative: vitality.narrative,
+    });
+  }, [territorialEvents, slug, district?.displayName, vitality.score, vitality.narrative]);
+
+  const ambientPulse = useMemo(() => {
+    if (territorialEvents.length === 0) return null;
+    return deriveAmbientPulse(
+      territorialEvents,
+      slug,
+      district.displayName,
+      vitality,
+      spatialSignals ?? undefined,
+    );
+  }, [territorialEvents, slug, district?.displayName, vitality, spatialSignals]);
+
+  const cadence = useAmbientCadence(territorialEvents);
 
   // Phase 14: coordination narratives
   const coordinationNarratives = useCoordinationNarratives(slug, district.id, summary, undefined);
+
+  // Build Initiative objects from feed missions for InitiativeCard
+  const initiativeMissions = useMemo(() => {
+    if (!feed || feed.recentMissions.length === 0) return [];
+    return feed.recentMissions.map((m) => {
+      const location: Initiative["location"] = {
+        district: m.district,
+        districtId: m.districtId ?? null,
+        region: m.region,
+        coords: m.coords ?? null,
+        locationLabel: null,
+      };
+      return {
+        id: `mission_${m.id}`,
+        sourceType: "mission" as const,
+        sourceId: m.id,
+        title: m.title,
+        summary: m.description ?? "",
+        category: m.category,
+        region: m.region,
+        lifecycle: deriveLifecycleFromMission(m.lifecycleInfo.lifecycle),
+        participantsCount: m.participants,
+        temporalAnchor: computeMissionAnchor(m.lifecycleInfo, m.startDate, m.endDate),
+        emoji: m.emoji,
+        location,
+      } satisfies Initiative;
+    });
+  }, [feed]);
 
   return (
     <motion.div
@@ -282,6 +330,61 @@ function DistrictPage() {
           )}
         </section>
 
+        {/* District Pulse — ambient activity signals */}
+        {districtPulse && (
+          <section aria-label="Pulso del distrito">
+            <DistrictPulseCard pulse={districtPulse} />
+          </section>
+        )}
+
+        {/* Ambient Pulse — complementary mood + cadence */}
+        {ambientPulse && (
+          <section
+            className="rounded-lg border border-border/40 bg-card/40 p-4 sm:p-5"
+            aria-label="Señal ambiental"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5 shrink-0">
+                {ambientPulse.signal.mood === "quiet" && "🌙"}
+                {ambientPulse.signal.mood === "hopeful" && "🌱"}
+                {ambientPulse.signal.mood === "awakening" && "🌅"}
+                {ambientPulse.signal.mood === "vibrant" && "⚡"}
+                {ambientPulse.signal.mood === "determined" && "🎯"}
+              </span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Señal ambiental
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/60">
+                    {ambientPulse.signal.energy}/10
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {ambientPulse.signal.tone}
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
+                  <span>
+                    Ritmo:{" "}
+                    {cadence.pulse === "calm" && "En calma"}
+                    {cadence.pulse === "steady" && "Constante"}
+                    {cadence.pulse === "lively" && "Animado"}
+                    {cadence.pulse === "intense" && "Intenso"}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>{cadence.eventsLast7d} eventos recientes</span>
+                  {cadence.uniqueActors > 0 && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{cadence.uniqueActors} actor{cadence.uniqueActors !== 1 ? "es" : ""}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* First movement empty state */}
         {firstMovement && (
           <section
@@ -372,11 +475,18 @@ function DistrictPage() {
             )
           ) : (
             <ul className="space-y-3">
-              {feed.recentMissions.slice(0, 4).map((m) => (
-                <li key={m.id}>
-                  <PublicMissionCard entity={missionToEntity(m)} />
-                </li>
-              ))}
+              {initiativeMissions.slice(0, 4).map((initiative) => {
+                const raw = feed.recentMissions.find((m) => m.id === initiative.sourceId);
+                return (
+                  <li key={initiative.sourceId}>
+                    <InitiativeCard
+                      initiative={initiative}
+                      xp={raw?.xp}
+                      spotsLeft={raw?.spotsLeft}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -395,7 +505,7 @@ function DistrictPage() {
         )}
 
         {/* Activity feed */}
-        {activity && activity.length > 0 && (
+        {territorialEvents.length > 0 && (
           <Suspense
             fallback={
               <div className="space-y-2" aria-busy="true">
@@ -403,12 +513,7 @@ function DistrictPage() {
               </div>
             }
           >
-            <DistrictActivityFeed
-              events={activity.map(
-                (a: DistrictActivity) => districtActivityToTerritorial(a, district.id, district.region),
-              )}
-              currentUserId={currentUserId}
-            />
+            <DistrictActivityFeed events={territorialEvents} currentUserId={currentUserId} />
           </Suspense>
         )}
 

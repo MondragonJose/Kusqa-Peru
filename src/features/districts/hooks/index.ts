@@ -17,8 +17,12 @@ import type {
 import type { ProposalLifecycleEvent } from "@/services/proposalConversionRepository";
 import type { DistrictGeometry, RegionMetadata, TerritoryNode } from "@/services/spatialRepository";
 import type { TerritorialImpactSummary } from "@/domain/territoryAggregations";
+import type { SpatialContext } from "@/domain/territorialIntelligence";
+import { classifyDistrictActivity } from "@/domain/territoryAggregations";
+import { buildAdjacencyMap, buildGeometryCoordMap, detectIsolation, findConvergenceZones, checkContiguity, computeTerritorialSpread } from "@/domain/spatialRelationships";
 import { proposalLifecycleKeys } from "@/lib/queryKeys";
 import {
+  allDistrictsActivityQueryOptions,
   districtActivityQueryOptions,
   districtBySlugQueryOptions,
   districtFeedQueryOptions,
@@ -144,6 +148,94 @@ export function useRegionMetadata() {
   return useQuery<RegionMetadata[]>({
     ...regionMetadataQueryOptions(),
   });
+}
+
+export function useAllDistrictsActivity() {
+  return useQuery<DistrictStats[]>({
+    ...allDistrictsActivityQueryOptions(),
+  });
+}
+
+export function useSpatialContext(slug: string): {
+  spatialContext: SpatialContext | null;
+  isLoading: boolean;
+} {
+  const { data: geometry, isLoading: geoLoading } = useTerritorialGeometry();
+  const { data: allStats, isLoading: statsLoading } = useAllDistrictsActivity();
+
+  const spatialContext = useMemo<SpatialContext | null>(() => {
+    if (!geometry || geometry.length === 0 || !allStats) return null;
+
+    const adjacencyMap = buildAdjacencyMap(geometry);
+    const coordMap = buildGeometryCoordMap(geometry);
+
+    // Build slug → stats lookup
+    const statsBySlug = new Map<string, TerritorialImpactSummary>();
+    for (const s of allStats) {
+      statsBySlug.set(s.slug.toLowerCase(), {
+        missionCount: s.missionCount,
+        completedMissionCount: s.completedMissionCount,
+        proposalCount: s.proposalCount,
+        activeProposalCount: s.activeProposalCount,
+        uniqueSupporterCount: s.uniqueSupporterCount,
+        acceptedCollaboratorCount: s.acceptedCollaboratorCount,
+        lastActivityAt: s.lastActivityAt,
+      });
+    }
+
+    // Classify each district
+    const activeSlugs: string[] = [];
+    const dormantSlugs: string[] = [];
+    for (const geo of geometry) {
+      const summary = statsBySlug.get(geo.slug.toLowerCase());
+      if (!summary) {
+        dormantSlugs.push(geo.slug);
+        continue;
+      }
+      const activityClass = classifyDistrictActivity(summary);
+      if (activityClass === "active" || activityClass === "established") {
+        activeSlugs.push(geo.slug);
+      } else {
+        dormantSlugs.push(geo.slug);
+      }
+    }
+
+    const neighbors = adjacencyMap.get(slug) ?? [];
+    const activeNeighborCount = neighbors.filter((n) => activeSlugs.includes(n.slug)).length;
+    const isIsolated = detectIsolation(slug, activeSlugs, adjacencyMap);
+    const zones = findConvergenceZones(activeSlugs, adjacencyMap);
+    const contiguityStatus = activeSlugs.length > 1
+      ? checkContiguity(activeSlugs, adjacencyMap)
+      : undefined;
+    const spreadLevel = activeSlugs.length > 1
+      ? computeTerritorialSpread(activeSlugs, coordMap).level
+      : undefined;
+
+    const currentZone = zones.find((z) => z.includes(slug));
+    const convergenceZoneSize = currentZone?.length;
+
+    const isDormant = dormantSlugs.includes(slug);
+    const hasReactivationPotential = isDormant && activeNeighborCount > 0;
+
+    return {
+      districtSlug: slug,
+      adjacencyMap,
+      activeSlugs,
+      dormantSlugs,
+      contiguityStatus,
+      spreadLevel,
+      isIsolated,
+      convergenceZoneSize,
+      hasReactivationPotential,
+      neighborCount: neighbors.length,
+      activeNeighborCount,
+    };
+  }, [geometry, allStats, slug]);
+
+  return {
+    spatialContext,
+    isLoading: geoLoading || statsLoading,
+  };
 }
 
 export function useTerritorialHierarchy() {

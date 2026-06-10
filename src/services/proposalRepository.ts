@@ -21,16 +21,16 @@ import {
   type ProposalResult,
   type DbProposalRow,
   type ProposalSupporterPreview,
-  type ProposalRegion,
   type ProposalStatus,
   type ProposalSupportStats,
   type ProposalCoalition,
   type ProposalCollaborator,
   PROPOSAL_CATEGORIES,
-  PROPOSAL_REGIONS,
   PROPOSAL_STATUSES,
   DB_DEFAULTS,
 } from "./proposalContract";
+import type { Region } from "@/domain/regions";
+import { REGIONS } from "@/domain/regions";
 import { proposalCollaboratorRepository } from "./proposalCollaboratorRepository";
 
 // Re-export contract types so consumers only need one import
@@ -58,7 +58,7 @@ const PROPOSAL_INSERT_SCHEMA = z.object({
   description: z.string().max(2000, "La descripción es demasiado larga").optional(),
   category: z.enum(PROPOSAL_CATEGORIES),
   district: z.string().min(1, "El distrito es requerido"),
-  region: z.enum(PROPOSAL_REGIONS),
+  region: z.enum(REGIONS as [Region, ...Region[]]),
   team_size: z.number().int().min(DB_DEFAULTS.TEAM_SIZE_MIN).max(DB_DEFAULTS.TEAM_SIZE_MAX),
   images: z.array(z.string()).optional(),
   latitude: z.number().optional(),
@@ -77,7 +77,7 @@ const PROPOSAL_UPDATE_SCHEMA = z.object({
   description: z.string().max(2000).optional(),
   category: z.enum(PROPOSAL_CATEGORIES).optional(),
   district: z.string().min(1).optional(),
-  region: z.enum(PROPOSAL_REGIONS).optional(),
+  region: z.enum(REGIONS as [Region, ...Region[]]).optional(),
   team_size: z
     .number()
     .int()
@@ -295,7 +295,7 @@ export const proposalRepository = {
 
   async getAllProposals(
     filters?: {
-      region?: ProposalRegion;
+      region?: Region;
       status?: ProposalStatus;
       district?: string;
       districtId?: string;

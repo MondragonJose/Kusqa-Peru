@@ -8,10 +8,10 @@ import type { Mission, MissionCategory, MissionDifficulty } from "@/types";
 import type { Database } from "@/types/supabase.generated";
 import { inferRegionFromCoords } from "@/domain/territorial";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
+import { CATEGORY_LABEL, CATEGORY_TO_DB, dbCategoryEmoji, type DbCategory } from "@/domain/categories";
 import { z } from "zod";
 
 type DbMission = Database["public"]["Tables"]["missions"]["Row"];
-type DbCategory = "environment" | "infrastructure" | "community" | "education" | "health";
 
 const MISSION_ID_SCHEMA = z.string().uuid();
 
@@ -46,31 +46,6 @@ function parseDbMissionRow(row: DbMission): DbMission {
   }
   return row;
 }
-
-const CATEGORY_LABEL: Record<DbCategory, MissionCategory> = {
-  environment: "Medio ambiente",
-  infrastructure: "Tecnología",
-  community: "Comunidad",
-  education: "Educación",
-  health: "Salud",
-};
-
-const CATEGORY_TO_DB: Record<MissionCategory, DbCategory> = {
-  "Medio ambiente": "environment",
-  Tecnología: "infrastructure",
-  Comunidad: "community",
-  Educación: "education",
-  Salud: "health",
-  "Arte & cultura": "community",
-};
-
-const CATEGORY_EMOJI: Record<DbCategory, string> = {
-  environment: "🌱",
-  infrastructure: "🏗️",
-  community: "🤝",
-  education: "📚",
-  health: "❤️",
-};
 
 const DEFAULT_XP = 320;
 const DEFAULT_DIFFICULTY: MissionDifficulty = "Suave";
@@ -124,7 +99,7 @@ function mapRowToMission(row: DbMission): Mission {
       avatar: "🦙",
     },
     coords,
-    emoji: CATEGORY_EMOJI[category],
+    emoji: dbCategoryEmoji(category),
   };
 }
 

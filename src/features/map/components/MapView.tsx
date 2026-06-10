@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Mission, MapCoords } from "@/types";
-import type { CivicEntity } from "@/types/entity";
-import { isMission } from "@/types/entity";
+import type { MapCoords } from "@/types";
+import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import { isMissionEntity, isProposalEntity } from "../projections/mapEntityProjection";
 import {
   PERU_DEFAULT_CENTER,
   MAP_DEFAULT_ZOOM,
@@ -15,11 +15,11 @@ import { useTerritorialGeometry } from "@/features/districts/hooks";
 import { spatialRepository } from "@/services/spatialRepository";
 import { MapControls } from "./MapControls";
 import { isValidLatLng } from "../utils/projection";
-import { renderHeatmapLayer } from "../layers/useHeatmapLayer";
 import { renderDistrictLayer, buildFeatureCollection } from "../layers/useDistrictLayer";
 import { renderMissionMarkers } from "../layers/useMissionMarkerLayer";
 import { createUserLocationPin } from "../layers/useUserLocationPin";
-import { MapPin, Flame, Eye, ChevronRight, Landmark, Zap, ShieldCheck } from "lucide-react";
+import { MapPin, Eye, ChevronRight, Landmark, Zap, ShieldCheck } from "lucide-react";
+import type { TerritorialActivityLevel } from "@/domain/territorialIntelligence";
 
 // Import Leaflet styles directly for compilation
 import "leaflet/dist/leaflet.css";
@@ -27,7 +27,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 type MapViewProps = {
-  missions: CivicEntity[];
+  missions: InitiativeMapEntity[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
   onRequestDetail?: (id: string) => void;
@@ -35,9 +35,11 @@ type MapViewProps = {
   userLocationLoading: boolean;
   onRequestUserLocation: () => void;
   focalCoords?: MapCoords | null;
+  /** Per-district warmth levels for polygon coloring. */
+  districtWarmth?: Record<string, TerritorialActivityLevel>;
 };
 
-type MapMode = "pins" | "heatmap" | "districts";
+type MapMode = "pins" | "districts";
 type MapStyle = "light" | "dark";
 
 export function MapView({
@@ -49,6 +51,7 @@ export function MapView({
   userLocationLoading,
   onRequestUserLocation,
   focalCoords = null,
+  districtWarmth,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -56,7 +59,6 @@ export function MapView({
   const clusterGroupRef = useRef<any>(null);
   const userMarkerRef = useRef<any>(null);
   const userCircleRef = useRef<any>(null);
-  const heatmapLayerGroupRef = useRef<any>(null);
   const geojsonLayerRef = useRef<any>(null);
   const markersMapRef = useRef<Map<string, any>>(new Map());
 
@@ -109,7 +111,7 @@ export function MapView({
   }, [spatialGeometry]);
 
   // Calculate matching missions for active region/department/district
-  const getFilteredMissionsForSelectedTerritory = (): CivicEntity[] => {
+  const getFilteredMissionsForSelectedTerritory = (): InitiativeMapEntity[] => {
     if (activeTerritoryPath.length === 0) return missions;
     const currentLeafNode = activeTerritoryPath[activeTerritoryPath.length - 1];
 
@@ -118,8 +120,6 @@ export function MapView({
         return m.region === currentLeafNode.regionKey;
       }
       if (currentLeafNode.type === "department") {
-        // Filter by region — departments are geographic sub-regions.
-        // We avoid hardcoded district whitelists that silently exclude valid data.
         return m.region === currentLeafNode.regionKey;
       }
       if (currentLeafNode.type === "district") {
@@ -127,7 +127,7 @@ export function MapView({
           .toLowerCase()
           .replace(" centro", "")
           .replace(" ciudad", "");
-        const districtMatch = m.district.toLowerCase().includes(districtQuery);
+        const districtMatch = (m.location?.district ?? "").toLowerCase().includes(districtQuery);
         const regionMatch = m.region === currentLeafNode.regionKey;
         return districtMatch || regionMatch;
       }
@@ -140,7 +140,7 @@ export function MapView({
   // Dynamic calculations for territorial discovery summaries
   const totalMissionsActive = territoryMissions.length;
   const totalExploradores = territoryMissions.reduce(
-    (acc, m) => acc + (m.entityType === "mission" ? m.participants : 0),
+    (acc, m) => acc + (isMissionEntity(m) ? (m.participants ?? 0) : 0),
     0,
   );
 
@@ -227,11 +227,6 @@ export function MapView({
     map.addLayer(clusterGroup);
     clusterGroupRef.current = clusterGroup;
 
-    // Heatmap Layer
-    const heatmapGroup = L.layerGroup();
-    map.addLayer(heatmapGroup);
-    heatmapLayerGroupRef.current = heatmapGroup;
-
     mapRef.current = map;
     updateLayersAndStyles();
 
@@ -240,7 +235,6 @@ export function MapView({
         mapRef.current.remove();
         mapRef.current = null;
         clusterGroupRef.current = null;
-        heatmapLayerGroupRef.current = null;
         geojsonLayerRef.current = null;
         userMarkerRef.current = null;
         userCircleRef.current = null;
@@ -261,10 +255,8 @@ export function MapView({
     }
 
     const clusterGroup = clusterGroupRef.current;
-    const heatmapGroup = heatmapLayerGroupRef.current;
 
     clusterGroup.clearLayers();
-    heatmapGroup.clearLayers();
     markersMapRef.current.clear();
 
     if (geojsonLayerRef.current) {
@@ -272,18 +264,14 @@ export function MapView({
       geojsonLayerRef.current = null;
     }
 
-    // Render Heatmap density
-    if (mapMode === "heatmap") {
-      renderHeatmapLayer({
-        L,
-        map: heatmapGroup,
-        missions: territoryMissions.filter(isMission),
-      });
-    }
-
-    // Render District Boundaries
+    // Render District Boundaries with territorial warmth
     if (mapMode === "districts") {
-      geojsonLayerRef.current = renderDistrictLayer({ L, map, polygons: districtPolygons });
+      geojsonLayerRef.current = renderDistrictLayer({
+        L,
+        map,
+        polygons: districtPolygons,
+        warmth: districtWarmth,
+      });
     }
 
     // Render Mission Pins
@@ -291,7 +279,7 @@ export function MapView({
       renderMissionMarkers({
         L,
         clusterGroup,
-        missions: territoryMissions.filter(isMission),
+        entities: territoryMissions,
         selectedMissionId,
         onSelectMission,
         onRequestDetail,
@@ -362,12 +350,13 @@ export function MapView({
   useEffect(() => {
     if (!leafletLoaded || !mapRef.current || !selectedMissionId) return;
     const selectedMission = missions.find((m) => m.id === selectedMissionId);
+    const selectedCoords = selectedMission?.location?.coords;
     if (
-      selectedMission?.coords &&
-      isValidLatLng(selectedMission.coords.lat, selectedMission.coords.lng)
+      selectedCoords &&
+      isValidLatLng(selectedCoords.lat, selectedCoords.lng)
     ) {
       mapRef.current.setView(
-        [selectedMission.coords.lat, selectedMission.coords.lng],
+        [selectedCoords.lat, selectedCoords.lng],
         MAP_DETAIL_ZOOM,
         { animate: true, duration: 1.0 },
       );
@@ -410,11 +399,10 @@ export function MapView({
 
     // Only do this on initial load if we have missions
     const missionsWithCoords = missions.filter(
-      (m) => m.coords && isValidLatLng(m.coords.lat, m.coords.lng),
+      (m) => m.location?.coords && isValidLatLng(m.location.coords.lat, m.location.coords.lng),
     );
     if (missionsWithCoords.length === 0) return;
 
-    // Check if map is still at default center (not manually moved yet)
     const currentCenter = mapRef.current.getCenter();
     const distanceFromDefault = Math.sqrt(
       Math.pow(currentCenter.lat - PERU_DEFAULT_CENTER.lat, 2) +
@@ -422,11 +410,10 @@ export function MapView({
     );
 
     if (distanceFromDefault < 0.1) {
-      // Calculate centroid of all missions
       const avgLat =
-        missionsWithCoords.reduce((sum, m) => sum + m.coords!.lat, 0) / missionsWithCoords.length;
+        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lat, 0) / missionsWithCoords.length;
       const avgLng =
-        missionsWithCoords.reduce((sum, m) => sum + m.coords!.lng, 0) / missionsWithCoords.length;
+        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lng, 0) / missionsWithCoords.length;
 
       // Center on centroid with appropriate zoom
       const zoom = missionsWithCoords.length > 5 ? 7 : 9;
@@ -608,10 +595,9 @@ export function MapView({
               <div className="flex rounded-xl border border-border/30 bg-surface/70 shadow-soft p-0.5 backdrop-blur-md text-[10px] font-bold gap-0.5">
                 {[
                   { id: "pins", label: "Pines", icon: <MapPin className="h-3.5 w-3.5" /> },
-                  { id: "heatmap", label: "Calor", icon: <Flame className="h-3.5 w-3.5" /> },
                   {
                     id: "districts",
-                    label: "Distritos",
+                    label: "Calidez",
                     icon: <Landmark className="h-3.5 w-3.5" />,
                   },
                 ].map((m) => (
@@ -782,27 +768,34 @@ export function MapView({
                 Acciones activas aquí
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {territoryMissions.filter(isMission).slice(0, 5).map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => onSelectMission(m.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-card border ${
-                      selectedMissionId === m.id ? "border-accent bg-accent/5" : "border-border/20"
-                    } hover:border-accent/40 text-left transition-all cursor-pointer`}
-                  >
-                    <span className="text-lg">{m.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[10px] font-bold text-foreground truncate">
-                        {m.title}
+                {territoryMissions.filter(isMissionEntity).slice(0, 5).map((m) => {
+                  const anchorLabel = m.temporalAnchor.label;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => onSelectMission(m.id)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-card border ${
+                        selectedMissionId === m.id ? "border-accent bg-accent/5" : "border-border/20"
+                      } hover:border-accent/40 text-left transition-all cursor-pointer`}
+                    >
+                      <span className="text-lg">{m.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-bold text-foreground truncate">
+                          {m.title}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[7px] text-muted-foreground truncate">{m.location?.district ?? m.region}</span>
+                          <span className="text-[7px] text-muted-foreground/40">·</span>
+                          <span className="text-[7px] text-muted-foreground/60">+{m.xp ?? 0} XP</span>
+                        </div>
                       </div>
-                      <div className="text-[8px] text-muted-foreground truncate">{m.district}</div>
-                    </div>
-                    <div className="text-[8px] font-black text-accent">+{m.xp} XP</div>
-                  </button>
-                ))}
-                {territoryMissions.filter(isMission).length > 5 && (
+                      <div className="text-[9px] font-semibold text-accent text-right leading-tight">{anchorLabel}</div>
+                    </button>
+                  );
+                })}
+                {territoryMissions.filter(isMissionEntity).length > 5 && (
                   <div className="text-[8px] text-center text-muted-foreground italic">
-                    +{territoryMissions.filter(isMission).length - 5} más misiones
+                    +{territoryMissions.filter(isMissionEntity).length - 5} más misiones
                   </div>
                 )}
               </div>

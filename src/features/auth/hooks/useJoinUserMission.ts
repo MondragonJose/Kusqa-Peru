@@ -1,6 +1,6 @@
 /**
  * Mutation: join mission (mission_participants write path).
- * Uses services/missions.ts which correctly uses mission_participants table.
+ * Uses participationService which correctly uses mission_participants table.
  */
 
 import {
@@ -8,7 +8,7 @@ import {
   createMissionMutation,
   getMissionFromCache,
 } from "@/features/auth/mutations/missionMutationEngine";
-import { joinMission as joinMissionService } from "@/services/missions";
+import { joinMission as joinMissionService } from "@/services/participationService";
 
 type JoinUserMissionInput = {
   missionId: string;

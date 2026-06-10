@@ -34,8 +34,8 @@ import {
 import type { Mission, Region, Evidence } from "@/types";
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
-import { missionToEntity, proposalToEntity } from "@/services/entityAdapter";
-import { isMission, isProposal, type CivicEntity } from "@/types/entity";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/initiative";
+import type { Initiative, InitiativeLifecycle, InitiativeLocation, TemporalAnchor } from "@/domain/initiative";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
   component: MissionDetail,
@@ -70,15 +70,34 @@ function MissionDetail() {
   } = useProposal(missionId);
   const { data: allMissions = [] } = useMissions();
 
-  // Phase 4C: type the entity as CivicEntity. The `isMission` / `isProposal`
-  // guards narrow the union, removing the need for `entity` casts.
-  const entity: CivicEntity | null = mission
-    ? missionToEntity(mission)
-    : proposal
-      ? proposalToEntity(proposal)
-      : null;
-  const isMissionEntity = entity != null && isMission(entity);
-  const isProposalEntity = entity != null && isProposal(entity);
+  const initiative: Initiative | null = useMemo(() => {
+    if (mission) {
+      const location: InitiativeLocation = {
+        district: mission.district,
+        districtId: mission.districtId ?? null,
+        region: mission.region,
+        coords: mission.coords,
+        locationLabel: null,
+      };
+      return {
+        id: `mission_${mission.id}`,
+        sourceType: "mission",
+        sourceId: mission.id,
+        title: mission.title,
+        summary: mission.description,
+        category: mission.category,
+        region: mission.region,
+        lifecycle: deriveLifecycleFromMission(mission.lifecycleInfo.lifecycle),
+        participantsCount: mission.participants,
+        temporalAnchor: computeMissionAnchor(mission.lifecycleInfo, mission.startDate, mission.endDate),
+        emoji: mission.emoji,
+        location,
+      };
+    }
+    return null;
+  }, [mission]);
+  const isMissionEntity = mission != null;
+  const isProposalEntity = proposal != null && mission == null;
   const isLoading = missionLoading || proposalLoading;
   const isError = missionError && proposalError;
   const error = missionError || proposalError;
@@ -250,13 +269,13 @@ function MissionDetail() {
   }, [joinMutation.isSuccess, missionId]);
 
   const similarMissions = useMemo(() => {
-    if (!entity) return [];
+    if (!initiative) return [];
     return allMissions
       .filter(
-        (x) => x.id !== entity.id && (x.region === entity.region || x.category === entity.category),
+        (x) => x.id !== initiative.sourceId && (x.region === initiative.region || x.category === initiative.category),
       )
       .slice(0, 2);
-  }, [entity, allMissions]);
+  }, [initiative, allMissions]);
 
   const handleOpenMissionStory = (id: string) => {
     setSelectedStoryId(id);
@@ -368,7 +387,7 @@ function MissionDetail() {
     );
   }
 
-  if (isError || !entity) {
+  if (isError || !initiative) {
     return (
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
         <Link
@@ -386,8 +405,8 @@ function MissionDetail() {
     );
   }
 
-  const meta = REGION_META[entity.region];
-  const theme = REGION_THEMES[entity.region] || REGION_THEMES.sierra;
+  const meta = REGION_META[initiative.region];
+  const theme = REGION_THEMES[initiative.region] || REGION_THEMES.sierra;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-24 lg:pb-12">
@@ -453,39 +472,39 @@ function MissionDetail() {
         <div className="absolute -right-20 -top-20 h-48 sm:h-72 w-48 sm:w-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="relative grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-end">
           <div>
-            <div className="text-7xl select-none filter drop-shadow-sm">{entity.emoji}</div>
+            <div className="text-7xl select-none filter drop-shadow-sm">{initiative.emoji}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
-                {meta.name} · {entity.category}
+                {meta.name} · {initiative.category}
               </div>
               <div
                 className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-black px-3.5 py-1 rounded-md border ${
-                  entity.status === "active"
+                  mission!.status === "active"
                     ? "bg-emerald-500/20 border-emerald-400/30 text-emerald-100"
-                    : entity.status === "completed"
+                    : mission!.status === "completed"
                       ? "bg-blue-500/20 border-blue-400/30 text-blue-100"
                       : "bg-amber-500/20 border-amber-400/30 text-amber-100"
                 }`}
               >
-                {entity.status === "active"
+                {mission!.status === "active"
                   ? "Activa"
-                  : entity.status === "completed"
+                  : mission!.status === "completed"
                     ? "Completada"
                     : "Propuesta"}
               </div>
             </div>
             <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-6xl mt-2 sm:mt-3 leading-[1.05] tracking-tight">
-              {entity.title}
+              {initiative.title}
             </h1>
             <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap gap-x-4 gap-y-0.5 text-xs sm:text-xs opacity-90 font-medium">
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5" /> {entity.district}
+                <MapPin className="h-3.5 w-3.5" /> {initiative.location?.district}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" /> {formatRelativeDate(entity.date)}
+                <Calendar className="h-3.5 w-3.5" /> {initiative.temporalAnchor.label}
               </span>
               <span className="hidden sm:inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> {entity.participants} participantes
+                <Users className="h-3.5 w-3.5" /> {initiative.participantsCount} participantes
               </span>
             </div>
             {/* P0 FIX: CTA dominante en hero - acción principal visible inmediatamente */}
@@ -591,19 +610,19 @@ function MissionDetail() {
               {isMissionEntity ? "La Misión Territorial" : "Sobre esta iniciativa"}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
-              {entity.description}
+              {initiative.summary}
             </p>
           </section>
 
           {/* Why this matters — only meaningful for real missions. Proposals
               have their own "Por qué" in the proposal detail view. */}
-          {isMissionEntity && entity.impact && (
+          {isMissionEntity && mission?.impact && (
             <section className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6`}>
               <h2 className="font-display font-black text-xl mb-3 text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
               </h2>
               <p className="text-sm sm:text-base text-foreground/90 leading-relaxed font-medium">
-                {entity.impact}
+                {mission!.impact}
               </p>
             </section>
           )}
@@ -709,13 +728,13 @@ function MissionDetail() {
           {/* Participants group — honest count display, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-4 text-foreground">
-              Participantes ({entity.participants})
+              Participantes ({initiative.participantsCount})
             </h2>
-            {entity.participants > 0 ? (
+            {initiative.participantsCount && initiative.participantsCount > 0 ? (
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">
-                  {entity.participants} persona{entity.participants !== 1 ? "s" : ""} en esta ruta
+                  {initiative.participantsCount} persona{initiative.participantsCount !== 1 ? "s" : ""} en esta ruta
                 </span>
               </div>
             ) : (
@@ -793,62 +812,15 @@ function MissionDetail() {
           <div className="rounded-3xl bg-card border border-border/80 p-6 shadow-soft sticky top-24 space-y-5">
             {/* P0 FIX: Eliminada sección de XP - sistema de gamificación eliminado */}
 
-            {/* Temporal block — derived from startDate/endDate */}
-            {entity.startDate && (
+            {/* Temporal block — lifecycle-aware anchor */}
+            {isMissionEntity && (
               <div className={`rounded-2xl p-4 border ${theme.bgLight} ${theme.border}`}>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Tiempo de la ruta
                 </div>
-                {(() => {
-                  const m = entity;
-                  const ts = m.lifecycleInfo.lifecycle;
-                  const fmt = (d: string) =>
-                    new Date(d).toLocaleDateString("es-PE", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    });
-                  if (ts === "upcoming") {
-                    return (
-                      <div className="text-sm font-semibold text-foreground">
-                        Inicia: {fmt(m.startDate!)}
-                      </div>
-                    );
-                  }
-                  if (ts === "active") {
-                    return (
-                      <>
-                        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          Ruta activa
-                        </div>
-                        {m.endDate && (
-                          <div className="text-xs text-muted-foreground">
-                            Hasta: {fmt(m.endDate)}
-                          </div>
-                        )}
-                      </>
-                    );
-                  }
-                  if (ts === "completed") {
-                    return (
-                      <>
-                        <div className="text-sm font-semibold text-foreground">Finalizó</div>
-                        <div className="text-xs text-muted-foreground">{fmt(m.endDate!)}</div>
-                      </>
-                    );
-                  }
-                  if (m.endDate) {
-                    return (
-                      <div className="text-sm font-semibold text-foreground">
-                        {fmt(m.startDate!)} — {fmt(m.endDate)}
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="text-sm font-semibold text-foreground">{fmt(m.startDate!)}</div>
-                  );
-                })()}
+                <div className="text-sm font-semibold text-foreground">
+                  {initiative.temporalAnchor.label}
+                </div>
               </div>
             )}
 
@@ -963,20 +935,20 @@ function MissionDetail() {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Dificultad</span>
-                <span className="font-bold text-foreground">{entity.difficulty || "N/A"}</span>
+                <span className="font-bold text-foreground">{mission!.difficulty || "N/A"}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Cupos libres</span>
-                <span className="font-bold text-accent">{entity.spotsLeft ?? 0}</span>
+                <span className="font-bold text-accent">{mission!.spotsLeft ?? 0}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Organizador</span>
-                <span className="font-bold text-foreground">{entity.organizer?.name || "N/A"}</span>
+                <span className="font-bold text-foreground">{mission!.organizer?.name || "N/A"}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Impacto</span>
                 <span className="font-bold text-stone-700 dark:text-stone-300 text-right">
-                  {entity.impact || "N/A"}
+                  {mission!.impact || "N/A"}
                 </span>
               </div>
             </div>
@@ -985,7 +957,7 @@ function MissionDetail() {
               <button
                 onClick={() => {
                   if (navigator.share) {
-                    navigator.share({ title: entity.title, url: window.location.href });
+                    navigator.share({ title: initiative.title, url: window.location.href });
                   } else if (navigator.clipboard) {
                     navigator.clipboard.writeText(window.location.href).then(() => {
                       toast.success("Enlace copiado", {
@@ -1014,7 +986,7 @@ function MissionDetail() {
       <CrossingOverlay
         open={crossingOpen}
         gradient={meta.gradient}
-        emoji={entity.emoji}
+        emoji={initiative.emoji}
         avatar={currentUser?.avatar ?? ""}
         hold={joinMutation.isPending}
         onComplete={handleCrossingComplete}

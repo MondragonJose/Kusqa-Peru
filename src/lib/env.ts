@@ -14,6 +14,7 @@ const EnvSchema = z.object({
   VITE_USE_REALTIME_SYNC: booleanCoerce.optional().default("false"),
   VITE_EVIDENCE_UPLOAD_ENABLED: booleanCoerce.optional().default("false"),
   VITE_TELEMETRY_ENABLED: booleanCoerce.optional().default("false"),
+  VITE_USE_INITIATIVE_READ_MODEL: booleanCoerce.optional().default("false"),
 
   // Optional API keys
   VITE_GOOGLE_MAPS_API_KEY: z.string().optional().default(""),
@@ -33,6 +34,7 @@ export function validateEnv(): EnvType {
       VITE_USE_REALTIME_SYNC: import.meta.env.VITE_USE_REALTIME_SYNC,
       VITE_EVIDENCE_UPLOAD_ENABLED: import.meta.env.VITE_EVIDENCE_UPLOAD_ENABLED,
       VITE_TELEMETRY_ENABLED: import.meta.env.VITE_TELEMETRY_ENABLED,
+      VITE_USE_INITIATIVE_READ_MODEL: import.meta.env.VITE_USE_INITIATIVE_READ_MODEL,
       VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
       VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
       VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
@@ -70,6 +72,7 @@ export function getEnv(): EnvType {
     VITE_USE_REALTIME_SYNC: import.meta.env.VITE_USE_REALTIME_SYNC,
     VITE_EVIDENCE_UPLOAD_ENABLED: import.meta.env.VITE_EVIDENCE_UPLOAD_ENABLED,
     VITE_TELEMETRY_ENABLED: import.meta.env.VITE_TELEMETRY_ENABLED,
+    VITE_USE_INITIATIVE_READ_MODEL: import.meta.env.VITE_USE_INITIATIVE_READ_MODEL,
     VITE_GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
     VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,

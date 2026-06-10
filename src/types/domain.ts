@@ -25,7 +25,7 @@ export type User = {
 };
 
 /** Organizador de una misión */
-export type MissionOrganizer = {
+type MissionOrganizer = {
   name: string;
   avatar: string;
 };
@@ -58,26 +58,7 @@ export type Mission = {
   lifecycleInfo: MissionLifecycleInfo;
 };
 
-/** Badge o medalla ganada */
-export type Badge = {
-  id: string;
-  name: string;
-  emoji: string;
-  region: Region | "todas";
-  earned: boolean;
-  description: string;
-};
 
-/** Notificación del sistema */
-export type Notification = {
-  id: string;
-  title: string;
-  body: string; // Unified: single description/body field
-  type: "mission" | "badge" | "achievement" | "event" | "civic" | "level" | "community";
-  timestamp: string; // Unified: single time field (e.g. "hace 2h")
-  read: boolean; // Unified: single read/unread field (true = already read)
-  emoji?: string;
-};
 
 /** Progreso territorial del usuario (tabla user_progress) */
 export type UserTerritoryProgress = {
@@ -103,10 +84,4 @@ export type UserMission = {
   mission: Mission;
 };
 
-/** Información del usuario en un perfil */
-export type UserProfile = {
-  user: User;
-  badges: Badge[];
-  totalMissionsCompleted: number;
-  totalImpact: string;
-};
+

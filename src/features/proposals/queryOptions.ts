@@ -12,7 +12,8 @@ import {
 import { proposalRepository } from "@/services/proposalRepository";
 import { proposalCollaboratorRepository } from "@/services/proposalCollaboratorRepository";
 import { proposalCommentRepository } from "@/services/proposalCommentRepository";
-import type { ProposalRegion, ProposalStatus } from "@/services/proposalContract";
+import type { Region } from "@/domain/regions";
+import type { ProposalStatus } from "@/services/proposalContract";
 import { userRepository } from "@/services/userRepository";
 
 // Cache times (en milisegundos)
@@ -47,7 +48,7 @@ export function userProposalsQueryOptions(userId: string, pg?: { limit?: number;
 
 export function allProposalsQueryOptions(
   filters?: {
-    region?: ProposalRegion;
+    region?: Region;
     status?: ProposalStatus;
     district?: string;
     districtId?: string;

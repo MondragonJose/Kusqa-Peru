@@ -10,7 +10,7 @@ import {
   createMissionMutation,
   getMissionFromCache,
 } from "@/features/auth/mutations/missionMutationEngine";
-import { submitEvidence } from "@/services/missions";
+import { submitEvidence } from "@/services/evidenceService";
 import type { EvidenceType } from "@/types";
 
 type SubmitMissionEvidenceInput = {

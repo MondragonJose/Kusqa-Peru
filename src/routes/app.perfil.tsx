@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -16,7 +16,7 @@ import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
 import { MissionStoryModal } from "@/features/missions";
 import { useSupportedProposalIds, useCurrentUserProposals, proposalKeys } from "@/features/proposals";
 import { proposalRepository } from "@/services/proposalRepository";
-import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
+import { getProposalPhase, getProposalPhaseCopy, getProposalThreshold } from "@/domain/proposalLifecycle";
 import {
   MapPin,
   Sparkles,
@@ -35,8 +35,9 @@ import {
   Flag,
 } from "lucide-react";
 import { formatRelativeDate } from "@/utils/date";
+import { computeProposalAnchor } from "@/domain/initiative";
 
-import type { Region, Mission, UserMission } from "@/types";
+import type { Mission, UserMission } from "@/types";
 import type { PlaceSuggestion } from "@/services/googleMaps";
 import { getPlaceSuggestions } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
@@ -45,10 +46,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/lib/queryKeys";
 import {
   REGION_META,
-  REGION_THEMES,
-  REGION_BADGES,
-  REGION_NODE_GRADIENTS,
-} from "@/constants/gamification";
+  REGIONS,
+  regionBadgeStyle,
+  regionGradient,
+  regionLabel,
+  regionEmoji,
+} from "@/domain/regions";
+import type { Region } from "@/domain/regions";
 
 export const Route = createFileRoute("/app/perfil")({
   component: Profile,
@@ -110,14 +114,7 @@ export function Profile() {
   }));
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando perfil...</p>
-        </div>
-      </div>
-    );
+    throw redirect({ to: "/app" });
   }
 
   // Derive civic trust status from real participation data
@@ -211,9 +208,9 @@ export function Profile() {
                   {user.name}
                 </h1>
                 <span
-                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${REGION_BADGES[user.region]}`}
+                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${regionBadgeStyle(user.region as Region)}`}
                 >
-                  {REGION_META[user.region].emoji} {REGION_META[user.region].name}
+                  {REGION_META[user.region as Region].emoji} {REGION_META[user.region as Region].name}
                 </span>
 
                 {/* Civic Trust Reputation Badge */}
@@ -464,8 +461,15 @@ export function Profile() {
                 {ownProposals.slice(0, 5).map((p) => {
                   const phase = getProposalPhase(p.status);
                   const phaseCopy = getProposalPhaseCopy(phase);
-                  const created = new Date(p.createdAt);
-                  const daysSince = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
+                  const anchorLabel = computeProposalAnchor(
+                    p.status,
+                    p.proposedDate,
+                    p.createdAt,
+                    p.convertedAt,
+                    p.completedAt,
+                    0,
+                    getProposalThreshold(p.teamSize),
+                  ).label;
                   return (
                     <Link
                       key={p.id}
@@ -483,7 +487,7 @@ export function Profile() {
                           <span className="opacity-40">·</span>
                           <span>{phaseCopy.shortLabel}</span>
                           <span className="opacity-40">·</span>
-                          <span>{daysSince}d</span>
+                          <span className="text-accent font-medium">{anchorLabel}</span>
                         </div>
                         {phase === "ready" && (
                           <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
@@ -528,7 +532,7 @@ export function Profile() {
               <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
                 {joinedMissions.map((um, i) => {
                   const m = um.mission;
-                  const nodeColor = REGION_NODE_GRADIENTS[m.region as Region] || "bg-stone-500";
+                  const nodeColor = regionGradient(m.region) || "bg-stone-500";
                   const completionState = um.completionState;
                   return (
                     <motion.div
@@ -654,20 +658,20 @@ export function Profile() {
             <p className="text-xs text-muted-foreground mb-4">Tu huella en cada región.</p>
 
             <div className="grid grid-cols-3 gap-2">
-              {REGION_THEMES.map((t) => {
-                const isActive = activeRegions.includes(t.id) || user.region === t.id;
+              {REGIONS.map((id) => {
+                const isActive = activeRegions.includes(id) || user.region === id;
                 return (
                   <div
-                    key={t.id}
-                    className={`relative rounded-2xl ${t.gradient} text-white p-3 text-center border overflow-hidden transition-all duration-300 ${
+                    key={id}
+                    className={`relative rounded-2xl ${regionGradient(id)} text-white p-3 text-center border overflow-hidden transition-all duration-300 ${
                       isActive
                         ? "shadow-sm border-transparent"
                         : "opacity-35 grayscale border-border"
                     }`}
                   >
-                    <div className="text-2xl mb-1">{t.emoji}</div>
-                    <div className="font-display font-bold text-xs">{t.label}</div>
-                    {user.region === t.id && (
+                    <div className="text-2xl mb-1">{regionEmoji(id)}</div>
+                    <div className="font-display font-bold text-xs">{regionLabel(id)}</div>
+                    {user.region === id && (
                       <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-sun animate-ping" />
                     )}
                   </div>

@@ -152,6 +152,7 @@ export const districtKeys = {
 export const districtStatsKeys = {
   root: [DISTRICT_STATS_ROOT] as const,
   byId: (districtId: string) => [DISTRICT_STATS_ROOT, districtId] as const,
+  all: [DISTRICT_STATS_ROOT, "all"] as const,
 };
 
 export const districtIntelligenceKeys = {
@@ -173,6 +174,13 @@ export const spatialKeys = {
   root: [SPATIAL_ROOT] as const,
   geometry: [SPATIAL_ROOT, "geometry"] as const,
   regionMetadata: [SPATIAL_ROOT, "region-metadata"] as const,
+};
+
+const INITIATIVES_ROOT = "initiatives" as const;
+
+export const initiativeKeys = {
+  all: [INITIATIVES_ROOT] as const,
+  detail: (id: string) => [INITIATIVES_ROOT, "detail", id] as const,
 };
 
 /** Ensures legacy key shapes remain prefixes of the central factory (dev-time guard). */

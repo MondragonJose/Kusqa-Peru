@@ -39,10 +39,10 @@ import type {
   EditCommentDTO,
   ProposalCollaborator,
   ProposalComment,
-  ProposalRegion,
   ProposalStatus,
   RespondToInvitationDTO,
 } from "@/services/proposalContract";
+import type { Region } from "@/domain/regions";
 import { proposalCollaboratorRepository } from "@/services/proposalCollaboratorRepository";
 import { proposalCommentRepository } from "@/services/proposalCommentRepository";
 import { userRepository } from "@/services/userRepository";
@@ -50,7 +50,7 @@ import { betaEvents } from "@/lib/telemetry/betaLogger";
 import { consumeRateLimit, getRateLimitResetMs } from "@/lib/rateLimiter";
 
 export function useAllProposals(filters?: {
-  region?: ProposalRegion;
+  region?: Region;
   status?: ProposalStatus;
   district?: string;
 }) {

@@ -1,30 +1,13 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CalendarDays, Sparkles, Clock } from "lucide-react";
-import { formatProposedDate, formatRelativeDate } from "@/utils/date";
 import type { Proposal } from "@/services/proposalContract";
-import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
+import { getProposalPhase, getProposalPhaseCopy, getProposalThreshold } from "@/domain/proposalLifecycle";
+import { computeProposalAnchor } from "@/domain/initiative";
+import { regionGradient, regionLabel, type Region } from "@/domain/regions";
+import { categoryEmoji, type MissionCategory } from "@/domain/categories";
 
-const REGION_LABEL: Record<string, string> = {
-  costa: "Costa",
-  sierra: "Sierra",
-  selva: "Selva",
-};
 
-const REGION_BAND: Record<string, string> = {
-  costa: "bg-gradient-coast",
-  sierra: "bg-gradient-andes",
-  selva: "bg-gradient-jungle",
-};
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Medio ambiente": "🌱",
-  Educación: "📚",
-  "Arte & cultura": "🎨",
-  Comunidad: "🤝",
-  Salud: "❤️",
-  Tecnología: "🏗️",
-};
 
 interface ProposalHeroProps {
   proposal: Proposal;
@@ -33,11 +16,18 @@ interface ProposalHeroProps {
 export function ProposalHero({ proposal }: ProposalHeroProps) {
   const phase = getProposalPhase(proposal.status);
   const phaseCopy = getProposalPhaseCopy(phase);
-  const emoji = CATEGORY_EMOJI[proposal.category] ?? "📌";
-  const regionLabel = REGION_LABEL[proposal.region] ?? proposal.region;
-  const bandClass = REGION_BAND[proposal.region] ?? REGION_BAND.costa;
+  const emoji = categoryEmoji(proposal.category as MissionCategory);
+  const bandClass = regionGradient(proposal.region);
   const displaySummary = proposal.summary?.trim() || "";
-  const proposedDateLabel = formatProposedDate(proposal.proposedDate);
+  const anchor = computeProposalAnchor(
+    proposal.status,
+    proposal.proposedDate,
+    proposal.createdAt,
+    proposal.convertedAt,
+    proposal.completedAt,
+    0,
+    getProposalThreshold(proposal.teamSize),
+  );
   const hasProposedDate = !!proposal.proposedDate;
 
   return (
@@ -61,7 +51,7 @@ export function ProposalHero({ proposal }: ProposalHeroProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                {regionLabel}
+                {regionLabel(proposal.region)}
               </span>
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">{proposal.category}</span>
@@ -102,16 +92,12 @@ export function ProposalHero({ proposal }: ProposalHeroProps) {
                 hasProposedDate ? "text-accent" : "text-muted-foreground"
               }`}
             >
-              {proposedDateLabel}
+              {anchor.label}
             </span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-xl bg-secondary/30 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{phaseCopy.label}</span>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-xl bg-secondary/20 px-3 py-2">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Creada {formatRelativeDate(proposal.createdAt)}</span>
           </div>
         </div>
       </div>

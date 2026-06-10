@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Compass, Map, Plus, Trophy, Bell, User, Sparkles, Search } from "lucide-react";
-import { useCurrentUser, useUserXpProgress } from "@/features/auth";
+import { Compass, Map, Plus, Trophy, Bell, User, Sparkles, Search, LogIn } from "lucide-react";
+import { useCurrentUser, useUserXpProgress, useOAuthLogin } from "@/features/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { HeaderBellBadge } from "./HeaderBellBadge";
@@ -12,35 +12,30 @@ type NavItem = {
   labelMobile: string;
   icon: typeof Compass;
   exact?: boolean;
+  requiresAuth?: boolean;
 };
-// P1 FIX: Reducir navegación a 3 items core - eliminar "Crear" y "Notificaciones"
-// P0 FIX: Labels mobile explícitos para evitar truncamiento técnico
-// P0 FIX: Añadir "Crear" como tab central para acceso directo a creación de proyectos
-// P0 FIX: Label más explícito "Crear proyecto" para reforzar core value de la app
+
 const NAV: NavItem[] = [
   { to: "/app", label: "Inicio", labelMobile: "Inicio", icon: Compass, exact: true },
   { to: "/app/mapa", label: "Mapa", labelMobile: "Mapa", icon: Map },
-  { to: "/app/crear", label: "Crear proyecto", labelMobile: "Crear", icon: Plus },
-  { to: "/app/perfil", label: "Perfil", labelMobile: "Mi perfil", icon: User },
+  { to: "/app/crear", label: "Crear proyecto", labelMobile: "Crear", icon: Plus, requiresAuth: true },
+  { to: "/app/perfil", label: "Perfil", labelMobile: "Mi perfil", icon: User, requiresAuth: true },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+type AppShellProps = {
+  children: React.ReactNode;
+  isAnonymous?: boolean;
+};
+
+export function AppShell({ children, isAnonymous = false }: AppShellProps) {
   const state = useRouterState();
   const path = state.location.pathname;
   const currentUser = useCurrentUser();
   const { progressPct } = useUserXpProgress();
+  const { loginWithGoogle } = useOAuthLogin();
 
-  // Fallback seguro si currentUser es null (profile no creado aún)
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando tu perfil...</p>
-        </div>
-      </div>
-    );
-  }
+  // Anonymous mode: show minimal shell without user data
+  const navItems = isAnonymous ? NAV.filter((n) => !n.requiresAuth) : NAV;
 
   return (
     <div className="flex h-screen bg-background relative overflow-hidden">
@@ -67,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav className="flex flex-col gap-1">
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = item.exact ? path === item.to : path.startsWith(item.to);
             const Icon = item.icon;
             return (
@@ -89,27 +84,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* User card */}
-        <Link
-          to="/app/perfil"
-          className="mt-auto rounded-2xl glass p-4 hover:shadow-card transition-smooth"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-gradient-sunrise grid place-items-center text-xl shadow-soft">
-              {currentUser.avatar}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm truncate">{currentUser.name}</div>
-              <div className="text-xs text-muted-foreground truncate">
-                Nivel {currentUser.level} · {currentUser.xp.toLocaleString()} XP
+        {/* User card or anonymous login CTA */}
+        {!isAnonymous && currentUser ? (
+          <Link
+            to="/app/perfil"
+            className="mt-auto rounded-2xl glass p-4 hover:shadow-card transition-smooth"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-gradient-sunrise grid place-items-center text-xl shadow-soft">
+                {currentUser.avatar}
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm truncate">{currentUser.name}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  Nivel {currentUser.level} · {currentUser.xp.toLocaleString()} XP
+                </div>
+              </div>
+              <Sparkles className="h-4 w-4 text-accent" />
             </div>
-            <Sparkles className="h-4 w-4 text-accent" />
+            <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
+              <div className="h-full bg-gradient-sunrise" style={{ width: `${progressPct}%` }} />
+            </div>
+          </Link>
+        ) : isAnonymous ? (
+          <div className="mt-auto rounded-2xl border border-dashed border-border/60 p-4 space-y-3">
+            <p className="text-xs text-muted-foreground text-center leading-relaxed">
+              Inicia sesión para crear propuestas, unirte a misiones y dejar tu huella en el
+              territorio.
+            </p>
+            <button
+              onClick={() => loginWithGoogle()}
+              className="w-full rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 text-sm font-semibold shadow-glow hover:opacity-90 transition-smooth flex items-center justify-center gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              Iniciar sesión
+            </button>
           </div>
-          <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
-            <div className="h-full bg-gradient-sunrise" style={{ width: `${progressPct}%` }} />
-          </div>
-        </Link>
+        ) : null}
       </aside>
 
       {/* Main */}
@@ -124,19 +135,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               K
             </div>
           </Link>
-          {/* P1 FIX: Eliminar search bar inactivo - causa confusión */}
-          {/* <div className="relative flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder="Buscar misiones, distritos, líderes…"
-                disabled
-                className="w-full rounded-xl border border-border/60 bg-surface/60 backdrop-blur pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/60 font-medium">
-                Próximamente
-              </span>
-            </div> */}
-          {/* P0 FIX: Eliminado display de racha - streak siempre es 0 (hardcoded), métrica sin datos reales */}
           <div className="ml-auto flex items-center gap-2">
             <HeaderBellBadge />
           </div>
@@ -163,7 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-strong rounded-t-2xl shadow-lift px-3 py-3 flex justify-between safe-area-bottom"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
-        {NAV.map((item) => {
+        {navItems.map((item) => {
           const active = item.exact ? path === item.to : path.startsWith(item.to);
           const Icon = item.icon;
           return (

@@ -10,7 +10,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Sparkles } from "lucide-react";
-import { REGION_META } from "@/constants/gamification";
+import { REGION_META, regionLabel } from "@/domain/regions";
 import {
   deriveCivicTrust,
   TRUST_STATUS_META,
@@ -21,13 +21,6 @@ interface PublicProfileHeaderProps {
   profile: PublicProfile;
   isOwnProfile: boolean;
 }
-
-const REGION_LABEL: Record<string, string> = {
-  costa: "Costa",
-  sierra: "Sierra",
-  selva: "Selva",
-  cumbre: "Cumbre",
-};
 
 function formatJoinDate(iso: string): string {
   try {
@@ -95,7 +88,7 @@ export function PublicProfileHeader({ profile, isOwnProfile }: PublicProfileHead
               )}
               {region && (
                 <span className={regionMeta?.chipBg + " px-1.5 py-0.5 rounded text-foreground"}>
-                  {REGION_LABEL[region] ?? region}
+                  {regionLabel(region)}
                 </span>
               )}
             </div>

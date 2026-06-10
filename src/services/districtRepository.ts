@@ -261,6 +261,30 @@ export const districtRepository = {
   },
 
   /**
+   * Read district_stats for ALL districts. Used by SpatialContext to
+   * classify each district as active/dormant for neighborhood-awareness.
+   * Lightweight: ~13 columns, ~200 rows.
+   */
+  async getAllDistrictStats(): Promise<DistrictStats[]> {
+    const { data, error } = await supabase
+      .from("district_stats")
+      .select("*");
+
+    if (error) {
+      if (import.meta.env.DEV) {
+        console.error("[KUSQA DISTRICT TRACE] getAllDistrictStats error:", error);
+      }
+      return [];
+    }
+    return (data ?? [])
+      .map((row: unknown) => {
+        const parsed = DISTRICT_STATS_SCHEMA.safeParse(row);
+        return parsed.success ? toDistrictStats(parsed.data) : null;
+      })
+      .filter((d: DistrictStats | null): d is DistrictStats => d !== null);
+  },
+
+  /**
    * Return a TerritorialImpactSummary with recent proposal/completion counts.
    * This is the primary input for territorial intelligence (vitality, narrative).
    * Merges district_stats with two lightweight recent-count queries.

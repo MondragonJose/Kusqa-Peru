@@ -10,21 +10,18 @@ import {
   Mountain,
   Waves,
   Trees,
-  Clock,
-  Globe,
-  Activity,
   ChevronRight,
   Star,
 } from "lucide-react";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { JSX } from "react/jsx-runtime";
-import { PublicMissionCard } from "@/features/missions";
-import { useMissions } from "@/hooks/useMissions";
+import { useLandingInitiatives } from "@/features/initiatives/hooks/useLandingInitiatives";
+import { deriveInitiativeStats } from "@/domain/initiativeStats";
+import { InitiativeCard } from "@/features/home/components/InitiativeCard";
 import { useOAuthLogin } from "@/features/auth";
 import { useAuthState } from "@/features/auth";
 import { toast } from "sonner";
-import { missionToEntity } from "@/services/entityAdapter";
-import type { Mission } from "@/types";
+import type { Initiative } from "@/domain/initiative";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Route
@@ -59,62 +56,7 @@ function useAnimatedCounter(target: number, duration = 2000, start = false) {
   return count;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Civic Observatory — animated stats (derived from real Supabase data)
-// ─────────────────────────────────────────────────────────────────────────────
 
-function deriveStatsFromMissions(missions: Mission[]) {
-  if (missions.length === 0) {
-    return [
-      { icon: Globe, label: "distritos activos", value: 0, suffix: "", color: "text-coast" },
-      {
-        icon: Activity,
-        label: "expediciones en marcha",
-        value: 0,
-        suffix: "",
-        color: "text-accent",
-      },
-      { icon: Users, label: "jóvenes movilizados", value: 0, suffix: "", color: "text-sierra" },
-      { icon: Clock, label: "horas comunitarias", value: 0, suffix: "", color: "text-jungle" },
-    ];
-  }
-
-  const uniqueDistricts = new Set(missions.map((m) => m.district)).size;
-  const totalParticipants = missions.reduce((sum, m) => sum + (m.participants || 0), 0);
-  // Estimate hours: 2 hours average per participant per mission
-  const estimatedHours = totalParticipants * 2;
-
-  return [
-    {
-      icon: Globe,
-      label: "distritos activos",
-      value: uniqueDistricts,
-      suffix: "",
-      color: "text-coast",
-    },
-    {
-      icon: Activity,
-      label: "expediciones en marcha",
-      value: missions.length,
-      suffix: "",
-      color: "text-accent",
-    },
-    {
-      icon: Users,
-      label: "jóvenes movilizados",
-      value: totalParticipants,
-      suffix: "",
-      color: "text-sierra",
-    },
-    {
-      icon: Clock,
-      label: "horas comunitarias",
-      value: estimatedHours,
-      suffix: "+",
-      color: "text-jungle",
-    },
-  ];
-}
 
 function StatCounter({
   icon: Icon,
@@ -226,21 +168,21 @@ function PeruTerritoryDecoration({
         </defs>
       </svg>
 
-      {/* Region floating labels — counts derived from real data */}
+      {/* Region floating labels — qualitative, no zero counts */}
       <div className="absolute top-[22%] left-[10%] bg-gradient-coast text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow">
-        Costa · 🌊 {costaCount} misiones
+        Costa · 🌊 {costaCount > 0 ? `${costaCount} misiones` : "territorio activo"}
       </div>
       <div
         className="absolute top-[48%] right-[5%] bg-gradient-andes text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
         style={{ animationDelay: "2s" }}
       >
-        Sierra · ⛰️ {sierraCount} misiones
+        Sierra · ⛰️ {sierraCount > 0 ? `${sierraCount} misiones` : "territorio activo"}
       </div>
       <div
         className="absolute bottom-[20%] left-[8%] bg-gradient-jungle text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
         style={{ animationDelay: "1s" }}
       >
-        Selva · 🌿 {selvaCount} misiones
+        Selva · 🌿 {selvaCount > 0 ? `${selvaCount} misiones` : "territorio activo"}
       </div>
     </div>
   );
@@ -251,7 +193,7 @@ function PeruTerritoryDecoration({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Landing(): JSX.Element {
-  const { data: missions = [] } = useMissions();
+  const { data: initiatives = [] } = useLandingInitiatives();
   const { loginWithGoogle } = useOAuthLogin();
   const { state, isAuthenticated, isReady } = useAuthState();
   const search = useSearch({ from: "/" });
@@ -276,17 +218,15 @@ function Landing(): JSX.Element {
     }
   }, [isAuthenticated, isReady, search.redirect]);
 
-  // Derive stats from real Supabase data
-  const stats = deriveStatsFromMissions(missions);
+  const stats = deriveInitiativeStats(initiatives);
 
-  // Derive mission counts by region for "Elige tu paisaje" cards
   const missionsByRegion = useMemo(() => {
     const counts: Record<string, number> = {};
-    missions.forEach((m) => {
-      counts[m.region] = (counts[m.region] || 0) + 1;
+    initiatives.forEach((i) => {
+      counts[i.region] = (counts[i.region] || 0) + 1;
     });
     return counts;
-  }, [missions]);
+  }, [initiatives]);
 
   // Show error toast if callback failed
   useEffect(() => {
@@ -303,48 +243,39 @@ function Landing(): JSX.Element {
     }
   }, []);
 
-  // Balanced mission selection for landing: ensure territorial diversity
   const featuredMissions = (() => {
-    if (missions.length === 0) return [];
+    if (initiatives.length === 0) return [];
 
-    // Group by region for diversity
-    const byRegion: Record<string, Mission[]> = {};
-    missions.forEach((m) => {
-      if (!byRegion[m.region]) byRegion[m.region] = [];
-      byRegion[m.region].push(m);
+    const byRegion: Record<string, Initiative[]> = {};
+    initiatives.forEach((i) => {
+      if (!byRegion[i.region]) byRegion[i.region] = [];
+      byRegion[i.region].push(i);
     });
 
-    // Pick 2 from each region if available, then fill remaining
-    const selected: Mission[] = [];
+    const selected: Initiative[] = [];
     const regions = Object.keys(byRegion);
 
-    // Take 2 from each region for diversity
     regions.forEach((region) => {
-      const regionMissions = byRegion[region];
-      // Shuffle within region for variety
-      const shuffled = regionMissions.sort(() => Math.random() - 0.5);
+      const pool = byRegion[region];
+      const shuffled = pool.sort(() => Math.random() - 0.5);
       selected.push(...shuffled.slice(0, 2));
     });
 
-    // If we have more than 6, trim down while keeping diversity
     if (selected.length > 6) {
-      // Keep one from each region first, then fill remaining
-      const diverse: Mission[] = [];
+      const diverse: Initiative[] = [];
       regions.forEach((region) => {
-        const regionSelected = selected.filter((m) => m.region === region);
+        const regionSelected = selected.filter((i) => i.region === region);
         if (regionSelected.length > 0) {
           diverse.push(regionSelected[0]);
         }
       });
-      // Fill remaining with shuffled extras
-      const extras = selected.filter((m) => !diverse.includes(m)).sort(() => Math.random() - 0.5);
+      const extras = selected.filter((i) => !diverse.includes(i)).sort(() => Math.random() - 0.5);
       diverse.push(...extras.slice(0, 6 - diverse.length));
       return diverse;
     }
 
-    // If we have less than 6, fill with any remaining missions
     if (selected.length < 6) {
-      const remaining = missions.filter((m) => !selected.includes(m));
+      const remaining = initiatives.filter((i) => !selected.includes(i));
       const shuffled = remaining.sort(() => Math.random() - 0.5);
       selected.push(...shuffled.slice(0, 6 - selected.length));
     }
@@ -456,8 +387,9 @@ function Landing(): JSX.Element {
                 <div className="absolute inset-0 bg-gradient-sunrise opacity-5 animate-pulse" />
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                 <span className="relative z-10 truncate">
-                  Movimiento vivo · {missions.length} ruta{missions.length !== 1 ? "s" : ""} activa
-                  {missions.length !== 1 ? "s" : ""}
+                  {initiatives.length > 0
+                    ? `Movimiento vivo · ${initiatives.length} ${initiatives.length === 1 ? "ruta activa" : "rutas activas"}`
+                    : "Iniciativas nacen desde cada territorio"}
                 </span>
               </motion.div>
 
@@ -495,7 +427,7 @@ function Landing(): JSX.Element {
               {/* Mini stats row — derived from real Supabase data */}
               <div className="hidden sm:flex mt-8 lg:mt-12 flex-wrap gap-x-6 lg:gap-x-10 gap-y-3">
                 {(() => {
-                  const s = deriveStatsFromMissions(missions);
+                  const s = deriveInitiativeStats(initiatives);
                   return [
                     { k: s[2].value.toLocaleString("es-PE"), v: s[2].label },
                     { k: s[1].value.toLocaleString("es-PE"), v: s[1].label },
@@ -598,6 +530,7 @@ function Landing(): JSX.Element {
       </section>
 
       {/* ── CIVIC OBSERVATORY ── */}
+      {stats.some((s) => s.value > 0) && (
       <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-sunrise opacity-85" />
         <div className="absolute inset-0 bg-mesh opacity-15" />
@@ -652,6 +585,7 @@ function Landing(): JSX.Element {
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* ── EL MOVIMIENTO ── */}
       <section id="movimiento" className="px-5 lg:px-8 py-24">
@@ -809,12 +743,57 @@ function Landing(): JSX.Element {
           </motion.div>
 
           {/* Mission grid */}
+          {featuredMissions.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {featuredMissions.map((mission, i) => {
-              const entity = missionToEntity(mission);
-              return <PublicMissionCard key={entity.id} entity={entity} index={i} />;
-            })}
+            {featuredMissions.map((initiative, i) => (
+              <InitiativeCard key={initiative.id} initiative={initiative} index={i} />
+            ))}
           </div>
+          ) : (
+          <>
+            {/* Warm fallback intro */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-muted-foreground text-base max-w-xl mb-8 leading-relaxed"
+            >
+              Cada iniciativa empieza con alguien que mira su barrio y dice: aquí algo puede
+              cambiar. Las primeras misiones nacen así — de vecinos que deciden ser el primer
+              paso. ¿Y si ese alguien fueras tú?
+            </motion.p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { emoji: "🎨", title: "Mural colectivo", place: "Barranco · Lima", gradient: "from-accent/20 to-sun/20" },
+              { emoji: "🌱", title: "Reforestación", place: "Chinchero · Cusco", gradient: "from-jungle/20 to-sierra/20" },
+              { emoji: "🛶", title: "Limpieza del río", place: "Iquitos · Loreto", gradient: "from-coast/20 to-jungle/20" },
+            ].map((c, i) => (
+              <motion.div
+                key={c.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="glass-strong rounded-2xl p-5 shadow-card"
+              >
+                <div className={`h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-5xl mb-4`}>
+                  {c.emoji}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                  <MapPin className="h-3 w-3" /> {c.place}
+                </div>
+                <div className="font-display font-semibold text-base mb-4">{c.title}</div>
+                <button
+                  onClick={loginWithGoogle}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 text-xs font-semibold hover:opacity-90 transition-smooth"
+                >
+                  Sé quien inicia algo aquí <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+          </>
+          )}
 
           {/* Soft join CTA */}
           <motion.div

@@ -10,6 +10,8 @@
  * placeholder metrics.
  */
 
+
+
 export type DistrictActivityClass = "empty" | "early" | "active" | "established";
 
 export type TerritorialImpactSummary = {
@@ -219,3 +221,5 @@ export function deriveDistrictMilestones(
 export function isFirstMovementNeeded(summary: TerritorialImpactSummary): boolean {
   return summary.missionCount === 0 && summary.proposalCount === 0;
 }
+
+

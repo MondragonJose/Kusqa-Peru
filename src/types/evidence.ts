@@ -18,7 +18,7 @@
 
 // ─── Evidence type ─────────────────────────────────────────────────────────
 
-export const EVIDENCE_TYPES = ["photo", "text", "checkpoint", "mixed"] as const;
+const EVIDENCE_TYPES = ["photo", "text", "checkpoint", "mixed"] as const;
 export type EvidenceType = (typeof EVIDENCE_TYPES)[number];
 
 /** Human-readable labels for each evidence type */
@@ -29,18 +29,11 @@ export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
   mixed: "Relato con foto",
 };
 
+
 // ─── Evidence status (domain canonical) ────────────────────────────────────
 
 export const EVIDENCE_STATUSES = ["pending", "verified", "rejected", "flagged"] as const;
 export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number];
-
-/** Human-readable labels for evidence lifecycle states */
-export const EVIDENCE_STATUS_LABELS: Record<EvidenceStatus, string> = {
-  pending: "Pendiente de verificación",
-  verified: "Verificada",
-  rejected: "Rechazada",
-  flagged: "Marcada para revisión",
-};
 
 /** Color classes for status badges */
 export const EVIDENCE_STATUS_STYLES: Record<EvidenceStatus, string> = {
@@ -56,14 +49,8 @@ export const EVIDENCE_STATUS_STYLES: Record<EvidenceStatus, string> = {
 
 // ─── Mission completion state (derived from evidence status) ─────────────
 
-export const COMPLETION_STATES = ["not_completed", "awaiting_verification", "completed"] as const;
+const COMPLETION_STATES = ["not_completed", "awaiting_verification", "completed"] as const;
 export type CompletionState = (typeof COMPLETION_STATES)[number];
-
-export const COMPLETION_STATE_LABELS: Record<CompletionState, string> = {
-  not_completed: "En ruta",
-  awaiting_verification: "Esperando verificación",
-  completed: "Completada",
-};
 
 // ─── DB row type (snake_case, matches SQL schema exactly) ──────────────────
 // Source: supabase/migrations/20260526120000_phase_b_operational_readiness.sql
@@ -104,7 +91,6 @@ export type DbEvidenceInsert = {
   media_urls?: string[];
 };
 
-export type DbEvidenceUpdate = Partial<Omit<DbEvidenceInsert, "user_id" | "mission_id">>;
 
 // ─── Domain model (camelCase, what the app works with) ─────────────────────
 
@@ -141,27 +127,6 @@ export type EvidenceLifecycleInfo = {
   contributesToTrust: boolean;
 };
 
-// ─── Input DTOs ────────────────────────────────────────────────────────────
-
-export type CreateEvidenceDTO = {
-  missionId: string;
-  type: EvidenceType;
-  description?: string;
-  caption?: string;
-  /** For photo/mixed: the file to upload. null for text/checkpoint. */
-  file?: File;
-  locationLat?: number;
-  locationLng?: number;
-};
-
-export type VerifyEvidenceDTO = {
-  evidenceId: string;
-  status: Extract<EvidenceStatus, "verified" | "rejected">;
-  rejectionReason?: string;
-};
-
 // ─── Constants ─────────────────────────────────────────────────────────────
 
 export const EVIDENCE_VERIFICATION_REQUIRED = true;
-export const MAX_EVIDENCE_DESCRIPTION_LENGTH = 2000;
-export const MAX_EVIDENCE_CAPTION_LENGTH = 500;

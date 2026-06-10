@@ -5,7 +5,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { evidenceKeys } from "@/lib/queryKeys";
 import { EVIDENCE_FEED_STALE_MS, EVIDENCE_FEED_GC_MS } from "@/lib/queryCache";
-import { submitEvidence, verifyEvidence } from "@/services/missions";
+import { submitEvidence, verifyEvidence } from "@/services/evidenceService";
 import { evidenceRepository } from "@/services/evidenceRepository";
 import { consumeRateLimit, getRateLimitResetMs } from "@/lib/rateLimiter";
 import type { Evidence, EvidenceType, CompletionState } from "@/types";

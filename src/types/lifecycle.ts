@@ -9,15 +9,6 @@
 /** Discriminated union of all possible lifecycle states — exhaustive match required. */
 export type MissionLifecycle = "upcoming" | "active" | "ending_soon" | "completed" | "archived";
 
-/** Human-readable labels for each lifecycle state. */
-export const LIFECYCLE_LABELS: Record<MissionLifecycle, string> = {
-  upcoming: "Próxima",
-  active: "Activa",
-  ending_soon: "Finaliza pronto",
-  completed: "Completada",
-  archived: "Archivada",
-};
-
 /** Sort priority — lower = higher in list. Used for mission ordering. */
 export const LIFECYCLE_PRIORITY: Record<MissionLifecycle, number> = {
   active: 0,

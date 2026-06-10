@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useCurrentUser } from "@/features/auth";
 import { CivicRouteMap, useProgression } from "@/features/progression";
 import { BadgeGrid, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
@@ -36,7 +36,7 @@ function Progress() {
   }));
   const earnedBadgesCount = badges.filter((b) => b.earned).length;
 
-  if (!user) return null;
+  if (!user) throw redirect({ to: "/app" });
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-12">

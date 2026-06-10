@@ -6,7 +6,7 @@ import { findRelatedTerritorialActivity, detectAdjacentCoalitionEmergence, check
 import { deriveCoordinationNarratives } from "@/domain/coordinationNarratives";
 import type { CoordinationNarrative } from "@/domain/coordinationNarratives";
 import type { AdjacencyMap } from "@/domain/spatialRelationships";
-import type { CivicEntity } from "@/types/entity";
+import type { Initiative } from "@/domain/initiative";
 
 export function useCoordinationNarratives(
   districtSlug: string,
@@ -22,7 +22,7 @@ export function useCoordinationNarratives(
     recentProposalCount?: number;
     recentCompletionCount?: number;
   } | null,
-  entities?: CivicEntity[],
+  initiatives?: Initiative[],
 ): CoordinationNarrative[] {
   const { data: geometry } = useTerritorialGeometry();
 
@@ -57,8 +57,8 @@ export function useCoordinationNarratives(
     const related = findRelatedTerritorialActivity(districtSlug, Array.from(neighborSummaries.values()), adjacencyMap);
     const proximity = computeCoalitionProximityInfo(neighbors, Array.from(neighborSummaries.values()));
     const emergence = detectAdjacentCoalitionEmergence(districtSlug, adjacencyMap, neighborSummaries as Map<string, any>);
-    const missionContinuity = checkNeighboringMissionContinuity(entities ?? [], adjacencyMap, districtSlug);
+    const missionContinuity = checkNeighboringMissionContinuity(initiatives ?? [], adjacencyMap, districtSlug);
 
     return deriveCoordinationNarratives(related, proximity, continuity, awareness, emergence, missionContinuity);
-  }, [geometry, districtSlug, districtId, summary, entities]);
+  }, [geometry, districtSlug, districtId, summary, initiatives]);
 }

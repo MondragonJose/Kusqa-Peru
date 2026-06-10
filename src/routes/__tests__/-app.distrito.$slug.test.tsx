@@ -57,6 +57,7 @@ function setupMocks(overrides: {
   useDistrictActivity?: () => unknown;
   useDistrictTopSupporters?: () => unknown;
   useTerritorialGeometry?: () => unknown;
+  useSpatialContext?: () => unknown;
 }) {
   vi.resetModules();
   vi.doMock("@/features/districts/hooks", () => ({
@@ -66,6 +67,7 @@ function setupMocks(overrides: {
     useDistrictActivity: overrides.useDistrictActivity ?? (() => ({ data: mockActivity })),
     useDistrictTopSupporters: overrides.useDistrictTopSupporters ?? (() => ({ data: mockTopSupporters })),
     useTerritorialGeometry: overrides.useTerritorialGeometry ?? (() => ({ data: [] })),
+    useSpatialContext: overrides.useSpatialContext ?? (() => ({ spatialContext: null })),
   }));
   vi.doMock("@/features/auth", () => ({
     useCurrentUserId: () => "u1",

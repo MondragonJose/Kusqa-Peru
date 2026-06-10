@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/features/auth";
 import { userSessionQueryOptions } from "@/features/auth/queryOptions";
@@ -47,6 +47,7 @@ function notificationRowToCivic(row: {
 
 function NotificationsPage() {
   const user = useCurrentUser();
+  if (!user) throw redirect({ to: "/app" });
   const { data: userId } = useQuery(userSessionQueryOptions());
   const { data: dbRows = [] } = useLiveNotificationInbox(userId ?? undefined);
   const markReadMutation = useMarkNotificationRead(userId ?? undefined);

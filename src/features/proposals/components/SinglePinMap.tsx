@@ -1,19 +1,13 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import type { ProposalRegion } from "@/services/proposalContract";
+import { REGION_META, type Region } from "@/domain/regions";
 
 interface SinglePinMapProps {
   latitude: number;
   longitude: number;
-  region: ProposalRegion;
+  region: Region;
   title: string;
 }
-
-const REGION_TINT: Record<ProposalRegion, string> = {
-  costa: "#3b82f6",
-  sierra: "#a16207",
-  selva: "#16a34a",
-};
 
 export function SinglePinMap({ latitude, longitude, region, title }: SinglePinMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,7 +39,7 @@ export function SinglePinMap({ latitude, longitude, region, title }: SinglePinMa
         maxZoom: 19,
       }).addTo(instance);
 
-      const tint = REGION_TINT[region] ?? "#3b82f6";
+      const tint = REGION_META[region].tint;
       const icon = L.divIcon({
         className: "kusqa-single-pin",
         iconSize: [30, 30],

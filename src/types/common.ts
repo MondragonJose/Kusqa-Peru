@@ -4,16 +4,10 @@
  */
 
 /** Regiones geográficas del Perú según KUSQA */
-export type Region = "costa" | "sierra" | "selva";
+export type { Region } from "@/domain/regions";
 
 /** Categorías de misiones */
-export type MissionCategory =
-  | "Medio ambiente"
-  | "Educación"
-  | "Arte & cultura"
-  | "Comunidad"
-  | "Salud"
-  | "Tecnología";
+export type { MissionCategory } from "@/domain/categories";
 
 /** Niveles de dificultad de misiones */
 export type MissionDifficulty = "Suave" | "Andina" | "Cumbre";

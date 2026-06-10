@@ -56,6 +56,16 @@ export function districtStatsQueryOptions(districtId: string) {
   };
 }
 
+export function allDistrictsActivityQueryOptions() {
+  return {
+    queryKey: districtStatsKeys.all,
+    queryFn: () => districtRepository.getAllDistrictStats(),
+    staleTime: DISTRICT_STATS_STALE_MS,
+    gcTime: 5 * 60 * 1000,
+    retry: 1 as const,
+  };
+}
+
 export function districtIntelligenceQueryOptions(districtId: string) {
   return {
     queryKey: districtIntelligenceKeys.byId(districtId),

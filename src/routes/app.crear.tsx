@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -45,6 +45,7 @@ const CATS = ["Medio ambiente", "Educación", "Arte & cultura", "Comunidad", "Sa
 function CreateProject() {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
+  if (!currentUser) throw redirect({ to: "/app" });
   const searchRecord = useSearch({ from: "/app/crear" }) as Record<string, unknown>;
   const districtFromSearch = typeof searchRecord.district === "string" ? searchRecord.district : undefined;
   const [step, setStep] = useState(1);

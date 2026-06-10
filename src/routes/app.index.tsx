@@ -1,146 +1,54 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { MapPin, Sparkles, ArrowRight, Users, Compass, CompassIcon, RefreshCw } from "lucide-react";
 import { Drawer } from "vaul";
 import { REGION_META } from "@/constants/gamification";
-import { useCurrentUser, useUserXpProgress } from "@/features/auth";
-import { useProgression } from "@/features/progression";
-// P0 FIX: Eliminado CommunityPulse - componente de fake community eliminado
-import { useMissions } from "@/hooks/useMissions";
-import { useAllProposals } from "@/features/proposals";
 import { districtSlugify } from "@/utils/districtSlug";
-import { Onboarding } from "@/components/Onboarding";
 import { TerritorialFootprint } from "@/components/TerritorialFootprint";
 import { KusqaButton } from "@/components/ui/kusqa-button";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
-import type { Region, Mission, MissionCategory, MissionDifficulty } from "@/types";
-import type { Proposal } from "@/services/proposalContract";
 import { useQueryClient } from "@tanstack/react-query";
-import { missionKeys } from "@/lib/queryKeys";
-import { formatRelativeDate } from "@/utils/date";
-import { getCategoryMetadata } from "@/constants/categoryMetadata";
-import { CivicEntity, isMission, isProposal } from "@/types/entity";
-import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
-import {
-  selectFeaturedMissions,
-  selectNearbyMissions,
-  selectFeedItems,
-  buildTerritory,
-  calculateEntityStats,
-} from "@/domain/missionSelection";
+import { useLandingInitiatives } from "@/features/initiatives/hooks/useLandingInitiatives";
+import { aggregateByRegion } from "@/domain/regionAggregations";
+import { selectFeedItems } from "@/domain/missionSelection";
+import type { Initiative } from "@/domain/initiative";
+import type { InitiativeAction } from "@/domain/initiativeActions";
 import { iconSize } from "@/design";
-
-// Helper para renderizar metadata contextual simple en cards
-function renderCategoryMetadata(category: MissionCategory) {
-  const meta = getCategoryMetadata(category);
-  // Para beta, mostrar solo el primer field relevante
-  const field = meta.fields[0];
-  return (
-    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/80 font-medium">
-      <span>{field.icon}</span>
-      <span>
-        {field.label}: {field.defaultValue}
-      </span>
-    </div>
-  );
-}
-
-// Helper para renderizar badge de entityType
-function renderEntityTypeBadge(entity: CivicEntity) {
-  if (isProposal(entity)) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-[8px] font-bold text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30">
-        <span>🏛️</span>
-        <span>Propuesta</span>
-      </span>
-    );
-  }
-  return null;
-}
+import { deriveAmbientSignal, initiativesToAmbientEvents } from "@/domain/ambient";
+import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { shareInitiative } from "@/features/actions/shareInitiative";
+import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 
 function Dashboard() {
-  const { data: missions = [], isLoading: missionsLoading } = useMissions();
-  const { data: proposals = [], isLoading: proposalsLoading } = useAllProposals(); // Sin filtro de status para incluir pending
-  const currentUser = useCurrentUser();
-  const { progressPct } = useUserXpProgress();
-  const { currentStage, nextStage, xpToNextStage } = useProgression();
-  const [selectedEntity, setSelectedEntity] = useState<CivicEntity | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<Initiative | null>(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { supportProposal, isSupported, isSupporting } = useSupportProposal();
 
   const { data: timeline, isLoading: timelineLoading } = useProfileMissionTimeline();
-  const isLoading = missionsLoading || proposalsLoading;
+  const { data: initiatives = [], isLoading } = useLandingInitiatives();
 
   const handleRefreshMissions = () => {
     if (import.meta.env.DEV) {
       console.log("[KUSQA MISSION TRACE] Manual cache refresh triggered");
-      queryClient.invalidateQueries({ queryKey: missionKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["initiatives"] });
     }
   };
 
-  // Merge missions + proposals como CivicEntity unificado
-  const allEntities = useMemo<CivicEntity[]>(() => {
-    const missionEntities = missions.map(missionToEntity);
-    const proposalEntities = proposals.flatMap((p) => {
-      const entity = proposalToEntity(p);
-      return entity ? [entity] : [];
-    });
-    const merged = [...missionEntities, ...proposalEntities];
-    if (import.meta.env.DEV) {
-      console.log(
-        "[KUSQA ENTITY TRACE] Dashboard merge:",
-        missionEntities.length,
-        "missions +",
-        proposalEntities.length,
-        "proposals =",
-        merged.length,
-        "total entities",
-      );
-    }
-    return merged;
-  }, [missions, proposals]);
+  const feedItems = useMemo(() => selectFeedItems(initiatives), [initiatives]);
 
-  // Domain logic: mission selection
-  const featured = useMemo(() => selectFeaturedMissions(allEntities), [allEntities]);
-  const userRegion = currentUser?.region as Region | undefined;
-  const nearby = useMemo(
-    () => selectNearbyMissions(allEntities, userRegion),
-    [allEntities, userRegion],
-  );
-  const feedItems = useMemo(() => selectFeedItems(allEntities), [allEntities]);
-  const entityStats = useMemo(() => calculateEntityStats(allEntities), [allEntities]);
+  const ambientSignal = useMemo(() => {
+    if (initiatives.length === 0) return null;
+    const events = initiativesToAmbientEvents(initiatives);
+    return deriveAmbientSignal(events);
+  }, [initiatives]);
 
-  // Domain logic: territory building — data-driven from available regions
-  const territories = useMemo(() => {
-    const regions = new Set<Region>();
-    const regionDistricts = new Map<Region, Set<string>>();
-    for (const e of allEntities) {
-      if (e.region) {
-        regions.add(e.region);
-        if (!regionDistricts.has(e.region)) regionDistricts.set(e.region, new Set());
-        if (e.district) regionDistricts.get(e.region)!.add(e.district);
-      }
-    }
-    const regionConfig: Record<Region, { id: string; name: string; quote: string; category: string; emoji: string }> = {
-      costa: { id: "costa", name: "Lima & Costa", quote: "Rescatando la memoria visual y comunitaria en el litoral.", category: "Arte & cultura", emoji: "🌊" },
-      sierra: { id: "sierra", name: "Sierra & Andes", quote: "Sembrando agua y reforestando las cuencas de los abuelos.", category: "Medio ambiente", emoji: "🏔️" },
-      selva: { id: "selva", name: "Amazonía & Selva", quote: "Uniendo brigadas fluviales para limpiar nuestros ríos sagrados.", category: "Comunidad", emoji: "🌿" },
-    };
-    return Array.from(regions)
-      .sort()
-      .map((r) => {
-        const cfg = regionConfig[r];
-        const territory = buildTerritory(allEntities, r, cfg?.id ?? r, cfg?.name ?? r, cfg?.quote ?? "", cfg?.category ?? "Comunidad", cfg?.emoji ?? "📍");
-        return {
-          ...territory,
-          districtCount: regionDistricts.get(r)?.size ?? 0,
-        };
-      });
-  }, [allEntities]);
+  const territories = useMemo(() => aggregateByRegion(initiatives), [initiatives]);
 
   return (
     <>
@@ -198,9 +106,9 @@ function Dashboard() {
                 </span>
               </div>
               <h1 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-[1.05]">
-                Tu territorio <br />
+                {feedItems.length > 0 && !isLoading ? "Tu territorio" : "Descubre lo que puede empezar"} <br />
                 <span className="bg-clip-text text-transparent bg-gradient-sunrise">
-                  está en movimiento.
+                  {feedItems.length > 0 && !isLoading ? "está en movimiento." : "cerca de ti."}
                 </span>
               </h1>
               <p className="text-sm text-stone-300 max-w-xl font-medium leading-relaxed">
@@ -337,7 +245,7 @@ function Dashboard() {
                           >
                             {t.activeMissionsCount > 0
                               ? `${t.activeMissionsCount} activa${t.activeMissionsCount !== 1 ? "s" : ""}`
-                              : "Próximamente"}
+                              : <>Sin datos aún · <Link to="/app/crear" className="text-accent hover:underline">Sé el primero</Link></>}
                           </span>
                         </div>
                       </div>
@@ -354,6 +262,59 @@ function Dashboard() {
                   </motion.div>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Ambient Signal — territory-wide mood from current entities */}
+        <section className="rounded-lg border border-border/40 bg-card/40 p-4 sm:p-5">
+          {ambientSignal ? (
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5 shrink-0">
+                {ambientSignal.mood === "quiet" && "🌙"}
+                {ambientSignal.mood === "hopeful" && "🌱"}
+                {ambientSignal.mood === "awakening" && "🌅"}
+                {ambientSignal.mood === "vibrant" && "⚡"}
+                {ambientSignal.mood === "determined" && "🎯"}
+              </span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Pulso del territorio
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/60">
+                    {ambientSignal.energy}/10
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {ambientSignal.tone}
+                </p>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
+                  <span>
+                    Ritmo:{" "}
+                    {ambientSignal.cadence.pulse === "calm" && "En calma"}
+                    {ambientSignal.cadence.pulse === "steady" && "Constante"}
+                    {ambientSignal.cadence.pulse === "lively" && "Animado"}
+                    {ambientSignal.cadence.pulse === "intense" && "Intenso"}
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>{ambientSignal.cadence.eventsLast7d} eventos recientes</span>
+                  <span aria-hidden>·</span>
+                  <span>{ambientSignal.cadence.diversity} tipo{ambientSignal.cadence.diversity !== 1 ? "s" : ""} de actividad</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5 shrink-0">💤</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Pulso del territorio
+                </div>
+                <p className="text-sm text-muted-foreground/70 mt-1">
+                  En espera — aún no hay señales recientes.
+                </p>
+              </div>
             </div>
           )}
         </section>
@@ -375,8 +336,11 @@ function Dashboard() {
           <div className="rounded-2xl bg-card border border-border/50 overflow-hidden divide-y divide-border/30">
             {feedItems.length > 0 ? (
               feedItems.map((item) => {
-                const isMissionEntity = isMission(item);
-                const isProposalEntity = isProposal(item);
+                const isMissionEntity = item.sourceType === "mission";
+                const isProposalEntity = item.sourceType === "proposal";
+                const district = item.location?.district ?? "";
+                const participants = item.participantsCount ?? 0;
+                const anchorLabel = item.temporalAnchor.label;
                 return (
                   <button
                     key={item.id}
@@ -405,19 +369,19 @@ function Dashboard() {
                         <MapPin className="h-3 w-3 opacity-60" />{" "}
                         <Link
                           to="/app/distrito/$slug"
-                          params={{ slug: districtSlugify(item.district) }}
+                          params={{ slug: districtSlugify(district) }}
                           onClick={(e) => e.stopPropagation()}
                           className="truncate hover:underline hover:text-accent transition-colors"
                         >
-                          {item.district}
+                          {district}
                         </Link>
                         <span className="opacity-45">•</span>
-                        <span className="truncate">{formatRelativeDate(item.date)}</span>
+                        <span className="truncate">{anchorLabel}</span>
                         {isMissionEntity && (
                           <>
                             <span className="opacity-45">•</span>
                             <Users className="h-3 w-3 opacity-60" />{" "}
-                            <span>{item.participants}</span>
+                            <span>{participants}</span>
                           </>
                         )}
                         {isProposalEntity && (
@@ -476,10 +440,13 @@ function Dashboard() {
                 {selectedEntity &&
                   (() => {
                     const meta = REGION_META[selectedEntity.region];
-                    const isProposalEntity = isProposal(selectedEntity);
+                    const isProposalEntity = selectedEntity.sourceType === "proposal";
+                    const district = selectedEntity.location?.district ?? "";
+                    const description = selectedEntity.summary;
+                    const participants = selectedEntity.participantsCount ?? 0;
+                    const linkId = selectedEntity.sourceId;
                     return (
                       <>
-                        {/* — PREVIEW — territorial destination card visible at first snap point */}
                         <div className="px-5 pb-4">
                           <div
                             className={`rounded-2xl ${meta.gradient} p-5 text-white relative overflow-hidden shadow-card`}
@@ -496,40 +463,66 @@ function Dashboard() {
                                 {selectedEntity.title}
                               </h3>
                               <p className="text-xs opacity-90 mt-1 flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" /> {selectedEntity.district}
+                                <MapPin className="h-3.5 w-3.5" /> {district}
                               </p>
                             </div>
                           </div>
 
-                          <Link
-                            to={
-                              isProposalEntity
-                                ? "/app/propuesta/$proposalId"
-                                : "/app/mision/$missionId"
-                            }
-                            params={
-                              isProposalEntity
-                                ? { proposalId: selectedEntity.id }
-                                : { missionId: selectedEntity.id }
-                            }
-                            onClick={() => setSelectedEntity(null)}
-                            className="mt-4 w-full inline-flex justify-center items-center rounded-xl bg-primary text-white py-3.5 font-semibold text-sm shadow-sm hover:bg-primary/90 active:scale-[0.98] transition-all"
-                          >
-                            {isProposalEntity ? "Apoyar iniciativa" : "Explorar ruta"}
-                          </Link>
+                          <div className="mt-4 flex items-center gap-2">
+                            <InitiativeActionBar
+                              initiative={selectedEntity}
+                              relationship={
+                                isSupported(selectedEntity.sourceId)
+                                  ? "supporter"
+                                  : "visitor"
+                              }
+                              variant="row"
+                              maxVisible={2}
+                              onAction={(action: InitiativeAction) => {
+                                switch (action) {
+                                  case "support":
+                                    if (!isSupported(selectedEntity.sourceId) && !isSupporting) {
+                                      supportProposal({ proposalId: selectedEntity.sourceId });
+                                    }
+                                    break;
+                                  case "join":
+                                    navigate({ to: "/app/mision/$missionId", params: { missionId: selectedEntity.sourceId } });
+                                    break;
+                                  case "share":
+                                    shareInitiative(selectedEntity.title, window.location.href);
+                                    break;
+                                }
+                              }}
+                            />
+                            <Link
+                              to={
+                                isProposalEntity
+                                  ? "/app/propuesta/$proposalId"
+                                  : "/app/mision/$missionId"
+                              }
+                              params={
+                                isProposalEntity
+                                  ? { proposalId: linkId }
+                                  : { missionId: linkId }
+                              }
+                              onClick={() => setSelectedEntity(null)}
+                              className="text-xs text-muted-foreground/60 hover:text-foreground underline underline-offset-2 transition-colors"
+                            >
+                              Ver detalle →
+                            </Link>
+                          </div>
                         </div>
 
-                        {/* — DETAILS — expands on drag up */}
                         <div className="px-5 pb-6 space-y-4">
                           <p className="text-sm text-muted-foreground leading-relaxed pt-4 border-t border-border/10">
-                            {selectedEntity.description}
+                            {description}
                           </p>
 
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             {isProposalEntity ? (
                               <><Sparkles className="h-3.5 w-3.5 text-violet-500" /><span className="text-violet-600 dark:text-violet-400">Iniciativa en busca de apoyo ciudadano</span></>
                             ) : (
-                              <><Users className="h-3.5 w-3.5" /><span>{selectedEntity.participants} personas en esta ruta</span></>
+                              <><Users className="h-3.5 w-3.5" /><span>{participants} personas en esta ruta</span></>
                             )}
                           </div>
                         </div>

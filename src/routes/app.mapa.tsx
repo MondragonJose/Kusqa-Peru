@@ -1,18 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MapPin, Search, Sparkles, Navigation, RefreshCw, ArrowRight } from "lucide-react";
+import { MapPin, Search, Navigation, RefreshCw } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
 import { districtSlugify } from "@/utils/districtSlug";
 import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
+import { useMapEntities } from "@/features/map/hooks/useMapEntities";
 import { MapView } from "@/features/map/components/MapView";
-import { useMissions } from "@/hooks/useMissions";
-import { useAllProposals } from "@/features/proposals";
+import { isMissionEntity, buildMapEntitySummary, mapEntityToActionInitiative } from "@/features/map/projections/mapEntityProjection";
 import { Drawer } from "vaul";
-import type { MapCoords, Mission, MissionCategory, MissionDifficulty } from "@/types";
-import type { CivicEntity } from "@/types/entity";
-import { proposalToEntity, missionToEntity } from "@/services/entityAdapter";
-import { iconSize, loading } from "@/design";
+import type { MissionCategory } from "@/types";
+import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import type { InitiativeAction } from "@/domain/initiativeActions";
+import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { shareInitiative } from "@/features/actions/shareInitiative";
+
+import type { TerritorialActivityLevel } from "@/domain/territorialIntelligence";
+import { classifyTerritorialVitality } from "@/domain/territorialIntelligence";
+import { classifyDistrictActivity } from "@/domain/territoryAggregations";
+import { loading } from "@/design";
 
 export const Route = createFileRoute("/app/mapa")({
   component: MapPage,
@@ -21,8 +27,8 @@ export const Route = createFileRoute("/app/mapa")({
 type TabType = "misiones" | "actividad" | "analitica";
 
 function MapPage() {
-  const { data: missions = [], isLoading: missionsLoading, isError: missionsError } = useMissions();
-  const { data: proposals = [] } = useAllProposals();
+  const navigate = useNavigate();
+  const { data: mapEntities = [], isLoading, isError } = useMapEntities();
   const {
     coords: userCoords,
     loading: userLocationLoading,
@@ -30,26 +36,7 @@ function MapPage() {
   } = useUserLocation();
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
-  const allMapItems = useMemo<CivicEntity[]>(() => {
-    const missionEntities = missions.map(missionToEntity);
-    const proposalEntities = proposals.flatMap((p) => {
-      const entity = proposalToEntity(p);
-      return entity ? [entity] : [];
-    });
-    const merged = [...missionEntities, ...proposalEntities];
-    if (import.meta.env.DEV) {
-      console.log(
-        "[KUSQA ENTITY TRACE] Map merge:",
-        missionEntities.length,
-        "missions +",
-        proposalEntities.length,
-        "proposals =",
-        merged.length,
-        "total entities",
-      );
-    }
-    return merged;
-  }, [missions, proposals]);
+  const allMapItems = mapEntities;
 
   const {
     filters,
@@ -65,24 +52,42 @@ function MapPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Sidebar only renders missions — proposals stay as map markers only
-  const sidebarMissions = filteredMissions.filter((m) => m.entityType !== "proposal");
-  const activeMission =
-    sidebarMissions.find((m) => m.id === selectedId) || sidebarMissions[0] || null;
+  const sidebarItems = filteredMissions.filter(isMissionEntity);
+  const activeEntity: InitiativeMapEntity | null =
+    sidebarItems.find((m) => m.id === selectedId) ?? sidebarItems[0] ?? null;
+
+  // District warmth: derive TerritorialActivityLevel via canonical pipeline
+  const districtWarmth = useMemo<Record<string, TerritorialActivityLevel>>(() => {
+    const grouped = new Map<string, InitiativeMapEntity[]>();
+    for (const e of allMapItems) {
+      const district = (e.location?.district ?? e.region).toLowerCase().trim();
+      if (!district) continue;
+      const list = grouped.get(district);
+      if (list) list.push(e);
+      else grouped.set(district, [e]);
+    }
+    const result: Record<string, TerritorialActivityLevel> = {};
+    for (const [district, entities] of grouped) {
+      const summary = buildMapEntitySummary(entities);
+      const activityClass = classifyDistrictActivity(summary);
+      result[district] = classifyTerritorialVitality(summary, activityClass);
+    }
+    return result;
+  }, [allMapItems]);
 
   useEffect(() => {
-    if (sidebarMissions.length === 0) {
+    if (sidebarItems.length === 0) {
       setSelectedId(null);
       return;
     }
-    const selectionValid = selectedId !== null && sidebarMissions.some((m) => m.id === selectedId);
+    const selectionValid = selectedId !== null && sidebarItems.some((m) => m.id === selectedId);
     if (!selectionValid) {
-      setSelectedId(sidebarMissions[0].id);
+      setSelectedId(sidebarItems[0].id);
     }
-  }, [sidebarMissions, selectedId]);
+  }, [sidebarItems, selectedId]);
 
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
-    // No auto-open drawer on mobile — Leaflet popup handles quick info + CTA
   }, []);
 
   const handleRequestDetail = useCallback((id: string) => {
@@ -91,7 +96,7 @@ function MapPage() {
   }, []);
 
   // Conditional returns AFTER all hooks
-  if (missionsLoading) {
+  if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <div className="animate-pulse space-y-4">
@@ -103,7 +108,7 @@ function MapPage() {
     );
   }
 
-  if (missionsError) {
+  if (isError) {
     return (
       <div className="max-w-7xl mx-auto p-6">
         <div className="rounded-3xl bg-destructive/10 border border-destructive/20 p-8 text-center">
@@ -138,7 +143,6 @@ function MapPage() {
           Atlas Territorial
         </h1>
         <div className="flex items-center gap-2">
-          {/* GPS indicator — icon-only on mobile, label on desktop */}
           {userLocationLoading ? (
             <div className="glass rounded-full p-1.5 lg:px-3 lg:py-1 text-muted-foreground flex items-center gap-1.5">
               <RefreshCw className="h-3.5 w-3.5 lg:h-4 lg:w-4 text-accent" />
@@ -223,44 +227,45 @@ function MapPage() {
         <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full order-1 lg:order-1">
           <MapView
             missions={filteredMissions}
-            selectedMissionId={activeMission?.id || null}
+            selectedMissionId={activeEntity?.id || null}
             onSelectMission={handleSelectMission}
             onRequestDetail={handleRequestDetail}
             userCoords={userCoords}
             userLocationLoading={userLocationLoading}
             onRequestUserLocation={requestUserLocation}
+            districtWarmth={districtWarmth}
           />
         </div>
 
         {/* Sidebar — hidden on mobile, drawer handles detail view */}
         <div className="hidden lg:flex lg:flex-col gap-2 lg:gap-4 min-h-[300px] lg:min-h-[500px] max-h-[40dvh] lg:max-h-none order-2 lg:order-2">
           <div className="flex-1 flex flex-col h-full">
-            {activeMission ? (
+            {activeEntity ? (
               <div className="flex-1 rounded-3xl bg-card border border-border/50 overflow-hidden shadow-card flex flex-col justify-between">
                 <div>
                   {/* Visual Banner Header */}
                   <div
-                    className={`${REGION_META[activeMission.region].gradient} p-4 lg:p-6 text-white relative`}
+                    className={`${REGION_META[activeEntity.region].gradient} p-4 lg:p-6 text-white relative`}
                   >
                     <div className="absolute inset-0 bg-mesh opacity-30" />
                     <div className="relative z-10">
                       <div className="text-4xl lg:text-5xl drop-shadow-md select-none">
-                        {activeMission.emoji}
+                        {activeEntity.emoji}
                       </div>
                       <div className="mt-2 lg:mt-3 text-[9px] lg:text-[10px] uppercase tracking-widest font-bold opacity-90">
-                        {REGION_META[activeMission.region].name} · {activeMission.category}
+                        {REGION_META[activeEntity.region].name} · {activeEntity.category}
                       </div>
                       <h2 className="font-display font-bold text-sm lg:text-xl mt-1 leading-tight drop-shadow-sm truncate">
-                        {activeMission.title}
+                        {activeEntity.title}
                       </h2>
                       <div className="text-[10px] lg:text-xs opacity-95 mt-1.5 lg:mt-2 flex items-center gap-1">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         <Link
                           to="/app/distrito/$slug"
-                          params={{ slug: districtSlugify(activeMission.district) }}
+                          params={{ slug: districtSlugify(activeEntity.location?.district ?? activeEntity.region) }}
                           className="truncate hover:underline"
                         >
-                          {activeMission.district}
+                          {activeEntity.location?.district ?? activeEntity.region}
                         </Link>
                       </div>
                     </div>
@@ -269,15 +274,15 @@ function MapPage() {
                   {/* Details Body */}
                   <div className="p-3 lg:p-5 space-y-2 lg:space-y-4">
                     <p className="text-[10px] lg:text-xs text-muted-foreground leading-relaxed">
-                      {activeMission.description}
+                      {activeEntity.summary}
                     </p>
 
                     {/* Grid stats */}
                     <div className="grid grid-cols-3 gap-1.5 lg:gap-2">
                       {[
-                        { label: "Puntos XP", value: `+${activeMission.xp}` },
-                        { label: "Cupos", value: `${activeMission.spotsLeft}` },
-                        { label: "Dificultad", value: activeMission.difficulty },
+                        { label: "Puntos XP", value: `+${activeEntity.xp ?? 0}` },
+                        { label: "Cupos", value: activeEntity.spotsLeft ?? "—" },
+                        { label: "Dificultad", value: activeEntity.difficulty ?? "—" },
                       ].map((s, idx) => (
                         <div
                           key={idx}
@@ -299,21 +304,28 @@ function MapPage() {
                         Impacto esperado
                       </div>
                       <div className="font-bold text-foreground text-[10px] lg:text-[11px]">
-                        {activeMission.impact}
+                        {activeEntity.impact ?? "—"}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* CTA Action button (Desktop view) */}
-                <div className="p-3 lg:p-4 border-t border-border/30 bg-secondary/15 flex gap-2">
-                  <Link
-                    to="/app/mision/$missionId"
-                    params={{ missionId: activeMission.id }}
-                    className="w-full inline-flex justify-center items-center rounded-xl bg-gradient-sunrise text-white px-3 lg:px-4 py-2.5 lg:py-3 font-semibold shadow-glow hover:scale-[1.02] transition-all active:scale-[0.98] duration-200 cursor-pointer text-xs lg:text-sm"
-                  >
-                    Unirme
-                  </Link>
+                <div className="p-3 lg:p-4 border-t border-border/30 bg-secondary/15">
+                  <InitiativeActionBar
+                    initiative={mapEntityToActionInitiative(activeEntity)}
+                    relationship="visitor"
+                    variant="popup"
+                    onAction={(action: InitiativeAction) => {
+                      if (action === "support") {
+                        navigate({ to: "/app/propuesta/$proposalId", params: { proposalId: activeEntity.sourceId } });
+                      } else if (action === "join") {
+                        navigate({ to: "/app/mision/$missionId", params: { missionId: activeEntity.id } });
+                      } else if (action === "share") {
+                        shareInitiative(activeEntity.title, window.location.href);
+                      }
+                    }}
+                  />
                 </div>
               </div>
             ) : (
@@ -345,45 +357,57 @@ function MapPage() {
             <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
               <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
 
-              {activeMission && (
+              {activeEntity && (
                 <>
                   {/* — PREVIEW — compact territorial card + CTA visible at 25% snap */}
                   <div className="px-5 pb-4">
                     <div
-                      className={`rounded-2xl ${REGION_META[activeMission.region].gradient} p-4 text-white relative overflow-hidden shadow-card`}
+                      className={`rounded-2xl ${REGION_META[activeEntity.region].gradient} p-4 text-white relative overflow-hidden shadow-card`}
                     >
                       <div className="absolute inset-0 bg-mesh opacity-25 pointer-events-none" />
                       <div className="relative z-10">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="text-[10px] uppercase tracking-widest font-bold opacity-85">
-                              {REGION_META[activeMission.region].name} · {activeMission.category}
+                              {REGION_META[activeEntity.region].name} · {activeEntity.category}
                             </div>
                             <h3 className="font-display font-bold text-base mt-0.5 leading-tight truncate">
-                              {activeMission.title}
+                              {activeEntity.title}
                             </h3>
+                            <p className="text-[10px] font-medium text-accent/90 mt-0.5">
+                              {activeEntity.temporalAnchor.label}
+                            </p>
                             <p className="text-[10px] opacity-80 mt-0.5 flex items-center gap-1">
                               <MapPin className="h-3 w-3" />{" "}
                               <Link
                                 to="/app/distrito/$slug"
-                                params={{ slug: districtSlugify(activeMission.district) }}
+                                params={{ slug: districtSlugify(activeEntity.location?.district ?? activeEntity.region) }}
                                 className="truncate hover:underline"
                               >
-                                {activeMission.district}
+                                {activeEntity.location?.district ?? activeEntity.region}
                               </Link>
                             </p>
                           </div>
                           <span className="text-3xl shrink-0 filter drop-shadow-md select-none">
-                            {activeMission.emoji}
+                            {activeEntity.emoji}
                           </span>
                         </div>
-                        <Link
-                          to="/app/mision/$missionId"
-                          params={{ missionId: activeMission.id }}
-                          className="mt-3 w-full inline-flex justify-center items-center rounded-xl bg-white/20 backdrop-blur text-white py-2.5 text-[10px] font-semibold border border-white/10 hover:bg-white/30 active:scale-[0.98] transition-all"
-                        >
-                          Unirme a la misión <span className="ml-1">→</span>
-                        </Link>
+                        <div className="mt-3">
+                          <InitiativeActionBar
+                            initiative={mapEntityToActionInitiative(activeEntity)}
+                            relationship="visitor"
+                            variant="popup"
+                            onAction={(action: InitiativeAction) => {
+                              if (action === "support") {
+                                navigate({ to: "/app/propuesta/$proposalId", params: { proposalId: activeEntity.sourceId } });
+                              } else if (action === "join") {
+                                navigate({ to: "/app/mision/$missionId", params: { missionId: activeEntity.id } });
+                              } else if (action === "share") {
+                                shareInitiative(activeEntity.title, window.location.href);
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -391,14 +415,14 @@ function MapPage() {
                   {/* — DETAILS — expands on drag up */}
                   <div className="px-5 pb-6 space-y-4">
                     <p className="text-sm text-muted-foreground leading-relaxed pt-4 border-t border-border/10">
-                      {activeMission.description}
+                      {activeEntity.summary}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { l: "Puntos XP", v: `+${activeMission.xp}` },
-                        { l: "Cupos libres", v: activeMission.spotsLeft },
-                        { l: "Dificultad", v: activeMission.difficulty },
+                        { l: "Puntos XP", v: `+${activeEntity.xp ?? 0}` },
+                        { l: "Cupos libres", v: activeEntity.spotsLeft ?? "—" },
+                        { l: "Dificultad", v: activeEntity.difficulty ?? "—" },
                       ].map((s, idx) => (
                         <div
                           key={idx}
@@ -416,18 +440,18 @@ function MapPage() {
                       <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">
                         Impacto comunitario
                       </div>
-                      <div className="font-bold text-foreground">{activeMission.impact}</div>
+                      <div className="font-bold text-foreground">{activeEntity.impact ?? "—"}</div>
                     </div>
 
-                    {activeMission.organizer && (
+                    {activeEntity.organizerName && (
                       <div className="flex items-center gap-3 pt-3 border-t border-border/10 text-xs">
                         <span className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-base select-none">
-                          {activeMission.organizer.avatar}
+                          {activeEntity.organizerAvatar ?? "🧑"}
                         </span>
                         <div>
                           <div className="text-[9px] text-muted-foreground">Organizador</div>
                           <div className="font-bold text-foreground">
-                            {activeMission.organizer.name}
+                            {activeEntity.organizerName}
                           </div>
                         </div>
                       </div>

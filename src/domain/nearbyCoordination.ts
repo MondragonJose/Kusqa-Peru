@@ -1,17 +1,5 @@
-import type { CivicEntity } from "@/types/entity";
-import type { Proposal } from "@/services/proposalContract";
 import type { TerritorialImpactSummary } from "./territoryAggregations";
 import type { AdjacencyMap } from "./spatialRelationships";
-import { calculateDistance } from "./territorial";
-import type { MapCoords } from "@/types";
-
-export type NearbyInitiatives = {
-  districtSlug: string;
-  nearbyMissions: CivicEntity[];
-  nearbyProposals: CivicEntity[];
-  totalNearby: number;
-  radiusKm: number;
-};
 
 export type RelatedTerritorialActivity = {
   activityCount: number;
@@ -31,44 +19,6 @@ export type NeighboringMissionContinuity = {
   contiguousMissions: number;
   corridorForming: boolean;
 };
-
-export type ProposalProximity = {
-  nearbyProposalIds: string[];
-  proximityCount: number;
-  clusterLabel: string | null;
-};
-
-export function findNearbyInitiatives(
-  districtSlug: string,
-  entities: CivicEntity[],
-  adjacencyMap: AdjacencyMap,
-  radiusKm: number = 25,
-): NearbyInitiatives {
-  const neighbors = adjacencyMap.get(districtSlug) ?? [];
-  const neighborSlugs = new Set(neighbors.map((n) => n.slug));
-  const nearbyMissions: CivicEntity[] = [];
-  const nearbyProposals: CivicEntity[] = [];
-
-  for (const e of entities) {
-    if (!e.district) continue;
-    const entitySlug = slugFromDistrictName(e.district);
-    if (neighborSlugs.has(entitySlug)) {
-      if (e.entityType === "mission") {
-        nearbyMissions.push(e);
-      } else {
-        nearbyProposals.push(e);
-      }
-    }
-  }
-
-  return {
-    districtSlug,
-    nearbyMissions,
-    nearbyProposals,
-    totalNearby: nearbyMissions.length + nearbyProposals.length,
-    radiusKm,
-  };
-}
 
 export function findRelatedTerritorialActivity(
   districtSlug: string,
@@ -122,14 +72,14 @@ export function detectAdjacentCoalitionEmergence(
 }
 
 export function checkNeighboringMissionContinuity(
-  entities: CivicEntity[],
+  entities: { location?: { district?: string | null } | null }[],
   adjacencyMap: AdjacencyMap,
   districtSlug: string,
 ): NeighboringMissionContinuity {
   const neighbors = adjacencyMap.get(districtSlug) ?? [];
   const neighborSlugs = new Set(neighbors.map((n) => n.slug));
   const missions = entities.filter(
-    (e) => e.district && neighborSlugs.has(slugFromDistrictName(e.district)),
+    (e) => e.location?.district && neighborSlugs.has(slugFromDistrictName(e.location.district)),
   );
 
   const contiguousMissions = missions.length;
@@ -137,44 +87,6 @@ export function checkNeighboringMissionContinuity(
   const corridorForming = contiguousMissions >= 3;
 
   return { hasContinuity, contiguousMissions, corridorForming };
-}
-
-export function computeProposalProximityRelationships(
-  proposals: Proposal[],
-  geometry: { slug: string; latitude: number; longitude: number }[],
-  radiusKm: number = 30,
-): Map<string, ProposalProximity> {
-  const result = new Map<string, ProposalProximity>();
-
-  const coordMap = new Map<string, { lat: number; lng: number }>();
-  for (const g of geometry) {
-    coordMap.set(g.slug, { lat: g.latitude, lng: g.longitude });
-  }
-
-  for (const p of proposals) {
-    if (!p.latitude || !p.longitude) continue;
-    const pCoords: MapCoords = { lat: p.latitude, lng: p.longitude };
-    const nearbyIds: string[] = [];
-
-    for (const other of proposals) {
-      if (other.id === p.id || !other.latitude || !other.longitude) continue;
-      const otherCoords: MapCoords = { lat: other.latitude, lng: other.longitude };
-      const dist = calculateDistance(pCoords, otherCoords);
-      if (dist <= radiusKm) {
-        nearbyIds.push(other.id);
-      }
-    }
-
-    const clusterLabel = nearbyIds.length >= 3 ? "núcleo de propuestas" : nearbyIds.length >= 1 ? "propuestas cercanas" : null;
-
-    result.set(p.id, {
-      nearbyProposalIds: nearbyIds,
-      proximityCount: nearbyIds.length,
-      clusterLabel,
-    });
-  }
-
-  return result;
 }
 
 function slugFromDistrictName(name: string): string {

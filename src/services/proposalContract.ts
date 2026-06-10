@@ -17,18 +17,9 @@
 
 // ─── Region / Category literals (shared across system) ─────────────────────
 
-export const PROPOSAL_REGIONS = ["costa", "sierra", "selva"] as const;
-export type ProposalRegion = (typeof PROPOSAL_REGIONS)[number];
+import type { Region } from "@/domain/regions";
 
-export const PROPOSAL_CATEGORIES = [
-  "Medio ambiente",
-  "Educación",
-  "Arte & cultura",
-  "Comunidad",
-  "Salud",
-  "Tecnología",
-] as const;
-export type ProposalCategory = (typeof PROPOSAL_CATEGORIES)[number];
+export { CATEGORIES as PROPOSAL_CATEGORIES, type MissionCategory as ProposalCategory } from "@/domain/categories";
 
 export const PROPOSAL_STATUSES = ["pending", "active", "resolved", "rejected"] as const;
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
@@ -46,7 +37,7 @@ export type DbProposalRow = {
   description: string | null;
   category: string;
   district: string;
-  region: ProposalRegion;
+  region: Region;
   team_size: number;
   images: string[] | null;
   status: ProposalStatus;
@@ -75,24 +66,6 @@ export type DbProposalRow = {
   has_converted_mission_id: string | null;
 };
 
-export type DbProposalInsert = {
-  user_id: string;
-  title: string;
-  description?: string | null;
-  category: string;
-  district: string;
-  region: string;
-  team_size: number;
-  images?: string[];
-  status?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  summary?: string | null;
-  why?: string | null;
-  location_label?: string | null;
-};
-
-export type DbProposalUpdate = Partial<Omit<DbProposalInsert, "user_id">>;
 
 // ─── Domain model (camelCase, what the app works with) ─────────────────────
 
@@ -103,7 +76,7 @@ export type Proposal = {
   description: string | null;
   category: string;
   district: string;
-  region: ProposalRegion;
+  region: Region;
   teamSize: number;
   images: string[];
   status: ProposalStatus;
@@ -135,7 +108,7 @@ export type CreateProposalDTO = {
   description?: string;
   category: string;
   district: string;
-  region: ProposalRegion;
+  region: Region;
   teamSize?: number;
   images?: string[];
   latitude?: number;
@@ -151,7 +124,7 @@ export type UpdateProposalDTO = Partial<{
   description: string;
   category: string;
   district: string;
-  region: ProposalRegion;
+  region: Region;
   teamSize: number;
   images: string[];
   status: ProposalStatus;
@@ -172,19 +145,6 @@ export type ProposalResult<T = Proposal> =
 
 // ─── Proposal support types ─────────────────────────────────────────────────
 
-export type DbProposalSupportRow = {
-  id: string;
-  user_id: string;
-  proposal_id: string;
-  created_at: string;
-};
-
-export type ProposalSupport = {
-  id: string;
-  userId: string;
-  proposalId: string;
-  createdAt: string;
-};
 
 export type ProposalSupporterPreview = {
   userId: string;
@@ -223,23 +183,9 @@ export const DB_DEFAULTS = {
 
 // ─── Coalition: collaborators ───────────────────────────────────────────────
 
-export const COLLABORATOR_ROLES = ["co_author", "ally"] as const;
-export type CollaboratorRole = (typeof COLLABORATOR_ROLES)[number];
+export type CollaboratorRole = "co_author" | "ally";
 
-export const COLLABORATOR_STATUSES = ["pending", "accepted", "declined"] as const;
-export type CollaboratorStatus = (typeof COLLABORATOR_STATUSES)[number];
-
-export type DbProposalCollaboratorRow = {
-  id: string;
-  proposal_id: string;
-  user_id: string;
-  role: CollaboratorRole;
-  invited_by: string | null;
-  status: CollaboratorStatus;
-  message: string | null;
-  created_at: string;
-  responded_at: string | null;
-};
+export type CollaboratorStatus = "pending" | "accepted" | "declined";
 
 export type ProposalCollaborator = {
   id: string;
@@ -270,17 +216,6 @@ export type RespondToInvitationDTO = {
 };
 
 // ─── Coalition: comments ────────────────────────────────────────────────────
-
-export type DbProposalCommentRow = {
-  id: string;
-  proposal_id: string;
-  user_id: string;
-  parent_comment_id: string | null;
-  content: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-};
 
 export type ProposalComment = {
   id: string;
@@ -323,13 +258,6 @@ export type ProposalSupportStats = {
   supportCount: number;
   collaboratorCount: number;
   acceptedCollaboratorCount: number;
-};
-
-export type DbProposalSupportStatsRow = {
-  proposal_id: string;
-  support_count: number;
-  collaborator_count: number;
-  accepted_collaborator_count: number;
 };
 
 export type ProposalCoalition = {

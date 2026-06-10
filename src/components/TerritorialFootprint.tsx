@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Region, Mission } from "@/types";
 import { computeFootprint } from "@/domain/territorial";
 import type { Footprint, ActivatedDistrict } from "@/domain/territorial";
+import { REGIONS } from "@/domain/regions";
 
 interface TerritorialFootprintProps {
   missions: Mission[];
@@ -20,7 +21,7 @@ const REGION_BLOB: Record<Region, { cx: number; cy: number; r: number; color: st
   selva: { cx: 145, cy: 280, r: 70, color: "oklch(0.78 0.14 140)" },
 };
 
-const REGION_ORDER: Region[] = ["costa", "sierra", "selva"];
+const REGION_ORDER: Region[] = REGIONS;
 
 /* Route trace paths between region centers */
 const ROUTE_TRACES: Record<string, string> = {
