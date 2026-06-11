@@ -20,7 +20,6 @@ import {
 } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useCreateProposal, useAllProposals } from "@/features/proposals";
-import type { ProposalResult } from "@/features/proposals";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser, getAuthSnapshot } from "@/features/auth";
 import { toast } from "sonner";
@@ -201,9 +200,7 @@ function CreateProject() {
         const fileName = `${userId}/${Date.now()}-${index}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        const { data, error } = await supabase.storage
-          .from("proposal-images")
-          .upload(filePath, file);
+        const { error } = await supabase.storage.from("proposal-images").upload(filePath, file);
 
         if (error) {
           if (import.meta.env.DEV) {

@@ -28,8 +28,6 @@ export const Route = createFileRoute("/app/mapa")({
   component: MapPage,
 });
 
-type TabType = "misiones" | "actividad" | "analitica";
-
 function MapPage() {
   const navigate = useNavigate();
   const { data: mapEntities = [], isLoading, isError } = useMapEntities();
@@ -42,14 +40,8 @@ function MapPage() {
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const allMapItems = mapEntities;
 
-  const {
-    filters,
-    updateFilters,
-    filteredMissions,
-    availableCategories,
-    availableDifficulties,
-    availableDistricts,
-  } = useMissionMapFilters(allMapItems, userCoords);
+  const { filters, updateFilters, filteredMissions, availableCategories, availableDistricts } =
+    useMissionMapFilters(allMapItems, userCoords);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showHuellas, setShowHuellas] = useState(true);

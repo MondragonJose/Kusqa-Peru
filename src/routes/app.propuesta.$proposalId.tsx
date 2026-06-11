@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, AlertCircle, Archive } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useProposal } from "@/features/proposals";
+import { useSupportProposal } from "@/features/proposals/hooks/useSupportProposal";
 import { useCurrentUserId } from "@/features/auth";
 import { canArchiveProposal } from "@/domain/proposalGovernance";
 import { moderationRepository } from "@/services/moderationRepository";
@@ -20,6 +21,7 @@ import { ProposalMomentum } from "@/features/proposals/components/ProposalMoment
 import type { Initiative } from "@/domain/initiative";
 import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/initiative";
 import type { InitiativeAction } from "@/domain/initiativeActions";
+import { deriveRelationship } from "@/domain/initiativeActions";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
@@ -32,6 +34,7 @@ function ProposalDetail() {
   const { proposalId } = useParams({ from: "/app/propuesta/$proposalId" });
   const { data: proposal, isLoading, isError, error } = useProposal(proposalId);
   const currentUserId = useCurrentUserId();
+  const { supportProposal, isSupported, isSupporting } = useSupportProposal();
   const [archiving, setArchiving] = useState(false);
   const [reporting, setReporting] = useState(false);
 
@@ -101,11 +104,18 @@ function ProposalDetail() {
     };
   }, [proposal]);
 
+  const handleSupport = () => {
+    if (!proposal) return;
+    if (!isSupported(proposal.id) && !isSupporting) {
+      supportProposal({ proposalId: proposal.id });
+    }
+  };
+
   const handleActionBar = (action: InitiativeAction) => {
     if (!proposal) return;
     switch (action) {
       case "support":
-        // Support is handled by ProposalStickyCTA
+        handleSupport();
         break;
       case "share":
         shareInitiative(proposal.title, window.location.href);
@@ -114,6 +124,9 @@ function ProposalDetail() {
         if (currentUserId) {
           handleReport();
         }
+        break;
+      case "edit":
+        handleArchive();
         break;
     }
   };
@@ -176,27 +189,27 @@ function ProposalDetail() {
           <ProposalLifecycleTimeline proposalId={proposal.id} />
           {currentUserId && initiativeForBar && (
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/20">
-              <div className="flex items-center gap-1">
-                <InitiativeActionBar
-                  initiative={initiativeForBar}
-                  relationship="visitor"
-                  variant="compact"
-                  maxVisible={2}
-                  onAction={handleActionBar}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                {canArchiveProposal(proposal.userId, currentUserId!, proposal.status) && (
-                  <button
-                    onClick={handleArchive}
-                    disabled={archiving}
-                    className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                  >
-                    <Archive className="h-3 w-3" />
-                    {archiving ? "Archivando..." : "Archivar propuesta"}
-                  </button>
-                )}
-              </div>
+              <InitiativeActionBar
+                initiative={initiativeForBar}
+                relationship={deriveRelationship(initiativeForBar, {
+                  currentUserId,
+                  isSupported: isSupported(proposal.id),
+                  isOwner: proposal.userId === currentUserId,
+                })}
+                variant="compact"
+                maxVisible={2}
+                onAction={handleActionBar}
+                onEdit={
+                  canArchiveProposal(proposal.userId, currentUserId, proposal.status)
+                    ? handleArchive
+                    : undefined
+                }
+                labelOverrides={
+                  canArchiveProposal(proposal.userId, currentUserId, proposal.status)
+                    ? { edit: "Archivar" }
+                    : undefined
+                }
+              />
             </div>
           )}
         </div>

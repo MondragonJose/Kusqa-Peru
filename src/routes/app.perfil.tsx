@@ -77,7 +77,7 @@ export function Profile() {
   const { data: ownProposals = [] } = useCurrentUserProposals();
 
   const [momentOpen, setMomentOpen] = useState(false);
-  const [activeMoment, setActiveMoment] = useState<KusqaMomentData | null>(null);
+  const [activeMoment, _setActiveMoment] = useState<KusqaMomentData | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [districtEditOpen, setDistrictEditOpen] = useState(false);
@@ -151,11 +151,6 @@ export function Profile() {
     streak: 0,
   });
 
-  const handleOpenDistrictEdit = () => {
-    setDistrictInput(user.district);
-    setDistrictEditOpen(true);
-  };
-
   const handleSaveDistrict = async () => {
     if (!districtInput.trim()) {
       alert("Por favor ingresa un distrito válido");
@@ -187,21 +182,6 @@ export function Profile() {
     } finally {
       setIsUpdatingDistrict(false);
     }
-  };
-
-  const handleTriggerCelebration = () => {
-    // Dynamically build a premium milestone celebration
-    setActiveMoment({
-      type: "level",
-      title: currentStage.name,
-      subtitle: `¡Hito Alcanzado: Nivel ${currentStage.level}!`,
-      icon: currentStage.icon,
-      message: `Tu expedición a través de la ${currentStage.terrain} ha dejado una huella imborrable. Sigues tejiendo comunidad en todo el Perú.`,
-      gradientClass: currentStage.gradientClass,
-      regionLabel: currentStage.terrain,
-      detailLabel: `Ruta KUSQA`,
-    });
-    setMomentOpen(true);
   };
 
   const handleOpenMissionStory = (id: string) => {

@@ -3,8 +3,10 @@ import { MapPin, Users, Heart, Clock, Zap } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Initiative } from "@/domain/initiative";
 import type { InitiativeAction } from "@/domain/initiativeActions";
+import { deriveRelationship } from "@/domain/initiativeActions";
 import { getLifecyclePresentation } from "@/domain/lifecyclePresentation";
 import { regionGradient, regionLabel, type Region } from "@/domain/regions";
+import { useCurrentUserId } from "@/features/auth";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
@@ -35,24 +37,28 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
   const proposalId = isProposal ? initiative.sourceId : "";
   const { data: supportCount = 0 } = useSupportCount(proposalId);
   const { isSupported } = useSupportProposal();
+  const currentUserId = useCurrentUserId();
   const navigate = useNavigate();
 
-  const relationship = isSupported(initiative.sourceId)
-    ? ("supporter" as const)
-    : ("visitor" as const);
+  const relationship = deriveRelationship(initiative, {
+    currentUserId: currentUserId ?? undefined,
+    isSupported: isSupported(initiative.sourceId),
+    isOwner: !!currentUserId && currentUserId === initiative.ownerId,
+  });
 
   const handleAction = (action: InitiativeAction) => {
     switch (action) {
       case "support":
+      case "join":
+      case "comment":
+      case "edit":
+      case "report":
         navigate({
           to: isProposal ? "/app/propuesta/$proposalId" : "/app/mision/$missionId",
           params: isProposal
             ? { proposalId: initiative.sourceId }
             : { missionId: initiative.sourceId },
         });
-        break;
-      case "join":
-        navigate({ to: "/app/mision/$missionId", params: { missionId: initiative.sourceId } });
         break;
       case "share":
         shareInitiative(initiative.title, window.location.href);

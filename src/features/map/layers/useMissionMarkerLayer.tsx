@@ -4,6 +4,7 @@
  * Consumes InitiativeMapEntity as the single rendering contract.
  */
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import type * as L from "leaflet";
 import {
   projectMapMarker,
   getEntityPresentation,
@@ -14,16 +15,14 @@ import { createRoot, type Root } from "react-dom/client";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { mapEntityToActionInitiative } from "../projections/mapEntityProjection";
 
-type LeafletInstance = any;
-
 type MarkerLayerOptions = {
-  L: LeafletInstance;
-  clusterGroup: LeafletInstance;
+  L: typeof import("leaflet");
+  clusterGroup: L.LayerGroup;
   entities: InitiativeMapEntity[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
   onRequestDetail?: (id: string) => void;
-  markersMap: Map<string, LeafletInstance>;
+  markersMap: Map<string, L.Marker>;
 };
 
 const REGION_GLOW: Record<string, string> = {
@@ -54,7 +53,6 @@ export function renderMissionMarkers({
     const isSelected = selectedMissionId === projection.id;
     const isProposal = isProposalEntity(entity);
 
-    const lifecycle = projection.lifecycle;
     const pres = getEntityPresentation(entity);
     if (pres.isHidden) return;
     const gradient = regionGradient(projection.region as Region);
@@ -127,8 +125,8 @@ export function renderMissionMarkers({
     marker.on("click", () => onSelectMission(projection.id));
 
     marker.on("popupopen", () => {
-      const popup: any = marker.getPopup();
-      const popupEl: HTMLElement | null = popup?.getElement();
+      const popup = marker.getPopup();
+      const popupEl = popup?.getElement() ?? null;
       if (!popupEl) return;
 
       // Clean up any stale root from a previous popup lifecycle

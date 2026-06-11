@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { CrossingOverlay } from "@/components/CrossingOverlay";
 import { REGION_META } from "@/constants/gamification";
 import { MissionStoryModal } from "@/features/missions";
-import { useCurrentUser, useJoinUserMission } from "@/features/auth";
+import { useCurrentUser, useCurrentUserId, useJoinUserMission } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
@@ -41,6 +41,7 @@ import type {
   TemporalAnchor,
 } from "@/domain/initiative";
 import type { InitiativeAction } from "@/domain/initiativeActions";
+import { deriveRelationship } from "@/domain/initiativeActions";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useDistricts, useSpatialContext } from "@/features/districts/hooks";
@@ -185,6 +186,7 @@ function MissionDetail() {
   }, [isMissionEntity, isProposalEntity, proposal, navigate]);
 
   const currentUser = useCurrentUser();
+  const currentUserId = useCurrentUserId();
   const joinMutation = useJoinUserMission();
   const didFireError = useRef(false);
   const joiningRef = useRef(false);
@@ -193,6 +195,12 @@ function MissionDetail() {
   const { data: timeline } = useProfileMissionTimeline();
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
   const userMission = timeline?.userMissions?.find((um) => um.missionId === missionId);
+  const relationship = initiative
+    ? deriveRelationship(initiative, {
+        currentUserId: currentUserId ?? undefined,
+        isParticipant: alreadyJoined,
+      })
+    : "visitor";
 
   const { data: evidenceList = [] } = useMissionEvidence(missionId);
   const submitEvidenceMutation = useSubmitEvidence();
@@ -545,41 +553,17 @@ function MissionDetail() {
         <ArrowLeft className="h-4 w-4" /> Volver al mapa de exploración
       </Link>
 
-      {/* Mobile sticky CTA - only visible on small screens */}
-      <div className="lg:hidden fixed bottom-20 left-4 right-4 z-30">
-        <motion.button
-          onClick={handleJoinMission}
-          disabled={
-            !isMissionEntity || alreadyJoined || joinMutation.isPending || joinMutation.isSuccess
-          }
-          className={`w-full inline-flex justify-center items-center rounded-2xl ${meta.gradient} text-white py-3.5 font-black text-xs shadow-glow transition-all ${
-            !isMissionEntity
-              ? "opacity-90 cursor-default"
-              : alreadyJoined || joinMutation.isSuccess
-                ? "opacity-90 cursor-default"
-                : "cursor-pointer"
-          } ${joinMutation.isPending ? "opacity-70 cursor-wait" : ""}`}
-          whileHover={
-            isMissionEntity && !alreadyJoined && !joinMutation.isPending ? { scale: 1.01 } : {}
-          }
-          whileTap={
-            isMissionEntity && !alreadyJoined && !joinMutation.isPending ? { scale: 0.98 } : {}
-          }
-        >
-          {!isMissionEntity ? (
-            <span className="flex items-center gap-2">Ver propuesta</span>
-          ) : joinMutation.isPending ? (
-            <span className="flex items-center gap-2">
-              <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              Ingresando...
-            </span>
-          ) : alreadyJoined || joinMutation.isSuccess ? (
-            <span className="flex items-center gap-2">✨ Estás en ruta</span>
-          ) : (
-            "Iniciar ruta"
-          )}
-        </motion.button>
-      </div>
+      {/* Mobile sticky CTA — delegates to InitiativeActionBar */}
+      {initiative && (
+        <div className="lg:hidden fixed bottom-20 left-4 right-4 z-30">
+          <InitiativeActionBar
+            variant="compact"
+            initiative={initiative}
+            relationship={relationship}
+            onAction={handleActionBar}
+          />
+        </div>
+      )}
 
       {/* Hero */}
       <motion.div
@@ -1064,24 +1048,6 @@ function MissionDetail() {
               </div>
             </div>
 
-            <div>
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: initiative.title, url: window.location.href });
-                  } else if (navigator.clipboard) {
-                    navigator.clipboard.writeText(window.location.href).then(() => {
-                      toast.success("Enlace copiado", {
-                        description: "Comparte esta ruta con tu comunidad.",
-                      });
-                    });
-                  }
-                }}
-                className="w-full rounded-2xl border border-border px-4 py-3 text-xs font-black uppercase tracking-wider hover:bg-secondary/40 transition-colors cursor-pointer"
-              >
-                Compartir ruta
-              </button>
-            </div>
           </div>
         </aside>
       </div>
