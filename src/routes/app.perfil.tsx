@@ -32,7 +32,7 @@ import { deriveCivicBiography } from "@/domain/civicBiography";
 import { beatToNarrative, phaseToHeadline } from "@/domain/civicJourneyNarrative";
 import { toInstitutionalRecord, toExport, type ExportFormat } from "@/domain/civicJourneyExport";
 
-import type { Mission } from "@/types";
+import type { Mission, UserMission } from "@/types";
 import type { PlaceSuggestion } from "@/services/googleMaps";
 import { getPlaceSuggestions } from "@/services/googleMaps";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
@@ -58,6 +58,23 @@ export const Route = createFileRoute("/app/perfil")({
   },
   component: Profile,
 });
+
+function computeStreak(userMissions: UserMission[]): number {
+  const dates = userMissions
+    .filter((um) => um.completedAt != null)
+    .map((um) => um.completedAt!.split("T")[0]);
+  const unique = [...new Set(dates)].sort((a, b) => b.localeCompare(a));
+  if (unique.length === 0) return 0;
+  let streak = 1;
+  for (let i = 1; i < unique.length; i++) {
+    const prev = new Date(unique[i - 1]);
+    const curr = new Date(unique[i]);
+    const diff = Math.round((prev.getTime() - curr.getTime()) / 86_400_000);
+    if (diff === 1) streak++;
+    else break;
+  }
+  return streak;
+}
 
 export function Profile() {
   const user = useCurrentUser()!;
@@ -147,8 +164,8 @@ export function Profile() {
   const trustStatus = deriveCivicTrust({
     missionsDone: user.missionsDone || 0,
     distinctDistricts: journey.footprint.regions.length,
-    hasLedProject: supportedIds.length > 0,
-    streak: 0,
+    hasLedProject: ownProposals.length > 0,
+    streak: computeStreak(timeline?.userMissions ?? []),
   });
 
   const handleSaveDistrict = async () => {

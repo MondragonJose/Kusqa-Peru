@@ -806,14 +806,14 @@ function Landing(): JSX.Element {
         <div className="relative mx-auto max-w-7xl text-white">
           <div className="max-w-2xl">
             <div className="text-xs uppercase tracking-widest text-sun font-semibold">
-              Tu expedición
+              Ruta de crecimiento
             </div>
             <h2 className="font-display font-bold text-4xl lg:text-5xl mt-3 leading-tight">
               De vecino activo a líder Kusqa.
             </h2>
             <p className="mt-5 text-white/70 text-lg leading-relaxed">
-              Cada misión te lleva más alto en una ruta inspirada en los caminos ancestrales. Sube
-              por la costa, atraviesa los Andes, llega a la Amazonía y deja huella en el camino.
+              Cada misión impulsa una ruta inspirada en los caminos ancestrales que atraviesan
+              la costa, los Andes y la Amazonía. El progreso real se construye en el territorio.
             </p>
           </div>
 
@@ -839,28 +839,19 @@ function Landing(): JSX.Element {
                 </linearGradient>
               </defs>
             </svg>
-            <div className="relative grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+            <div className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
               {[
-                { lvl: 1, name: "Caminante", emoji: "🚶", active: true },
-                { lvl: 2, name: "Vecino", emoji: "🏘️", active: true },
-                { lvl: 3, name: "Sembrador", emoji: "🌱", active: true },
-                { lvl: 4, name: "Guía", emoji: "⛰️", active: false, current: true },
-                { lvl: 7, name: "Líder Kusqa", emoji: "🏆", active: false },
+                { lvl: 1, name: "Caminante", emoji: "🚶" },
+                { lvl: 2, name: "Vecino", emoji: "🏘️" },
+                { lvl: 3, name: "Sembrador", emoji: "🌱" },
+                { lvl: 4, name: "Guía", emoji: "⛰️" },
+                { lvl: 5, name: "Tejedor", emoji: "🤲" },
+                { lvl: 6, name: "Curaca", emoji: "🗿" },
+                { lvl: 7, name: "Líder Kusqa", emoji: "🏆" },
               ].map((s) => (
                 <div key={s.lvl} className="relative">
-                  <div
-                    className={`aspect-square rounded-2xl grid place-items-center text-3xl sm:text-4xl ${
-                      s.current
-                        ? "bg-gradient-sunrise shadow-glow ring-4 ring-white/30"
-                        : s.active
-                          ? "bg-white/15 backdrop-blur"
-                          : "bg-white/5 border border-white/10 opacity-60"
-                    }`}
-                  >
+                  <div className="aspect-square rounded-2xl grid place-items-center text-4xl sm:text-5xl bg-white/10 backdrop-blur border border-white/10">
                     {s.emoji}
-                    {s.current && (
-                      <span className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse-ring" />
-                    )}
                   </div>
                   <div className="mt-2 sm:mt-3 text-center">
                     <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/50">
@@ -883,7 +874,7 @@ function Landing(): JSX.Element {
             <Star className="h-8 w-8 text-sun shrink-0" />
             <div className="flex-1 text-center sm:text-left">
               <div className="font-semibold text-white">
-                Tu aventura empieza en Nivel 1 — Caminante
+                El primer paso hacia el cambio empieza aquí
               </div>
               <div className="text-white/60 text-sm mt-0.5">
                 Cada misión que completes te acerca a ser un Líder Kusqa reconocido en tu región.

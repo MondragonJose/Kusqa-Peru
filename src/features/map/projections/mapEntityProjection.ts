@@ -107,16 +107,21 @@ export function buildMapEntitySummary(entities: InitiativeMapEntity[]): Territor
   let recentProposalCount = 0;
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
+  let supporterSum = 0;
+  let collaboratorSum = 0;
+
   for (const e of entities) {
     if (e.sourceType === "mission") {
       missionCount++;
       if (e.lifecycle === "completed") completedMissionCount++;
+      if (e.participants != null) collaboratorSum += e.participants;
     } else {
       proposalCount++;
       if (e.lifecycle === "forming") activeProposalCount++;
       if (e.date && new Date(e.date) > thirtyDaysAgo) recentProposalCount++;
     }
 
+    supporterSum += e.supportCount;
     if (e.date && (!lastActivityAt || e.date > lastActivityAt)) {
       lastActivityAt = e.date;
     }
@@ -127,8 +132,8 @@ export function buildMapEntitySummary(entities: InitiativeMapEntity[]): Territor
     completedMissionCount,
     proposalCount,
     activeProposalCount,
-    uniqueSupporterCount: 0,
-    acceptedCollaboratorCount: 0,
+    uniqueSupporterCount: supporterSum,
+    acceptedCollaboratorCount: collaboratorSum,
     lastActivityAt,
     recentProposalCount: recentProposalCount > 0 ? recentProposalCount : undefined,
   };

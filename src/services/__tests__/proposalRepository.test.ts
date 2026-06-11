@@ -46,6 +46,41 @@ describe("proposalRepository", () => {
       ).rejects.toThrow(/Failed to fetch proposal/);
     });
 
+    it("converts string latitude/longitude from Supabase to number in domain", async () => {
+      mock.queue.tableResponse("proposals", {
+        data: makeProposalRow({
+          latitude: "-12.0464",
+          longitude: "-77.0428",
+        }),
+        error: null,
+      });
+
+      const result = await proposalRepository.getProposalById(
+        "11111111-1111-1111-1111-111111111111",
+      );
+
+      expect(result).not.toBeNull();
+      expect(result!.latitude).toBe(-12.0464);
+      expect(typeof result!.latitude).toBe("number");
+      expect(result!.longitude).toBe(-77.0428);
+      expect(typeof result!.longitude).toBe("number");
+    });
+
+    it("returns null latitude/longitude when DB row has null", async () => {
+      mock.queue.tableResponse("proposals", {
+        data: makeProposalRow({ latitude: null, longitude: null }),
+        error: null,
+      });
+
+      const result = await proposalRepository.getProposalById(
+        "11111111-1111-1111-1111-111111111111",
+      );
+
+      expect(result).not.toBeNull();
+      expect(result!.latitude).toBeNull();
+      expect(result!.longitude).toBeNull();
+    });
+
     it("returns null when the row is missing", async () => {
       mock.queue.tableResponse("proposals", { data: null, error: null });
 

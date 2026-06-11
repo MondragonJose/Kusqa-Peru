@@ -245,7 +245,7 @@ function CreateProject() {
   const handlePublish = async () => {
     if (!title.trim()) {
       toast.error("Título requerido", {
-        description: "Por favor ingresa un título para tu misión",
+        description: "Por favor ingresa un título para tu propuesta",
       });
       return;
     }
@@ -336,7 +336,7 @@ function CreateProject() {
 
     setIsSubmitting(false);
     toast.success("Propuesta publicada", {
-      description: "Tu iniciativa ya aparece en el feed y el mapa.",
+      description: "Tu propuesta ya aparece en el feed y el mapa.",
     });
     navigate({ to: "/app" });
   };
@@ -397,7 +397,7 @@ function CreateProject() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-display font-bold text-xl">
-                    ¿De qué trata tu expedición cívica?
+                    ¿De qué trata tu propuesta ciudadana?
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
                     Dale un nombre que inspire acción y selecciona su causa principal.
@@ -550,7 +550,7 @@ function CreateProject() {
                 </div>
                 <h2 className="font-display font-bold text-3xl mt-2">¿Cuántos seremos?</h2>
                 <p className="text-muted-foreground mt-2">
-                  Define el tamaño del equipo para esta iniciativa.
+                  Define el tamaño del equipo para esta propuesta.
                 </p>
                 <div className="mt-8 text-center">
                   <div className="font-display font-bold text-7xl text-gradient-sunrise">
@@ -716,7 +716,7 @@ function CreateProject() {
                     <span className="text-muted-foreground font-normal">(opcional)</span>
                   </label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    ¿Cuándo planeas ejecutar la iniciativa? Aparecerá como ancla temporal en el
+                    ¿Cuándo planeas ejecutar tu propuesta? Aparecerá como ancla temporal en el
                     feed.
                   </p>
                   <input
@@ -754,9 +754,8 @@ function CreateProject() {
                   <span className="font-semibold text-foreground">{district}</span> y notificaremos
                   a tu red cívica.
                 </p>
-                <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm">
-                  Has ganado <span className="font-bold text-accent">+150 XP</span> por tu liderazgo
-                  🚀
+                <div className="mt-6 text-sm text-muted-foreground">
+                  Al publicar, tu propuesta aparecerá en el mapa y el feed del distrito.
                 </div>
                 {similarProposals.length > 0 && (
                   <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 px-4 py-3 text-left">
