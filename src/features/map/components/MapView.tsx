@@ -46,6 +46,13 @@ type MapViewProps = {
   onToggleHuellas?: () => void;
   selectedHuellaId?: string | null;
   onSelectHuella?: (id: string) => void;
+  /**
+   * Padding reserved for side panels (eg. sidebar + detail panel).
+   * Applied via paddingTopLeft/paddingBottomRight in fitBounds when centering
+   * on a selected entity, so the popup stays fully visible inside the viewport.
+   */
+  selectionPaddingTopLeft?: [number, number];
+  selectionPaddingBottomRight?: [number, number];
 };
 
 type MapMode = "pins" | "districts";
@@ -65,6 +72,8 @@ export function MapView({
   onToggleHuellas,
   selectedHuellaId = null,
   onSelectHuella,
+  selectionPaddingTopLeft = [0, 0],
+  selectionPaddingBottomRight = [0, 0],
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -146,6 +155,7 @@ export function MapView({
 
   // Huella layer: debounced bbox-based query
   const [debouncedBbox, setDebouncedBbox] = useState<BBox | undefined>(undefined);
+  const hasInitiallyFitted = useRef(false);
   const [currentZoom, setCurrentZoom] = useState(MAP_DEFAULT_ZOOM);
   const [showDormantHuellas, setShowDormantHuellas] = useState(true);
   const bboxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -470,13 +480,19 @@ export function MapView({
     spatialGeometry,
   ]);
 
-  // Center selected mission changes
+  // Center selected mission changes — use fitBounds with padding so popup
+  // stays inside the viewport and doesn't clip behind side panels.
   useEffect(() => {
-    if (!leafletLoaded || !mapRef.current || !selectedMissionId) return;
+    if (!leafletLoaded || !LInstance || !mapRef.current || !selectedMissionId) return;
     const selectedMission = missions.find((m) => m.id === selectedMissionId);
     const selectedCoords = selectedMission?.location?.coords;
     if (selectedCoords && isValidLatLng(selectedCoords.lat, selectedCoords.lng)) {
-      mapRef.current.setView([selectedCoords.lat, selectedCoords.lng], MAP_DETAIL_ZOOM, {
+      const point = LInstance.latLng(selectedCoords.lat, selectedCoords.lng);
+      const bounds = LInstance.latLngBounds([point]);
+      mapRef.current.fitBounds(bounds, {
+        paddingTopLeft: selectionPaddingTopLeft,
+        paddingBottomRight: selectionPaddingBottomRight,
+        maxZoom: MAP_DETAIL_ZOOM,
         animate: true,
         duration: 1.0,
       });
@@ -484,10 +500,10 @@ export function MapView({
       if (marker) {
         setTimeout(() => {
           if (marker.isPopupOpen && !marker.isPopupOpen()) marker.openPopup();
-        }, 300);
+        }, 400);
       }
     }
-  }, [selectedMissionId, leafletLoaded, missions]);
+  }, [selectedMissionId, leafletLoaded, LInstance, missions, selectionPaddingTopLeft, selectionPaddingBottomRight]);
 
   // Auto-center on user location when first obtained
   useEffect(() => {
@@ -513,44 +529,42 @@ export function MapView({
     }
   }, [userCoords, leafletLoaded]);
 
-  // Auto-center on mission activity (centroid of all missions) on initial load
+  // Fit bounds to all visible entities on initial load and filter change.
+  // On subsequent changes with an active selection the selection-centering
+  // effect (above) takes over so the user preserves their focus entity.
   useEffect(() => {
-    if (!leafletLoaded || !mapRef.current) return;
+    if (!leafletLoaded || !LInstance || !mapRef.current) return;
 
-    // Only do this on initial load if we have missions
     const missionsWithCoords = missions.filter(
       (m) => m.location?.coords && isValidLatLng(m.location.coords.lat, m.location.coords.lng),
     );
     if (missionsWithCoords.length === 0) return;
 
-    const currentCenter = mapRef.current.getCenter();
-    const distanceFromDefault = Math.sqrt(
-      Math.pow(currentCenter.lat - PERU_DEFAULT_CENTER.lat, 2) +
-        Math.pow(currentCenter.lng - PERU_DEFAULT_CENTER.lng, 2),
+    const isFirstFit = !hasInitiallyFitted.current;
+    hasInitiallyFitted.current = true;
+
+    // When a marker is selected and this is not the first ever fit, skip
+    // so the selection-centering effect handles the viewport.
+    if (!isFirstFit && selectedMissionId && missions.some((m) => m.id === selectedMissionId)) return;
+
+    const latLngs = missionsWithCoords.map((m) =>
+      LInstance.latLng(m.location!.coords!.lat, m.location!.coords!.lng),
     );
+    const bounds = LInstance.latLngBounds(latLngs);
+    mapRef.current.fitBounds(bounds, {
+      padding: [50, 50],
+      maxZoom: 12,
+      animate: !isFirstFit,
+      duration: 1.5,
+    });
 
-    if (distanceFromDefault < 0.1) {
-      const avgLat =
-        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lat, 0) /
-        missionsWithCoords.length;
-      const avgLng =
-        missionsWithCoords.reduce((sum, m) => sum + m.location!.coords!.lng, 0) /
-        missionsWithCoords.length;
-
-      // Center on centroid with appropriate zoom
-      const zoom = missionsWithCoords.length > 5 ? 7 : 9;
-      mapRef.current.setView([avgLat, avgLng], zoom, { animate: true, duration: 1.5 });
-
-      if (import.meta.env.DEV) {
-        console.log("[KUSQA MAP TRACE] Auto-centered on entity centroid:", {
-          avgLat,
-          avgLng,
-          zoom,
-          entityCount: missionsWithCoords.length,
-        });
-      }
+    if (import.meta.env.DEV) {
+      console.log("[KUSQA MAP TRACE] Fit bounds to entities:", {
+        count: missionsWithCoords.length,
+        isFirstFit,
+      });
     }
-  }, [missions, leafletLoaded]);
+  }, [missions, leafletLoaded, LInstance, selectedMissionId]);
 
   // GPS User centering sync
   const handleCenterUser = () => {

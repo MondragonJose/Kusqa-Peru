@@ -17,6 +17,7 @@ import { useRef, useEffect, useMemo, useState } from "react";
 import { JSX } from "react/jsx-runtime";
 import { useLandingInitiatives } from "@/features/initiatives/hooks/useLandingInitiatives";
 import { deriveInitiativeStats } from "@/domain/initiativeStats";
+import { regionGradient, type Region } from "@/domain/regions";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
 import { useOAuthLogin } from "@/features/auth";
 import { useAuthState } from "@/features/auth";
@@ -407,19 +408,19 @@ function Landing(): JSX.Element {
               </p>
 
               <div className="mt-6 lg:mt-9 flex flex-wrap items-center gap-2 lg:gap-3">
-                <button
-                  onClick={loginWithGoogle}
+                <Link
+                  to="/app/mapa"
                   className="group inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-smooth"
                 >
-                  Crear proyecto
-                  <ArrowRight className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <a
-                  href="#expediciones"
+                  Explorar mapa <MapPin className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <button
+                  onClick={loginWithGoogle}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 backdrop-blur px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold hover:bg-surface transition-smooth"
                 >
-                  Explorar mapa <MapPin className="h-3 lg:h-4 w-3 lg:w-4" />
-                </a>
+                  Crear proyecto
+                  <ArrowRight className="h-3 lg:h-4 w-3 lg:w-4" />
+                </button>
               </div>
 
               {/* Mini stats row — derived from real Supabase data */}
@@ -456,74 +457,65 @@ function Landing(): JSX.Element {
           </div>
 
           {/* Floating expedition cards */}
-          <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 max-w-5xl">
-            {[
-              {
-                emoji: "🎨",
-                title: "Mural colectivo",
-                place: "Barranco · Lima",
-                xp: 320,
-                rotate: "-rotate-2",
-                gradient: "from-accent/20 to-sun/20",
-                region: "Costa",
-              },
-              {
-                emoji: "🌱",
-                title: "Reforestación",
-                place: "Chinchero · Cusco",
-                xp: 540,
-                rotate: "rotate-1",
-                gradient: "from-jungle/20 to-sierra/20",
-                region: "Sierra",
-              },
-              {
-                emoji: "🛶",
-                title: "Limpieza del río",
-                place: "Iquitos · Loreto",
-                xp: 680,
-                rotate: "-rotate-1",
-                gradient: "from-coast/20 to-jungle/20",
-                region: "Selva",
-              },
-            ].map((c, i) => (
-              <motion.div
-                key={c.title}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02, y: -4 }}
-                transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
-                className={`glass-strong rounded-2xl p-4 lg:p-5 shadow-card hover:shadow-lift transition-smooth ${c.rotate} hover:rotate-0 cursor-pointer`}
-              >
-                <div
-                  className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}
+          {featuredMissions.length > 0 ? (
+            <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 max-w-5xl">
+              {featuredMissions.slice(0, 3).map((initiative, i) => (
+                <motion.div
+                  key={initiative.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
+                  className="glass-strong rounded-2xl p-4 lg:p-5 shadow-card hover:shadow-lift transition-smooth cursor-pointer"
                 >
-                  {c.emoji}
-                </div>
-                <div className="flex items-center gap-1 text-[8px] lg:text-xs text-muted-foreground mb-2">
-                  <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">
-                    {c.region}
-                  </span>
-                  <span>·</span>
-                  <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" />{" "}
-                  <span className="truncate">{c.place}</span>
-                </div>
-                <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">
-                  {c.title}
-                </div>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
-                    +{c.xp} XP
-                  </span>
-                  <button
-                    onClick={loginWithGoogle}
-                    className="text-[8px] lg:text-xs text-accent font-semibold hover:gap-2 flex items-center gap-1 transition-all"
+                  <div
+                    className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${regionGradient(initiative.region as Region)} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}
                   >
-                    Únete <ChevronRight className="h-3 w-3" />
-                  </button>
-                </div>
+                    {initiative.emoji}
+                  </div>
+                  <div className="flex items-center gap-1 text-[8px] lg:text-xs text-muted-foreground mb-2">
+                    <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">
+                      {initiative.region}
+                    </span>
+                    <span>·</span>
+                    <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" />{" "}
+                    <span className="truncate">{initiative.location?.district ?? ""}</span>
+                  </div>
+                  <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">
+                    {initiative.title}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
+                      {initiative.lifecycle === "active" ? "En curso" : initiative.lifecycle === "forming" ? "Próxima" : initiative.lifecycle}
+                    </span>
+                    <Link
+                      to="/app/mapa"
+                      className="text-[8px] lg:text-xs text-accent font-semibold hover:gap-2 flex items-center gap-1 transition-all"
+                    >
+                      Ver más <ChevronRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-12 lg:mt-16 max-w-5xl">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="glass-strong rounded-2xl p-8 text-center shadow-card"
+              >
+                <div className="text-3xl mb-4">🏔️</div>
+                <h3 className="font-display font-semibold text-lg mb-2">
+                  Las primeras expediciones están naciendo
+                </h3>
+                <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                  Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El mapa se llena cuando tú decides dar el primer paso.
+                </p>
               </motion.div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -729,12 +721,12 @@ function Landing(): JSX.Element {
                 <br />
                 sus comunidades hoy.
               </h2>
-              <button
-                onClick={loginWithGoogle}
+              <Link
+                to="/app/mapa"
                 className="inline-flex items-center gap-2 text-sm text-accent font-semibold hover:gap-3 transition-all"
               >
                 Ver todas las acciones <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
             </div>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl leading-relaxed">
               Cada misión es una historia real de jóvenes como tú dejando huella en su barrio,
@@ -751,7 +743,6 @@ function Landing(): JSX.Element {
             </div>
           ) : (
             <>
-              {/* Warm fallback intro */}
               <motion.p
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -762,53 +753,26 @@ function Landing(): JSX.Element {
                 cambiar. Las primeras misiones nacen así — de vecinos que deciden ser el primer
                 paso. ¿Y si ese alguien fueras tú?
               </motion.p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[
-                  {
-                    emoji: "🎨",
-                    title: "Mural colectivo",
-                    place: "Barranco · Lima",
-                    gradient: "from-accent/20 to-sun/20",
-                  },
-                  {
-                    emoji: "🌱",
-                    title: "Reforestación",
-                    place: "Chinchero · Cusco",
-                    gradient: "from-jungle/20 to-sierra/20",
-                  },
-                  {
-                    emoji: "🛶",
-                    title: "Limpieza del río",
-                    place: "Iquitos · Loreto",
-                    gradient: "from-coast/20 to-jungle/20",
-                  },
-                ].map((c, i) => (
-                  <motion.div
-                    key={c.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="glass-strong rounded-2xl p-5 shadow-card"
-                  >
-                    <div
-                      className={`h-28 rounded-xl bg-gradient-to-br ${c.gradient} grid place-items-center text-5xl mb-4`}
-                    >
-                      {c.emoji}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                      <MapPin className="h-3 w-3" /> {c.place}
-                    </div>
-                    <div className="font-display font-semibold text-base mb-4">{c.title}</div>
-                    <button
-                      onClick={loginWithGoogle}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 py-2.5 text-xs font-semibold hover:opacity-90 transition-smooth"
-                    >
-                      Sé quien inicia algo aquí <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-strong rounded-2xl p-10 text-center shadow-card"
+              >
+                <div className="text-4xl mb-4">🚀</div>
+                <h3 className="font-display font-semibold text-lg mb-2">
+                  No hay expediciones todavía — la primera puede ser tuya
+                </h3>
+                <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed mb-6">
+                  El mapa está vacío porque nadie ha dado el primer paso en tu región. ¿Te animas a crear la primera misión?
+                </p>
+                <button
+                  onClick={loginWithGoogle}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-glow"
+                >
+                  Crear primera misión <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
             </>
           )}
 
@@ -946,62 +910,26 @@ function Landing(): JSX.Element {
               Jóvenes construyendo el Perú que sueñan.
             </h2>
           </div>
-          <div className="mt-12 grid md:grid-cols-3 gap-5">
-            {[
-              {
-                quote:
-                  "Antes pensaba que para cambiar algo había que esperar a ser grande. KUSQA me mostró que mi cuadra ya cuenta.",
-                name: "Mateo, 19",
-                place: "Trujillo",
-                emoji: "🌊",
-                region: "Costa",
-                missions: "8 misiones",
-              },
-              {
-                quote:
-                  "Sembrar queuñas en Chinchero con otros chicos fue lo más bonito que hice este año. Me hice amigos de toda la sierra.",
-                name: "Sayri, 22",
-                place: "Cusco",
-                emoji: "🌱",
-                region: "Sierra",
-                missions: "15 misiones",
-              },
-              {
-                quote:
-                  "Organicé mi primer proyecto de clases de código. Hoy tengo 40 mentores y sigo creciendo.",
-                name: "Camila, 24",
-                place: "Lima",
-                emoji: "💻",
-                region: "Costa",
-                missions: "23 misiones",
-              },
-            ].map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-2xl glass p-6 shadow-soft hover:shadow-card transition-smooth"
-              >
-                <div className="text-3xl">{t.emoji}</div>
-                <p className="mt-4 text-foreground leading-relaxed">"{t.quote}"</p>
-                <div className="mt-5 pt-5 border-t border-border/50 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-sm">{t.name}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <MapPin className="h-3 w-3" /> {t.place}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {t.region}
-                    </div>
-                    <div className="text-xs text-accent font-semibold">{t.missions}</div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          <div className="mt-12">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="rounded-2xl glass p-10 text-center shadow-soft max-w-lg mx-auto"
+            >
+              <div className="text-4xl mb-4">📢</div>
+              <p className="text-foreground leading-relaxed text-lg">
+                "Las primeras voces están escribiendo su historia — la tuya puede ser la próxima."
+              </p>
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <button
+                  onClick={loginWithGoogle}
+                  className="inline-flex items-center gap-2 text-sm text-accent font-semibold hover:gap-3 transition-all"
+                >
+                  Comparte tu historia <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Users, Heart, Clock, Zap } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Initiative } from "@/domain/initiative";
+import { getInitiativeDetailRoute } from "@/domain/initiativeRoute";
 import type { InitiativeAction } from "@/domain/initiativeActions";
 import { deriveRelationship } from "@/domain/initiativeActions";
 import { getLifecyclePresentation } from "@/domain/lifecyclePresentation";
@@ -52,14 +53,11 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
       case "join":
       case "comment":
       case "edit":
-      case "report":
-        navigate({
-          to: isProposal ? "/app/propuesta/$proposalId" : "/app/mision/$missionId",
-          params: isProposal
-            ? { proposalId: initiative.sourceId }
-            : { missionId: initiative.sourceId },
-        });
+      case "report": {
+        const route = getInitiativeDetailRoute(initiative);
+        navigate(route);
         break;
+      }
       case "share":
         shareInitiative(initiative.title, window.location.href);
         break;

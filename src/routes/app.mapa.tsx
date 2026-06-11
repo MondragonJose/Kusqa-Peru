@@ -7,23 +7,21 @@ import { useUserLocation } from "@/features/map/hooks/useUserLocation";
 import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters";
 import { useMapEntities } from "@/features/map/hooks/useMapEntities";
 import { MapView } from "@/features/map/components/MapView";
-import {
-  isMissionEntity,
-  buildMapEntitySummary,
-  mapEntityToActionInitiative,
-} from "@/features/map/projections/mapEntityProjection";
+import { MapSidebar } from "@/features/map/components/MapSidebar";
+import { MapDetailPanel } from "@/features/map/components/MapDetailPanel";
+import { buildMapEntitySummary, mapEntityToActionInitiative } from "@/features/map/projections/mapEntityProjection";
 import { Drawer } from "vaul";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import type { MissionCategory } from "@/types";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
 import type { InitiativeAction } from "@/domain/initiativeActions";
+import { getInitiativeDetailRoute } from "@/domain/initiativeRoute";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
+import { toast } from "sonner";
 import { shareInitiative } from "@/features/actions/shareInitiative";
+import { useSupportProposal } from "@/features/proposals";
+import { useJoinUserMission } from "@/features/auth";
+import { useCurrentUser } from "@/features/auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import type { TerritorialActivityLevel } from "@/domain/territorialIntelligence";
 import { classifyTerritorialVitality } from "@/domain/territorialIntelligence";
@@ -48,16 +46,20 @@ function MapPage() {
 
   const { filters, updateFilters, filteredMissions, availableCategories, availableDistricts } =
     useMissionMapFilters(allMapItems, userCoords);
+  const isMobile = useIsMobile();
+
+  const currentUser = useCurrentUser();
+  const { supportProposal } = useSupportProposal();
+  const joinMutation = useJoinUserMission();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [showHuellas, setShowHuellas] = useState(true);
   const [selectedHuellaId, setSelectedHuellaId] = useState<string | null>(null);
 
-  // Sidebar only renders missions — proposals stay as map markers only
-  const sidebarItems = filteredMissions.filter(isMissionEntity);
   const activeEntity: InitiativeMapEntity | null =
-    sidebarItems.find((m) => m.id === selectedId) ?? sidebarItems[0] ?? null;
+    filteredMissions.find((m) => m.id === selectedId) ?? null;
 
   // District warmth: derive TerritorialActivityLevel via canonical pipeline
   const districtWarmth = useMemo<Record<string, TerritorialActivityLevel>>(() => {
@@ -79,15 +81,15 @@ function MapPage() {
   }, [allMapItems]);
 
   useEffect(() => {
-    if (sidebarItems.length === 0) {
+    if (filteredMissions.length === 0) {
       setSelectedId(null);
       return;
     }
-    const selectionValid = selectedId !== null && sidebarItems.some((m) => m.id === selectedId);
+    const selectionValid = selectedId !== null && filteredMissions.some((m) => m.id === selectedId);
     if (!selectionValid) {
-      setSelectedId(sidebarItems[0].id);
+      setSelectedId(filteredMissions[0].id);
     }
-  }, [sidebarItems, selectedId]);
+  }, [filteredMissions, selectedId]);
 
   // Request user location automatically on mount
   useEffect(() => {
@@ -100,8 +102,7 @@ function MapPage() {
 
   const handleRequestDetail = useCallback((id: string) => {
     setSelectedId(id);
-    setIsDetailOpen(true);
-    setIsDrawerOpen(true);
+    setDetailOpen(true);
   }, []);
 
   // Conditional returns AFTER all hooks
@@ -225,10 +226,27 @@ function MapPage() {
         </div>
       </div>
 
-      {/* Main Map & Interactive Sidebar Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_390px] gap-3 lg:gap-5 items-stretch">
-        {/* Dynamic Leaflet Map with focal coords support */}
-        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full order-1 lg:order-1">
+      {/* Main Map Layout: sidebar + map + detail panel (desktop), map-only (mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_390px] gap-3 lg:gap-4 items-stretch">
+        {/* Desktop sidebar — entity list */}
+        {!isMobile && (
+          <div className="hidden lg:block min-h-[640px]">
+            <MapSidebar
+              entities={filteredMissions}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setDetailOpen(true);
+              }}
+              onHover={setHoveredId}
+              isLoading={isLoading}
+            />
+          </div>
+        )}
+
+        {/* Dynamic Leaflet Map */}
+        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeEntity?.id || null}
@@ -242,150 +260,45 @@ function MapPage() {
             onToggleHuellas={() => setShowHuellas((v) => !v)}
             selectedHuellaId={selectedHuellaId}
             onSelectHuella={setSelectedHuellaId}
+            selectionPaddingTopLeft={isMobile ? [0, 0] : [280, 30]}
+            selectionPaddingBottomRight={isMobile ? [0, 0] : [390, 30]}
           />
         </div>
 
-        {/* Desktop detail Dialog */}
-        {activeEntity && (
-          <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-            <DialogContent className="max-h-[85vh] overflow-y-auto w-[min(92vw,640px)]">
-              <DialogTitle className="sr-only">{activeEntity.title}</DialogTitle>
-              <DialogDescription className="sr-only">
-                {activeEntity.summary}
-              </DialogDescription>
-              <div className="space-y-4">
-                {/* Visual Banner Header */}
-                <div
-                  className={`${REGION_META[activeEntity.region].gradient} p-4 sm:p-6 text-white relative rounded-xl`}
-                >
-                  <div className="absolute inset-0 bg-mesh opacity-30 rounded-xl" />
-                  <div className="relative z-10">
-                    <div className="text-4xl sm:text-5xl drop-shadow-md select-none">
-                      {activeEntity.emoji}
-                    </div>
-                    <div className="mt-2 sm:mt-3 text-[9px] sm:text-[10px] uppercase tracking-widest font-bold opacity-90">
-                      {REGION_META[activeEntity.region].name} · {activeEntity.category}
-                    </div>
-                    <h2 className="font-display font-bold text-sm sm:text-xl mt-1 leading-tight drop-shadow-sm truncate">
-                      {activeEntity.title}
-                    </h2>
-                    <div className="text-[10px] sm:text-xs opacity-95 mt-1.5 sm:mt-2 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      <Link
-                        to="/app/distrito/$slug"
-                        params={{
-                          slug: districtSlugify(
-                            activeEntity.location?.district ?? activeEntity.region,
-                          ),
-                        }}
-                        className="truncate hover:underline"
-                      >
-                        {activeEntity.location?.district ?? activeEntity.region}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Details Body */}
-                <div className="space-y-3">
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    {activeEntity.summary}
-                  </p>
-
-                  {/* Grid stats */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: "Puntos XP", value: `+${activeEntity.xp ?? 0}` },
-                      { label: "Cupos", value: activeEntity.spotsLeft ?? "—" },
-                      { label: "Dificultad", value: activeEntity.difficulty ?? "—" },
-                    ].map((s, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-xl bg-secondary/50 border border-border/20 p-2.5 text-center"
-                      >
-                        <div className="font-display font-extrabold text-foreground text-xs">
-                          {s.value}
-                        </div>
-                        <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">
-                          {s.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Impact description */}
-                  <div className="rounded-xl bg-accent/5 border border-accent/15 p-3 text-xs sm:text-sm">
-                    <div className="text-accent font-bold uppercase tracking-wider text-[7px] mb-0.5">
-                      Impacto esperado
-                    </div>
-                    <div className="font-bold text-foreground">
-                      {activeEntity.impact ?? "—"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA Action buttons */}
-                <div className="pt-2 border-t border-border/30">
-                  <InitiativeActionBar
-                    initiative={mapEntityToActionInitiative(activeEntity)}
-                    relationship="visitor"
-                    variant="row"
-                    maxVisible={4}
-                    onAction={(action: InitiativeAction) => {
-                      switch (action) {
-                        case "support":
-                          navigate({
-                            to: "/app/propuesta/$proposalId",
-                            params: { proposalId: activeEntity.sourceId },
-                          });
-                          break;
-                        case "join":
-                          navigate({
-                            to: "/app/mision/$missionId",
-                            params: { missionId: activeEntity.id },
-                          });
-                          break;
-                        case "share":
-                          shareInitiative(activeEntity.title, window.location.href);
-                          break;
-                        case "comment":
-                          navigate({
-                            to: activeEntity.sourceType === "mission"
-                              ? "/app/mision/$missionId"
-                              : "/app/propuesta/$proposalId",
-                            params: activeEntity.sourceType === "mission"
-                              ? { missionId: activeEntity.id }
-                              : { proposalId: activeEntity.sourceId },
-                            hash: "comments",
-                          });
-                          break;
-                        case "report":
-                          navigate({
-                            to: activeEntity.sourceType === "mission"
-                              ? "/app/mision/$missionId"
-                              : "/app/propuesta/$proposalId",
-                            params: activeEntity.sourceType === "mission"
-                              ? { missionId: activeEntity.id }
-                              : { proposalId: activeEntity.sourceId },
-                          });
-                          break;
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        {/* Desktop detail panel — inline replacement for the old modal */}
+        {!isMobile && activeEntity && (
+          <div className="hidden lg:block min-h-[640px]">
+            <MapDetailPanel
+              entity={activeEntity}
+              onClose={() => setSelectedId(null)}
+              onSupport={(proposalId) => {
+                if (!currentUser) { toast.error("Debes iniciar sesión para apoyar"); return; }
+                supportProposal({ proposalId });
+              }}
+              onJoin={(missionId) => {
+                if (!currentUser) { toast.error("Debes iniciar sesión para unirte"); return; }
+                joinMutation.mutate({ missionId });
+              }}
+            />
+          </div>
         )}
       </div>
 
-      {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer — territorial destination preview */}
-      <Drawer.Root open={isDrawerOpen} onOpenChange={setIsDrawerOpen} snapPoints={["25%", "85vh"]}>
+      {/* MOBILE-ONLY: Vaul Bottom Sheet Drawer — territorial destination preview */}
+      {isMobile && (
+      <Drawer.Root open={detailOpen} onOpenChange={setDetailOpen} snapPoints={["25%", "85vh"]}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
           <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
             <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
               <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
+
+              {activeEntity && (
+                <Drawer.Title className="sr-only">{activeEntity.title}</Drawer.Title>
+              )}
+              {activeEntity && (
+                <Drawer.Description className="sr-only">{activeEntity.summary}</Drawer.Description>
+              )}
 
               {activeEntity && (
                 <>
@@ -431,38 +344,32 @@ function MapPage() {
                             initiative={mapEntityToActionInitiative(activeEntity)}
                             relationship="visitor"
                             variant="compact"
-                            onAction={(action: InitiativeAction) => {
-                              switch (action) {
-                                case "support":
-                                  navigate({
-                                    to: "/app/propuesta/$proposalId",
-                                    params: { proposalId: activeEntity.sourceId },
-                                  });
-                                  break;
-                                case "join":
-                                  navigate({
-                                    to: "/app/mision/$missionId",
-                                    params: { missionId: activeEntity.id },
-                                  });
-                                  break;
-                                case "share":
-                                  shareInitiative(activeEntity.title, window.location.href);
-                                  break;
-                                case "comment":
-                                  navigate({
-                                    to: "/app/mision/$missionId",
-                                    params: { missionId: activeEntity.id },
-                                    hash: "comments",
-                                  });
-                                  break;
-                                case "report":
-                                  navigate({
-                                    to: "/app/mision/$missionId",
-                                    params: { missionId: activeEntity.id },
-                                  });
-                                  break;
-                              }
-                            }}
+                              onAction={(action: InitiativeAction) => {
+                                switch (action) {
+                                  case "support":
+                                    if (!currentUser) { toast.error("Debes iniciar sesión para apoyar"); break; }
+                                    supportProposal({ proposalId: activeEntity.sourceId });
+                                    break;
+                                  case "join":
+                                    if (!currentUser) { toast.error("Debes iniciar sesión para unirte"); break; }
+                                    joinMutation.mutate({ missionId: activeEntity.id });
+                                    break;
+                                  case "share":
+                                    shareInitiative(activeEntity.title, window.location.href);
+                                    break;
+                                  case "comment": {
+                                    const route = getInitiativeDetailRoute(activeEntity);
+                                    navigate({ ...route, hash: "comments" });
+                                    break;
+                                  }
+                                  case "edit":
+                                  case "report": {
+                                    const route = getInitiativeDetailRoute(activeEntity);
+                                    navigate(route);
+                                    break;
+                                  }
+                                }
+                              }}
                           />
                         </div>
                       </div>
@@ -520,6 +427,7 @@ function MapPage() {
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
+      )}
     </div>
   );
 }

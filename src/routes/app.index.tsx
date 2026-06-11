@@ -16,6 +16,7 @@ import type { Initiative } from "@/domain/initiative";
 import type { InitiativeAction } from "@/domain/initiativeActions";
 import { iconSize } from "@/design";
 import { deriveAmbientSignal, initiativesToAmbientEvents } from "@/domain/ambient";
+import { getInitiativeDetailRoute } from "@/domain/initiativeRoute";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
@@ -450,6 +451,15 @@ function Dashboard() {
               <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
                 <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
 
+                {selectedEntity && (
+                  <Drawer.Title className="sr-only">{selectedEntity.title}</Drawer.Title>
+                )}
+                {selectedEntity && (
+                  <Drawer.Description className="sr-only">
+                    {selectedEntity.summary}
+                  </Drawer.Description>
+                )}
+
                 {selectedEntity &&
                   (() => {
                     const meta = REGION_META[selectedEntity.region];
@@ -457,7 +467,6 @@ function Dashboard() {
                     const district = selectedEntity.location?.district ?? "";
                     const description = selectedEntity.summary;
                     const participants = selectedEntity.participantsCount ?? 0;
-                    const linkId = selectedEntity.sourceId;
                     return (
                       <>
                         <div className="px-5 pb-4">
@@ -497,11 +506,17 @@ function Dashboard() {
                                     }
                                     break;
                                   case "join":
-                                    navigate({
-                                      to: "/app/mision/$missionId",
-                                      params: { missionId: selectedEntity.sourceId },
-                                    });
+                                  case "edit":
+                                  case "report": {
+                                    const route = getInitiativeDetailRoute(selectedEntity);
+                                    navigate(route);
                                     break;
+                                  }
+                                  case "comment": {
+                                    const route = getInitiativeDetailRoute(selectedEntity);
+                                    navigate({ ...route, hash: "comments" });
+                                    break;
+                                  }
                                   case "share":
                                     shareInitiative(selectedEntity.title, window.location.href);
                                     break;
@@ -509,14 +524,7 @@ function Dashboard() {
                               }}
                             />
                             <Link
-                              to={
-                                isProposalEntity
-                                  ? "/app/propuesta/$proposalId"
-                                  : "/app/mision/$missionId"
-                              }
-                              params={
-                                isProposalEntity ? { proposalId: linkId } : { missionId: linkId }
-                              }
+                              {...getInitiativeDetailRoute(selectedEntity)}
                               onClick={() => setSelectedEntity(null)}
                               className="text-xs text-muted-foreground/60 hover:text-foreground underline underline-offset-2 transition-colors"
                             >

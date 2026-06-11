@@ -72,6 +72,7 @@ function CreateProject() {
   const [stepErrors, setStepErrors] = useState<Record<number, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  const [proposedDate, setProposedDate] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Image upload state
@@ -109,6 +110,12 @@ function CreateProject() {
         if (team < 3 || team > 80) return "El equipo debe tener entre 3 y 80 personas";
         return null;
       case 4:
+        if (proposedDate) {
+          const d = new Date(proposedDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (d < today) return "La fecha tentativa debe ser hoy o una fecha futura";
+        }
         return null;
       case 5:
         return null;
@@ -286,6 +293,7 @@ function CreateProject() {
       summary: summary.trim() || undefined,
       why: why.trim() || undefined,
       locationLabel: locationLabel.trim() || undefined,
+      proposedDate: proposedDate ? new Date(proposedDate).toISOString() : undefined,
       category: cat,
       district: district.trim(),
       region,
@@ -700,6 +708,32 @@ function CreateProject() {
                       Subiendo imágenes...
                     </div>
                   )}
+                </div>
+
+                <div className="mt-6">
+                  <label className="text-sm font-semibold">
+                    Fecha tentativa de acción{" "}
+                    <span className="text-muted-foreground font-normal">(opcional)</span>
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ¿Cuándo planeas ejecutar la iniciativa? Aparecerá como ancla temporal en el
+                    feed.
+                  </p>
+                  <input
+                    type="date"
+                    value={proposedDate}
+                    onChange={(e) => {
+                      setProposedDate(e.target.value);
+                      if (e.target.value) {
+                        const d = new Date(e.target.value);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (d >= today) setStepErrors((prev) => ({ ...prev, [4]: "" }));
+                      }
+                    }}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/50"
+                  />
                 </div>
               </div>
             )}

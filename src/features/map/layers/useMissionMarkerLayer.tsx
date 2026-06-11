@@ -11,10 +11,6 @@ import {
   isProposalEntity,
 } from "../projections/mapEntityProjection";
 import { regionGradient, regionChipBg, type Region } from "@/domain/regions";
-import { createRoot, type Root } from "react-dom/client";
-import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
-import { mapEntityToActionInitiative, entityDetailRoute } from "../projections/mapEntityProjection";
-import { shareInitiative } from "@/features/actions/shareInitiative";
 
 type MarkerLayerOptions = {
   L: typeof import("leaflet");
@@ -45,8 +41,6 @@ export function renderMissionMarkers({
   onRequestDetail,
   markersMap,
 }: MarkerLayerOptions): void {
-  const popupRoots = new Map<string, Root>();
-
   entities.forEach((entity) => {
     const projection = projectMapMarker(entity);
     if (!projection) return;
@@ -94,7 +88,7 @@ export function renderMissionMarkers({
 
     const popupHtml = `
       <div class="p-2.5 text-xs w-56 font-sans">
-        <div class="flex items-start justify-between gap-1.5 pb-1.5 border-b border-border/40">
+        <div class="flex items-start justify-between gap-1.5">
           <div class="flex-1 min-w-0">
             <div class="font-bold text-foreground text-sm truncate leading-tight">${projection.title}</div>
             <div class="text-[9px] text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -105,12 +99,11 @@ export function renderMissionMarkers({
           </div>
           <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${projection.region}</span>
         </div>
-        <div id="action-bar-popup-${projection.id}" class="mt-2"></div>
-        <div class="flex mt-1.5">
+        <div class="mt-1.5">
           <button
-            class="kusqa-detail-btn flex-1 inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30"
+            class="kusqa-detail-btn w-full inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30"
           >
-            Ver más →
+            Ver detalles →
           </button>
         </div>
       </div>
@@ -128,52 +121,15 @@ export function renderMissionMarkers({
     marker.on("popupopen", () => {
       const popup = marker.getPopup();
       const popupEl = popup?.getElement() ?? null;
-      if (!popupEl) return;
+      if (!popupEl || !onRequestDetail) return;
 
-      // Clean up any stale root from a previous popup lifecycle
-      const staleRoot = popupRoots.get(projection.id);
-      if (staleRoot) staleRoot.unmount();
-
-      // Mount InitiativeActionBar into the action-bar container
-      const container = popupEl.querySelector<HTMLElement>(`#action-bar-popup-${projection.id}`);
-      if (container) {
-        const root = createRoot(container);
-        root.render(
-          <InitiativeActionBar
-            initiative={mapEntityToActionInitiative(entity)}
-            relationship="visitor"
-            variant="popup"
-            maxVisible={2}
-            onAction={(action) => {
-              if (action === "share") {
-                shareInitiative(projection.title, `${window.location.origin}${entityDetailRoute(entity)}`);
-                return;
-              }
-              onRequestDetail?.(projection.id);
-            }}
-          />,
-        );
-        popupRoots.set(projection.id, root);
-      }
-
-      // Wire up the "Ver más" detail button
-      if (onRequestDetail) {
-        const btn: HTMLElement | null = popupEl.querySelector(".kusqa-detail-btn");
-        if (btn) {
-          btn.onclick = (e: Event) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRequestDetail(projection.id);
-          };
-        }
-      }
-    });
-
-    marker.on("popupclose", () => {
-      const root = popupRoots.get(projection.id);
-      if (root) {
-        root.unmount();
-        popupRoots.delete(projection.id);
+      const btn: HTMLElement | null = popupEl.querySelector(".kusqa-detail-btn");
+      if (btn) {
+        btn.onclick = (e: Event) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onRequestDetail(projection.id);
+        };
       }
     });
 
