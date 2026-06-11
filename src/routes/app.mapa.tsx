@@ -92,6 +92,11 @@ function MapPage() {
     }
   }, [sidebarItems, selectedId]);
 
+  // Request user location automatically on mount
+  useEffect(() => {
+    requestUserLocation();
+  }, [requestUserLocation]);
+
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
   }, []);
@@ -135,11 +140,6 @@ function MapPage() {
       </div>
     );
   }
-
-  // Request user location automatically on mount
-  useEffect(() => {
-    requestUserLocation();
-  }, [requestUserLocation]);
 
   return (
     <div className="space-y-3 lg:space-y-5 max-w-7xl mx-auto px-3 md:px-6 py-1 lg:py-2">
