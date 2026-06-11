@@ -184,13 +184,13 @@ export const DB_DEFAULTS = {
 
 // ─── Coalition: collaborators ───────────────────────────────────────────────
 
-export type CollaboratorRole = "co_author" | "ally";
+export type CollaboratorRole = "co_steward" | "ally";
 
 export type CollaboratorStatus = "pending" | "accepted" | "declined";
 
 export type ProposalCollaborator = {
   id: string;
-  proposalId: string;
+  initiativeId: string;
   userId: string;
   username: string;
   firstName: string;
@@ -204,7 +204,7 @@ export type ProposalCollaborator = {
 };
 
 export type CreateCollaboratorInvitationDTO = {
-  proposalId: string;
+  initiativeId: string;
   /** Target user (must already be a registered KUSQA member) */
   userId: string;
   role: CollaboratorRole;

@@ -6,8 +6,8 @@ import {
   getProposalPhase,
   getProposalPhaseCopy,
   getProposalThreshold,
+  computeProposalAnchor,
 } from "@/domain/proposalLifecycle";
-import { computeProposalAnchor } from "@/domain/initiative";
 import { regionGradient, regionLabel, type Region } from "@/domain/regions";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
 

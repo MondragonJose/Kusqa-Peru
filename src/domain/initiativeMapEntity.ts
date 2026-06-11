@@ -9,12 +9,8 @@ import type {
   InitiativeLocation,
   TemporalAnchor,
 } from "@/domain/initiative";
-import {
-  deriveLifecycleFromMission,
-  deriveLifecycleFromProposal,
-  computeMissionAnchor,
-  computeProposalAnchor,
-} from "@/domain/initiative";
+import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/proposalLifecycle";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/missionLifecycle";
 import { categoryEmoji } from "@/domain/categories";
 import { getProposalThreshold } from "@/domain/proposalLifecycle";
 

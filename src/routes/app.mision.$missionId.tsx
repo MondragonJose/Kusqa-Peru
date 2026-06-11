@@ -33,7 +33,7 @@ import {
 import type { Mission, Region, Evidence } from "@/types";
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_STATUS_STYLES } from "@/types/evidence";
 import { formatRelativeDate } from "@/utils/date";
-import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/initiative";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/missionLifecycle";
 import type {
   Initiative,
   InitiativeLifecycle,
@@ -196,7 +196,7 @@ function MissionDetail() {
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
   const userMission = timeline?.userMissions?.find((um) => um.missionId === missionId);
   const relationship = initiative
-    ? deriveRelationship(initiative, {
+    ? deriveRelationship({
         currentUserId: currentUserId ?? undefined,
         isParticipant: alreadyJoined,
       })
@@ -623,7 +623,7 @@ function MissionDetail() {
               {initiative && (
                 <InitiativeActionBar
                   initiative={initiative}
-                  relationship={initiative.ownerId ? "organizer" : "visitor"}
+                  relationship={initiative.ownerId ? "steward" : "visitor"}
                   variant="row"
                   onAction={handleActionBar}
                 />

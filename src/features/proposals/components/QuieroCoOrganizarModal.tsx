@@ -30,14 +30,14 @@ export function QuieroCoOrganizarModal({
   onOpenChange,
 }: QuieroCoOrganizarModalProps) {
   const [userHandle, setUserHandle] = useState("");
-  const [role, setRole] = useState<CollaboratorRole>("co_author");
+  const [role, setRole] = useState<CollaboratorRole>("co_steward");
   const [message, setMessage] = useState("");
   const { mutate: invite, isPending } = useInviteCollaborator();
 
   useEffect(() => {
     if (!open) {
       setUserHandle("");
-      setRole("co_author");
+      setRole("co_steward");
       setMessage("");
     }
   }, [open]);
@@ -61,7 +61,7 @@ export function QuieroCoOrganizarModal({
 
     invite(
       {
-        proposalId: proposal.id,
+        initiativeId: proposal.id,
         userId: trimmed,
         role,
         message: message.trim() || undefined,

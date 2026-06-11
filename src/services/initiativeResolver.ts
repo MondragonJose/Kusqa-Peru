@@ -20,12 +20,8 @@ import type {
   InitiativeLocation,
   TemporalAnchor,
 } from "@/domain/initiative";
-import {
-  deriveLifecycleFromMission,
-  deriveLifecycleFromProposal,
-  computeMissionAnchor,
-  computeProposalAnchor,
-} from "@/domain/initiative";
+import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/proposalLifecycle";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/missionLifecycle";
 import type { Mission } from "@/types";
 import type { Proposal } from "@/services/proposalContract";
 import { missionRepository } from "@/services/missionRepository";

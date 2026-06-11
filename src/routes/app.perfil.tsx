@@ -26,7 +26,7 @@ import {
   getProposalThreshold,
 } from "@/domain/proposalLifecycle";
 import { MapPin, Sparkles, Heart, Map, Clock, ArrowRight, X, Download } from "lucide-react";
-import { computeProposalAnchor } from "@/domain/initiative";
+import { computeProposalAnchor } from "@/domain/proposalLifecycle";
 import { deriveCivicJourney, type CivicJourneyInput } from "@/domain/civicJourney";
 import { deriveCivicBiography } from "@/domain/civicBiography";
 import { beatToNarrative, phaseToHeadline } from "@/domain/civicJourneyNarrative";

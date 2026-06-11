@@ -391,7 +391,7 @@ const INITIATIVE_SELECT = `
 export const initiativeCommentRepository = {
   async countByInitiative(initiativeId: string, initiativeType: InitiativeType): Promise<number> {
     const { count, error } = await supabase
-      .from("proposal_comments")
+      .from("initiative_comments")
       .select("*", { count: "exact", head: true })
       .eq("initiative_id", initiativeId)
       .eq("initiative_type", initiativeType)
@@ -419,7 +419,7 @@ export const initiativeCommentRepository = {
       error: topErr,
       count: topCount,
     } = await supabase
-      .from("proposal_comments")
+      .from("initiative_comments")
       .select(INITIATIVE_SELECT, { count: "exact" })
       .eq("initiative_id", initiativeId)
       .eq("initiative_type", initiativeType)
@@ -436,7 +436,7 @@ export const initiativeCommentRepository = {
     let replies: unknown[] = [];
     if (topIds.length > 0) {
       const { data, error } = await supabase
-        .from("proposal_comments")
+        .from("initiative_comments")
         .select(INITIATIVE_SELECT)
         .eq("initiative_id", initiativeId)
         .eq("initiative_type", initiativeType)

@@ -22,7 +22,7 @@
 
 import { DB_DEFAULTS, type ProposalStatus } from "@/services/proposalContract";
 import type { Proposal } from "@/services/proposalContract";
-import type { InitiativeLifecycle } from "@/domain/initiative";
+import { computeTemporalAnchor, type InitiativeLifecycle, type TemporalAnchor } from "@/domain/initiative";
 
 export type ProposalPhase =
   | "open"
@@ -160,7 +160,7 @@ export function mapProposalPhaseToLifecycle(phase: ProposalPhase): InitiativeLif
     case "completed":
       return "completed";
     case "archived":
-      return "archived";
+      return "dormant";
   }
 }
 
@@ -364,4 +364,28 @@ export function getProposalAgeContext(daysActive: number): {
   if (daysActive <= 7) return { label: "primera semana", kind: "young" };
   if (daysActive <= 30) return { label: "primer mes", kind: "established" };
   return { label: "en curso", kind: "mature" };
+}
+
+export function deriveLifecycleFromProposal(
+  status: ProposalStatus,
+  convertedAt: string | null | undefined,
+  completedAt: string | null | undefined,
+): InitiativeLifecycle {
+  if (completedAt) return "completed";
+  if (convertedAt) return "active";
+  return mapProposalPhaseToLifecycle(getProposalPhase(status));
+}
+
+export function computeProposalAnchor(
+  status: ProposalStatus,
+  proposedDate: string | null | undefined,
+  createdAt: string,
+  convertedAt: string | null | undefined,
+  completedAt: string | null | undefined,
+  supportCount: number,
+  threshold: number,
+): TemporalAnchor {
+  const lifecycle = deriveLifecycleFromProposal(status, convertedAt, completedAt);
+  const dateAnchor = completedAt ?? convertedAt ?? proposedDate ?? createdAt ?? null;
+  return computeTemporalAnchor(lifecycle, dateAnchor, supportCount, threshold);
 }

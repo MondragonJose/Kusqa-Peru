@@ -31,7 +31,7 @@ import {
 import { useCoordinationNarratives } from "@/features/coordination/hooks/useCoordinationNarratives";
 import { useCurrentUserId } from "@/features/auth";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
-import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/initiative";
+import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/missionLifecycle";
 import type { Initiative } from "@/domain/initiative";
 import { formatRelativeDate } from "@/utils/date";
 import { districtActivityToTerritorial } from "@/domain/territorialEvent";

@@ -58,10 +58,10 @@ export function canArchiveProposal(
 import { deriveRelationship, getAvailableInitiativeActions } from "./initiativeActions";
 
 export function canReportProposal(currentUserId: string, proposalAuthorId: string): boolean {
-  const relationship = deriveRelationship(
-    { sourceType: "proposal", sourceId: "" },
-    { currentUserId, isOwner: currentUserId === proposalAuthorId },
-  );
+  const relationship = deriveRelationship({
+    currentUserId,
+    isOwner: currentUserId === proposalAuthorId,
+  });
   const actions = getAvailableInitiativeActions({
     lifecycle: "active",
     relationship,

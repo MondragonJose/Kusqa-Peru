@@ -19,12 +19,12 @@ import type {
 } from "@/services/proposalContract";
 import { z } from "zod";
 
-const COLLABORATOR_ROLE_ENUM = z.enum(["co_author", "ally"]);
+const COLLABORATOR_ROLE_ENUM = z.enum(["co_steward", "ally"]);
 const COLLABORATOR_STATUS_ENUM = z.enum(["pending", "accepted", "declined"]);
 
 const DB_COLLABORATOR_SCHEMA = z.object({
   id: z.string().uuid(),
-  proposal_id: z.string().uuid(),
+  initiative_id: z.string().uuid(),
   user_id: z.string().uuid(),
   role: COLLABORATOR_ROLE_ENUM,
   invited_by: z.string().uuid().nullable(),
@@ -53,7 +53,7 @@ function toDomain(row: JoinedCollaboratorRow): ProposalCollaborator {
   const username = row.username ?? "kusqa";
   return {
     id: row.id,
-    proposalId: row.proposal_id,
+    initiativeId: row.initiative_id,
     userId: row.user_id,
     username,
     firstName: firstNameFromFullName(row.full_name, username),
@@ -87,9 +87,9 @@ export const proposalCollaboratorRepository = {
     }
 
     const { data, error } = await supabase
-      .from("proposal_collaborators")
+      .from("initiative_stewards")
       .insert({
-        proposal_id: input.proposalId,
+        initiative_id: input.initiativeId,
         user_id: input.userId,
         role: input.role,
         invited_by: invitedBy,
@@ -98,7 +98,7 @@ export const proposalCollaboratorRepository = {
       })
       .select(
         `
-        id, proposal_id, user_id, role, invited_by, status, message,
+        id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
         profiles:user_id ( username, full_name, avatar_url )
         `,
@@ -131,7 +131,7 @@ export const proposalCollaboratorRepository = {
     input: RespondToInvitationDTO & { currentUserId: string },
   ): Promise<ProposalResult<ProposalCollaborator>> {
     const { data, error } = await supabase
-      .from("proposal_collaborators")
+      .from("initiative_stewards")
       .update({
         status: input.response,
         responded_at: new Date().toISOString(),
@@ -140,7 +140,7 @@ export const proposalCollaboratorRepository = {
       .eq("user_id", input.currentUserId)
       .select(
         `
-        id, proposal_id, user_id, role, invited_by, status, message,
+        id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
         profiles:user_id ( username, full_name, avatar_url )
         `,
@@ -162,17 +162,17 @@ export const proposalCollaboratorRepository = {
    * List ACCEPTED collaborators for a proposal. Public to all authenticated
    * users (this is the public coalition).
    */
-  async listAccepted(proposalId: string): Promise<ProposalCollaborator[]> {
+  async listAccepted(initiativeId: string): Promise<ProposalCollaborator[]> {
     const { data, error } = await supabase
-      .from("proposal_collaborators")
+      .from("initiative_stewards")
       .select(
         `
-        id, proposal_id, user_id, role, invited_by, status, message,
+        id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
         profiles:user_id ( username, full_name, avatar_url )
         `,
       )
-      .eq("proposal_id", proposalId)
+      .eq("initiative_id", initiativeId)
       .eq("status", "accepted")
       .order("created_at", { ascending: true });
 
@@ -193,10 +193,10 @@ export const proposalCollaboratorRepository = {
    */
   async listPendingForUser(currentUserId: string): Promise<ProposalCollaborator[]> {
     const { data, error } = await supabase
-      .from("proposal_collaborators")
+      .from("initiative_stewards")
       .select(
         `
-        id, proposal_id, user_id, role, invited_by, status, message,
+        id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
         profiles:user_id ( username, full_name, avatar_url )
         `,
@@ -224,7 +224,7 @@ export const proposalCollaboratorRepository = {
    */
   async withdraw(collaboratorId: string): Promise<ProposalResult<true>> {
     const { error } = await supabase
-      .from("proposal_collaborators")
+      .from("initiative_stewards")
       .delete()
       .eq("id", collaboratorId)
       .eq("status", "pending");
@@ -242,7 +242,7 @@ function flattenRow(raw: unknown): JoinedCollaboratorRow {
   if (!raw || typeof raw !== "object") {
     return {
       id: "",
-      proposal_id: "",
+      initiative_id: "",
       user_id: "",
       role: "ally",
       invited_by: null,
@@ -262,7 +262,7 @@ function flattenRow(raw: unknown): JoinedCollaboratorRow {
       : null;
   return {
     id: String(row.id ?? ""),
-    proposal_id: String(row.proposal_id ?? ""),
+    initiative_id: String(row.initiative_id ?? ""),
     user_id: String(row.user_id ?? ""),
     role: (row.role as JoinedCollaboratorRow["role"]) ?? "ally",
     invited_by: (row.invited_by as string | null) ?? null,

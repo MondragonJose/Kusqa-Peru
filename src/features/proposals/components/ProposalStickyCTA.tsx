@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { getProposalPhase, getProposalPhaseCopy } from "@/domain/proposalLifecycle";
-import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/initiative";
+import { getProposalPhase, getProposalPhaseCopy, deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/proposalLifecycle";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
 import type { Proposal } from "@/services/proposalContract";
 import type { Initiative } from "@/domain/initiative";

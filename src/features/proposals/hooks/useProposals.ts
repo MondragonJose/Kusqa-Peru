@@ -213,16 +213,16 @@ export function useInviteCollaborator() {
     onSuccess: (result, dto) => {
       if (result.status === "success") {
         queryClient.invalidateQueries({
-          queryKey: proposalCollaboratorKeys.accepted(dto.proposalId),
+          queryKey: proposalCollaboratorKeys.accepted(dto.initiativeId),
         });
         queryClient.invalidateQueries({
           queryKey: proposalCollaboratorKeys.pendingForUser(result.data.userId),
         });
         queryClient.invalidateQueries({
-          queryKey: proposalCoalitionKeys.byProposal(dto.proposalId),
+          queryKey: proposalCoalitionKeys.byProposal(dto.initiativeId),
         });
         queryClient.invalidateQueries({
-          queryKey: proposalCoalitionKeys.stats(dto.proposalId),
+          queryKey: proposalCoalitionKeys.stats(dto.initiativeId),
         });
       }
     },
@@ -244,7 +244,7 @@ export function useRespondToInvitation() {
     },
     onSuccess: (result) => {
       if (result.status === "success") {
-        const proposalId = result.data.proposalId;
+        const proposalId = result.data.initiativeId;
         queryClient.invalidateQueries({
           queryKey: proposalCollaboratorKeys.accepted(proposalId),
         });

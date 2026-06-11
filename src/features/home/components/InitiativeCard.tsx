@@ -40,7 +40,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
   const currentUserId = useCurrentUserId();
   const navigate = useNavigate();
 
-  const relationship = deriveRelationship(initiative, {
+  const relationship = deriveRelationship({
     currentUserId: currentUserId ?? undefined,
     isSupported: isSupported(initiative.sourceId),
     isOwner: !!currentUserId && currentUserId === initiative.ownerId,

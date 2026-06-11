@@ -22,7 +22,7 @@ import {
 } from "@/features/proposals/components/ConversionCta";
 import { ProposalMomentum } from "@/features/proposals/components/ProposalMomentum";
 import type { Initiative } from "@/domain/initiative";
-import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/initiative";
+import { deriveLifecycleFromProposal, computeProposalAnchor } from "@/domain/proposalLifecycle";
 import type { InitiativeAction } from "@/domain/initiativeActions";
 import { deriveRelationship } from "@/domain/initiativeActions";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
@@ -211,10 +211,10 @@ function ProposalDetail() {
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/20">
               <InitiativeActionBar
                 initiative={initiativeForBar}
-                relationship={deriveRelationship(initiativeForBar, {
-                  currentUserId,
+                relationship={deriveRelationship({
+                  currentUserId: currentUserId ?? undefined,
                   isSupported: isSupported(proposal.id),
-                  isOwner: proposal.userId === currentUserId,
+                  isOwner: !!currentUserId && currentUserId === proposal.userId,
                 })}
                 variant="compact"
                 maxVisible={2}
