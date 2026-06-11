@@ -19,7 +19,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { createSupabaseMock } from "../../test/createSupabaseMock";
+import { createSupabaseMock, type SupabaseResponse } from "../../test/createSupabaseMock";
 import { makeMissionRow } from "../../test/factories";
 
 // ─── Literal guard — hoisted before any import ──────────────────────────────
@@ -48,9 +48,9 @@ const { missionRepository } = await import("../missionRepository");
 async function resolveAllWith(
   rows: ReturnType<typeof makeMissionRow>[],
   rpcOverrides?: {
-    organizer?: { data: unknown; error: unknown };
-    impact?: { data: unknown; error: unknown };
-    distance?: { data: unknown; error: unknown };
+    organizer?: SupabaseResponse<unknown>;
+    impact?: SupabaseResponse<unknown>;
+    distance?: SupabaseResponse<unknown>;
   },
 ) {
   const org = rpcOverrides?.organizer ?? {
