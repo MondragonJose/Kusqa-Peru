@@ -100,7 +100,7 @@ export const proposalCollaboratorRepository = {
         `
         id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
-        profiles:user_id ( username, full_name, avatar_url )
+        profiles!initiative_stewards_user_id_fkey ( username, full_name, avatar_url )
         `,
       )
       .single();
@@ -142,7 +142,7 @@ export const proposalCollaboratorRepository = {
         `
         id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
-        profiles:user_id ( username, full_name, avatar_url )
+        profiles!initiative_stewards_user_id_fkey ( username, full_name, avatar_url )
         `,
       )
       .single();
@@ -169,7 +169,7 @@ export const proposalCollaboratorRepository = {
         `
         id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
-        profiles:user_id ( username, full_name, avatar_url )
+        profiles!initiative_stewards_user_id_fkey ( username, full_name, avatar_url )
         `,
       )
       .eq("initiative_id", initiativeId)
@@ -198,7 +198,7 @@ export const proposalCollaboratorRepository = {
         `
         id, initiative_id, user_id, role, invited_by, status, message,
         created_at, responded_at,
-        profiles:user_id ( username, full_name, avatar_url )
+        profiles!initiative_stewards_user_id_fkey ( username, full_name, avatar_url )
         `,
       )
       .eq("user_id", currentUserId)

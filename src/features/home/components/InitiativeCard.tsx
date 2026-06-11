@@ -9,6 +9,7 @@ import { getLifecyclePresentation } from "@/domain/lifecyclePresentation";
 import { regionGradient, regionLabel, type Region } from "@/domain/regions";
 import { useCurrentUserId } from "@/features/auth";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
+import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 
@@ -41,6 +42,8 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
   const currentUserId = useCurrentUserId();
   const navigate = useNavigate();
 
+  const { handleJoin } = useJoinInitiativeAction();
+
   const relationship = deriveRelationship({
     currentUserId: currentUserId ?? undefined,
     isSupported: isSupported(initiative.sourceId),
@@ -49,8 +52,10 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
 
   const handleAction = (action: InitiativeAction) => {
     switch (action) {
-      case "support":
       case "join":
+        handleJoin(initiative.sourceId, { lifecycle: initiative.lifecycle });
+        break;
+      case "support":
       case "comment":
       case "edit":
       case "report": {

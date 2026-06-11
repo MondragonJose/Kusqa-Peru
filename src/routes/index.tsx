@@ -499,22 +499,20 @@ function Landing(): JSX.Element {
               ))}
             </div>
           ) : (
-            <div className="mt-12 lg:mt-16 max-w-5xl">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="glass-strong rounded-2xl p-8 text-center shadow-card"
-              >
-                <div className="text-3xl mb-4">🏔️</div>
-                <h3 className="font-display font-semibold text-lg mb-2">
-                  Las primeras expediciones están naciendo
-                </h3>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
-                  Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El mapa se llena cuando tú decides dar el primer paso.
-                </p>
-              </motion.div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="mt-12 lg:mt-16 max-w-md mx-auto text-center"
+            >
+              <div className="text-2xl mb-3">🏔️</div>
+              <h3 className="font-medium text-base text-muted-foreground mb-2">
+                Las primeras expediciones están naciendo
+              </h3>
+              <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El mapa se llena cuando tú decides dar el primer paso.
+              </p>
+            </motion.div>
           )}
         </div>
       </section>
@@ -817,29 +815,11 @@ function Landing(): JSX.Element {
             </p>
           </div>
 
-          {/* Path */}
-          <div className="mt-14 relative">
-            <svg
-              className="absolute inset-0 w-full h-full hidden md:block"
-              viewBox="0 0 1000 300"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M 50 240 Q 200 50 400 180 T 750 90 T 950 200"
-                stroke="url(#g1)"
-                strokeWidth="3"
-                strokeDasharray="6 8"
-                fill="none"
-              />
-              <defs>
-                <linearGradient id="g1" x1="0" x2="1">
-                  <stop offset="0" stopColor="oklch(0.78 0.17 75)" />
-                  <stop offset="1" stopColor="oklch(0.7 0.18 45)" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
+          {/* Vertical timeline */}
+          <div className="mt-14 mx-auto max-w-lg relative">
+            {/* Connecting line */}
+            <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-white/10" />
+            <div className="space-y-8">
               {[
                 { lvl: 1, name: "Caminante", emoji: "🚶" },
                 { lvl: 2, name: "Vecino", emoji: "🏘️" },
@@ -848,19 +828,22 @@ function Landing(): JSX.Element {
                 { lvl: 5, name: "Tejedor", emoji: "🤲" },
                 { lvl: 6, name: "Curaca", emoji: "🗿" },
                 { lvl: 7, name: "Líder Kusqa", emoji: "🏆" },
-              ].map((s) => (
-                <div key={s.lvl} className="relative">
-                  <div className="aspect-square rounded-2xl grid place-items-center text-4xl sm:text-5xl bg-white/10 backdrop-blur border border-white/10">
-                    {s.emoji}
-                  </div>
-                  <div className="mt-2 sm:mt-3 text-center">
-                    <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/50">
-                      Nivel {s.lvl}
+              ].map((s, i) => {
+                const region = ["costa", "sierra", "selva"][i % 3] as Region;
+                return (
+                  <div key={s.lvl} className="relative flex items-start gap-4">
+                    <div className={`relative z-10 h-11 w-11 shrink-0 rounded-full ${regionGradient(region)} grid place-items-center text-xl shadow-lg`}>
+                      {s.emoji}
                     </div>
-                    <div className="font-semibold text-xs sm:text-sm">{s.name}</div>
+                    <div className="pt-1.5">
+                      <div className="text-[10px] uppercase tracking-widest text-white/50">
+                        Nivel {s.lvl}
+                      </div>
+                      <div className="font-semibold text-sm text-white">{s.name}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

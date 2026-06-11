@@ -3,6 +3,8 @@ import { MapPin, Sparkles, Users, Shield } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
 import { projectMapSidebarItem, type SidebarItemProjection } from "../projections/mapEntityProjection";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import { MapDetailPanel } from "./MapDetailPanel";
+import { getDifficultyMeta } from "@/domain/difficulty";
 
 export type MapSidebarProps = {
   entities: InitiativeMapEntity[];
@@ -11,18 +13,11 @@ export type MapSidebarProps = {
   onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
   isLoading: boolean;
-};
-
-const DIFFICULTY_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  fácil: Shield,
-  media: Shield,
-  difícil: Shield,
-};
-
-const DIFFICULTY_COLOR: Record<string, string> = {
-  fácil: "text-green-500",
-  media: "text-amber-500",
-  difícil: "text-red-500",
+  /** When set, renders MapDetailPanel embedded instead of the entity list */
+  detailEntity?: InitiativeMapEntity | null;
+  onCloseDetail?: () => void;
+  onSupport?: (proposalId: string) => void;
+  onJoin?: (missionId: string) => void;
 };
 
 function SidebarItem({
@@ -40,8 +35,9 @@ function SidebarItem({
 }) {
   const regionMeta = REGION_META[item.region as keyof typeof REGION_META] ?? REGION_META.costa;
   const isProposal = item.organizerName === null && item.spotsLeft === null;
-  const DifficultyIcon = item.difficulty ? DIFFICULTY_ICON[item.difficulty.toLowerCase()] ?? Shield : null;
-  const difficultyColor = item.difficulty ? DIFFICULTY_COLOR[item.difficulty.toLowerCase()] ?? "text-muted-foreground" : "text-muted-foreground";
+  const diffMeta = getDifficultyMeta(item.difficulty);
+  const DifficultyIcon = diffMeta?.icon ?? null;
+  const difficultyColor = diffMeta?.color ?? "text-muted-foreground";
 
   return (
     <button
@@ -118,8 +114,23 @@ export function MapSidebar({
   onSelect,
   onHover,
   isLoading,
+  detailEntity,
+  onCloseDetail,
+  onSupport,
+  onJoin,
 }: MapSidebarProps) {
   const items = useMemo(() => entities.map(projectMapSidebarItem), [entities]);
+
+  if (detailEntity) {
+    return (
+      <MapDetailPanel
+        entity={detailEntity}
+        onClose={onCloseDetail ?? (() => {})}
+        onSupport={onSupport}
+        onJoin={onJoin}
+      />
+    );
+  }
 
   if (isLoading) {
     return (

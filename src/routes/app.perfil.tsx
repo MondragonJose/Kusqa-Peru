@@ -277,20 +277,20 @@ export function Profile() {
             <div className="flex gap-2 pb-1 z-10 w-full sm:w-auto">
               <Link
                 to="/app/mapa"
-                className="flex-1 sm:flex-initial rounded-xl bg-primary text-white border border-transparent px-4 py-2.5 text-xs font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-initial rounded-xl bg-primary text-white border border-transparent px-4 py-3 text-xs font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Explorar territorio
               </Link>
               <button
                 onClick={() => handleExport("json")}
-                className="rounded-xl border border-border/60 px-3 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
+                className="rounded-xl border border-border/60 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
                 title="Exportar acta cívica (JSON)"
               >
                 <Download className="h-4 w-4" /> JSON
               </button>
               <button
                 onClick={() => handleExport("csv")}
-                className="rounded-xl border border-border/60 px-3 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
+                className="rounded-xl border border-border/60 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
                 title="Exportar acta cívica (CSV)"
               >
                 <Download className="h-4 w-4" /> CSV
@@ -726,7 +726,7 @@ export function Profile() {
                   Insignias
                 </h2>
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-1.5 block">
-                  {userBadges.length} desbloqueadas
+                  {userBadges.filter((b) => b.earned).length} desbloqueadas
                 </span>
               </div>
               <button className="text-[10px] uppercase font-bold text-primary flex items-center gap-0.5 hover:underline">

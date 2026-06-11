@@ -34,7 +34,6 @@ type MapViewProps = {
   missions: InitiativeMapEntity[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
-  onRequestDetail?: (id: string) => void;
   userCoords: MapCoords | null;
   userLocationLoading: boolean;
   onRequestUserLocation: () => void;
@@ -62,7 +61,6 @@ export function MapView({
   missions,
   selectedMissionId,
   onSelectMission,
-  onRequestDetail,
   userCoords,
   userLocationLoading,
   onRequestUserLocation,
@@ -385,7 +383,6 @@ export function MapView({
         entities: territoryMissions,
         selectedMissionId,
         onSelectMission,
-        onRequestDetail,
         markersMap: markersMapRef.current,
       });
     }
@@ -496,12 +493,6 @@ export function MapView({
         animate: true,
         duration: 1.0,
       });
-      const marker = markersMapRef.current.get(selectedMissionId);
-      if (marker) {
-        setTimeout(() => {
-          if (marker.isPopupOpen && !marker.isPopupOpen()) marker.openPopup();
-        }, 400);
-      }
     }
   }, [selectedMissionId, leafletLoaded, LInstance, missions, selectionPaddingTopLeft, selectionPaddingBottomRight]);
 

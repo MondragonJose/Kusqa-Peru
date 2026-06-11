@@ -266,7 +266,7 @@ function Dashboard() {
                     {/* Footer CTA — quiet text link, not a heavy button */}
                     <Link
                       to={t.link}
-                      className="px-3.5 pb-3.5 pt-1 inline-flex items-center gap-1 text-xs text-accent font-semibold hover:gap-1.5 transition-all"
+                      className="px-3.5 py-3 inline-flex items-center gap-1 text-xs text-accent font-semibold hover:gap-1.5 transition-all"
                     >
                       Explorar territorio
                       <ArrowRight className="h-3 w-3" />

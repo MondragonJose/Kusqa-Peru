@@ -385,7 +385,7 @@ function flattenInitiativeComment(raw: unknown): z.infer<typeof DB_INITIATIVE_CO
 const INITIATIVE_SELECT = `
   id, initiative_id, initiative_type, user_id, parent_comment_id, content,
   created_at, updated_at, deleted_at,
-  profiles!initiative_comments_user_fk ( username, full_name, avatar_url )
+  profiles!initiative_comments_user_id_fkey ( username, full_name, avatar_url )
 ` as const;
 
 export const initiativeCommentRepository = {

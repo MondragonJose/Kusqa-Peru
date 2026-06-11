@@ -8,6 +8,7 @@ import type { InitiativeAction } from "@/domain/initiativeActions";
 import { getInitiativeDetailRoute } from "@/domain/initiativeRoute";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
+import { getDifficultyMeta } from "@/domain/difficulty";
 
 export type MapDetailPanelProps = {
   entity: InitiativeMapEntity;
@@ -21,11 +22,12 @@ export type MapDetailPanelProps = {
 export function MapDetailPanel({ entity, onClose, onSupport, onJoin }: MapDetailPanelProps) {
   const navigate = useNavigate();
   const regionMeta = REGION_META[entity.region as keyof typeof REGION_META] ?? REGION_META.costa;
+  const diffMeta = getDifficultyMeta(entity.difficulty);
 
   const stats = [
-    { label: "Puntos XP", value: `+${entity.xp ?? 0}`, icon: Sparkles },
-    { label: "Cupos", value: entity.spotsLeft ?? "—", icon: Users },
-    { label: "Dificultad", value: entity.difficulty ?? "—", icon: Shield },
+    { label: "Puntos XP", value: `+${entity.xp ?? 0}`, icon: Sparkles, color: "text-muted-foreground" },
+    { label: "Cupos", value: entity.spotsLeft ?? "—", icon: Users, color: "text-muted-foreground" },
+    { label: "Dificultad", value: entity.difficulty ?? "—", icon: diffMeta?.icon ?? Shield, color: diffMeta?.color ?? "text-muted-foreground" },
   ];
 
   return (
@@ -79,7 +81,7 @@ export function MapDetailPanel({ entity, onClose, onSupport, onJoin }: MapDetail
               key={s.label}
               className="rounded-xl bg-secondary/50 border border-border/20 p-2.5 text-center"
             >
-              <s.icon className="h-3.5 w-3.5 mx-auto text-muted-foreground mb-0.5" />
+              <s.icon className={`h-3.5 w-3.5 mx-auto mb-0.5 ${s.color}`} />
               <div className="font-display font-extrabold text-foreground text-xs">{s.value}</div>
               <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">
                 {s.label}

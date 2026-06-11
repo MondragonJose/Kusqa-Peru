@@ -18,7 +18,9 @@ import { toast } from "sonner";
 import { CrossingOverlay } from "@/components/CrossingOverlay";
 import { REGION_META } from "@/constants/gamification";
 import { MissionStoryModal } from "@/features/missions";
-import { useCurrentUser, useCurrentUserId, useJoinUserMission } from "@/features/auth";
+import { getDifficultyMeta } from "@/domain/difficulty";
+import { useCurrentUser, useCurrentUserId } from "@/features/auth";
+import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import { useMission, useMissions } from "@/hooks/useMissions";
 import { useProposal } from "@/features/proposals";
@@ -42,6 +44,7 @@ import type {
 } from "@/domain/initiative";
 import type { InitiativeAction } from "@/domain/initiativeActions";
 import { deriveRelationship } from "@/domain/initiativeActions";
+import { ReportModal } from "@/features/moderation/components/ReportModal";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useDistricts, useSpatialContext } from "@/features/districts/hooks";
@@ -187,10 +190,8 @@ function MissionDetail() {
 
   const currentUser = useCurrentUser();
   const currentUserId = useCurrentUserId();
-  const joinMutation = useJoinUserMission();
-  const didFireError = useRef(false);
-  const joiningRef = useRef(false);
-  const joinSuccessLogged = useRef(false);
+  const { handleJoin, joinMutation, resetJoining } = useJoinInitiativeAction();
+  const joinBetaLogged = useRef(false);
 
   const { data: timeline } = useProfileMissionTimeline();
   const alreadyJoined = timeline?.missions?.some((um) => um.id === missionId) ?? false;
@@ -343,6 +344,7 @@ function MissionDetail() {
 
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const [crossingOpen, setCrossingOpen] = useState(false);
   const [heroInView, setHeroInView] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -361,28 +363,16 @@ function MissionDetail() {
   }, []);
 
   useEffect(() => {
-    if (joinMutation.isError && !didFireError.current && !crossingOpen) {
-      didFireError.current = true;
-      const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
-      betaEvents.missionJoinError(missionId, msg || "unknown");
-      const isDuplicate =
-        msg.includes("duplicate") || msg.includes("already") || msg.includes("Ya estás");
-      if (isDuplicate) {
-        toast.info("Ya estás en esta ruta.");
-      } else {
-        toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
+    if ((joinMutation.isSuccess || joinMutation.isError) && !joinBetaLogged.current) {
+      joinBetaLogged.current = true;
+      if (joinMutation.isSuccess) betaEvents.missionJoinSuccess(missionId);
+      if (joinMutation.isError) {
+        const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
+        betaEvents.missionJoinError(missionId, msg || "unknown");
       }
     }
-    if (!joinMutation.isError) didFireError.current = false;
-  }, [joinMutation.isError, joinMutation.error, crossingOpen]);
-
-  useEffect(() => {
-    if (joinMutation.isSuccess && !joinSuccessLogged.current) {
-      joinSuccessLogged.current = true;
-      betaEvents.missionJoinSuccess(missionId);
-    }
-    if (!joinMutation.isSuccess) joinSuccessLogged.current = false;
-  }, [joinMutation.isSuccess, missionId]);
+    if (!joinMutation.isSuccess && !joinMutation.isError) joinBetaLogged.current = false;
+  }, [joinMutation.isSuccess, joinMutation.isError, joinMutation.error, missionId]);
 
   const similarMissions = useMemo(() => {
     if (!initiative) return [];
@@ -400,42 +390,20 @@ function MissionDetail() {
     setStoryOpen(true);
   };
 
-  const handleJoinMission = () => {
-    if (joiningRef.current) return;
-    if (!currentUser) {
-      toast.error("Debes iniciar sesión para iniciar una ruta.");
-      return;
-    }
-    // Defensive: this route is mission-only. If we ever land here with a
-    // proposal entity (e.g. the conversion view), do not call joinMission —
-    // the proposal id does not exist in the missions table and the join
-    // service will throw. Redirect to the proposal detail instead.
-    if (!isMissionEntity) {
-      if (isProposalEntity && proposal) {
-        navigate({
-          to: "/app/propuesta/$proposalId",
-          params: { proposalId: proposal.id },
-        });
-      }
-      return;
-    }
-    if (alreadyJoined || joinMutation.isSuccess) return;
-    betaEvents.missionJoinStart(missionId);
-    joiningRef.current = true;
-    setCrossingOpen(true);
-    joinMutation.mutate({ missionId });
-  };
-
   const handleActionBar = (action: InitiativeAction) => {
     switch (action) {
-      case "join":
-        handleJoinMission();
+      case "join": {
+        betaEvents.missionJoinStart(missionId);
+        setCrossingOpen(true);
+        const fired = handleJoin(missionId, { alreadyJoined, lifecycle: initiative?.lifecycle });
+        if (!fired) setCrossingOpen(false);
         break;
+      }
       case "share":
         shareInitiative(initiative?.title ?? "", window.location.href);
         break;
       case "report":
-        toast.info("Reporta esta iniciativa desde el menú de opciones.");
+        if (currentUserId) setReportOpen(true);
         break;
       case "comment":
         // Scroll to comments section
@@ -445,21 +413,8 @@ function MissionDetail() {
   };
 
   const handleCrossingComplete = () => {
-    joiningRef.current = false;
+    resetJoining();
     setCrossingOpen(false);
-    if (joinMutation.isError) {
-      didFireError.current = true;
-      const msg = joinMutation.error instanceof Error ? joinMutation.error.message : "";
-      setTimeout(() => {
-        const isDuplicate =
-          msg.includes("duplicate") || msg.includes("already") || msg.includes("Ya estás");
-        if (isDuplicate) {
-          toast.info("Ya estás en esta ruta.");
-        } else {
-          toast.error("No se pudo abrir la ruta. Intenta de nuevo.");
-        }
-      }, 200);
-    }
   };
 
   if (isLoading) {
@@ -1028,7 +983,14 @@ function MissionDetail() {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Dificultad</span>
-                <span className="font-bold text-foreground">{mission!.difficulty || "N/A"}</span>
+                <span className="font-bold flex items-center gap-1">
+                  {(() => {
+                    const dm = getDifficultyMeta(mission!.difficulty);
+                    const DiffIcon = dm?.icon ?? ShieldCheck;
+                    return <DiffIcon className={`h-4 w-4 ${dm?.color ?? "text-foreground"}`} />;
+                  })()}
+                  <span className="text-foreground">{mission!.difficulty || "N/A"}</span>
+                </span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Cupos libres</span>
@@ -1061,6 +1023,15 @@ function MissionDetail() {
         isOpen={storyOpen}
         onClose={() => setStoryOpen(false)}
         missionId={selectedStoryId}
+      />
+
+      {/* Report modal */}
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="mission"
+        targetId={missionId}
+        reporterId={currentUserId ?? ""}
       />
 
       {/* Crossing ritual overlay — stays open until mutation resolves */}

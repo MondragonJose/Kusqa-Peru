@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ReportModal } from "@/features/moderation/components/ReportModal";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +9,6 @@ import { useProposal } from "@/features/proposals";
 import { useSupportProposal } from "@/features/proposals/hooks/useSupportProposal";
 import { useCurrentUserId } from "@/features/auth";
 import { canArchiveProposal } from "@/domain/proposalGovernance";
-import { moderationRepository } from "@/services/moderationRepository";
 import { proposalRepository } from "@/services/proposalRepository";
 import { isUnifiedWritesEnabled } from "@/features/initiative/mutations/initiativeMutationTypes";
 import { runMissionWrite } from "@/features/auth/mutations/missionMutationEngine";
@@ -40,7 +40,7 @@ function ProposalDetail() {
   const currentUserId = useCurrentUserId();
   const { supportProposal, isSupported, isSupporting } = useSupportProposal();
   const [archiving, setArchiving] = useState(false);
-  const [reporting, setReporting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const handleArchive = async () => {
     if (!proposal || archiving) return;
@@ -72,27 +72,6 @@ function ProposalDetail() {
       toast.error(msg);
     } finally {
       setArchiving(false);
-    }
-  };
-
-  const handleReport = async () => {
-    if (!proposal || !currentUserId || reporting) return;
-    setReporting(true);
-    try {
-      await moderationRepository.report({
-        reporterId: currentUserId,
-        targetType: "proposal",
-        targetId: proposal.id,
-        reasonCode: "inappropriate",
-        description: "",
-      });
-      toast.success("Reporte enviado", {
-        description: "Gracias por ayudar a mantener la comunidad.",
-      });
-    } catch {
-      toast.error("Error al enviar reporte");
-    } finally {
-      setReporting(false);
     }
   };
 
@@ -141,9 +120,7 @@ function ProposalDetail() {
         shareInitiative(proposal.title, window.location.href);
         break;
       case "report":
-        if (currentUserId) {
-          handleReport();
-        }
+        if (currentUserId) setReportOpen(true);
         break;
       case "edit":
         handleArchive();
@@ -236,6 +213,14 @@ function ProposalDetail() {
       </article>
 
       <ProposalStickyCTA proposal={proposal} />
+
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="proposal"
+        targetId={proposal.id}
+        reporterId={currentUserId ?? ""}
+      />
     </motion.div>
   );
 }

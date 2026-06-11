@@ -10,7 +10,7 @@ import {
   getEntityPresentation,
   isProposalEntity,
 } from "../projections/mapEntityProjection";
-import { regionGradient, regionChipBg, type Region } from "@/domain/regions";
+import { regionGradient, type Region } from "@/domain/regions";
 
 type MarkerLayerOptions = {
   L: typeof import("leaflet");
@@ -18,7 +18,6 @@ type MarkerLayerOptions = {
   entities: InitiativeMapEntity[];
   selectedMissionId: string | null;
   onSelectMission: (id: string) => void;
-  onRequestDetail?: (id: string) => void;
   markersMap: Map<string, L.Marker>;
 };
 
@@ -38,7 +37,6 @@ export function renderMissionMarkers({
   entities,
   selectedMissionId,
   onSelectMission,
-  onRequestDetail,
   markersMap,
 }: MarkerLayerOptions): void {
   entities.forEach((entity) => {
@@ -52,7 +50,6 @@ export function renderMissionMarkers({
     if (pres.isHidden) return;
     const gradient = regionGradient(projection.region as Region);
     const glow = REGION_GLOW[projection.region] ?? REGION_GLOW.sierra;
-    const chipClass = regionChipBg(projection.region as Region);
     const iconSize = isSelected ? 52 : 38;
 
     const proposalShape = `rounded-xl bg-white dark:bg-card border-2 border-violet-300 dark:border-violet-600 border-dashed text-foreground shadow-md`;
@@ -86,52 +83,8 @@ export function renderMissionMarkers({
       iconAnchor: [iconSize / 2, iconSize / 2],
     });
 
-    const popupHtml = `
-      <div class="p-2.5 text-xs w-56 font-sans">
-        <div class="flex items-start justify-between gap-1.5">
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-foreground text-sm truncate leading-tight">${projection.title}</div>
-            <div class="text-[9px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <span>📍</span> ${projection.district}
-              ${isProposal ? '<span class="text-violet-500 ml-1">🌱 Semilla cívica</span>' : ""}
-            </div>
-            ${pres.tooltipTone ? `<div class="text-[9px] text-muted-foreground/70 mt-0.5">${pres.tooltipTone}</div>` : ""}
-          </div>
-          <span class="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${chipClass} uppercase tracking-wider">${projection.region}</span>
-        </div>
-        <div class="mt-1.5">
-          <button
-            class="kusqa-detail-btn w-full inline-flex justify-center items-center gap-1 rounded-lg bg-secondary/80 text-foreground py-1.5 text-[8px] font-bold hover:bg-secondary transition-all border border-border/30"
-          >
-            Ver detalles →
-          </button>
-        </div>
-      </div>
-    `;
-
     const marker = L.marker([projection.coords!.lat, projection.coords!.lng], { icon: customIcon });
-    marker.bindPopup(popupHtml, {
-      closeButton: false,
-      offset: L.point(0, -10),
-      className: "custom-map-popup",
-      maxWidth: 280,
-    });
     marker.on("click", () => onSelectMission(projection.id));
-
-    marker.on("popupopen", () => {
-      const popup = marker.getPopup();
-      const popupEl = popup?.getElement() ?? null;
-      if (!popupEl || !onRequestDetail) return;
-
-      const btn: HTMLElement | null = popupEl.querySelector(".kusqa-detail-btn");
-      if (btn) {
-        btn.onclick = (e: Event) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onRequestDetail(projection.id);
-        };
-      }
-    });
 
     clusterGroup.addLayer(marker);
     markersMap.set(projection.id, marker);

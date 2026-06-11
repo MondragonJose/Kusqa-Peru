@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MapPin, Search, Navigation, RefreshCw } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
 import { districtSlugify } from "@/utils/districtSlug";
@@ -8,7 +8,6 @@ import { useMissionMapFilters } from "@/features/map/hooks/useMissionMapFilters"
 import { useMapEntities } from "@/features/map/hooks/useMapEntities";
 import { MapView } from "@/features/map/components/MapView";
 import { MapSidebar } from "@/features/map/components/MapSidebar";
-import { MapDetailPanel } from "@/features/map/components/MapDetailPanel";
 import { buildMapEntitySummary, mapEntityToActionInitiative } from "@/features/map/projections/mapEntityProjection";
 import { Drawer } from "vaul";
 import type { MissionCategory } from "@/types";
@@ -19,7 +18,7 @@ import { InitiativeActionBar } from "@/features/actions/components/InitiativeAct
 import { toast } from "sonner";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useSupportProposal } from "@/features/proposals";
-import { useJoinUserMission } from "@/features/auth";
+import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { useCurrentUser } from "@/features/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -50,13 +49,15 @@ function MapPage() {
 
   const currentUser = useCurrentUser();
   const { supportProposal } = useSupportProposal();
-  const joinMutation = useJoinUserMission();
+  const { handleJoin } = useJoinInitiativeAction();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [showHuellas, setShowHuellas] = useState(true);
   const [selectedHuellaId, setSelectedHuellaId] = useState<string | null>(null);
+  const drawerHandleRef = useRef<HTMLDivElement>(null);
+  const focusTriggerRef = useRef<HTMLElement | null>(null);
 
   const activeEntity: InitiativeMapEntity | null =
     filteredMissions.find((m) => m.id === selectedId) ?? null;
@@ -91,17 +92,15 @@ function MapPage() {
     }
   }, [filteredMissions, selectedId]);
 
-  // Request user location automatically on mount
-  useEffect(() => {
-    requestUserLocation();
-  }, [requestUserLocation]);
-
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
-  }, []);
-
-  const handleRequestDetail = useCallback((id: string) => {
-    setSelectedId(id);
+    if (typeof document !== 'undefined') {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body) {
+        focusTriggerRef.current = active;
+        active.blur();
+      }
+    }
     setDetailOpen(true);
   }, []);
 
@@ -227,7 +226,7 @@ function MapPage() {
       </div>
 
       {/* Main Map Layout: sidebar + map + detail panel (desktop), map-only (mobile) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_390px] gap-3 lg:gap-4 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 lg:gap-4 items-stretch">
         {/* Desktop sidebar — entity list */}
         {!isMobile && (
           <div className="hidden lg:block min-h-[640px]">
@@ -237,10 +236,27 @@ function MapPage() {
               hoveredId={hoveredId}
               onSelect={(id) => {
                 setSelectedId(id);
+                if (typeof document !== 'undefined') {
+                  const active = document.activeElement as HTMLElement | null;
+                  if (active && active !== document.body) {
+                    focusTriggerRef.current = active;
+                    active.blur();
+                  }
+                }
                 setDetailOpen(true);
               }}
               onHover={setHoveredId}
               isLoading={isLoading}
+              detailEntity={activeEntity}
+              onCloseDetail={() => setSelectedId(null)}
+              onSupport={(proposalId) => {
+                if (!currentUser) { toast.error("Debes iniciar sesión para apoyar"); return; }
+                supportProposal({ proposalId });
+              }}
+              onJoin={(missionId) => {
+                if (!activeEntity) return;
+                handleJoin(missionId, { lifecycle: activeEntity.lifecycle });
+              }}
             />
           </div>
         )}
@@ -251,7 +267,6 @@ function MapPage() {
             missions={filteredMissions}
             selectedMissionId={activeEntity?.id || null}
             onSelectMission={handleSelectMission}
-            onRequestDetail={handleRequestDetail}
             userCoords={userCoords}
             userLocationLoading={userLocationLoading}
             onRequestUserLocation={requestUserLocation}
@@ -261,37 +276,44 @@ function MapPage() {
             selectedHuellaId={selectedHuellaId}
             onSelectHuella={setSelectedHuellaId}
             selectionPaddingTopLeft={isMobile ? [0, 0] : [280, 30]}
-            selectionPaddingBottomRight={isMobile ? [0, 0] : [390, 30]}
+            selectionPaddingBottomRight={isMobile ? [0, 0] : [0, 0]}
           />
         </div>
 
-        {/* Desktop detail panel — inline replacement for the old modal */}
-        {!isMobile && activeEntity && (
-          <div className="hidden lg:block min-h-[640px]">
-            <MapDetailPanel
-              entity={activeEntity}
-              onClose={() => setSelectedId(null)}
-              onSupport={(proposalId) => {
-                if (!currentUser) { toast.error("Debes iniciar sesión para apoyar"); return; }
-                supportProposal({ proposalId });
-              }}
-              onJoin={(missionId) => {
-                if (!currentUser) { toast.error("Debes iniciar sesión para unirte"); return; }
-                joinMutation.mutate({ missionId });
-              }}
-            />
-          </div>
-        )}
       </div>
 
       {/* MOBILE-ONLY: Vaul Bottom Sheet Drawer — territorial destination preview */}
       {isMobile && (
-      <Drawer.Root open={detailOpen} onOpenChange={setDetailOpen} snapPoints={["25%", "85vh"]}>
+      <Drawer.Root
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) {
+            requestAnimationFrame(() => {
+              focusTriggerRef.current?.focus();
+              focusTriggerRef.current = null;
+            });
+          }
+        }}
+        snapPoints={["25%", "85vh"]}
+      >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
-          <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
+          <Drawer.Content
+            className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+              requestAnimationFrame(() => {
+                drawerHandleRef.current?.focus();
+              });
+            }}
+          >
             <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
-              <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
+              <div
+                ref={drawerHandleRef}
+                tabIndex={-1}
+                className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5 outline-none"
+              />
 
               {activeEntity && (
                 <Drawer.Title className="sr-only">{activeEntity.title}</Drawer.Title>
@@ -351,8 +373,7 @@ function MapPage() {
                                     supportProposal({ proposalId: activeEntity.sourceId });
                                     break;
                                   case "join":
-                                    if (!currentUser) { toast.error("Debes iniciar sesión para unirte"); break; }
-                                    joinMutation.mutate({ missionId: activeEntity.id });
+                                    handleJoin(activeEntity.id, { lifecycle: activeEntity.lifecycle });
                                     break;
                                   case "share":
                                     shareInitiative(activeEntity.title, window.location.href);
