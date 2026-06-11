@@ -34,7 +34,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
   const isFull = spotsLeft === 0;
   const proposalId = isProposal ? initiative.sourceId : "";
   const { data: supportCount = 0 } = useSupportCount(proposalId);
-  const { supportProposal, isSupported, isSupporting } = useSupportProposal();
+  const { isSupported } = useSupportProposal();
   const navigate = useNavigate();
 
   const relationship = isSupported(initiative.sourceId)
@@ -44,9 +44,12 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
   const handleAction = (action: InitiativeAction) => {
     switch (action) {
       case "support":
-        if (isProposal && !isSupported(initiative.sourceId) && !isSupporting) {
-          supportProposal({ proposalId: initiative.sourceId });
-        }
+        navigate({
+          to: isProposal ? "/app/propuesta/$proposalId" : "/app/mision/$missionId",
+          params: isProposal
+            ? { proposalId: initiative.sourceId }
+            : { missionId: initiative.sourceId },
+        });
         break;
       case "join":
         navigate({ to: "/app/mision/$missionId", params: { missionId: initiative.sourceId } });

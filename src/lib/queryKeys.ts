@@ -132,6 +132,18 @@ export const proposalCommentKeys = {
   listAll: (proposalId: string) => [PROPOSAL_COMMENTS_ROOT, "proposal", proposalId] as const,
   count: (proposalId: string) => [PROPOSAL_COMMENTS_ROOT, "proposal", proposalId, "count"] as const,
 };
+
+const INITIATIVE_COMMENTS_ROOT = "initiative-comments" as const;
+
+export const initiativeCommentKeys = {
+  root: [INITIATIVE_COMMENTS_ROOT] as const,
+  list: (initiativeId: string, initiativeType: string, page: number) =>
+    [INITIATIVE_COMMENTS_ROOT, initiativeType, initiativeId, "list", page] as const,
+  listAll: (initiativeId: string, initiativeType: string) =>
+    [INITIATIVE_COMMENTS_ROOT, initiativeType, initiativeId] as const,
+  count: (initiativeId: string, initiativeType: string) =>
+    [INITIATIVE_COMMENTS_ROOT, initiativeType, initiativeId, "count"] as const,
+};
 export const proposalCoalitionKeys = {
   root: [PROPOSAL_COALITION_ROOT] as const,
   byProposal: (proposalId: string) => [PROPOSAL_COALITION_ROOT, "proposal", proposalId] as const,

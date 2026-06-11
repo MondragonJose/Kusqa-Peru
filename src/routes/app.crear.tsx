@@ -22,13 +22,19 @@ import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { useCreateProposal, useAllProposals } from "@/features/proposals";
 import type { ProposalResult } from "@/features/proposals";
 import { supabase } from "@/lib/supabase";
-import { useCurrentUser } from "@/features/auth";
+import { useCurrentUser, getAuthSnapshot } from "@/features/auth";
 import { toast } from "sonner";
 import { calculateDistance } from "@/domain/territorial";
 import { detectSimilarProposals } from "@/domain/proposalGovernance";
 import type { ExistingProposal } from "@/domain/proposalGovernance";
 
 export const Route = createFileRoute("/app/crear")({
+  beforeLoad: async () => {
+    const { state, user } = await getAuthSnapshot();
+    if (state === "unauthenticated" || !user) {
+      throw redirect({ to: "/app" });
+    }
+  },
   component: CreateProject,
 });
 
@@ -45,7 +51,6 @@ const CATS = ["Medio ambiente", "Educación", "Arte & cultura", "Comunidad", "Sa
 function CreateProject() {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
-  if (!currentUser) throw redirect({ to: "/app" });
   const searchRecord = useSearch({ from: "/app/crear" }) as Record<string, unknown>;
   const districtFromSearch =
     typeof searchRecord.district === "string" ? searchRecord.district : undefined;

@@ -23,6 +23,9 @@ export {
   useJoinUserMission,
 } from "./hooks/useUserMissionMutations";
 
+// Auth snapshot accessor (async, for route guards)
+export { getAuthSnapshot } from "./getAuthSnapshot";
+
 // Auth state machine exports
 export {
   deriveAuthState,

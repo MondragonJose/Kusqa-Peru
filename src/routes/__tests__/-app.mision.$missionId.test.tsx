@@ -48,6 +48,7 @@ function setupMocks(overrides: { useMission?: () => unknown; useProposal?: () =>
   }));
   vi.doMock("@/features/auth", () => ({
     useCurrentUser: () => ({ id: "u1", name: "Ana", district: "Cusco" }),
+    useCurrentUserId: () => "u1",
     useJoinUserMission: () => ({ mutate: vi.fn(), isPending: false, isError: false, error: null }),
   }));
   vi.doMock("@/features/auth/hooks/useUserMissions", () => ({

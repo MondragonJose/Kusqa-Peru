@@ -45,9 +45,7 @@ function MapPage() {
   const {
     filters,
     updateFilters,
-    resetFilters,
     filteredMissions,
-    availableRegions,
     availableCategories,
     availableDifficulties,
     availableDistricts,

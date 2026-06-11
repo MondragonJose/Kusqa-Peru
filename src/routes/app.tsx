@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/components/AppShell";
 import { MissionRealtimeSync } from "@/components/MissionRealtimeSync";
@@ -11,7 +11,6 @@ function AppRouteComponent() {
   useEventPropagation(queryClient);
   const { state, isReady, user } = useAuthState();
   useEventHydrationBootstrap(user?.id);
-  const location = useLocation();
 
   // Estado 1: initializing → Mostrar loading (AuthProvider restaurando sesión)
   if (state === "initializing") {

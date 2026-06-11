@@ -216,7 +216,7 @@ export type RespondToInvitationDTO = {
   response: "accepted" | "declined";
 };
 
-// ─── Coalition: comments ────────────────────────────────────────────────────
+// ─── Coalition: comments (proposal-specific, legacy) ────────────────────────
 
 export type ProposalComment = {
   id: string;
@@ -248,6 +248,39 @@ export type EditCommentDTO = {
 
 export type ListCommentsResult = {
   comments: ProposalComment[];
+  total: number;
+  hasMore: boolean;
+};
+
+// ─── Unified initiative wall (both missions & proposals) ────────────────────
+
+export type InitiativeType = "proposal" | "mission";
+
+export type InitiativeComment = {
+  id: string;
+  initiativeId: string;
+  initiativeType: InitiativeType;
+  authorId: string;
+  authorUsername: string;
+  authorFirstName: string;
+  authorAvatarUrl: string | null;
+  parentCommentId: string | null;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  isEditable: boolean;
+  isDeleted: boolean;
+};
+
+export type CreateInitiativeCommentDTO = {
+  initiativeId: string;
+  initiativeType: InitiativeType;
+  content: string;
+  parentCommentId?: string | null;
+};
+
+export type ListInitiativeCommentsResult = {
+  comments: InitiativeComment[];
   total: number;
   hasMore: boolean;
 };

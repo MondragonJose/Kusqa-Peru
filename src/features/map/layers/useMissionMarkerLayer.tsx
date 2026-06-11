@@ -9,7 +9,6 @@ import {
   getEntityPresentation,
   isProposalEntity,
 } from "../projections/mapEntityProjection";
-import { isValidLatLng } from "../utils/projection";
 import { regionGradient, regionChipBg, type Region } from "@/domain/regions";
 import { createRoot, type Root } from "react-dom/client";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";

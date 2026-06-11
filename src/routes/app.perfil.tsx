@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useCurrentUser } from "@/features/auth";
+import { useCurrentUser, getAuthSnapshot } from "@/features/auth";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
 import {
   useProgression,
@@ -28,6 +28,7 @@ import {
 import { MapPin, Sparkles, Heart, Map, Clock, ArrowRight, X, Download } from "lucide-react";
 import { computeProposalAnchor } from "@/domain/initiative";
 import { deriveCivicJourney, type CivicJourneyInput } from "@/domain/civicJourney";
+import { deriveCivicBiography } from "@/domain/civicBiography";
 import { beatToNarrative, phaseToHeadline } from "@/domain/civicJourneyNarrative";
 import { toInstitutionalRecord, toExport, type ExportFormat } from "@/domain/civicJourneyExport";
 
@@ -49,11 +50,17 @@ import {
 import type { Region } from "@/domain/regions";
 
 export const Route = createFileRoute("/app/perfil")({
+  beforeLoad: async () => {
+    const { state, user } = await getAuthSnapshot();
+    if (state === "unauthenticated" || !user) {
+      throw redirect({ to: "/app" });
+    }
+  },
   component: Profile,
 });
 
 export function Profile() {
-  const user = useCurrentUser();
+  const user = useCurrentUser()!;
   const { currentStage } = useProgression();
   const queryClient = useQueryClient();
 
@@ -87,10 +94,6 @@ export function Profile() {
     delay: 400,
   });
 
-  if (!user) {
-    throw redirect({ to: "/app" });
-  }
-
   const journey = useMemo(() => {
     const input: CivicJourneyInput = {
       userMissions: timeline?.userMissions ?? [],
@@ -110,6 +113,17 @@ export function Profile() {
     };
     return deriveCivicJourney(input);
   }, [timeline, supportedProposals, ownProposals, user.district]);
+
+  const bio = useMemo(
+    () =>
+      deriveCivicBiography({
+        journey,
+        completedMissionCount: completedMissions.length,
+        supportedCount: supportedIds.length,
+        proposalCount: ownProposals.length,
+      }),
+    [journey, completedMissions.length, supportedIds.length, ownProposals.length],
+  );
 
   const activeRegions = journey.footprint.regions;
   const earnedBadgeIds = new Set<string>();
@@ -287,37 +301,22 @@ export function Profile() {
             </div>
           </div>
 
-          {/* Stats Bar — with territorial gradient accent */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 border-t border-border/60 pt-6 relative">
+          {/* Identity Narrative — biography derived from participation events */}
+          <div className="border-t border-border/60 pt-6 relative">
             <div
               className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region].gradient}`}
             />
-            {[
-              { l: "XP", v: user.xp.toLocaleString(), i: "✨", color: "text-amber-500" },
-              { l: "Rutas", v: completedMissions.length, i: "🗺️", color: "text-sky-500" },
-              { l: "Regiones", v: journey.footprint.regions.length, i: "🏔️", color: "text-accent" },
-              { l: "Nivel", v: currentStage.name, i: "⭐", color: "text-amber-500" },
-            ].map((s) => (
-              <div
-                key={s.l}
-                className="rounded-2xl bg-secondary/55 p-2.5 sm:p-4 border border-border/20 flex items-center gap-2 sm:gap-3 relative overflow-hidden"
-              >
-                <div
-                  className={`absolute inset-0 opacity-[0.04] ${REGION_META[user.region].gradient}`}
-                />
-                <span className="text-xl sm:text-3xl filter drop-shadow-sm relative shrink-0">
-                  {s.i}
-                </span>
-                <div className="relative min-w-0">
-                  <div className="font-display font-black text-base sm:text-xl text-foreground leading-none truncate max-w-[80px] sm:max-w-none">
-                    {s.v}
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] text-muted-foreground font-semibold mt-1 uppercase tracking-wider">
-                    {s.l}
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="space-y-3">
+              <p className="font-display font-black text-xl sm:text-2xl text-foreground leading-tight">
+                {bio.headline}
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+                {bio.territorialIdentity}
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {bio.participationIdentity}
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -7,8 +7,8 @@ import { ProposalLocationPreview } from "./ProposalLocationPreview";
 import { ProposalSupportersRow } from "./ProposalSupportersRow";
 import { formatProposedDate } from "@/utils/date";
 
-const ConversationThread = lazy(() =>
-  import("./ConversationThread").then((m) => ({ default: m.ConversationThread })),
+const InitiativeWall = lazy(() =>
+  import("@/features/initiativeWall").then((m) => ({ default: m.InitiativeWall })),
 );
 
 interface ProposalTabsProps {
@@ -80,7 +80,7 @@ export function ProposalTabs({ proposal }: ProposalTabsProps) {
             </div>
           }
         >
-          <ConversationThread proposalId={proposal.id} />
+          <InitiativeWall initiativeId={proposal.id} initiativeType="proposal" />
         </Suspense>
       </TabsContent>
     </Tabs>

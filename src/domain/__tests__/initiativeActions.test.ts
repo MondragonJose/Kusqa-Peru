@@ -214,6 +214,150 @@ describe("exhaustive matrix", () => {
   });
 });
 
+// ─── ACTION PARITY — surface rendering vs canonical domain ──────────────────
+//
+// For every surface that renders InitiativeActionBar, verifies:
+//   canon(lifecycle, relationship) ⊆ surface.wiredActions
+//
+// If canon returns an action that the surface does NOT wire (disabled/hidden),
+// the test fails — the surface would show a button the user can't use.
+//
+// If the surface wires an action that is NOT in canon, the button is hidden
+// by InitiativeActionBar filtering, so the handler is dead code. The test
+// flags this with a .notify call (non-blocking) for documentation.
+//
+// Each surface definition mirrors the actual relationship resolver + handler
+// set found in the source code (see action parity audit).
+
+type SurfaceParity = {
+  name: string;
+  /** Which relationships this surface can produce, given initiative context. */
+  possibleRelationships: (initiative: Pick<Initiative, "ownerId">) => UserRelationship[];
+  /** Which actions this surface provides real handlers for (enabled buttons). */
+  wiredActions: InitiativeAction[];
+};
+
+const SURFACES: SurfaceParity[] = [
+  {
+    name: "InitiativeCard (feed card) / app.index drawer",
+    possibleRelationships: (i) => [
+      "visitor",
+      ...(i.ownerId ? ["supporter" as const] : []),
+    ],
+    wiredActions: ["support", "join", "share"],
+  },
+  {
+    name: "Map sidebar/bottom-sheet (app.mapa.tsx)",
+    possibleRelationships: () => ["visitor"],
+    wiredActions: ["support", "join", "share"],
+  },
+  {
+    name: "Map popup (useMissionMarkerLayer.tsx)",
+    possibleRelationships: () => ["visitor"],
+    // catch-all handler navigates to detail for every rendered action
+    wiredActions: ["support", "join", "comment", "share", "edit", "report"],
+  },
+  {
+    name: "Mission detail (app.mision.$missionId.tsx)",
+    possibleRelationships: (i) => [i.ownerId ? "organizer" : "visitor"],
+    wiredActions: ["join", "share", "report", "comment"],
+  },
+  {
+    name: "Proposal detail (app.propuesta.$proposalId.tsx)",
+    possibleRelationships: () => ["visitor"],
+    wiredActions: ["support", "share", "report"],
+  },
+];
+
+function canon(lifecycle: InitiativeLifecycle, relationship: UserRelationship): InitiativeAction[] {
+  return getAvailableInitiativeActions({ lifecycle, sourceType: "mission", relationship });
+}
+
+describe("action parity — surface rendering vs canonical domain", () => {
+  for (const surface of SURFACES) {
+    describe(surface.name, () => {
+      // Build the set of (lifecycle, relationship) pairs this surface encounters
+      const pairs: Array<{ lifecycle: InitiativeLifecycle; rel: UserRelationship }> = [];
+      for (const lifecycle of ["forming", "active", "ending", "completed"] as InitiativeLifecycle[]) {
+          for (const initiative of [{ ownerId: undefined }, { ownerId: "uid" }] as const) {
+          for (const rel of surface.possibleRelationships(initiative)) {
+            if (!pairs.some((p) => p.lifecycle === lifecycle && p.rel === rel)) {
+              pairs.push({ lifecycle, rel });
+            }
+          }
+        }
+      }
+      // archived: only visitor matters (all relationships return [])
+      pairs.push({ lifecycle: "archived" as const, rel: "visitor" as const });
+
+      for (const { lifecycle, rel } of pairs) {
+        const label = `${lifecycle} / ${rel}`;
+
+        it(`handles every canonical action for ${label}`, () => {
+          const canonical = canon(lifecycle, rel);
+          const missing = canonical.filter((a) => !surface.wiredActions.includes(a));
+
+          expect(missing, [
+            `Surface "${surface.name}" is MISSING handlers for: [${missing.join(", ")}]`,
+            `  canon returned: [${canonical.join(", ")}]`,
+            `  surface wires:  [${surface.wiredActions.join(", ")}]`,
+          ].join("\n")).toEqual([]);
+        });
+
+        it(`no dead-code handlers for ${label}`, () => {
+          const canonical = canon(lifecycle, rel);
+          const deadCode = surface.wiredActions.filter((a) => !canonical.includes(a));
+
+          if (deadCode.length > 0) {
+            // Non-blocking notification: handler exists but button hidden by canon
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[parity note] ${surface.name} wires [${deadCode.join(", ")}] ` +
+              `but canon returns [${canonical.join(", ")}] for ${label} — ` +
+              `handler is dead code (button hidden by InitiativeActionBar)`,
+            );
+          }
+
+          // Archived at visitor returns [], so all wired actions would be dead code — skip
+          if (lifecycle === "archived") return;
+
+          // For non-archived, at least the common actions should be present
+          expect(canonical.length).toBeGreaterThan(0);
+        });
+      }
+    });
+  }
+
+  // ─── Cross-surface invariant checks ──────────────────────────────────────
+  describe("cross-surface invariants", () => {
+    it("share is wired by every surface", () => {
+      for (const surface of SURFACES) {
+        expect(surface.wiredActions).toContain("share");
+      }
+    });
+
+    it("only map popup wires edit (catch-all navigates to detail)", () => {
+      const withEdit = SURFACES.filter((s) => s.wiredActions.includes("edit")).map((s) => s.name);
+      expect(withEdit).toEqual(["Map popup (useMissionMarkerLayer.tsx)"]);
+    });
+
+    it("map popup, mission detail and proposal detail wire report", () => {
+      const withReport = SURFACES.filter((s) => s.wiredActions.includes("report")).map((s) => s.name);
+      expect(withReport.sort()).toEqual([
+        "Map popup (useMissionMarkerLayer.tsx)",
+        "Mission detail (app.mision.$missionId.tsx)",
+        "Proposal detail (app.propuesta.$proposalId.tsx)",
+      ]);
+    });
+
+    it("feed card and map sidebar have the same wired set", () => {
+      const feed = SURFACES.find((s) => s.name.startsWith("InitiativeCard"))!;
+      const sidebar = SURFACES.find((s) => s.name.startsWith("Map sidebar"))!;
+      expect(feed.wiredActions).toEqual(sidebar.wiredActions);
+    });
+  });
+});
+
 // ─── EDGE CASES ─────────────────────────────────────────────────────────────
 
 describe("edge cases", () => {

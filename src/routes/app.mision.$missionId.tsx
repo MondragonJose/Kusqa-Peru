@@ -48,6 +48,7 @@ import { deriveCivicTrace } from "@/domain/civicTrace";
 import type { CivicTrace, CivicTraceInput } from "@/domain/civicTrace";
 import { traceToNarrative } from "@/domain/civicTraceNarrative";
 import type { CivicTraceNarrativeCtx } from "@/domain/civicTraceNarrative";
+import { InitiativeWall } from "@/features/initiativeWall";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
   component: MissionDetail,
@@ -1083,6 +1084,11 @@ function MissionDetail() {
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Initiative Wall — civic conversation */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8" id="comments">
+        <InitiativeWall initiativeId={missionId} initiativeType="mission" />
       </div>
 
       {/* Cinematic story overlay */}
