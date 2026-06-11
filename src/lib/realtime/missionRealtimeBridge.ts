@@ -18,7 +18,7 @@ import {
   type MissionDomainEvent,
 } from "@/lib/realtime/missionRealtime";
 
-const RECONCILE_DEBOUNCE_MS = 400;
+const RECONCILE_DEBOUNCE_MS = 300;
 
 type BridgeState = {
   channel: RealtimeChannel | null;

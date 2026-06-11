@@ -13,6 +13,12 @@ import {
   mapEntityToActionInitiative,
 } from "@/features/map/projections/mapEntityProjection";
 import { Drawer } from "vaul";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import type { MissionCategory } from "@/types";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
 import type { InitiativeAction } from "@/domain/initiativeActions";
@@ -44,6 +50,7 @@ function MapPage() {
     useMissionMapFilters(allMapItems, userCoords);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [showHuellas, setShowHuellas] = useState(true);
   const [selectedHuellaId, setSelectedHuellaId] = useState<string | null>(null);
 
@@ -93,6 +100,7 @@ function MapPage() {
 
   const handleRequestDetail = useCallback((id: string) => {
     setSelectedId(id);
+    setIsDetailOpen(true);
     setIsDrawerOpen(true);
   }, []);
 
@@ -237,127 +245,138 @@ function MapPage() {
           />
         </div>
 
-        {/* Sidebar — hidden on mobile, drawer handles detail view */}
-        <div className="hidden lg:flex lg:flex-col gap-2 lg:gap-4 min-h-[300px] lg:min-h-[500px] max-h-[40dvh] lg:max-h-none order-2 lg:order-2">
-          <div className="flex-1 flex flex-col h-full">
-            {activeEntity ? (
-              <div className="flex-1 rounded-3xl bg-card border border-border/50 overflow-hidden shadow-card flex flex-col justify-between">
-                <div>
-                  {/* Visual Banner Header */}
-                  <div
-                    className={`${REGION_META[activeEntity.region].gradient} p-4 lg:p-6 text-white relative`}
-                  >
-                    <div className="absolute inset-0 bg-mesh opacity-30" />
-                    <div className="relative z-10">
-                      <div className="text-4xl lg:text-5xl drop-shadow-md select-none">
-                        {activeEntity.emoji}
-                      </div>
-                      <div className="mt-2 lg:mt-3 text-[9px] lg:text-[10px] uppercase tracking-widest font-bold opacity-90">
-                        {REGION_META[activeEntity.region].name} · {activeEntity.category}
-                      </div>
-                      <h2 className="font-display font-bold text-sm lg:text-xl mt-1 leading-tight drop-shadow-sm truncate">
-                        {activeEntity.title}
-                      </h2>
-                      <div className="text-[10px] lg:text-xs opacity-95 mt-1.5 lg:mt-2 flex items-center gap-1">
-                        <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <Link
-                          to="/app/distrito/$slug"
-                          params={{
-                            slug: districtSlugify(
-                              activeEntity.location?.district ?? activeEntity.region,
-                            ),
-                          }}
-                          className="truncate hover:underline"
-                        >
-                          {activeEntity.location?.district ?? activeEntity.region}
-                        </Link>
-                      </div>
+        {/* Desktop detail Dialog */}
+        {activeEntity && (
+          <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+            <DialogContent className="max-h-[85vh] overflow-y-auto w-[min(92vw,640px)]">
+              <DialogTitle className="sr-only">{activeEntity.title}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {activeEntity.summary}
+              </DialogDescription>
+              <div className="space-y-4">
+                {/* Visual Banner Header */}
+                <div
+                  className={`${REGION_META[activeEntity.region].gradient} p-4 sm:p-6 text-white relative rounded-xl`}
+                >
+                  <div className="absolute inset-0 bg-mesh opacity-30 rounded-xl" />
+                  <div className="relative z-10">
+                    <div className="text-4xl sm:text-5xl drop-shadow-md select-none">
+                      {activeEntity.emoji}
                     </div>
-                  </div>
-
-                  {/* Details Body */}
-                  <div className="p-3 lg:p-5 space-y-2 lg:space-y-4">
-                    <p className="text-[10px] lg:text-xs text-muted-foreground leading-relaxed">
-                      {activeEntity.summary}
-                    </p>
-
-                    {/* Grid stats */}
-                    <div className="grid grid-cols-3 gap-1.5 lg:gap-2">
-                      {[
-                        { label: "Puntos XP", value: `+${activeEntity.xp ?? 0}` },
-                        { label: "Cupos", value: activeEntity.spotsLeft ?? "—" },
-                        { label: "Dificultad", value: activeEntity.difficulty ?? "—" },
-                      ].map((s, idx) => (
-                        <div
-                          key={idx}
-                          className="rounded-xl bg-secondary/50 border border-border/20 p-2 lg:p-2.5 text-center"
-                        >
-                          <div className="font-display font-extrabold text-foreground text-[10px] lg:text-xs">
-                            {s.value}
-                          </div>
-                          <div className="text-[7px] lg:text-[8px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">
-                            {s.label}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="mt-2 sm:mt-3 text-[9px] sm:text-[10px] uppercase tracking-widest font-bold opacity-90">
+                      {REGION_META[activeEntity.region].name} · {activeEntity.category}
                     </div>
-
-                    {/* Impact description */}
-                    <div className="rounded-xl bg-accent/5 border border-accent/15 p-2.5 lg:p-3 text-[10px] lg:text-xs">
-                      <div className="text-accent font-bold uppercase tracking-wider text-[7px] lg:text-[8px] mb-0.5">
-                        Impacto esperado
-                      </div>
-                      <div className="font-bold text-foreground text-[10px] lg:text-[11px]">
-                        {activeEntity.impact ?? "—"}
-                      </div>
+                    <h2 className="font-display font-bold text-sm sm:text-xl mt-1 leading-tight drop-shadow-sm truncate">
+                      {activeEntity.title}
+                    </h2>
+                    <div className="text-[10px] sm:text-xs opacity-95 mt-1.5 sm:mt-2 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <Link
+                        to="/app/distrito/$slug"
+                        params={{
+                          slug: districtSlugify(
+                            activeEntity.location?.district ?? activeEntity.region,
+                          ),
+                        }}
+                        className="truncate hover:underline"
+                      >
+                        {activeEntity.location?.district ?? activeEntity.region}
+                      </Link>
                     </div>
                   </div>
                 </div>
 
-                {/* CTA Action button (Desktop view) */}
-                <div className="p-3 lg:p-4 border-t border-border/30 bg-secondary/15">
+                {/* Details Body */}
+                <div className="space-y-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    {activeEntity.summary}
+                  </p>
+
+                  {/* Grid stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Puntos XP", value: `+${activeEntity.xp ?? 0}` },
+                      { label: "Cupos", value: activeEntity.spotsLeft ?? "—" },
+                      { label: "Dificultad", value: activeEntity.difficulty ?? "—" },
+                    ].map((s, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-xl bg-secondary/50 border border-border/20 p-2.5 text-center"
+                      >
+                        <div className="font-display font-extrabold text-foreground text-xs">
+                          {s.value}
+                        </div>
+                        <div className="text-[7px] uppercase tracking-wider text-muted-foreground mt-0.5 font-bold">
+                          {s.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Impact description */}
+                  <div className="rounded-xl bg-accent/5 border border-accent/15 p-3 text-xs sm:text-sm">
+                    <div className="text-accent font-bold uppercase tracking-wider text-[7px] mb-0.5">
+                      Impacto esperado
+                    </div>
+                    <div className="font-bold text-foreground">
+                      {activeEntity.impact ?? "—"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Action buttons */}
+                <div className="pt-2 border-t border-border/30">
                   <InitiativeActionBar
                     initiative={mapEntityToActionInitiative(activeEntity)}
                     relationship="visitor"
                     variant="row"
-                    maxVisible={2}
+                    maxVisible={4}
                     onAction={(action: InitiativeAction) => {
-                      if (action === "support") {
-                        navigate({
-                          to: "/app/propuesta/$proposalId",
-                          params: { proposalId: activeEntity.sourceId },
-                        });
-                      } else if (action === "join") {
-                        navigate({
-                          to: "/app/mision/$missionId",
-                          params: { missionId: activeEntity.id },
-                        });
-                      } else if (action === "share") {
-                        shareInitiative(activeEntity.title, window.location.href);
+                      switch (action) {
+                        case "support":
+                          navigate({
+                            to: "/app/propuesta/$proposalId",
+                            params: { proposalId: activeEntity.sourceId },
+                          });
+                          break;
+                        case "join":
+                          navigate({
+                            to: "/app/mision/$missionId",
+                            params: { missionId: activeEntity.id },
+                          });
+                          break;
+                        case "share":
+                          shareInitiative(activeEntity.title, window.location.href);
+                          break;
+                        case "comment":
+                          navigate({
+                            to: activeEntity.sourceType === "mission"
+                              ? "/app/mision/$missionId"
+                              : "/app/propuesta/$proposalId",
+                            params: activeEntity.sourceType === "mission"
+                              ? { missionId: activeEntity.id }
+                              : { proposalId: activeEntity.sourceId },
+                            hash: "comments",
+                          });
+                          break;
+                        case "report":
+                          navigate({
+                            to: activeEntity.sourceType === "mission"
+                              ? "/app/mision/$missionId"
+                              : "/app/propuesta/$proposalId",
+                            params: activeEntity.sourceType === "mission"
+                              ? { missionId: activeEntity.id }
+                              : { proposalId: activeEntity.sourceId },
+                          });
+                          break;
                       }
                     }}
                   />
                 </div>
               </div>
-            ) : (
-              <div className="flex-1 rounded-3xl border border-dashed border-border/60 p-8 text-center flex flex-col items-center justify-center bg-card">
-                <div className="text-4xl mb-3">🗺️</div>
-                <h3 className="font-display font-bold text-sm text-foreground">
-                  Aún sin rutas activas aquí
-                </h3>
-                <p className="text-[11px] text-muted-foreground mt-2 max-w-[220px] leading-relaxed">
-                  Explora otros distritos del Perú y sé el primero en activar este territorio.
-                </p>
-                <button
-                  onClick={() => updateFilters({ district: "todas", region: "todas" })}
-                  className="mt-4 text-xs font-bold text-accent hover:underline"
-                >
-                  Ver todo el Perú
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* MOBILE-FIRST: Vaul Bottom Sheet Drawer — territorial destination preview */}
@@ -413,18 +432,35 @@ function MapPage() {
                             relationship="visitor"
                             variant="compact"
                             onAction={(action: InitiativeAction) => {
-                              if (action === "support") {
-                                navigate({
-                                  to: "/app/propuesta/$proposalId",
-                                  params: { proposalId: activeEntity.sourceId },
-                                });
-                              } else if (action === "join") {
-                                navigate({
-                                  to: "/app/mision/$missionId",
-                                  params: { missionId: activeEntity.id },
-                                });
-                              } else if (action === "share") {
-                                shareInitiative(activeEntity.title, window.location.href);
+                              switch (action) {
+                                case "support":
+                                  navigate({
+                                    to: "/app/propuesta/$proposalId",
+                                    params: { proposalId: activeEntity.sourceId },
+                                  });
+                                  break;
+                                case "join":
+                                  navigate({
+                                    to: "/app/mision/$missionId",
+                                    params: { missionId: activeEntity.id },
+                                  });
+                                  break;
+                                case "share":
+                                  shareInitiative(activeEntity.title, window.location.href);
+                                  break;
+                                case "comment":
+                                  navigate({
+                                    to: "/app/mision/$missionId",
+                                    params: { missionId: activeEntity.id },
+                                    hash: "comments",
+                                  });
+                                  break;
+                                case "report":
+                                  navigate({
+                                    to: "/app/mision/$missionId",
+                                    params: { missionId: activeEntity.id },
+                                  });
+                                  break;
                               }
                             }}
                           />

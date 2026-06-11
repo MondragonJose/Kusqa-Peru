@@ -13,7 +13,8 @@ import {
 import { regionGradient, regionChipBg, type Region } from "@/domain/regions";
 import { createRoot, type Root } from "react-dom/client";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
-import { mapEntityToActionInitiative } from "../projections/mapEntityProjection";
+import { mapEntityToActionInitiative, entityDetailRoute } from "../projections/mapEntityProjection";
+import { shareInitiative } from "@/features/actions/shareInitiative";
 
 type MarkerLayerOptions = {
   L: typeof import("leaflet");
@@ -143,7 +144,13 @@ export function renderMissionMarkers({
             relationship="visitor"
             variant="popup"
             maxVisible={2}
-            onAction={() => onRequestDetail?.(projection.id)}
+            onAction={(action) => {
+              if (action === "share") {
+                shareInitiative(projection.title, `${window.location.origin}${entityDetailRoute(entity)}`);
+                return;
+              }
+              onRequestDetail?.(projection.id);
+            }}
           />,
         );
         popupRoots.set(projection.id, root);

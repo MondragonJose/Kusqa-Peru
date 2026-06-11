@@ -10,6 +10,11 @@ export const getRouter = () => {
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
+        retry: (failureCount, error) => {
+          const status = (error as { status?: number; code?: string })?.status;
+          if (typeof status === "number" && status >= 400 && status < 500) return false;
+          return failureCount < 2;
+        },
       },
     },
   });

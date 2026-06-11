@@ -385,7 +385,7 @@ function flattenInitiativeComment(raw: unknown): z.infer<typeof DB_INITIATIVE_CO
 const INITIATIVE_SELECT = `
   id, initiative_id, initiative_type, user_id, parent_comment_id, content,
   created_at, updated_at, deleted_at,
-  profiles:user_id ( username, full_name, avatar_url )
+  profiles!initiative_comments_user_fk ( username, full_name, avatar_url )
 ` as const;
 
 export const initiativeCommentRepository = {
@@ -496,7 +496,7 @@ export const initiativeCommentRepository = {
     }
 
     const { data, error } = await supabase
-      .from("proposal_comments")
+      .from("initiative_comments")
       .insert({
         initiative_id: input.initiativeId,
         initiative_type: input.initiativeType,
@@ -536,7 +536,7 @@ export const initiativeCommentRepository = {
     }
 
     const { data, error } = await supabase
-      .from("proposal_comments")
+      .from("initiative_comments")
       .update({ content: trimmed, updated_at: new Date().toISOString() })
       .eq("id", input.commentId)
       .eq("user_id", input.currentUserId)
@@ -563,7 +563,7 @@ export const initiativeCommentRepository = {
 
   async softDeleteComment(commentId: string, currentUserId: string): Promise<ProposalResult<true>> {
     const { error } = await supabase
-      .from("proposal_comments")
+      .from("initiative_comments")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", commentId)
       .eq("user_id", currentUserId)
