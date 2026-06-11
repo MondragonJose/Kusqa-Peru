@@ -183,35 +183,58 @@ insert into public.initiatives (
   created_at, updated_at
 )
 select
-  id, 'mission'::initiative_kind,
-  title, description, category, district, district_id,
+  id,
+  'mission'::initiative_kind,
+  title,
+  description,
+  category,
+  district,
+  district_id,
+
   coalesce(
     (select region from public.proposals where id = m.source_proposal_id),
     (select region from public.districts where id = m.district_id),
     'sierra'
-  ) as region,
-  latitude, longitude,
-  organizer_id, organizer_id,
-  start_date, end_date,
-  max_participants, xp_reward, current_progress,
+  ),
+
+  latitude,
+  longitude,
+
+  -- ✅ owner_id fallback chain:
+  -- 1) missions.created_by
+  -- 2) proposals.user_id via source_proposal_id
+  -- 3) first mission participant user_id (by created_at)
+  coalesce(
+    m.created_by,
+    (select p.user_id
+     from public.proposals p
+     where p.id = m.source_proposal_id),
+    (select mp.user_id
+     from public.mission_participants mp
+     where mp.mission_id = m.id
+     order by mp.created_at asc
+     limit 1)
+  ),
+
+  null::uuid, -- organizer_id
+  start_date,
+  end_date,
+  max_participants,
+  xp_reward,
+  current_progress,
+
   case
-    when end_date is not null and end_date < now() then 'completed'::initiative_status
+    when end_date is not null and end_date < now()
+      then 'completed'::initiative_status
     else 'active'::initiative_status
   end,
-  end_date as completed_at,
+
+  end_date,
   source_proposal_id,
-  created_at, updated_at
+  created_at,
+  created_at
 from public.missions m
 on conflict (id) do nothing;
-
--- Link has_converted_initiative_id for missions that came from proposals.
-update public.initiatives i
-set has_converted_initiative_id = i.id
-from public.initiatives src
-where src.has_converted_initiative_id = i.id
-  and i.kind = 'mission'
-  and src.kind = 'proposal';
-
 -- ── 5) Migrate proposal_supports → initiative_supports ────────────────────
 
 create table if not exists public.initiative_supports (
@@ -269,11 +292,42 @@ from public.proposal_collaborators
 on conflict (id) do nothing;
 
 -- ── 8) Migrate proposal_comments → initiative_comments ────────────────────
+create table if not exists public.initiative_comments (
+  id uuid primary key default gen_random_uuid(),
 
+  initiative_id uuid not null,
+  initiative_type text not null,
+
+  user_id uuid not null,
+
+  parent_comment_id uuid,
+
+  content text not null,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,
+
+  -- optional constraints (keep or remove to match your legacy schema)
+  constraint initiative_comments_parent_fk
+    foreign key (parent_comment_id) references public.initiative_comments(id) on delete set null,
+
+  constraint initiative_comments_initiative_fk
+    foreign key (initiative_id) references public.initiatives(id) on delete cascade
+);
 -- Table already exists from earlier migration
-insert into public.initiative_comments (id, initiative_id, initiative_type, user_id, parent_comment_id, content, created_at, updated_at, deleted_at)
+insert into public.initiative_comments
+  (id, initiative_id, initiative_type, user_id, parent_comment_id, content, created_at, updated_at, deleted_at)
 select
-  id, proposal_id, 'proposal', user_id, parent_comment_id, content, created_at, updated_at, deleted_at
+  id,
+  initiative_id,
+  'proposal'::text,
+  user_id,
+  parent_comment_id,
+  content,
+  created_at,
+  updated_at,
+  deleted_at
 from public.proposal_comments
 on conflict (id) do nothing;
 
@@ -403,34 +457,6 @@ create trigger trg_initiatives_updated_at
   before update on public.initiatives
   for each row execute function public.trg_handle_updated_at_initiatives();
 
--- ── 14) Convert old tables to views for backward compat ──────────────────
-
--- proposals view
-create or replace view public.proposals as
-select
-  id, title, description, category, district, district_id, region,
-  owner_id as user_id,
-  latitude::numeric as latitude,
-  longitude::numeric as longitude,
-  team_size, images, proposed_date, summary, why, location_label,
-  legacy_proposal_status as status,
-  ready_at, converted_at, completed_at,
-  has_converted_initiative_id as has_converted_mission_id,
-  created_at, updated_at
-from public.initiatives
-where kind = 'proposal';
-
--- missions view
-create or replace view public.missions as
-select
-  id, title, description, category, district, district_id,
-  latitude, longitude,
-  organizer_id,
-  start_date, end_date, current_progress, max_participants, xp_reward,
-  source_initiative_id as source_proposal_id,
-  created_at, updated_at
-from public.initiatives
-where kind = 'mission';
 
 -- ── 15) Grant permissions ────────────────────────────────────────────────
 
