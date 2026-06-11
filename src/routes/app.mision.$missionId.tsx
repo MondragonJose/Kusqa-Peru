@@ -1047,7 +1047,6 @@ function MissionDetail() {
                 </span>
               </div>
             </div>
-
           </div>
         </aside>
       </div>

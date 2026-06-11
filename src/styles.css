@@ -135,17 +135,53 @@
 
   /* Gradients & effects */
   /* Restaurado gradient-sunrise como color de identidad juvenil - P0 FIX REVERSED */
-  --gradient-sunrise: linear-gradient(135deg, oklch(0.78 0.17 75) 0%, oklch(0.7 0.18 45) 45%, oklch(0.55 0.18 15) 100%);
-  --gradient-andes: linear-gradient(135deg, oklch(0.65 0.12 45) 0%, oklch(0.45 0.14 35) 60%, oklch(0.32 0.10 30) 100%);
+  --gradient-sunrise: linear-gradient(
+    135deg,
+    oklch(0.78 0.17 75) 0%,
+    oklch(0.7 0.18 45) 45%,
+    oklch(0.55 0.18 15) 100%
+  );
+  --gradient-andes: linear-gradient(
+    135deg,
+    oklch(0.65 0.12 45) 0%,
+    oklch(0.45 0.14 35) 60%,
+    oklch(0.32 0.1 30) 100%
+  );
   --gradient-coast: linear-gradient(135deg, oklch(0.82 0.1 200) 0%, oklch(0.62 0.16 220) 100%);
   --gradient-jungle: linear-gradient(135deg, oklch(0.78 0.14 140) 0%, oklch(0.5 0.16 160) 100%);
 
   /* Terrain gradients — richer, narrative-specific */
-  --gradient-terrain-costa: linear-gradient(160deg, oklch(0.9 0.08 80) 0%, oklch(0.82 0.12 55) 40%, oklch(0.72 0.14 220) 100%);
-  --gradient-terrain-sierra: linear-gradient(160deg, oklch(0.6 0.08 55) 0%, oklch(0.45 0.12 45) 45%, oklch(0.35 0.12 280) 100%);
-  --gradient-terrain-selva: linear-gradient(160deg, oklch(0.75 0.16 140) 0%, oklch(0.55 0.18 160) 50%, oklch(0.42 0.14 175) 100%);
-  --gradient-cumbre: linear-gradient(160deg, oklch(0.82 0.1 80) 0%, oklch(0.62 0.15 45) 35%, oklch(0.38 0.08 280) 70%, oklch(0.22 0.06 285) 100%);
-  --gradient-aurora: linear-gradient(135deg, oklch(0.55 0.18 300), oklch(0.65 0.14 200), oklch(0.7 0.12 160));
+  --gradient-terrain-costa: linear-gradient(
+    160deg,
+    oklch(0.9 0.08 80) 0%,
+    oklch(0.82 0.12 55) 40%,
+    oklch(0.72 0.14 220) 100%
+  );
+  --gradient-terrain-sierra: linear-gradient(
+    160deg,
+    oklch(0.6 0.08 55) 0%,
+    oklch(0.45 0.12 45) 45%,
+    oklch(0.35 0.12 280) 100%
+  );
+  --gradient-terrain-selva: linear-gradient(
+    160deg,
+    oklch(0.75 0.16 140) 0%,
+    oklch(0.55 0.18 160) 50%,
+    oklch(0.42 0.14 175) 100%
+  );
+  --gradient-cumbre: linear-gradient(
+    160deg,
+    oklch(0.82 0.1 80) 0%,
+    oklch(0.62 0.15 45) 35%,
+    oklch(0.38 0.08 280) 70%,
+    oklch(0.22 0.06 285) 100%
+  );
+  --gradient-aurora: linear-gradient(
+    135deg,
+    oklch(0.55 0.18 300),
+    oklch(0.65 0.14 200),
+    oklch(0.7 0.12 160)
+  );
 
   /* Restaurado shadow-glow contenido para jerarquía visual - P0 FIX REVERSED */
   --shadow-glow: 0 8px 24px -8px oklch(0.7 0.18 45 / 0.25);
@@ -190,7 +226,8 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
@@ -198,23 +235,39 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
 @layer utilities {
-  .font-display { font-family: var(--font-display); }
+  .font-display {
+    font-family: var(--font-display);
+  }
 
   /* Restaurado bg-gradient-sunrise para identidad visual juvenil - P0 FIX REVERSED */
-  .bg-gradient-sunrise { background-image: var(--gradient-sunrise); }
-  .bg-gradient-andes { background-image: var(--gradient-andes); }
-  .bg-gradient-coast { background-image: var(--gradient-coast); }
-  .bg-gradient-jungle { background-image: var(--gradient-jungle); }
-  .bg-gradient-aurora { background-image: var(--gradient-aurora); }
+  .bg-gradient-sunrise {
+    background-image: var(--gradient-sunrise);
+  }
+  .bg-gradient-andes {
+    background-image: var(--gradient-andes);
+  }
+  .bg-gradient-coast {
+    background-image: var(--gradient-coast);
+  }
+  .bg-gradient-jungle {
+    background-image: var(--gradient-jungle);
+  }
+  .bg-gradient-aurora {
+    background-image: var(--gradient-aurora);
+  }
 
-  .text-gradient-sunrise, .text-gradient-aurora {
+  .text-gradient-sunrise,
+  .text-gradient-aurora {
     background: var(--gradient-sunrise);
     -webkit-background-clip: text;
     background-clip: text;
@@ -234,41 +287,76 @@
     border: 1px solid oklch(1 0 0 / 0.6);
   }
 
-  .shadow-glow { box-shadow: var(--shadow-glow); }
-  .shadow-card { box-shadow: var(--shadow-card); }
-  .shadow-soft { box-shadow: var(--shadow-soft); }
-  .shadow-lift { box-shadow: var(--shadow-lift); }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
 
-  .transition-smooth { transition: all 0.4s var(--transition-smooth); }
+  .transition-smooth {
+    transition: all 0.4s var(--transition-smooth);
+  }
 
   @keyframes wander {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(12px, -8px); }
-    66% { transform: translate(-6px, 10px); }
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    33% {
+      transform: translate(12px, -8px);
+    }
+    66% {
+      transform: translate(-6px, 10px);
+    }
   }
   .animate-wander {
     animation: wander 14s ease-in-out infinite;
   }
 
   @keyframes float-slow {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
   .animate-float-slow {
     animation: float-slow 5s ease-in-out infinite;
   }
 
   /* Hide scrollbars on filter pill rows */
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
   /* P0 FIX: Eliminadas animaciones decorativas - civic-in, glow-pulse, breathe, presence-in, wander */
 
   /* Terrain gradient utilities */
-  .bg-gradient-terrain-costa { background-image: var(--gradient-terrain-costa); }
-  .bg-gradient-terrain-sierra { background-image: var(--gradient-terrain-sierra); }
-  .bg-gradient-terrain-selva { background-image: var(--gradient-terrain-selva); }
-  .bg-gradient-cumbre { background-image: var(--gradient-cumbre); }
+  .bg-gradient-terrain-costa {
+    background-image: var(--gradient-terrain-costa);
+  }
+  .bg-gradient-terrain-sierra {
+    background-image: var(--gradient-terrain-sierra);
+  }
+  .bg-gradient-terrain-selva {
+    background-image: var(--gradient-terrain-selva);
+  }
+  .bg-gradient-cumbre {
+    background-image: var(--gradient-cumbre);
+  }
 
   /* P0 FIX: Eliminados badge rarity shadows - sistema de gamificación eliminado */
 
@@ -296,10 +384,11 @@
 
   /* Full screen Spotify Wrapped celebration mesh background */
   .kusqa-celebration-mesh {
-    background-image: radial-gradient(circle at 10% 20%, oklch(0.78 0.17 75 / 0.45), transparent 45%),
-                      radial-gradient(circle at 90% 10%, oklch(0.55 0.18 320 / 0.4), transparent 50%),
-                      radial-gradient(circle at 50% 80%, oklch(0.62 0.18 200 / 0.42), transparent 55%),
-                      linear-gradient(to bottom, oklch(0.22 0.035 285) 0%, oklch(0.12 0.035 285) 100%);
+    background-image:
+      radial-gradient(circle at 10% 20%, oklch(0.78 0.17 75 / 0.45), transparent 45%),
+      radial-gradient(circle at 90% 10%, oklch(0.55 0.18 320 / 0.4), transparent 50%),
+      radial-gradient(circle at 50% 80%, oklch(0.62 0.18 200 / 0.42), transparent 55%),
+      linear-gradient(to bottom, oklch(0.22 0.035 285) 0%, oklch(0.12 0.035 285) 100%);
   }
 
   /* Animated neon path glow for Qhapaq Ñan */
@@ -315,11 +404,15 @@
 
   /* Glowing gold keyframes for territorial footprints */
   @keyframes foot-glow {
-    0%, 100% { filter: drop-shadow(0 0 4px oklch(0.78 0.17 75 / 0.3)); }
-    50% { filter: drop-shadow(0 0 12px oklch(0.78 0.18 75 / 0.75)); }
+    0%,
+    100% {
+      filter: drop-shadow(0 0 4px oklch(0.78 0.17 75 / 0.3));
+    }
+    50% {
+      filter: drop-shadow(0 0 12px oklch(0.78 0.18 75 / 0.75));
+    }
   }
   .animate-foot-glow {
     animation: foot-glow 3s ease-in-out infinite;
   }
 }
-

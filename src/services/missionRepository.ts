@@ -12,10 +12,8 @@ import { inferRegionFromCoords } from "@/domain/territorial";
 import { computeLifecycleInfo } from "@/domain/lifecycle";
 import type { GeoCoords } from "@/domain/geo";
 import {
-  CATEGORY_LABEL,
-  CATEGORY_TO_DB,
-  dbCategoryEmoji,
-  type DbCategory,
+  categoryEmoji,
+  type MissionCategory,
 } from "@/domain/categories";
 import { z } from "zod";
 
@@ -29,7 +27,7 @@ const DB_MISSION_SCHEMA = z.object({
   description: z.string().min(1),
   district: z.string().min(1),
   district_id: z.string().uuid().nullable().optional(),
-  category: z.enum(["environment", "infrastructure", "community", "education", "health"]),
+  category: z.enum(["Medio ambiente", "Educación", "Arte & cultura", "Comunidad", "Salud", "Tecnología"]),
   latitude: z.number(),
   longitude: z.number(),
   created_at: z.string(),
@@ -81,7 +79,11 @@ async function resolveOrganizerForMission(
     });
     if (error || !data) return null;
     const row = Array.isArray(data) ? data[0] : data;
-    const r = row as { first_name?: string | null; username?: string | null; avatar_url?: string | null };
+    const r = row as {
+      first_name?: string | null;
+      username?: string | null;
+      avatar_url?: string | null;
+    };
     const name = r.first_name ?? r.username;
     if (!name) return null;
     return { name, avatar: r.avatar_url ?? "" };
@@ -97,7 +99,11 @@ async function resolveMissionImpact(missionId: string): Promise<string | null> {
     });
     if (error || !data) return null;
     const row = Array.isArray(data) ? data[0] : data;
-    const r = row as { evidence_count?: number; latest_caption?: string | null; latest_description?: string | null };
+    const r = row as {
+      evidence_count?: number;
+      latest_caption?: string | null;
+      latest_description?: string | null;
+    };
     const count = Number(r.evidence_count ?? 0);
     if (count === 0) return null;
     const text = r.latest_caption ?? r.latest_description;
@@ -152,10 +158,9 @@ function mapRowToMission(
   const coords = { lat: row.latitude, lng: row.longitude };
   const region = inferRegionFromCoords(coords);
   const participants = row.current_progress ?? 0;
-  const spotsLeft = row.max_participants != null
-    ? Math.max(0, row.max_participants - participants)
-    : null;
-  const category = row.category as DbCategory;
+  const spotsLeft =
+    row.max_participants != null ? Math.max(0, row.max_participants - participants) : null;
+  const category = row.category as MissionCategory;
   const startDate =
     "start_date" in row ? ((row as Record<string, unknown>).start_date as string | null) : null;
   const endDate =
@@ -171,7 +176,7 @@ function mapRowToMission(
     district: row.district,
     districtId: ((row as Record<string, unknown>).district_id as string | null) ?? null,
     region,
-    category: CATEGORY_LABEL[category],
+    category,
     xp: row.xp_reward ?? null,
     participants,
     spotsLeft,
@@ -184,7 +189,7 @@ function mapRowToMission(
     lifecycleInfo: computeLifecycleInfo(startDate, endDate),
     organizer,
     coords,
-    emoji: dbCategoryEmoji(category),
+    emoji: categoryEmoji(category),
   };
 }
 
@@ -337,7 +342,7 @@ export const missionRepository = {
   },
 
   async create(data: Omit<Mission, "id">): Promise<Mission> {
-    const category = CATEGORY_TO_DB[data.category] ?? "community";
+    const category = data.category;
     const participants = data.participants ?? 0;
     const capacity = Math.max(participants + (data.spotsLeft ?? 0), participants, 1);
 
@@ -433,12 +438,6 @@ async function resolveMissions(rows: DbMission[], referenceCoords?: GeoCoords): 
   );
 
   return entries.map(({ row, organizer, date, impact }) =>
-    mapRowToMission(
-      row,
-      organizer,
-      date,
-      impact,
-      distanceMap?.get(row.id) ?? null,
-    ),
+    mapRowToMission(row, organizer, date, impact, distanceMap?.get(row.id) ?? null),
   );
 }

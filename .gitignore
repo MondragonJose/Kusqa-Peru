@@ -53,3 +53,11 @@ bun.lockb
 
 # Backup artifacts
 .backups/
+
+# Storybook static build
+storybook-static/
+
+# Playwright artifacts
+playwright-report/
+playwright/.cache/
+test-results/

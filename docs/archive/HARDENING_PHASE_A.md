@@ -2,14 +2,14 @@
 
 ## 1. Auditoría del estado actual (pre-Phase A)
 
-| Capa | Estado | Gap |
-|------|--------|-----|
-| Frontend write | `missionMutationEngine` — dedup, lanes, pins, reconcile | Fuerte |
-| Repositories | `userMissionRepository` + RPC adapters | Client podía pasar XP |
-| PostgreSQL | `user_missions` unique + RPC básicos | Sin CHECKs de estado, sin audit |
-| Economía | `DEFAULT_XP=320` en mapper | No column `xp_reward` |
-| Tests | Ninguno en CI | Riesgo regresión RPC |
-| Realtime | No implementado | Multi-device eventual |
+| Capa           | Estado                                                  | Gap                             |
+| -------------- | ------------------------------------------------------- | ------------------------------- |
+| Frontend write | `missionMutationEngine` — dedup, lanes, pins, reconcile | Fuerte                          |
+| Repositories   | `userMissionRepository` + RPC adapters                  | Client podía pasar XP           |
+| PostgreSQL     | `user_missions` unique + RPC básicos                    | Sin CHECKs de estado, sin audit |
+| Economía       | `DEFAULT_XP=320` en mapper                              | No column `xp_reward`           |
+| Tests          | Ninguno en CI                                           | Riesgo regresión RPC            |
+| Realtime       | No implementado                                         | Multi-device eventual           |
 
 ## 2. Riesgos detectados
 
@@ -21,15 +21,15 @@
 
 ## 3. Plan incremental implementado
 
-| # | Entregable | Archivo(s) |
-|---|------------|------------|
-| 1 | Constraints + cleanup | `20260525120000_schema_constraints_hardening.sql` |
-| 2 | Authoritative XP + audit RPCs | `20260525120100_authoritative_xp_audit_rpcs.sql` |
-| 3 | Repository + Zod | `userMissionRepository.ts`, `userMissionRpc*.ts` |
-| 4 | Hook input `{ missionId }` only | `useCompleteUserMission.ts` |
-| 5 | Realtime prep | `src/lib/realtime/missionRealtime.ts` |
-| 6 | Tests | Vitest + SQL harness |
-| 7 | Legacy sunset doc | `LEGACY_PATH_SUNSET.md` |
+| #   | Entregable                      | Archivo(s)                                        |
+| --- | ------------------------------- | ------------------------------------------------- |
+| 1   | Constraints + cleanup           | `20260525120000_schema_constraints_hardening.sql` |
+| 2   | Authoritative XP + audit RPCs   | `20260525120100_authoritative_xp_audit_rpcs.sql`  |
+| 3   | Repository + Zod                | `userMissionRepository.ts`, `userMissionRpc*.ts`  |
+| 4   | Hook input `{ missionId }` only | `useCompleteUserMission.ts`                       |
+| 5   | Realtime prep                   | `src/lib/realtime/missionRealtime.ts`             |
+| 6   | Tests                           | Vitest + SQL harness                              |
+| 7   | Legacy sunset doc               | `LEGACY_PATH_SUNSET.md`                           |
 
 ## 4. Cambios por archivo
 
@@ -63,12 +63,12 @@ useCompleteUserMission({ missionId })
 
 ## 7. Regresiones posibles
 
-| Área | Mitigación |
-|------|------------|
-| Migration cleanup falla | Revisar filas corruptas antes de CHECKs |
-| UI pasa `xpEarned` | Overload ignorado + hook solo `missionId` |
-| Optimistic XP ≠ server | Alinear `missions.xp_reward` con catálogo |
-| RPC signature change | Drop old `(uuid, integer)` en migración |
+| Área                    | Mitigación                                |
+| ----------------------- | ----------------------------------------- |
+| Migration cleanup falla | Revisar filas corruptas antes de CHECKs   |
+| UI pasa `xpEarned`      | Overload ignorado + hook solo `missionId` |
+| Optimistic XP ≠ server  | Alinear `missions.xp_reward` con catálogo |
+| RPC signature change    | Drop old `(uuid, integer)` en migración   |
 
 ## 8. Futuro (no en scope)
 

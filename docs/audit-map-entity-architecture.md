@@ -21,104 +21,105 @@ The proposed `InitiativeMapEntity` solves both by adding optional Layer B fields
 
 ### 1.1 Marker Layer (`useMissionMarkerLayer.ts`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `id` | `mission.id` | Required | Used as marker key and for selection. Must be raw UUID. |
-| `coords.lat` | `mission.coords.lat` | Required | Marker position. Guarded by `isValidLatLng`. |
-| `coords.lng` | `mission.coords.lng` | Required | Same |
-| `region` | `mission.region` | Required | Gradient, glow, chip class |
-| `lifecycleInfo.lifecycle` | `mission.lifecycleInfo.lifecycle` | Required | → `deriveLifecycleFromMission` → `getLifecyclePresentation` |
-| `emoji` | `mission.emoji` | Required | Pin icon |
-| `title` | `mission.title` | Required | Popup title |
-| `district` | `mission.district` | Required | Popup location |
-| **proposalIds** | `proposalIds?.has(mission.id)` | **DEAD** | Parameter never sent from MapView. `isProposal` always `false`. |
+| Field                     | Access path                       | Required? | Notes                                                           |
+| ------------------------- | --------------------------------- | --------- | --------------------------------------------------------------- |
+| `id`                      | `mission.id`                      | Required  | Used as marker key and for selection. Must be raw UUID.         |
+| `coords.lat`              | `mission.coords.lat`              | Required  | Marker position. Guarded by `isValidLatLng`.                    |
+| `coords.lng`              | `mission.coords.lng`              | Required  | Same                                                            |
+| `region`                  | `mission.region`                  | Required  | Gradient, glow, chip class                                      |
+| `lifecycleInfo.lifecycle` | `mission.lifecycleInfo.lifecycle` | Required  | → `deriveLifecycleFromMission` → `getLifecyclePresentation`     |
+| `emoji`                   | `mission.emoji`                   | Required  | Pin icon                                                        |
+| `title`                   | `mission.title`                   | Required  | Popup title                                                     |
+| `district`                | `mission.district`                | Required  | Popup location                                                  |
+| **proposalIds**           | `proposalIds?.has(mission.id)`    | **DEAD**  | Parameter never sent from MapView. `isProposal` always `false`. |
 
 ### 1.2 Sidebar Detail Panel (`app.mapa.tsx:263-364`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `id` | `activeMission.id` | Required | Route param to `/app/mision/$missionId` |
-| `region` | `activeMission.region` | Required | Gradient |
-| `emoji` | `activeMission.emoji` | Required | Header |
-| `category` | `activeMission.category` | Required | Header |
-| `title` | `activeMission.title` | Required | Header |
-| `district` | `activeMission.district` | Required | Location link |
-| `description` | `activeMission.description` | Required | Body text |
-| `xp` | `activeMission.xp` | Required | Stats grid |
-| `spotsLeft` | `activeMission.spotsLeft` | Required | Stats grid |
-| `difficulty` | `activeMission.difficulty` | Required | Stats grid |
-| `impact` | `activeMission.impact` | Required | Impact section |
+| Field         | Access path                 | Required? | Notes                                   |
+| ------------- | --------------------------- | --------- | --------------------------------------- |
+| `id`          | `activeMission.id`          | Required  | Route param to `/app/mision/$missionId` |
+| `region`      | `activeMission.region`      | Required  | Gradient                                |
+| `emoji`       | `activeMission.emoji`       | Required  | Header                                  |
+| `category`    | `activeMission.category`    | Required  | Header                                  |
+| `title`       | `activeMission.title`       | Required  | Header                                  |
+| `district`    | `activeMission.district`    | Required  | Location link                           |
+| `description` | `activeMission.description` | Required  | Body text                               |
+| `xp`          | `activeMission.xp`          | Required  | Stats grid                              |
+| `spotsLeft`   | `activeMission.spotsLeft`   | Required  | Stats grid                              |
+| `difficulty`  | `activeMission.difficulty`  | Required  | Stats grid                              |
+| `impact`      | `activeMission.impact`      | Required  | Impact section                          |
 
 ### 1.3 Bottom Drawer (`app.mapa.tsx:423-527`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `region` | `activeMission.region` | Required | Gradient |
-| `category` | `activeMission.category` | Required | Header |
-| `title` | `activeMission.title` | Required | Header |
-| `lifecycleInfo` | `activeMission.lifecycleInfo` | Required | → `computeMissionAnchor` |
-| `startDate` | `activeMission.startDate` | Required | → `computeMissionAnchor` |
-| `endDate` | `activeMission.endDate` | Required | → `computeMissionAnchor` |
-| `district` | `activeMission.district` | Required | Location link |
-| `emoji` | `activeMission.emoji` | Required | Visual |
-| `description` | `activeMission.description` | Required | Body |
-| `xp` | `activeMission.xp` | Required | Stats |
-| `spotsLeft` | `activeMission.spotsLeft` | Required | Stats |
-| `difficulty` | `activeMission.difficulty` | Required | Stats |
-| `impact` | `activeMission.impact` | Required | Stats |
-| `organizer` | `activeMission.organizer` | Optional | Conditional render |
-| `organizer.name` | `activeMission.organizer.name` | Optional | Conditional |
-| `organizer.avatar` | `activeMission.organizer.avatar` | Optional | Conditional |
+| Field              | Access path                      | Required? | Notes                    |
+| ------------------ | -------------------------------- | --------- | ------------------------ |
+| `region`           | `activeMission.region`           | Required  | Gradient                 |
+| `category`         | `activeMission.category`         | Required  | Header                   |
+| `title`            | `activeMission.title`            | Required  | Header                   |
+| `lifecycleInfo`    | `activeMission.lifecycleInfo`    | Required  | → `computeMissionAnchor` |
+| `startDate`        | `activeMission.startDate`        | Required  | → `computeMissionAnchor` |
+| `endDate`          | `activeMission.endDate`          | Required  | → `computeMissionAnchor` |
+| `district`         | `activeMission.district`         | Required  | Location link            |
+| `emoji`            | `activeMission.emoji`            | Required  | Visual                   |
+| `description`      | `activeMission.description`      | Required  | Body                     |
+| `xp`               | `activeMission.xp`               | Required  | Stats                    |
+| `spotsLeft`        | `activeMission.spotsLeft`        | Required  | Stats                    |
+| `difficulty`       | `activeMission.difficulty`       | Required  | Stats                    |
+| `impact`           | `activeMission.impact`           | Required  | Stats                    |
+| `organizer`        | `activeMission.organizer`        | Optional  | Conditional render       |
+| `organizer.name`   | `activeMission.organizer.name`   | Optional  | Conditional              |
+| `organizer.avatar` | `activeMission.organizer.avatar` | Optional  | Conditional              |
 
 ### 1.4 MapView Preview Cards (`MapView.tsx:768-807`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `id` | `m.id` | Required | Selection |
-| `emoji` | `m.emoji` | Required | Visual |
-| `title` | `m.title` | Required | Text |
-| `district` | `m.district` | Required | Location |
-| `xp` | `m.xp` | Required | XP badge |
-| `lifecycleInfo` | `m.lifecycleInfo` | Required | → `computeMissionAnchor` |
-| `startDate` | `m.startDate` | Required | → `computeMissionAnchor` |
-| `endDate` | `m.endDate` | Required | → `computeMissionAnchor` |
+| Field           | Access path       | Required? | Notes                    |
+| --------------- | ----------------- | --------- | ------------------------ |
+| `id`            | `m.id`            | Required  | Selection                |
+| `emoji`         | `m.emoji`         | Required  | Visual                   |
+| `title`         | `m.title`         | Required  | Text                     |
+| `district`      | `m.district`      | Required  | Location                 |
+| `xp`            | `m.xp`            | Required  | XP badge                 |
+| `lifecycleInfo` | `m.lifecycleInfo` | Required  | → `computeMissionAnchor` |
+| `startDate`     | `m.startDate`     | Required  | → `computeMissionAnchor` |
+| `endDate`       | `m.endDate`       | Required  | → `computeMissionAnchor` |
 
 ### 1.5 MapView Territorial Discovery Panel (`MapView.tsx:740-766`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `entityType` | `m.entityType` | Required | Discriminator (mission → count participants) |
-| `participants` | `m.participants` | Required (mission) | Total explorers |
-| `category` | `m.category` | Required | Dominant category |
-| `region` | `m.region` | Required | Filter |
+| Field          | Access path      | Required?          | Notes                                        |
+| -------------- | ---------------- | ------------------ | -------------------------------------------- |
+| `entityType`   | `m.entityType`   | Required           | Discriminator (mission → count participants) |
+| `participants` | `m.participants` | Required (mission) | Total explorers                              |
+| `category`     | `m.category`     | Required           | Dominant category                            |
+| `region`       | `m.region`       | Required           | Filter                                       |
 
 ### 1.6 Filters (`useMissionMapFilters.ts`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `region` | `mission.region` | Required | Filter |
-| `district` | `mission.district` | Required | Filter |
-| `category` | `mission.category` | Required | Filter |
-| `difficulty` | `mission.difficulty` | Required (mission) | Guarded by `isMission()` |
-| `title` | `mission.title` | Required | Search |
-| `description` | `mission.description` | Required | Search |
-| `coords` | `mission.coords` | Required | Proximity filter |
-| `entityType` | `mission.entityType` | Required | Discriminator for `isMission()` → difficulty filter |
+| Field         | Access path           | Required?          | Notes                                               |
+| ------------- | --------------------- | ------------------ | --------------------------------------------------- |
+| `region`      | `mission.region`      | Required           | Filter                                              |
+| `district`    | `mission.district`    | Required           | Filter                                              |
+| `category`    | `mission.category`    | Required           | Filter                                              |
+| `difficulty`  | `mission.difficulty`  | Required (mission) | Guarded by `isMission()`                            |
+| `title`       | `mission.title`       | Required           | Search                                              |
+| `description` | `mission.description` | Required           | Search                                              |
+| `coords`      | `mission.coords`      | Required           | Proximity filter                                    |
+| `entityType`  | `mission.entityType`  | Required           | Discriminator for `isMission()` → difficulty filter |
 
 ### 1.7 District Warmth (`app.mapa.tsx:80-96`)
 
-| Field | Access path | Required? | Notes |
-|-------|-----------|-----------|-------|
-| `district` | `e.district` | Required | Grouping key |
-| `entityType` | `e.entityType` | Required | → `isMission()` / `isProposal()` |
-| `status` | `(Mission).status` | Required (mission) | → completedMissionCount |
-| `_proposal.status` | `(ProposalEntity)._proposal.status` | Required (proposal) | → activeProposalCount |
-| `_proposal.createdAt` | `(ProposalEntity)._proposal.createdAt` | Required (proposal) | → recentProposalCount |
-| `date` | `e.date` | Required | → lastActivityAt |
+| Field                 | Access path                            | Required?           | Notes                            |
+| --------------------- | -------------------------------------- | ------------------- | -------------------------------- |
+| `district`            | `e.district`                           | Required            | Grouping key                     |
+| `entityType`          | `e.entityType`                         | Required            | → `isMission()` / `isProposal()` |
+| `status`              | `(Mission).status`                     | Required (mission)  | → completedMissionCount          |
+| `_proposal.status`    | `(ProposalEntity)._proposal.status`    | Required (proposal) | → activeProposalCount            |
+| `_proposal.createdAt` | `(ProposalEntity)._proposal.createdAt` | Required (proposal) | → recentProposalCount            |
+| `date`                | `e.date`                               | Required            | → lastActivityAt                 |
 
 ### 1.8 Initiative Feed Section (`app.mapa.tsx:367-421`)
 
 Already uses `Initiative[]` directly. Fields consumed:
+
 - `initiative.id`, `initiative.region`, `initiative.emoji`, `initiative.sourceType`, `initiative.sourceId`, `initiative.lifecycle`, `initiative.title`, `initiative.location?.district`, `initiative.temporalAnchor.label`
 
 No drift — this is the reference implementation.
@@ -130,7 +131,7 @@ No drift — this is the reference implementation.
 ```ts
 // src/types/domain.ts:34-59
 type Mission = {
-  id: string;           // raw UUID
+  id: string; // raw UUID
   title: string;
   description: string;
   district: string;
@@ -157,6 +158,7 @@ type Mission = {
 **21 fields total.** Map surfaces consume 17 of them (all except `distanceKm`, `status`, `districtId`, `lifecycleInfo` is consumed indirectly via `deriveLifecycleFromMission`/`computeMissionAnchor`).
 
 ### Fields NOT consumed by any map surface (candidates for exclusion):
+
 - `distanceKm` — never rendered on map
 - `status` — superseded by `lifecycleInfo.lifecycle`
 
@@ -240,26 +242,26 @@ export type InitiativeMapEntity = {
 
 ### Fields that changed from the RFC draft
 
-| RFC Draft | Definitive | Rationale |
-|-----------|-----------|-----------|
-| `id: string` (prefixed) | `prefixedId: string` | Marker layer and selection use raw UUID. Prefixed ID only used for React keys. Renamed to avoid ambiguity. |
-| `sourceId: string` | `id: string` | Renamed for clarity. Every map operation uses this raw UUID. |
-| `location: InitiativeLocation \| null` | Inlined `{ district, districtId, region, coords }` | Avoids import coupling to `initiative.ts`. Keeps entity self-contained. |
-| `participantsCount?: number` | `participantsCount: number` (required, default 0) | Used in territorial discovery panel unconditionally. |
-| `supportersCount?: number` | `supportersCount: number` (required, default 0) | Same reason. |
-| (missing) | `lastActivityAt: string` | Required for ambient signal derivation and vitality recency. |
-| `difficulty?: string` | `difficulty?: MissionDifficulty` | Proper type, not string. |
-| (missing) | `vitalityScore?: number` | Used by territorial intelligence pipeline for district warmth. |
+| RFC Draft                              | Definitive                                         | Rationale                                                                                                  |
+| -------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `id: string` (prefixed)                | `prefixedId: string`                               | Marker layer and selection use raw UUID. Prefixed ID only used for React keys. Renamed to avoid ambiguity. |
+| `sourceId: string`                     | `id: string`                                       | Renamed for clarity. Every map operation uses this raw UUID.                                               |
+| `location: InitiativeLocation \| null` | Inlined `{ district, districtId, region, coords }` | Avoids import coupling to `initiative.ts`. Keeps entity self-contained.                                    |
+| `participantsCount?: number`           | `participantsCount: number` (required, default 0)  | Used in territorial discovery panel unconditionally.                                                       |
+| `supportersCount?: number`             | `supportersCount: number` (required, default 0)    | Same reason.                                                                                               |
+| (missing)                              | `lastActivityAt: string`                           | Required for ambient signal derivation and vitality recency.                                               |
+| `difficulty?: string`                  | `difficulty?: MissionDifficulty`                   | Proper type, not string.                                                                                   |
+| (missing)                              | `vitalityScore?: number`                           | Used by territorial intelligence pipeline for district warmth.                                             |
 
 ### Fields that should NOT exist on InitiativeMapEntity
 
-| Field | Reason |
-|-------|--------|
-| `entityType` | Replaced by `sourceType`. Adding both creates drift risk. |
-| `_proposal` | Backreference to raw Proposal type. The entity should be self-contained. Proposal-specific data is either on Layer A or not needed on the map. |
-| `distanceKm` | Never consumed by any map surface. |
-| `status` | Superseded by `lifecycle`. |
-| `lifecycleInfo` | Superseded by `lifecycle`. Temporal anchors via `temporalAnchor` and `startDate`/`endDate` for legacy. |
+| Field           | Reason                                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entityType`    | Replaced by `sourceType`. Adding both creates drift risk.                                                                                      |
+| `_proposal`     | Backreference to raw Proposal type. The entity should be self-contained. Proposal-specific data is either on Layer A or not needed on the map. |
+| `distanceKm`    | Never consumed by any map surface.                                                                                                             |
+| `status`        | Superseded by `lifecycle`.                                                                                                                     |
+| `lifecycleInfo` | Superseded by `lifecycle`. Temporal anchors via `temporalAnchor` and `startDate`/`endDate` for legacy.                                         |
 
 ---
 
@@ -344,56 +346,56 @@ export function buildMapEntity(
 
 ### 5.1 Duplications
 
-| What | Where | Redundant with |
-|------|-------|---------------|
-| `lifecycleInfo.lifecycle` → `deriveLifecycleFromMission` | Marker layer, MapView preview cards, drawer | `Initiative.lifecycle` (already derived in resolver) |
-| `computeMissionAnchor(lifecycleInfo, startDate, endDate)` | Sidebar, drawer, MapView preview cards | `Initiative.temporalAnchor` (already computed in resolver) |
-| `entityType` discriminator | Filters, sidebar filter, vitality pipeline | `sourceType` on Initiative |
-| `proposalIds` parameter | Marker layer type (never used) | `sourceType` check would make it unnecessary |
-| `mission.id` (raw UUID) vs `initiative.id` (prefixed) | Three-way ID logic | Normalize to raw UUID for map, prefixed for lists |
+| What                                                      | Where                                       | Redundant with                                             |
+| --------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `lifecycleInfo.lifecycle` → `deriveLifecycleFromMission`  | Marker layer, MapView preview cards, drawer | `Initiative.lifecycle` (already derived in resolver)       |
+| `computeMissionAnchor(lifecycleInfo, startDate, endDate)` | Sidebar, drawer, MapView preview cards      | `Initiative.temporalAnchor` (already computed in resolver) |
+| `entityType` discriminator                                | Filters, sidebar filter, vitality pipeline  | `sourceType` on Initiative                                 |
+| `proposalIds` parameter                                   | Marker layer type (never used)              | `sourceType` check would make it unnecessary               |
+| `mission.id` (raw UUID) vs `initiative.id` (prefixed)     | Three-way ID logic                          | Normalize to raw UUID for map, prefixed for lists          |
 
 ### 5.2 Hidden Coupling
 
-| Coupling | Location | Problem |
-|----------|----------|---------|
-| `isMission()` guard → `m.participants` | `MapView.tsx:146` | Casts CivicEntity to Mission. After migration, must use `sourceType === "mission"` + `participantsCount`. |
-| `isMission()` guard → `mission.difficulty` filter | `useMissionMapFilters.ts:93` | Difficulty filter silently skips proposals. After migration, must check `sourceType === "mission"` before accessing `.difficulty`. |
-| `entityType !== "proposal"` | `app.mapa.tsx:75` | After migration, must become `sourceType === "mission"`. Silent bug when using Initiative (which has no entityType, so filter passes all). |
-| `buildTerritorialSummaryFromEntities` | `app.mapa.tsx:91` | Depends on `CivicEntity` shape with `entityType`, `_proposal`, `status`. After migration, needs a new overload accepting `InitiativeMapEntity[]`. |
-| `civicEntitiesToAmbientEvents` → `deriveAmbientSignal` | `app.index.tsx:92` | Depends on `CivicEntity`. After migration, needs adapter for `InitiativeMapEntity[]`. |
+| Coupling                                               | Location                     | Problem                                                                                                                                           |
+| ------------------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `isMission()` guard → `m.participants`                 | `MapView.tsx:146`            | Casts CivicEntity to Mission. After migration, must use `sourceType === "mission"` + `participantsCount`.                                         |
+| `isMission()` guard → `mission.difficulty` filter      | `useMissionMapFilters.ts:93` | Difficulty filter silently skips proposals. After migration, must check `sourceType === "mission"` before accessing `.difficulty`.                |
+| `entityType !== "proposal"`                            | `app.mapa.tsx:75`            | After migration, must become `sourceType === "mission"`. Silent bug when using Initiative (which has no entityType, so filter passes all).        |
+| `buildTerritorialSummaryFromEntities`                  | `app.mapa.tsx:91`            | Depends on `CivicEntity` shape with `entityType`, `_proposal`, `status`. After migration, needs a new overload accepting `InitiativeMapEntity[]`. |
+| `civicEntitiesToAmbientEvents` → `deriveAmbientSignal` | `app.index.tsx:92`           | Depends on `CivicEntity`. After migration, needs adapter for `InitiativeMapEntity[]`.                                                             |
 
 ### 5.3 `as any` Casts
 
-| Location | Line | Risk |
-|----------|------|------|
-| `app.mapa.tsx` var `allMapItems` | N/A (no `as any` currently) | **Clean.** `allMapItems` is correctly typed as `CivicEntity[]`. |
-| Previous RFC mentioned `initiatives as any` | RFC section 2 | **Removed.** Current code has separate feed section instead of cast. |
-| `MarkerLayerOptions` type uses `LeafletInstance = any` | `useMissionMarkerLayer.ts:12` | **Tolerable.** Leaflet typing limitation. |
-| `getPopup()` result cast to `any` | `useMissionMarkerLayer.ts:147` | **Tolerable.** Leaflet typing limitation. |
+| Location                                               | Line                           | Risk                                                                 |
+| ------------------------------------------------------ | ------------------------------ | -------------------------------------------------------------------- |
+| `app.mapa.tsx` var `allMapItems`                       | N/A (no `as any` currently)    | **Clean.** `allMapItems` is correctly typed as `CivicEntity[]`.      |
+| Previous RFC mentioned `initiatives as any`            | RFC section 2                  | **Removed.** Current code has separate feed section instead of cast. |
+| `MarkerLayerOptions` type uses `LeafletInstance = any` | `useMissionMarkerLayer.ts:12`  | **Tolerable.** Leaflet typing limitation.                            |
+| `getPopup()` result cast to `any`                      | `useMissionMarkerLayer.ts:147` | **Tolerable.** Leaflet typing limitation.                            |
 
 ### 5.4 `sourceType`/`entityType` Drift
 
-| Location | Uses | Needs to become |
-|----------|------|----------------|
-| `app.mapa.tsx:75` filter | `m.entityType !== "proposal"` | `e.sourceType === "mission"` |
-| `MapView.tsx:146` participants | `m.entityType === "mission"` | `e.sourceType === "mission"` |
-| `useMissionMapFilters.ts:93` difficulty guard | `isMission(mission)` | `mission.sourceType === "mission"` |
-| `isMission()` / `isProposal()` type guards | `entityType` discriminator | Need new guards on `sourceType` |
-| `buildTerritorialSummaryFromEntities` | `isMission(e)` / `isProposal(e)` | New overload with `sourceType` checks |
-| `app.index.tsx` drawer | `isInitiative(item)` + `sourceType` | Already correct — reference implementation |
+| Location                                      | Uses                                | Needs to become                            |
+| --------------------------------------------- | ----------------------------------- | ------------------------------------------ |
+| `app.mapa.tsx:75` filter                      | `m.entityType !== "proposal"`       | `e.sourceType === "mission"`               |
+| `MapView.tsx:146` participants                | `m.entityType === "mission"`        | `e.sourceType === "mission"`               |
+| `useMissionMapFilters.ts:93` difficulty guard | `isMission(mission)`                | `mission.sourceType === "mission"`         |
+| `isMission()` / `isProposal()` type guards    | `entityType` discriminator          | Need new guards on `sourceType`            |
+| `buildTerritorialSummaryFromEntities`         | `isMission(e)` / `isProposal(e)`    | New overload with `sourceType` checks      |
+| `app.index.tsx` drawer                        | `isInitiative(item)` + `sourceType` | Already correct — reference implementation |
 
 ### 5.5 Migration Risks
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| Sidebar receives undefined for xp/spotsLeft/difficulty/impact | **HIGH** (visual breakage) | Default values: `xp ?? 0`, `spotsLeft ?? "—"`, `difficulty ?? "—"`, `impact ?? ""` |
-| Drawer crashes on missing organizer | **HIGH** (runtime error) | Optional chaining: `activeMission.organizer?.name` |
-| Marker layer doesn't render proposals | **MEDIUM** (lost visibility) | Replace `filter(isMission)` with entity loop. Use `sourceType` for shape distinction. |
-| `computeMissionAnchor` called on proposals | **MEDIUM** (wrong anchor) | Use `temporalAnchor.label` directly. Remove raw `startDate`/`endDate` dependency. |
-| District warmth returns zero for all districts | **MEDIUM** (lost feature) | New `buildTerritorialSummaryFromEntities` overload for `InitiativeMapEntity[]` |
-| Filters break because `difficulty` missing from proposals | **LOW** (filter silently skips) | Guard with `sourceType === "mission"` before accessing difficulty |
-| `entityType` references missed during grep | **LOW** (build error) | Strict type check — use grep for `entityType` across all migrated files |
-| Ambient signal breaks | **LOW** | Adapter function `initiativeMapEntityToTerritorialEvent()` |
+| Risk                                                          | Severity                        | Mitigation                                                                            |
+| ------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------- |
+| Sidebar receives undefined for xp/spotsLeft/difficulty/impact | **HIGH** (visual breakage)      | Default values: `xp ?? 0`, `spotsLeft ?? "—"`, `difficulty ?? "—"`, `impact ?? ""`    |
+| Drawer crashes on missing organizer                           | **HIGH** (runtime error)        | Optional chaining: `activeMission.organizer?.name`                                    |
+| Marker layer doesn't render proposals                         | **MEDIUM** (lost visibility)    | Replace `filter(isMission)` with entity loop. Use `sourceType` for shape distinction. |
+| `computeMissionAnchor` called on proposals                    | **MEDIUM** (wrong anchor)       | Use `temporalAnchor.label` directly. Remove raw `startDate`/`endDate` dependency.     |
+| District warmth returns zero for all districts                | **MEDIUM** (lost feature)       | New `buildTerritorialSummaryFromEntities` overload for `InitiativeMapEntity[]`        |
+| Filters break because `difficulty` missing from proposals     | **LOW** (filter silently skips) | Guard with `sourceType === "mission"` before accessing difficulty                     |
+| `entityType` references missed during grep                    | **LOW** (build error)           | Strict type check — use grep for `entityType` across all migrated files               |
+| Ambient signal breaks                                         | **LOW**                         | Adapter function `initiativeMapEntityToTerritorialEvent()`                            |
 
 ---
 
@@ -401,36 +403,37 @@ export function buildMapEntity(
 
 ### Consumers that would use InitiativeMapEntity
 
-| Consumer | Current type | Can migrate? | Adapter needed? |
-|----------|-------------|-------------|-----------------|
-| Marker layer | `Mission[]` | **Yes** | Replace `isMission` filter with entity loop |
-| Map popup | Inside marker layer | **Yes** | Same |
-| Sidebar detail panel | `CivicEntity` | **Yes** | Replace field paths, add defaults for Layer B |
-| Bottom drawer | `CivicEntity` | **Yes** | Same |
-| MapView preview cards | `CivicEntity` (filtered to Mission) | **Yes** | Replace `computeMissionAnchor` with `temporalAnchor.label` |
-| MapView territorial panel | `CivicEntity[]` | **Yes** | Replace `entityType` with `sourceType`, `participants` with `participantsCount` |
-| Filters | `CivicEntity[]` | **Yes** | Replace `isMission()` guard with `sourceType` check |
-| District warmth | `CivicEntity[]` | **Yes** | New `buildTerritorialSummaryFromEntities` overload |
-| Initiative feed (existing) | `Initiative[]` | **Yes** | Already uses Initiative — just map to IME for consistency |
-| Homepage stats | `Mission[]` | **Yes** | Already planned for Phase 2 |
-| Homepage VitalityBanner | N/A (new) | **Yes** | Built on `selectTopDistricts` |
-| Dashboard feed | `CivicEntity[] \| Initiative[]` | **Yes** | Minor field path update |
-| District pages | `Mission[]` via `useDistrictActivity` | **Partial** | District page fetches from district service hooks, not from entity list. Would need DTO change. |
-| Ambient signal | `CivicEntity[]` | **Yes** | `initiativeMapEntityToTerritorialEvent()` adapter |
+| Consumer                   | Current type                          | Can migrate? | Adapter needed?                                                                                 |
+| -------------------------- | ------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------- |
+| Marker layer               | `Mission[]`                           | **Yes**      | Replace `isMission` filter with entity loop                                                     |
+| Map popup                  | Inside marker layer                   | **Yes**      | Same                                                                                            |
+| Sidebar detail panel       | `CivicEntity`                         | **Yes**      | Replace field paths, add defaults for Layer B                                                   |
+| Bottom drawer              | `CivicEntity`                         | **Yes**      | Same                                                                                            |
+| MapView preview cards      | `CivicEntity` (filtered to Mission)   | **Yes**      | Replace `computeMissionAnchor` with `temporalAnchor.label`                                      |
+| MapView territorial panel  | `CivicEntity[]`                       | **Yes**      | Replace `entityType` with `sourceType`, `participants` with `participantsCount`                 |
+| Filters                    | `CivicEntity[]`                       | **Yes**      | Replace `isMission()` guard with `sourceType` check                                             |
+| District warmth            | `CivicEntity[]`                       | **Yes**      | New `buildTerritorialSummaryFromEntities` overload                                              |
+| Initiative feed (existing) | `Initiative[]`                        | **Yes**      | Already uses Initiative — just map to IME for consistency                                       |
+| Homepage stats             | `Mission[]`                           | **Yes**      | Already planned for Phase 2                                                                     |
+| Homepage VitalityBanner    | N/A (new)                             | **Yes**      | Built on `selectTopDistricts`                                                                   |
+| Dashboard feed             | `CivicEntity[] \| Initiative[]`       | **Yes**      | Minor field path update                                                                         |
+| District pages             | `Mission[]` via `useDistrictActivity` | **Partial**  | District page fetches from district service hooks, not from entity list. Would need DTO change. |
+| Ambient signal             | `CivicEntity[]`                       | **Yes**      | `initiativeMapEntityToTerritorialEvent()` adapter                                               |
 
 ### Consumers that would NOT use InitiativeMapEntity
 
-| Consumer | Reason |
-|----------|--------|
-| Mission detail page | Renders full Mission type. Not a map/spatial surface. |
-| Proposal detail page | Renders full Proposal type. Not a map/spatial surface. |
-| Profile lists | Read-only navigation. Not a spatial surface. |
-| PublicMissionCard | Uses CivicEntity. Could be refactored but is a card, not a map surface. |
-| District service hooks | Use dedicated district DB queries, not entity lists. |
+| Consumer               | Reason                                                                  |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Mission detail page    | Renders full Mission type. Not a map/spatial surface.                   |
+| Proposal detail page   | Renders full Proposal type. Not a map/spatial surface.                  |
+| Profile lists          | Read-only navigation. Not a spatial surface.                            |
+| PublicMissionCard      | Uses CivicEntity. Could be refactored but is a card, not a map surface. |
+| District service hooks | Use dedicated district DB queries, not entity lists.                    |
 
 ### Verdict: **YES, with caveats**
 
 `InitiativeMapEntity` can serve as the Single Spatial Read Model for:
+
 - **Map** (all 7 surfaces: markers, popup, sidebar, drawer, preview cards, territorial panel, feed)
 - **Homepage territorial** (stats, VitalityBanner, InitiativeSnapshot — Phase 2)
 - **Vitality systems** (district warmth, ambient signal via adapters)
@@ -444,63 +447,63 @@ It cannot replace the district page entity pipeline (which uses dedicated DB que
 
 ### Phase 0 — Foundation (1-2h)
 
-| Step | File | Change |
-|------|------|--------|
-| 0.1 | `src/domain/initiativeMapEntity.ts` | Create definitive type + `buildMapEntity()` |
-| 0.2 | `src/domain/initiative.ts` | Add `lastActivityAt: string` to `Initiative` |
-| 0.3 | `src/services/initiativeResolver.ts` | Populate `lastActivityAt` from source timestamps |
-| 0.4 | `src/services/mapEntityResolver.ts` | Create resolver returning `InitiativeMapEntity[]` (parallel to `initiativeResolver`) |
+| Step | File                                 | Change                                                                               |
+| ---- | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| 0.1  | `src/domain/initiativeMapEntity.ts`  | Create definitive type + `buildMapEntity()`                                          |
+| 0.2  | `src/domain/initiative.ts`           | Add `lastActivityAt: string` to `Initiative`                                         |
+| 0.3  | `src/services/initiativeResolver.ts` | Populate `lastActivityAt` from source timestamps                                     |
+| 0.4  | `src/services/mapEntityResolver.ts`  | Create resolver returning `InitiativeMapEntity[]` (parallel to `initiativeResolver`) |
 
 ### Phase 1 — Marker Layer (2-3h)
 
-| Step | File | Change |
-|------|------|--------|
-| 1.1 | `useMissionMarkerLayer.ts` | Accept `InitiativeMapEntity[]`, remove `proposalIds`, use `sourceType` for shape |
-| 1.2 | `useMissionMarkerLayer.ts` | Use `entity.lifecycle` directly (no `deriveLifecycleFromMission`) |
-| 1.3 | `useMissionMarkerLayer.ts` | Use `entity.location.coords` instead of `mission.coords` |
-| 1.4 | `MapView.tsx` | Pass `InitiativeMapEntity[]` to marker layer |
+| Step | File                       | Change                                                                           |
+| ---- | -------------------------- | -------------------------------------------------------------------------------- |
+| 1.1  | `useMissionMarkerLayer.ts` | Accept `InitiativeMapEntity[]`, remove `proposalIds`, use `sourceType` for shape |
+| 1.2  | `useMissionMarkerLayer.ts` | Use `entity.lifecycle` directly (no `deriveLifecycleFromMission`)                |
+| 1.3  | `useMissionMarkerLayer.ts` | Use `entity.location.coords` instead of `mission.coords`                         |
+| 1.4  | `MapView.tsx`              | Pass `InitiativeMapEntity[]` to marker layer                                     |
 
 ### Phase 2 — MapView Preview Cards (1-2h)
 
-| Step | File | Change |
-|------|------|--------|
-| 2.1 | `MapView.tsx:768-807` | Use `entity.temporalAnchor.label` instead of `computeMissionAnchor` |
-| 2.2 | `MapView.tsx:768-807` | Use `entity.participantsCount` + `sourceType` instead of `isMission()` + `m.participants` |
-| 2.3 | `MapView.tsx:740-766` | Update territorial panel to use `sourceType` discriminator |
+| Step | File                  | Change                                                                                    |
+| ---- | --------------------- | ----------------------------------------------------------------------------------------- |
+| 2.1  | `MapView.tsx:768-807` | Use `entity.temporalAnchor.label` instead of `computeMissionAnchor`                       |
+| 2.2  | `MapView.tsx:768-807` | Use `entity.participantsCount` + `sourceType` instead of `isMission()` + `m.participants` |
+| 2.3  | `MapView.tsx:740-766` | Update territorial panel to use `sourceType` discriminator                                |
 
 ### Phase 3 — Sidebar + Drawer (2-3h)
 
-| Step | File | Change |
-|------|------|--------|
-| 3.1 | `app.mapa.tsx:75` | Replace `entityType !== "proposal"` with `sourceType === "mission"` |
-| 3.2 | `app.mapa.tsx:265-364` | Replace all field paths. Add defaults: `xp ?? 0`, `spotsLeft ?? "—"`, `difficulty ?? "—"`, `impact ?? ""` |
-| 3.3 | `app.mapa.tsx:431-527` | Replace `computeMissionAnchor()` with `entity.temporalAnchor.label` |
-| 3.4 | `app.mapa.tsx:431-527` | Add `organizer?.name` optional chaining |
-| 3.5 | `app.mapa.tsx:80-96` | Replace `buildTerritorialSummaryFromEntities` with `InitiativeMapEntity` version |
+| Step | File                   | Change                                                                                                    |
+| ---- | ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| 3.1  | `app.mapa.tsx:75`      | Replace `entityType !== "proposal"` with `sourceType === "mission"`                                       |
+| 3.2  | `app.mapa.tsx:265-364` | Replace all field paths. Add defaults: `xp ?? 0`, `spotsLeft ?? "—"`, `difficulty ?? "—"`, `impact ?? ""` |
+| 3.3  | `app.mapa.tsx:431-527` | Replace `computeMissionAnchor()` with `entity.temporalAnchor.label`                                       |
+| 3.4  | `app.mapa.tsx:431-527` | Add `organizer?.name` optional chaining                                                                   |
+| 3.5  | `app.mapa.tsx:80-96`   | Replace `buildTerritorialSummaryFromEntities` with `InitiativeMapEntity` version                          |
 
 ### Phase 4 — Filters (1-2h)
 
-| Step | File | Change |
-|------|------|--------|
-| 4.1 | `useMissionMapFilters.ts` | Accept `InitiativeMapEntity[]` instead of `CivicEntity[]` |
-| 4.2 | `useMissionMapFilters.ts` | Replace `isMission()` guard with `sourceType === "mission"` for difficulty filter |
-| 4.3 | `useMissionMapFilters.ts` | Replace `mission.description` with `entity.summary` for search |
+| Step | File                      | Change                                                                            |
+| ---- | ------------------------- | --------------------------------------------------------------------------------- |
+| 4.1  | `useMissionMapFilters.ts` | Accept `InitiativeMapEntity[]` instead of `CivicEntity[]`                         |
+| 4.2  | `useMissionMapFilters.ts` | Replace `isMission()` guard with `sourceType === "mission"` for difficulty filter |
+| 4.3  | `useMissionMapFilters.ts` | Replace `mission.description` with `entity.summary` for search                    |
 
 ### Phase 5 — Homepage + Dashboard (Phase 2 integration)
 
-| Step | File | Change |
-|------|------|--------|
-| 5.1 | `routes/index.tsx` | Use `InitiativeMapEntity[]` for stats, cards, region counts |
-| 5.2 | `routes/app.index.tsx` | Use `InitiativeMapEntity[]` for feed, stats row |
-| 5.3 | `domain/ambient.ts` | Add `initiativeMapEntityToTerritorialEvent()` adapter |
+| Step | File                   | Change                                                      |
+| ---- | ---------------------- | ----------------------------------------------------------- |
+| 5.1  | `routes/index.tsx`     | Use `InitiativeMapEntity[]` for stats, cards, region counts |
+| 5.2  | `routes/app.index.tsx` | Use `InitiativeMapEntity[]` for feed, stats row             |
+| 5.3  | `domain/ambient.ts`    | Add `initiativeMapEntityToTerritorialEvent()` adapter       |
 
 ### Phase 6 — Cleanup (1h)
 
-| Step | File | Change |
-|------|------|--------|
-| 6.1 | Remove `proposalIds` from marker layer type | Dead parameter |
-| 6.2 | Remove `entityType` from all migrated surfaces | Replaced by `sourceType` |
-| 6.3 | Deprecate `CivicEntity` for spatial use | Keep only for non-spatial cards (PublicMissionCard) |
+| Step | File                                           | Change                                              |
+| ---- | ---------------------------------------------- | --------------------------------------------------- |
+| 6.1  | Remove `proposalIds` from marker layer type    | Dead parameter                                      |
+| 6.2  | Remove `entityType` from all migrated surfaces | Replaced by `sourceType`                            |
+| 6.3  | Deprecate `CivicEntity` for spatial use        | Keep only for non-spatial cards (PublicMissionCard) |
 
 ---
 
@@ -566,14 +569,14 @@ It cannot replace the district page entity pipeline (which uses dedicated DB que
 
 ## 9. Risks Final Summary
 
-| # | Risk | Impact | Probability | Mitigation |
-|---|------|--------|-------------|------------|
-| 1 | Sidebar gets undefined for Layer B fields | High | High | Default values at render (??) |
-| 2 | `entityType` grep misses | Medium | Medium | TS strict mode catches mismatches |
-| 3 | Proposal markers never rendered | Medium | High (current state) | Remove `.filter(isMission)` in marker layer |
-| 4 | `buildTerritorialSummaryFromEntities` breaks | Medium | Low | Overload with InitiativeMapEntity |
-| 5 | `computeMissionAnchor` called on proposals | Low | Medium | Use `temporalAnchor.label` everywhere |
-| 6 | Ambient signal breaks | Low | Low | Adapter function |
-| 7 | `lastActivityAt` enrichment unavailable | Low | High (gap) | Add to Initiative type + resolver |
-| 8 | Clustering breaks with new ID format | Low | Low | All markers use raw UUID as key |
-| 9 | District page doesn't reflect changes | Low | Low | Uses dedicated queries, not entity list |
+| #   | Risk                                         | Impact | Probability          | Mitigation                                  |
+| --- | -------------------------------------------- | ------ | -------------------- | ------------------------------------------- |
+| 1   | Sidebar gets undefined for Layer B fields    | High   | High                 | Default values at render (??)               |
+| 2   | `entityType` grep misses                     | Medium | Medium               | TS strict mode catches mismatches           |
+| 3   | Proposal markers never rendered              | Medium | High (current state) | Remove `.filter(isMission)` in marker layer |
+| 4   | `buildTerritorialSummaryFromEntities` breaks | Medium | Low                  | Overload with InitiativeMapEntity           |
+| 5   | `computeMissionAnchor` called on proposals   | Low    | Medium               | Use `temporalAnchor.label` everywhere       |
+| 6   | Ambient signal breaks                        | Low    | Low                  | Adapter function                            |
+| 7   | `lastActivityAt` enrichment unavailable      | Low    | High (gap)           | Add to Initiative type + resolver           |
+| 8   | Clustering breaks with new ID format         | Low    | Low                  | All markers use raw UUID as key             |
+| 9   | District page doesn't reflect changes        | Low    | Low                  | Uses dedicated queries, not entity list     |

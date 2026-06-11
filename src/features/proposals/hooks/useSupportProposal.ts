@@ -5,6 +5,8 @@ import { userRepository } from "@/services/userRepository";
 import { toast } from "sonner";
 import { consumeRateLimit } from "@/lib/rateLimiter";
 import { proposalSupportCountQueryOptions } from "../queryOptions";
+import { isUnifiedWritesEnabled } from "@/features/initiative/mutations/initiativeMutationTypes";
+import { runMissionWrite } from "@/features/auth/mutations/missionMutationEngine";
 
 export function useSupportedProposalIds() {
   return useQuery({
@@ -28,9 +30,22 @@ export function useSupportCount(proposalId: string) {
 export function useSupportProposal() {
   const queryClient = useQueryClient();
   const { data: supportedIds = [] } = useSupportedProposalIds();
+  const unifiedEnabled = isUnifiedWritesEnabled();
 
   const supportMutation = useMutation({
-    mutationFn: (proposalId: string) => proposalRepository.supportProposal(proposalId),
+    mutationFn: async (proposalId: string) => {
+      if (unifiedEnabled) {
+        await runMissionWrite(queryClient, {
+          kind: "supportInitiative",
+          writeContext: { proposalIds: [proposalId] },
+          steps: [() => proposalRepository.supportProposal(proposalId)],
+          invalidate: { proposalIds: [proposalId] },
+        });
+        return;
+      }
+      const result = await proposalRepository.supportProposal(proposalId);
+      if (result.status === "error") throw new Error(result.error);
+    },
     onMutate: async (proposalId: string) => {
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.byUser("current") });
       await queryClient.cancelQueries({ queryKey: proposalSupportKeys.count(proposalId) });

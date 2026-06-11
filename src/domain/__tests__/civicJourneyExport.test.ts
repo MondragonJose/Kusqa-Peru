@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { toInstitutionalRecord, toExport } from "../civicJourneyExport";
-import type { CivicJourney, NarrativeBeat, TerritorialFootprint, JourneyArc } from "../civicJourney";
+import type {
+  CivicJourney,
+  NarrativeBeat,
+  TerritorialFootprint,
+  JourneyArc,
+} from "../civicJourney";
 
 function footprint(overrides?: Partial<TerritorialFootprint>): TerritorialFootprint {
   return {
@@ -15,7 +20,10 @@ function footprint(overrides?: Partial<TerritorialFootprint>): TerritorialFootpr
   };
 }
 
-function mkBeat(kind: NarrativeBeat["kind"], overrides: Partial<NarrativeBeat> = {}): NarrativeBeat {
+function mkBeat(
+  kind: NarrativeBeat["kind"],
+  overrides: Partial<NarrativeBeat> = {},
+): NarrativeBeat {
   return {
     kind,
     title: "test",
@@ -42,7 +50,10 @@ function arc(beats: NarrativeBeat[]): JourneyArc {
   };
 }
 
-function journey(beats: NarrativeBeat[], fpOverrides?: Partial<TerritorialFootprint>): CivicJourney {
+function journey(
+  beats: NarrativeBeat[],
+  fpOverrides?: Partial<TerritorialFootprint>,
+): CivicJourney {
   return {
     footprint: footprint(fpOverrides),
     arc: arc(beats),
@@ -68,7 +79,11 @@ describe("toInstitutionalRecord", () => {
     const j = journey([
       mkBeat("joined_mission", { timestamp: "2025-01-01T00:00:00Z" }),
       mkBeat("completed_mission", { timestamp: "2025-01-10T00:00:00Z" }),
-      mkBeat("supported_proposal", { sourceType: "proposal", sourceId: "sp1", timestamp: "2025-02-01T00:00:00Z" }),
+      mkBeat("supported_proposal", {
+        sourceType: "proposal",
+        sourceId: "sp1",
+        timestamp: "2025-02-01T00:00:00Z",
+      }),
     ]);
     const r = toInstitutionalRecord(j);
     expect(r.participationCount).toBe(3);
@@ -87,8 +102,16 @@ describe("toInstitutionalRecord", () => {
 
   it("deduplicates initiativesCreated by sourceId", () => {
     const j = journey([
-      mkBeat("created_proposal", { sourceType: "proposal", sourceId: "up1", title: "Huerto urbano" }),
-      mkBeat("created_proposal", { sourceType: "proposal", sourceId: "up2", title: "Comedor popular" }),
+      mkBeat("created_proposal", {
+        sourceType: "proposal",
+        sourceId: "up1",
+        title: "Huerto urbano",
+      }),
+      mkBeat("created_proposal", {
+        sourceType: "proposal",
+        sourceId: "up2",
+        title: "Comedor popular",
+      }),
     ]);
     const r = toInstitutionalRecord(j);
     expect(r.initiativesCreated).toBe(2);
@@ -96,8 +119,16 @@ describe("toInstitutionalRecord", () => {
 
   it("deduplicates initiativesCreated when proposal_converted also exists", () => {
     const j = journey([
-      mkBeat("created_proposal", { sourceType: "proposal", sourceId: "up1", title: "Huerto urbano" }),
-      mkBeat("proposal_converted", { sourceType: "proposal", sourceId: "up1", title: "Huerto urbano" }),
+      mkBeat("created_proposal", {
+        sourceType: "proposal",
+        sourceId: "up1",
+        title: "Huerto urbano",
+      }),
+      mkBeat("proposal_converted", {
+        sourceType: "proposal",
+        sourceId: "up1",
+        title: "Huerto urbano",
+      }),
     ]);
     const r = toInstitutionalRecord(j);
     expect(r.initiativesCreated).toBe(1);
@@ -128,7 +159,11 @@ describe("toInstitutionalRecord", () => {
     const j = journey([
       mkBeat("joined_mission", { timestamp: "2025-03-01T00:00:00Z" }),
       mkBeat("completed_mission", { timestamp: "2025-01-15T00:00:00Z" }),
-      mkBeat("supported_proposal", { sourceType: "proposal", sourceId: "sp1", timestamp: "2025-06-01T00:00:00Z" }),
+      mkBeat("supported_proposal", {
+        sourceType: "proposal",
+        sourceId: "sp1",
+        timestamp: "2025-06-01T00:00:00Z",
+      }),
     ]);
     const r = toInstitutionalRecord(j);
     expect(r.firstActivityAt).toBe("2025-01-15T00:00:00Z");
@@ -136,9 +171,7 @@ describe("toInstitutionalRecord", () => {
   });
 
   it("sets first and last same when single beat", () => {
-    const j = journey([
-      mkBeat("joined_mission", { timestamp: "2025-05-05T00:00:00Z" }),
-    ]);
+    const j = journey([mkBeat("joined_mission", { timestamp: "2025-05-05T00:00:00Z" })]);
     const r = toInstitutionalRecord(j);
     expect(r.firstActivityAt).toBe("2025-05-05T00:00:00Z");
     expect(r.lastActivityAt).toBe("2025-05-05T00:00:00Z");

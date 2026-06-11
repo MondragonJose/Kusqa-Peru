@@ -10,21 +10,21 @@
 
 ### Production Project
 
-| Attribute | Value |
-|-----------|-------|
+| Attribute         | Value                                             |
+| ----------------- | ------------------------------------------------- |
 | **Supabase Plan** | Pro ($25/mo) — enables daily backups, PITR option |
-| **Vercel** | Production branch (`main`) |
-| **Env** | Full real data, real auth providers |
-| **Backups** | Automated daily + manual before migrations |
+| **Vercel**        | Production branch (`main`)                        |
+| **Env**           | Full real data, real auth providers               |
+| **Backups**       | Automated daily + manual before migrations        |
 
 ### Staging Project
 
-| Attribute | Value |
-|-----------|-------|
-| **Supabase Plan** | Free tier (lower cost, non-critical) |
-| **Vercel** | Preview deployments from PRs |
-| **Env** | Anonymized seed data, test auth |
-| **Backups** | Not critical; reseed from migrations if needed |
+| Attribute         | Value                                          |
+| ----------------- | ---------------------------------------------- |
+| **Supabase Plan** | Free tier (lower cost, non-critical)           |
+| **Vercel**        | Preview deployments from PRs                   |
+| **Env**           | Anonymized seed data, test auth                |
+| **Backups**       | Not critical; reseed from migrations if needed |
 
 ### Setup Steps
 
@@ -48,13 +48,13 @@ The `.env` system already supports this — `VITE_SUPABASE_URL` and `VITE_SUPABA
 
 ## Data Retention
 
-| Data Type | Production | Staging |
-|-----------|------------|---------|
-| User profiles | Keep | Delete/anon |
-| Missions | Keep | Seed data |
-| Evidence files | Keep | Delete |
-| Proposals | Keep | Seed data |
-| Auth users | Supabase managed | Test accounts only |
+| Data Type      | Production       | Staging            |
+| -------------- | ---------------- | ------------------ |
+| User profiles  | Keep             | Delete/anon        |
+| Missions       | Keep             | Seed data          |
+| Evidence files | Keep             | Delete             |
+| Proposals      | Keep             | Seed data          |
+| Auth users     | Supabase managed | Test accounts only |
 
 ## Migration Discipline
 

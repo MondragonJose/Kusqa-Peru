@@ -2,11 +2,11 @@
 
 ## Backup Basics
 
-| What | How | Frequency |
-|------|-----|-----------|
-| Database (public schema) | `./scripts/backup.sh --db-only` | Before any migration, weekly minimum |
-| Storage buckets | `./scripts/backup.sh --storage-only` | Weekly |
-| Full backup | `./scripts/backup.sh` | Before schema changes |
+| What                     | How                                  | Frequency                            |
+| ------------------------ | ------------------------------------ | ------------------------------------ |
+| Database (public schema) | `./scripts/backup.sh --db-only`      | Before any migration, weekly minimum |
+| Storage buckets          | `./scripts/backup.sh --storage-only` | Weekly                               |
+| Full backup              | `./scripts/backup.sh`                | Before schema changes                |
 
 Backups go to `.backups/<timestamp>/` (gitignored).
 
@@ -15,6 +15,7 @@ Backups go to `.backups/<timestamp>/` (gitignored).
 ## Scenario 1: Failed Migration
 
 ### Symptoms
+
 - `supabase db push` or manual SQL fails mid-file
 - Partial state: some tables created/altered, others not
 - App errors referencing missing columns or tables
@@ -33,6 +34,7 @@ ls -t .backups/ | head -1
 ```
 
 ### Prevention
+
 - Wrap all new migrations in `BEGIN` / `COMMIT` (see 18B finding)
 - Test migrations on a staging DB first
 - Take a backup before each migration run
@@ -42,6 +44,7 @@ ls -t .backups/ | head -1
 ## Scenario 2: Accidental Data Deletion
 
 ### Symptoms
+
 - Rows missing from `missions`, `proposals`, `profiles`, etc.
 - User reports "my mission is gone"
 
@@ -61,11 +64,13 @@ psql -d "$SUPABASE_DB_URL" -f .backups/<ts>/db/data.sql \
 ```
 
 If full restore is acceptable:
+
 ```bash
 ./scripts/backup.sh --restore .backups/<timestamp>
 ```
 
 ### Prevention
+
 - No destructive `DELETE` or `DROP` in application code
 - Use `soft_delete` patterns where possible
 - RLS prevents mass deletion by non-owners
@@ -75,6 +80,7 @@ If full restore is acceptable:
 ## Scenario 3: Corrupted Uploads
 
 ### Symptoms
+
 - Images in `mission-evidence` or `proposal-images` fail to load
 - Signed URLs return 400/403
 - Evidence rows have `storage_path` but no actual object
@@ -100,6 +106,7 @@ psql -d "$SUPABASE_DB_URL" -c "
 ```
 
 ### Prevention
+
 - `upsert: false` prevents accidental overwrite
 - 3-attempt retry with backoff in evidence upload
 - Signed URLs are 1-hour TTL (auto-renews on fetch)
@@ -109,6 +116,7 @@ psql -d "$SUPABASE_DB_URL" -c "
 ## Scenario 4: Broken RLS Policies
 
 ### Symptoms
+
 - Authenticated users get 401/403 on valid queries
 - Users see data they shouldn't
 - Evidence uploads fail with "new row violates row-level security"
@@ -127,11 +135,13 @@ psql -d "$SUPABASE_DB_URL" -c "ALTER TABLE public.mission_evidence ENABLE ROW LE
 ```
 
 If full RLS audit needed:
+
 ```bash
 psql -d "$SUPABASE_DB_URL" -f scripts/ops/verify_rls.sql
 ```
 
 ### Prevention
+
 - Always test new policies on a staging DB
 - Use `DROP POLICY IF EXISTS` before `CREATE POLICY` for idempotency
 - Verify policy coverage after any migration affecting RLS
@@ -141,6 +151,7 @@ psql -d "$SUPABASE_DB_URL" -f scripts/ops/verify_rls.sql
 ## Scenario 5: Realtime Outage
 
 ### Symptoms
+
 - `kusqa-sync` channel errors
 - Live mission updates not appearing
 - "Realtime channel error" in console
@@ -150,11 +161,14 @@ psql -d "$SUPABASE_DB_URL" -f scripts/ops/verify_rls.sql
 1. **Check Supabase status**: https://status.supabase.com
 2. **Reconnect client**: Users should refresh or re-connect automatically (client has reconnect logic)
 3. **Verify realtime publication**:
+
 ```sql
 SELECT * FROM pg_publication_tables
 WHERE pubname = 'supabase_realtime';
 ```
+
 If tables missing from publication:
+
 ```sql
 ALTER PUBLICATION supabase_realtime ADD TABLE missions;
 ALTER PUBLICATION supabase_realtime ADD TABLE civic_events;
@@ -166,6 +180,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE user_notifications;
    - With 3 subscriptions: `missions` (INSERT/UPDATE), `civic_events` (INSERT), `user_notifications` (INSERT)
 
 ### Prevention
+
 - `VITE_USE_REALTIME_SYNC=false` is the kill-switch (feature flag)
 - App falls back to polling when realtime is disabled
 - 1 channel per user keeps resource usage bounded
@@ -205,11 +220,13 @@ npm run build && npm run deploy
 ## Post-Recovery Verification
 
 After any recovery operation, run:
+
 ```bash
 psql -d "$SUPABASE_DB_URL" -f scripts/ops/verify_consistency.sql
 ```
 
 This detects:
+
 - Duplicate `user_missions` rows
 - Completed missions missing XP
 - Evidence rows without storage objects

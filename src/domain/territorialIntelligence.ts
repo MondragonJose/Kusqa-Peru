@@ -4,6 +4,7 @@ import type {
   DistrictActivityClass,
 } from "./territoryAggregations";
 import type { AdjacencyMap, ContinuityStatus, SpreadLevel } from "./spatialRelationships";
+import type { InitiativeEvent } from "./initiativeEventCatalog";
 
 // ─── Spatial narrative types ─────────────────────────────────────────────
 
@@ -462,12 +463,13 @@ export function buildVitalityNarrative(input: NarrativeInput): string {
   return "La comunidad está definiendo su camino.";
 }
 
-// ─── Event coherence: TerritorialEvent[] → TerritorialImpactSummary (10E.8) ──
+// ─── Event coherence: InitiativeEvent[] → TerritorialImpactSummary ──
 
-import type { TerritorialEvent } from "./territorialEvent";
-
-export function summarizeEventsToImpact(
-  events: TerritorialEvent[],
+/**
+ * Canonical projection: InitiativeEvent[] → TerritorialImpactSummary.
+ */
+export function summarizeInitiativeEvents(
+  events: InitiativeEvent[],
 ): Partial<TerritorialImpactSummary> {
   const now = Date.now();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
@@ -479,24 +481,71 @@ export function summarizeEventsToImpact(
   const missions = new Set<string>();
 
   for (const ev of events) {
-    if (!lastActivityAt || ev.createdAt > lastActivityAt) {
-      lastActivityAt = ev.createdAt;
+    if (!lastActivityAt || ev.timestamp > lastActivityAt) {
+      lastActivityAt = ev.timestamp;
     }
 
-    const age = now - new Date(ev.createdAt).getTime();
+    const age = now - new Date(ev.timestamp).getTime();
     const isRecent = age < thirtyDays;
 
-    if (ev.type === "proposal.created" && isRecent) {
-      recentProposalCount++;
+    switch (ev.type) {
+      case "ProposalCreated":
+        proposals.add(ev.proposalId);
+        if (isRecent) recentProposalCount++;
+        break;
+      case "ProposalSupported":
+        proposals.add(ev.proposalId);
+        if (ev.supporterId) uniqueSupporters.add(ev.supporterId);
+        break;
+      case "ProposalUnsuspended":
+        if (ev.supporterId) uniqueSupporters.add(ev.supporterId);
+        break;
+      case "ProposalCommentAdded":
+        proposals.add(ev.proposalId);
+        break;
+      case "ProposalCollaboratorJoined":
+        proposals.add(ev.proposalId);
+        if (ev.collaboratorId) uniqueCollaborators.add(ev.collaboratorId);
+        break;
+      case "ProposalThresholdReached":
+        proposals.add(ev.proposalId);
+        break;
+      case "ProposalConvertedToMission":
+        proposals.add(ev.proposalId);
+        if (ev.missionId) missions.add(ev.missionId);
+        break;
+      case "ProposalReopened":
+        proposals.add(ev.proposalId);
+        break;
+      case "ProposalLocked":
+        proposals.add(ev.proposalId);
+        break;
+      case "MissionJoined":
+        missions.add(ev.missionId);
+        break;
+      case "EvidenceSubmitted":
+        missions.add(ev.missionId);
+        break;
+      case "EvidenceVerified":
+        missions.add(ev.missionId);
+        break;
+      case "EvidenceRejected":
+        missions.add(ev.missionId);
+        break;
+      case "EvidenceFlagged":
+        missions.add(ev.missionId);
+        break;
+      case "MissionStateUpdated":
+        missions.add(ev.missionId);
+        break;
+      case "MissionCompleted":
+        missions.add(ev.missionId);
+        break;
+      case "DistrictFirstMovement":
+      case "CommunityTrustChanged":
+      case "CommunityProfileMilestone":
+        break;
     }
-    if (ev.type === "proposal.supported" || ev.type === "proposal.unsupported") {
-      if (ev.actor.id) uniqueSupporters.add(ev.actor.id);
-    }
-    if (ev.type === "proposal.collaborator_joined") {
-      if (ev.actor.id) uniqueCollaborators.add(ev.actor.id);
-    }
-    if (ev.entityType === "proposal") proposals.add(ev.entityId);
-    if (ev.entityType === "mission") missions.add(ev.entityId);
   }
 
   return {

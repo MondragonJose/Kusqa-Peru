@@ -32,15 +32,15 @@ proposal is the seed.
 
 ## Migrations (additive, idempotent, in this order)
 
-| File | Purpose |
-|---|---|
-| `0000_baseline.sql` | Commit the core schema (missions, mission_participants, user_progress, profiles, proposals, proposal_supports) that was referenced but never committed. |
-| `20260526130000_seed_realistic_missions.sql` | Rewritten to use the real schema columns; 14 missions, idempotent on title. |
-| `20260526140000_seed_vitality.sql` | Rewritten: 6 profiles, mission_participants via join, user_notifications via DO block, 3 realistic proposals in Rímac / San Borja / VES. |
-| `20260606010000_create_districts_table.sql` | New `districts` table (33 entries), RLS public-read, region CHECK. |
-| `20260606020000_add_district_fk_columns.sql` | `district_id` nullable FK on proposals/missions/profiles; backfill via `kusqa_district_slugify`. |
-| `20260606030000_district_aggregations_and_rpcs.sql` | `district_stats` view + 4 SECURITY DEFINER RPCs; fixes `mission_events` SELECT RLS. |
-| `20260606040000_proposal_conversion.sql` | `has_converted_mission_id` + `source_proposal_id`; `proposal_lifecycle_events` table + enum; `convert_proposal_to_mission`, `reopen_proposal`, `get_proposal_lifecycle_events` RPCs. |
+| File                                                | Purpose                                                                                                                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `0000_baseline.sql`                                 | Commit the core schema (missions, mission_participants, user_progress, profiles, proposals, proposal_supports) that was referenced but never committed.                              |
+| `20260526130000_seed_realistic_missions.sql`        | Rewritten to use the real schema columns; 14 missions, idempotent on title.                                                                                                          |
+| `20260526140000_seed_vitality.sql`                  | Rewritten: 6 profiles, mission_participants via join, user_notifications via DO block, 3 realistic proposals in Rímac / San Borja / VES.                                             |
+| `20260606010000_create_districts_table.sql`         | New `districts` table (33 entries), RLS public-read, region CHECK.                                                                                                                   |
+| `20260606020000_add_district_fk_columns.sql`        | `district_id` nullable FK on proposals/missions/profiles; backfill via `kusqa_district_slugify`.                                                                                     |
+| `20260606030000_district_aggregations_and_rpcs.sql` | `district_stats` view + 4 SECURITY DEFINER RPCs; fixes `mission_events` SELECT RLS.                                                                                                  |
+| `20260606040000_proposal_conversion.sql`            | `has_converted_mission_id` + `source_proposal_id`; `proposal_lifecycle_events` table + enum; `convert_proposal_to_mission`, `reopen_proposal`, `get_proposal_lifecycle_events` RPCs. |
 
 All RPCs are `SECURITY DEFINER` and explicitly `REVOKE` EXECUTE FROM PUBLIC,
 then `GRANT` to `anon, authenticated` so the public read paths are
@@ -86,11 +86,11 @@ Pure functions over `TerritorialImpactSummary`:
 
 ## Bundle budget (gzipped)
 
-| Route | Size |
-|---|---|
-| `app.distrito._slug` | **3.25 kB** (well under budget) |
+| Route                       | Size                                                    |
+| --------------------------- | ------------------------------------------------------- |
+| `app.distrito._slug`        | **3.25 kB** (well under budget)                         |
 | `app.propuesta._proposalId` | 14.16 kB (Phase 2A baseline 4.16 kB + conversion 10 kB) |
-| `app.index` | 5.99 kB |
+| `app.index`                 | 5.99 kB                                                 |
 
 The map preview and the activity feed are split into separate lazy
 chunks (2.16 kB and 3.40 kB) so the district page is fast on first

@@ -6,19 +6,21 @@ export type UserRelationship =
   | "visitor"
   | "supporter"
   | "participant"
-  | "collaborator"
-  | "organizer";
+  | "co_steward"
+  | "steward";
 
 export type ActionContext = {
   lifecycle: InitiativeLifecycle;
-  sourceType: "proposal" | "mission";
   relationship: UserRelationship;
+  sourceType?: "mission" | "proposal";
 };
 
-export function deriveRelationship(userId: string | null, initiative: Initiative): UserRelationship;
 export function deriveRelationship(
-  initiative: Pick<Initiative, "sourceType" | "sourceId">,
-  context?: {
+  userId: string | null,
+  initiative: Initiative,
+): UserRelationship;
+export function deriveRelationship(
+  context: {
     currentUserId?: string;
     isSupported?: boolean;
     isParticipant?: boolean;
@@ -26,33 +28,19 @@ export function deriveRelationship(
   },
 ): UserRelationship;
 export function deriveRelationship(
-  first: string | null | Pick<Initiative, "sourceType" | "sourceId">,
-  second?:
-    | Initiative
-    | {
-        currentUserId?: string;
-        isSupported?: boolean;
-        isParticipant?: boolean;
-        isOwner?: boolean;
-      },
+  first: string | null | { currentUserId?: string; isSupported?: boolean; isParticipant?: boolean; isOwner?: boolean },
+  second?: Initiative,
 ): UserRelationship {
   if (first === null) return "visitor";
   if (typeof first === "string") {
     const initiative = second as Initiative;
-    if (initiative.ownerId === first) return "organizer";
+    if (initiative.ownerId === first) return "steward";
     return "visitor";
   }
-  const context = second as
-    | {
-        currentUserId?: string;
-        isSupported?: boolean;
-        isParticipant?: boolean;
-        isOwner?: boolean;
-      }
-    | undefined;
-  if (context?.isOwner) return "organizer";
-  if (context?.isParticipant) return "participant";
-  if (context?.isSupported) return "supporter";
+  const context = first;
+  if (context.isOwner) return "steward";
+  if (context.isParticipant) return "participant";
+  if (context.isSupported) return "supporter";
   return "visitor";
 }
 
@@ -68,9 +56,13 @@ export const ACTION_PRIORITY: Record<InitiativeAction, number> = {
 export function actionToLabel(
   action: InitiativeAction,
   lifecycle?: InitiativeLifecycle,
-  sourceType?: "mission" | "proposal",
+  sourceTypeOrDormant?: "mission" | "proposal" | boolean,
   dormant?: boolean,
 ): string {
+  const sourceType = typeof sourceTypeOrDormant === "string" ? sourceTypeOrDormant : undefined;
+  if (typeof sourceTypeOrDormant === "boolean") {
+    dormant = sourceTypeOrDormant;
+  }
   switch (action) {
     case "support":
       return "Apoyar";
@@ -111,12 +103,13 @@ export function actionToIcon(action: InitiativeAction): string {
 export function getAvailableInitiativeActions(context: ActionContext): InitiativeAction[] {
   const { lifecycle, relationship } = context;
 
-  if (lifecycle === "archived") return [];
+  if (lifecycle === "dormant") return [];
 
   const actions: InitiativeAction[] = ["share"];
 
   switch (lifecycle) {
     case "forming":
+    case "gathering":
       switch (relationship) {
         case "visitor":
           actions.push("support", "report");
@@ -124,10 +117,10 @@ export function getAvailableInitiativeActions(context: ActionContext): Initiativ
         case "supporter":
           actions.push("support", "comment");
           break;
-        case "collaborator":
+        case "co_steward":
           actions.push("comment");
           break;
-        case "organizer":
+        case "steward":
           actions.push("edit", "comment");
           break;
         case "participant":
@@ -137,7 +130,6 @@ export function getAvailableInitiativeActions(context: ActionContext): Initiativ
       break;
 
     case "active":
-    case "ending":
       switch (relationship) {
         case "visitor":
           actions.push("join", "report");
@@ -148,10 +140,10 @@ export function getAvailableInitiativeActions(context: ActionContext): Initiativ
         case "supporter":
           actions.push("comment");
           break;
-        case "collaborator":
+        case "co_steward":
           actions.push("comment");
           break;
-        case "organizer":
+        case "steward":
           actions.push("edit", "comment");
           break;
       }
@@ -168,10 +160,10 @@ export function getAvailableInitiativeActions(context: ActionContext): Initiativ
         case "supporter":
           actions.push("join", "comment");
           break;
-        case "collaborator":
+        case "co_steward":
           actions.push("join", "comment");
           break;
-        case "organizer":
+        case "steward":
           actions.push("join", "edit");
           break;
       }

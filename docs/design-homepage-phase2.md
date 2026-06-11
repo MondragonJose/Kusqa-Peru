@@ -1,7 +1,7 @@
 # Homepage Phase 2 — Initiative Read Model & Territorial Intelligence
 
 **Status:** Design · No implementation  
-**Date:** 2026-06-10  
+**Date:** 2026-06-10
 
 ---
 
@@ -9,25 +9,25 @@
 
 ### Landing page (`/` — `routes/index.tsx`)
 
-| Surface | Data source | Lifecycle aware? | Initiative aware? | Problem |
-|---------|-------------|-----------------|-------------------|---------|
-| Hero badge | `missions.length` | No | No | Only counts missions, not proposals |
-| Mini stats row | `deriveStatsFromMissions()` | No | No | Missing proposals, supporters, forming initiatives |
-| Peru SVG region labels | `missionsByRegion` (Mission only) | No | No | "X misiones" — proposals invisible |
-| Observatory | `deriveStatsFromMissions()` | No | No | Hidden when missions=0 even if proposals exist |
-| Floating expedition cards | Hardcoded (3 items) | No | No | Never reflects real data |
-| "Elige tu paisaje" region cards | `missionsByRegion` (Mission only) | No | No | "X misiones" — proposals invisible |
-| Featured missions grid | `useMissions()` → `featuredMissions` | No | No | Missing proposals entirely |
+| Surface                         | Data source                          | Lifecycle aware? | Initiative aware? | Problem                                            |
+| ------------------------------- | ------------------------------------ | ---------------- | ----------------- | -------------------------------------------------- |
+| Hero badge                      | `missions.length`                    | No               | No                | Only counts missions, not proposals                |
+| Mini stats row                  | `deriveStatsFromMissions()`          | No               | No                | Missing proposals, supporters, forming initiatives |
+| Peru SVG region labels          | `missionsByRegion` (Mission only)    | No               | No                | "X misiones" — proposals invisible                 |
+| Observatory                     | `deriveStatsFromMissions()`          | No               | No                | Hidden when missions=0 even if proposals exist     |
+| Floating expedition cards       | Hardcoded (3 items)                  | No               | No                | Never reflects real data                           |
+| "Elige tu paisaje" region cards | `missionsByRegion` (Mission only)    | No               | No                | "X misiones" — proposals invisible                 |
+| Featured missions grid          | `useMissions()` → `featuredMissions` | No               | No                | Missing proposals entirely                         |
 
 ### Dashboard (`/app` — `routes/app.index.tsx`)
 
-| Surface | Data source | Lifecycle aware? | Initiative aware? | Problem |
-|---------|-------------|-----------------|-------------------|---------|
-| Hero | `feedItems.length` | No | Yes (uses `useCivicFeed`) | None (already on Initiative) |
-| Territories | `allEntities` (Initiative) | No | Partial | Uses `buildTerritory()` which works with any entity with region/category |
-| Ambient signal | `civicEntitiesToAmbientEvents` | No | Partial | Already uses CivicEntity (works with Initiative via adapter) |
-| Feed items | `selectFeedItems(allEntities)` | No | Yes | Already unified |
-| Feed drawer | `selectedEntity` (Initiative) | No | Yes | Already unified |
+| Surface        | Data source                    | Lifecycle aware? | Initiative aware?         | Problem                                                                  |
+| -------------- | ------------------------------ | ---------------- | ------------------------- | ------------------------------------------------------------------------ |
+| Hero           | `feedItems.length`             | No               | Yes (uses `useCivicFeed`) | None (already on Initiative)                                             |
+| Territories    | `allEntities` (Initiative)     | No               | Partial                   | Uses `buildTerritory()` which works with any entity with region/category |
+| Ambient signal | `civicEntitiesToAmbientEvents` | No               | Partial                   | Already uses CivicEntity (works with Initiative via adapter)             |
+| Feed items     | `selectFeedItems(allEntities)` | No               | Yes                       | Already unified                                                          |
+| Feed drawer    | `selectedEntity` (Initiative)  | No               | Yes                       | Already unified                                                          |
 
 ---
 
@@ -163,7 +163,7 @@ import type { Initiative, InitiativeLifecycle } from "./initiative";
 export type InitiativeStats = {
   total: number;
   forming: number;
-  active: number;     // active + ending (live)
+  active: number; // active + ending (live)
   ending: number;
   completed: number;
   archived: number;
@@ -176,11 +176,14 @@ export type InitiativeStats = {
  * Derive aggregate stats from an Initiative array.
  * Pure function. No I/O.
  */
-export function deriveInitiativeStats(
-  initiatives: Initiative[],
-): InitiativeStats {
-  let forming = 0, active = 0, ending = 0, completed = 0, archived = 0;
-  let totalParticipants = 0, totalSupporters = 0;
+export function deriveInitiativeStats(initiatives: Initiative[]): InitiativeStats {
+  let forming = 0,
+    active = 0,
+    ending = 0,
+    completed = 0,
+    archived = 0;
+  let totalParticipants = 0,
+    totalSupporters = 0;
   const districts = new Set<string>();
 
   for (const i of initiatives) {
@@ -226,9 +229,7 @@ export type RegionAggregation = {
 /**
  * Aggregate initiative counts by region, with lifecycle breakdown.
  */
-export function aggregateByRegion(
-  initiatives: Initiative[],
-): RegionAggregation[] {
+export function aggregateByRegion(initiatives: Initiative[]): RegionAggregation[] {
   const map = new Map<Region, RegionAggregation>();
 
   for (const i of initiatives) {
@@ -249,7 +250,11 @@ export function aggregateByRegion(
 ```typescript
 // src/domain/districtVitalitySummary.ts (NEW — lightweight for home page)
 
-import type { TerritorialImpactSummary, DistrictActivityClass, MovementDirection } from "./territoryAggregations";
+import type {
+  TerritorialImpactSummary,
+  DistrictActivityClass,
+  MovementDirection,
+} from "./territoryAggregations";
 
 export type DistrictVitalitySnapshot = {
   slug: string;
@@ -265,7 +270,12 @@ export type DistrictVitalitySnapshot = {
  * Returns max `limit` results, ordered by active count descending.
  */
 export function selectTopDistricts(
-  districts: Array<{ slug: string; name: string; emoji: string; summary: TerritorialImpactSummary }>,
+  districts: Array<{
+    slug: string;
+    name: string;
+    emoji: string;
+    summary: TerritorialImpactSummary;
+  }>,
   limit = 5,
 ): DistrictVitalitySnapshot[] {
   return districts
@@ -312,17 +322,17 @@ export function useLandingInitiatives() {
 
 ### 4.3 Existing capabilities we reuse
 
-| Capability | Source | Phase 2 usage |
-|-----------|--------|---------------|
-| `Initiative.lifecycle` | `initiative.ts:19-24` | Stats derivation, card badges, region breakdown |
-| `Initiative.participantsCount` | `initiative.ts:256` | Stats (total movilizados) |
-| `Initiative.supportersCount` | `initiative.ts:257` | Stats (total apoyos) |
-| `Initiative.temporalAnchor.label` | `initiative.ts:80` | Card secondary text |
-| `classifyDistrictActivity()` | `territoryAggregations.ts:47` | Vitality banner coloring |
-| `deriveMovementDirection()` | `territoryAggregations.ts:122` | Vitality banner arrows |
-| `deriveAmbientSignal()` | `ambient.ts` | Ambient pulse (unchanged) |
-| `selectFeedItems()` | `missionSelection.ts:95` | Dashboard feed (unchanged) |
-| `buildTerritory()` | `missionSelection.ts:109` | Region cards (now gets Initiative data) |
+| Capability                        | Source                         | Phase 2 usage                                   |
+| --------------------------------- | ------------------------------ | ----------------------------------------------- |
+| `Initiative.lifecycle`            | `initiative.ts:19-24`          | Stats derivation, card badges, region breakdown |
+| `Initiative.participantsCount`    | `initiative.ts:256`            | Stats (total movilizados)                       |
+| `Initiative.supportersCount`      | `initiative.ts:257`            | Stats (total apoyos)                            |
+| `Initiative.temporalAnchor.label` | `initiative.ts:80`             | Card secondary text                             |
+| `classifyDistrictActivity()`      | `territoryAggregations.ts:47`  | Vitality banner coloring                        |
+| `deriveMovementDirection()`       | `territoryAggregations.ts:122` | Vitality banner arrows                          |
+| `deriveAmbientSignal()`           | `ambient.ts`                   | Ambient pulse (unchanged)                       |
+| `selectFeedItems()`               | `missionSelection.ts:95`       | Dashboard feed (unchanged)                      |
+| `buildTerritory()`                | `missionSelection.ts:109`      | Region cards (now gets Initiative data)         |
 
 ---
 
@@ -330,28 +340,28 @@ export function useLandingInitiatives() {
 
 ### 5.1 Landing page queries
 
-| Query | Source | Replaces | Stale time |
-|-------|--------|----------|------------|
-| `useLandingInitiatives()` | `initiativeResolver.resolveAll()` | `useMissions()` | 120s |
-| `useProposals()` (keep) | `proposalRepository.getAllProposals()` | Only for `buildTerritorialSummaryFromEntities` fallback | 60s |
+| Query                     | Source                                 | Replaces                                                | Stale time |
+| ------------------------- | -------------------------------------- | ------------------------------------------------------- | ---------- |
+| `useLandingInitiatives()` | `initiativeResolver.resolveAll()`      | `useMissions()`                                         | 120s       |
+| `useProposals()` (keep)   | `proposalRepository.getAllProposals()` | Only for `buildTerritorialSummaryFromEntities` fallback | 60s        |
 
 **No new backend queries.** The `initiativeResolver.resolveAll()` already fetches missions and proposals in parallel. We just need a new frontend hook that isn't gated by the feature flag.
 
 ### 5.2 Dashboard queries
 
-| Query | Source | Change |
-|-------|--------|--------|
-| `useCivicFeed()` | Already Initiative-aware | No change |
-| `useProfileMissionTimeline()` | Auth-bound | No change |
+| Query                         | Source                   | Change    |
+| ----------------------------- | ------------------------ | --------- |
+| `useCivicFeed()`              | Already Initiative-aware | No change |
+| `useProfileMissionTimeline()` | Auth-bound               | No change |
 
 ### 5.3 Derived data (computed client-side)
 
-| Derivation | Input | Cost |
-|-----------|-------|------|
-| `deriveInitiativeStats(initiatives)` | `Initiative[]` | O(n) |
-| `aggregateByRegion(initiatives)` | `Initiative[]` | O(n) |
-| `selectTopDistricts(districts)` | `TerritorialImpactSummary[]` | O(n) |
-| `deriveAmbientSignal(events)` | `TerritorialEvent[]` | O(n) (unchanged) |
+| Derivation                           | Input                        | Cost             |
+| ------------------------------------ | ---------------------------- | ---------------- |
+| `deriveInitiativeStats(initiatives)` | `Initiative[]`               | O(n)             |
+| `aggregateByRegion(initiatives)`     | `Initiative[]`               | O(n)             |
+| `selectTopDistricts(districts)`      | `TerritorialImpactSummary[]` | O(n)             |
+| `deriveAmbientSignal(events)`        | `TerritorialEvent[]`         | O(n) (unchanged) |
 
 All derivations are pure functions, computed in `useMemo`. No server load.
 
@@ -361,40 +371,40 @@ All derivations are pure functions, computed in `useMemo`. No server load.
 
 ### 6.1 New components
 
-| Component | Location | Responsibility | Replaces |
-|-----------|----------|---------------|----------|
-| `InitiativeSnapshot` | `src/features/home/components/InitiativeSnapshot.tsx` | 3 real initiative cards for hero area (landing) | Hardcoded floating expedition cards (3 items) |
-| `StatsRow` | `src/features/home/components/StatsRow.tsx` | Compact lifecycle stats for dashboard | Nothing (additive) |
-| `VitalityBanner` | `src/features/home/components/VitalityBanner.tsx` | Horizontally scrollable top districts | Nothing (additive) |
-| `InitiativeCard` | `src/features/home/components/InitiativeCard.tsx` | Single initiative card with lifecycle badge + action CTA | Shared across snapshot + expeditions |
-| `RegionAggregationCard` | `src/features/home/components/RegionAggregationCard.tsx` | Region card showing lifecycle breakdown | Inline region cards (upgrade) |
+| Component               | Location                                                 | Responsibility                                           | Replaces                                      |
+| ----------------------- | -------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------- |
+| `InitiativeSnapshot`    | `src/features/home/components/InitiativeSnapshot.tsx`    | 3 real initiative cards for hero area (landing)          | Hardcoded floating expedition cards (3 items) |
+| `StatsRow`              | `src/features/home/components/StatsRow.tsx`              | Compact lifecycle stats for dashboard                    | Nothing (additive)                            |
+| `VitalityBanner`        | `src/features/home/components/VitalityBanner.tsx`        | Horizontally scrollable top districts                    | Nothing (additive)                            |
+| `InitiativeCard`        | `src/features/home/components/InitiativeCard.tsx`        | Single initiative card with lifecycle badge + action CTA | Shared across snapshot + expeditions          |
+| `RegionAggregationCard` | `src/features/home/components/RegionAggregationCard.tsx` | Region card showing lifecycle breakdown                  | Inline region cards (upgrade)                 |
 
 ### 6.2 Modified components
 
-| Component | File | Change |
-|-----------|------|--------|
-| `Landing` | `src/routes/index.tsx` | Replace `useMissions()` with `useLandingInitiatives()`; replace all `deriveStatsFromMissions` with `deriveInitiativeStats`; replace hardcoded floating cards with `<InitiativeSnapshot>`; add `<VitalityBanner>`; upgrade region cards to show lifecycle breakdown |
-| `Dashboard` | `src/routes/app.index.tsx` | Add `<StatsRow>` between hero and footprint; add `<VitalityBanner>` between regions and ambient; upgrade region cards to show lifecycle breakdown |
-| `PeruTerritoryDecoration` | `src/routes/index.tsx:157` | Accept `Initiative[]` instead of region counts; show lifecycle counts per region |
-| `deriveStatsFromMissions` | `src/routes/index.tsx:66` | Delete (replaced by `deriveInitiativeStats`) |
-| `selectFeedItems` | `src/domain/missionSelection.ts` | No change needed (already generic) |
+| Component                 | File                             | Change                                                                                                                                                                                                                                                             |
+| ------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Landing`                 | `src/routes/index.tsx`           | Replace `useMissions()` with `useLandingInitiatives()`; replace all `deriveStatsFromMissions` with `deriveInitiativeStats`; replace hardcoded floating cards with `<InitiativeSnapshot>`; add `<VitalityBanner>`; upgrade region cards to show lifecycle breakdown |
+| `Dashboard`               | `src/routes/app.index.tsx`       | Add `<StatsRow>` between hero and footprint; add `<VitalityBanner>` between regions and ambient; upgrade region cards to show lifecycle breakdown                                                                                                                  |
+| `PeruTerritoryDecoration` | `src/routes/index.tsx:157`       | Accept `Initiative[]` instead of region counts; show lifecycle counts per region                                                                                                                                                                                   |
+| `deriveStatsFromMissions` | `src/routes/index.tsx:66`        | Delete (replaced by `deriveInitiativeStats`)                                                                                                                                                                                                                       |
+| `selectFeedItems`         | `src/domain/missionSelection.ts` | No change needed (already generic)                                                                                                                                                                                                                                 |
 
 ### 6.3 New domain files
 
-| File | Content |
-|------|---------|
-| `src/domain/initiativeStats.ts` | `deriveInitiativeStats()`, `InitiativeStats` type |
-| `src/domain/regionAggregations.ts` | `aggregateByRegion()`, `RegionAggregation` type |
-| `src/domain/districtVitalitySummary.ts` | `selectTopDistricts()`, `DistrictVitalitySnapshot` type |
-| `src/features/initiatives/hooks/useLandingInitiatives.ts` | `useLandingInitiatives()` hook |
+| File                                                      | Content                                                 |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| `src/domain/initiativeStats.ts`                           | `deriveInitiativeStats()`, `InitiativeStats` type       |
+| `src/domain/regionAggregations.ts`                        | `aggregateByRegion()`, `RegionAggregation` type         |
+| `src/domain/districtVitalitySummary.ts`                   | `selectTopDistricts()`, `DistrictVitalitySnapshot` type |
+| `src/features/initiatives/hooks/useLandingInitiatives.ts` | `useLandingInitiatives()` hook                          |
 
 ### 6.4 Components deleted
 
-| Component | Reason |
-|-----------|--------|
-| `deriveStatsFromMissions` (inline function) | Replaced by `deriveInitiativeStats` |
-| Hardcoded floating cards (lines 530-597) | Replaced by real `<InitiativeSnapshot>` |
-| `PeruTerritoryDecoration` props `costaCount/sierraCount/selvaCount` | Replaced by `Initiative[]` |
+| Component                                                           | Reason                                  |
+| ------------------------------------------------------------------- | --------------------------------------- |
+| `deriveStatsFromMissions` (inline function)                         | Replaced by `deriveInitiativeStats`     |
+| Hardcoded floating cards (lines 530-597)                            | Replaced by real `<InitiativeSnapshot>` |
+| `PeruTerritoryDecoration` props `costaCount/sierraCount/selvaCount` | Replaced by `Initiative[]`              |
 
 ---
 
@@ -428,15 +438,15 @@ All derivations are pure functions, computed in `useMemo`. No server load.
 
 ### 7.3 Empty state behavior
 
-| Surface | Empty behavior |
-|---------|---------------|
-| Hero badge | Same: "Iniciativas nacen desde cada territorio" |
+| Surface            | Empty behavior                                                   |
+| ------------------ | ---------------------------------------------------------------- |
+| Hero badge         | Same: "Iniciativas nacen desde cada territorio"                  |
 | InitiativeSnapshot | Same fallback: 3 placeholder cards + "Sé quien inicia algo aquí" |
-| StatsRow | All zeros: "0 formándose · 0 activas · 0 completadas" |
-| VitalityBanner | Hidden (nothing to show) |
-| Observatory | Always visible (was hidden on zero in Phase 1) |
-| Region cards | "Sin actividad" per region; lifecycle row hidden |
-| Expediciones | Same fallback: 3 placeholder cards |
+| StatsRow           | All zeros: "0 formándose · 0 activas · 0 completadas"            |
+| VitalityBanner     | Hidden (nothing to show)                                         |
+| Observatory        | Always visible (was hidden on zero in Phase 1)                   |
+| Region cards       | "Sin actividad" per region; lifecycle row hidden                 |
+| Expediciones       | Same fallback: 3 placeholder cards                               |
 
 ---
 
@@ -444,24 +454,24 @@ All derivations are pure functions, computed in `useMemo`. No server load.
 
 ### 8.1 Perceptual impact
 
-| Metric | Before (Phase 1) | After (Phase 2) |
-|--------|------------------|-----------------|
-| Proposals visible on landing | ✗ (hidden) | ✓ (in stats, cards, region counts) |
-| Lifecycle visible on landing cards | ✗ (no badge) | ✓ (forming/active/completed badges) |
-| Stats include supporters | ✗ (only participants) | ✓ (supporters + participants) |
-| "X misiones" labels | Only missions | "X iniciativas" (both types) |
-| Floating cards | Hardcoded | Real data, changes as initiatives change |
-| Territorial vitality | None | District vitality banner shows movement |
-| Observatory hidden on zero | ✓ (hidden section) | ✗ (always visible, honest 0s) |
-| Dashboard lifecycle visibility | None | Compact stats row |
+| Metric                             | Before (Phase 1)      | After (Phase 2)                          |
+| ---------------------------------- | --------------------- | ---------------------------------------- |
+| Proposals visible on landing       | ✗ (hidden)            | ✓ (in stats, cards, region counts)       |
+| Lifecycle visible on landing cards | ✗ (no badge)          | ✓ (forming/active/completed badges)      |
+| Stats include supporters           | ✗ (only participants) | ✓ (supporters + participants)            |
+| "X misiones" labels                | Only missions         | "X iniciativas" (both types)             |
+| Floating cards                     | Hardcoded             | Real data, changes as initiatives change |
+| Territorial vitality               | None                  | District vitality banner shows movement  |
+| Observatory hidden on zero         | ✓ (hidden section)    | ✗ (always visible, honest 0s)            |
+| Dashboard lifecycle visibility     | None                  | Compact stats row                        |
 
 ### 8.2 Performance impact
 
-| Aspect | Impact | Mitigation |
-|--------|--------|------------|
-| New query on landing | +1 parallel query | Resolver fetches missions+proposals in parallel; 120s stale time |
-| Client-side derivations | 3 new `useMemo` calls | All O(n), same as existing ambient derivation |
-| Bundle size | +4 new domain files (tiny) | Pure functions, no dependencies |
+| Aspect                  | Impact                     | Mitigation                                                       |
+| ----------------------- | -------------------------- | ---------------------------------------------------------------- |
+| New query on landing    | +1 parallel query          | Resolver fetches missions+proposals in parallel; 120s stale time |
+| Client-side derivations | 3 new `useMemo` calls      | All O(n), same as existing ambient derivation                    |
+| Bundle size             | +4 new domain files (tiny) | Pure functions, no dependencies                                  |
 
 ### 8.3 Auth boundary
 
@@ -477,22 +487,22 @@ The landing page Phase 2 works **independently** of `VITE_USE_INITIATIVE_READ_MO
 
 ## 9. Implementation Order
 
-| Phase | Step | File | Effort | Dependencies |
-|-------|------|------|--------|-------------|
-| 2a | Create `deriveInitiativeStats()` + type | `src/domain/initiativeStats.ts` (NEW) | 30 min | None |
-| 2a | Create `aggregateByRegion()` + type | `src/domain/regionAggregations.ts` (NEW) | 20 min | None |
-| 2a | Create `selectTopDistricts()` + type | `src/domain/districtVitalitySummary.ts` (NEW) | 20 min | `territoryAggregations.ts` |
-| 2a | Create `useLandingInitiatives()` hook | `src/features/initiatives/hooks/useLandingInitiatives.ts` (NEW) | 15 min | `initiativeResolver` |
-| 2b | Build `<InitiativeSnapshot>` (3 real cards) | `src/features/home/components/InitiativeSnapshot.tsx` (NEW) | 1h | 2a domain functions |
-| 2b | Build `<StatsRow>` (compact stats) | `src/features/home/components/StatsRow.tsx` (NEW) | 30 min | `deriveInitiativeStats` |
-| 2b | Build `<VitalityBanner>` (district chips) | `src/features/home/components/VitalityBanner.tsx` (NEW) | 1h | `selectTopDistricts` |
-| 2b | Build `<InitiativeCard>` (shared card) | `src/features/home/components/InitiativeCard.tsx` (NEW) | 45 min | lifecycle badge, CTA logic |
-| 2b | Upgrade `<RegionAggregationCard>` | Refactor inline region cards | 30 min | `aggregateByRegion` |
-| 2c | Upgrade landing page | `src/routes/index.tsx` | 2h | All 2a + 2b |
-| 2c | Upgrade dashboard | `src/routes/app.index.tsx` | 1h | StatsRow, VitalityBanner |
-| 2c | Update PeruTerritoryDecoration | `src/routes/index.tsx` | 20 min | Initiative lifecycle data |
-| 2d | Delete `deriveStatsFromMissions` | `src/routes/index.tsx` | 5 min | After migration verified |
-| 2d | Remove hardcoded floating cards | `src/routes/index.tsx` | 10 min | After InitiativeSnapshot verified |
+| Phase | Step                                        | File                                                            | Effort | Dependencies                      |
+| ----- | ------------------------------------------- | --------------------------------------------------------------- | ------ | --------------------------------- |
+| 2a    | Create `deriveInitiativeStats()` + type     | `src/domain/initiativeStats.ts` (NEW)                           | 30 min | None                              |
+| 2a    | Create `aggregateByRegion()` + type         | `src/domain/regionAggregations.ts` (NEW)                        | 20 min | None                              |
+| 2a    | Create `selectTopDistricts()` + type        | `src/domain/districtVitalitySummary.ts` (NEW)                   | 20 min | `territoryAggregations.ts`        |
+| 2a    | Create `useLandingInitiatives()` hook       | `src/features/initiatives/hooks/useLandingInitiatives.ts` (NEW) | 15 min | `initiativeResolver`              |
+| 2b    | Build `<InitiativeSnapshot>` (3 real cards) | `src/features/home/components/InitiativeSnapshot.tsx` (NEW)     | 1h     | 2a domain functions               |
+| 2b    | Build `<StatsRow>` (compact stats)          | `src/features/home/components/StatsRow.tsx` (NEW)               | 30 min | `deriveInitiativeStats`           |
+| 2b    | Build `<VitalityBanner>` (district chips)   | `src/features/home/components/VitalityBanner.tsx` (NEW)         | 1h     | `selectTopDistricts`              |
+| 2b    | Build `<InitiativeCard>` (shared card)      | `src/features/home/components/InitiativeCard.tsx` (NEW)         | 45 min | lifecycle badge, CTA logic        |
+| 2b    | Upgrade `<RegionAggregationCard>`           | Refactor inline region cards                                    | 30 min | `aggregateByRegion`               |
+| 2c    | Upgrade landing page                        | `src/routes/index.tsx`                                          | 2h     | All 2a + 2b                       |
+| 2c    | Upgrade dashboard                           | `src/routes/app.index.tsx`                                      | 1h     | StatsRow, VitalityBanner          |
+| 2c    | Update PeruTerritoryDecoration              | `src/routes/index.tsx`                                          | 20 min | Initiative lifecycle data         |
+| 2d    | Delete `deriveStatsFromMissions`            | `src/routes/index.tsx`                                          | 5 min  | After migration verified          |
+| 2d    | Remove hardcoded floating cards             | `src/routes/index.tsx`                                          | 10 min | After InitiativeSnapshot verified |
 
 **Total:** ~8-9 hours across 4 sub-phases.
 
@@ -513,24 +523,24 @@ Not strictly necessary since all changes are additive (new components, new domai
 
 ### Rollback per surface
 
-| Surface | Rollback method |
-|---------|----------------|
-| Landing stats | Revert to `deriveStatsFromMissions` |
-| Landing cards | Revert to hardcoded floating cards |
-| Landing region cards | Revert to `missionsByRegion` |
-| VitalityBanner | Remove from JSX |
-| StatsRow | Remove from JSX |
+| Surface                | Rollback method                        |
+| ---------------------- | -------------------------------------- |
+| Landing stats          | Revert to `deriveStatsFromMissions`    |
+| Landing cards          | Revert to hardcoded floating cards     |
+| Landing region cards   | Revert to `missionsByRegion`           |
+| VitalityBanner         | Remove from JSX                        |
+| StatsRow               | Remove from JSX                        |
 | Dashboard region cards | Revert to old `buildTerritory` display |
 
 Each rollback is a single edit in the route file. No data loss.
 
 ### Migration verification
 
-| Check | Method |
-|-------|--------|
-| Stats include proposals | Spot check: create a proposal, verify landing observatory count increases |
-| Lifecycle badges correct | Visual: verify forming shows "En formación", active shows "En curso", completed shows "Completada" |
-| Vitality banner shows only active districts | District with zero activity should not appear |
-| Card actions match lifecycle | Forming → "Apoyar", Active → "Unirme", Completed → "Ver resultados" |
-| No auth required for landing | Private browser window loads landing fully |
-| Dashboard stats match | StatsRow counts match initiative list |
+| Check                                       | Method                                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Stats include proposals                     | Spot check: create a proposal, verify landing observatory count increases                          |
+| Lifecycle badges correct                    | Visual: verify forming shows "En formación", active shows "En curso", completed shows "Completada" |
+| Vitality banner shows only active districts | District with zero activity should not appear                                                      |
+| Card actions match lifecycle                | Forming → "Apoyar", Active → "Unirme", Completed → "Ver resultados"                                |
+| No auth required for landing                | Private browser window loads landing fully                                                         |
+| Dashboard stats match                       | StatsRow counts match initiative list                                                              |

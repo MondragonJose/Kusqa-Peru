@@ -414,7 +414,11 @@ export const initiativeCommentRepository = {
     const now = Date.now();
     const offset = page * pageSize;
 
-    const { data: topLevel, error: topErr, count: topCount } = await supabase
+    const {
+      data: topLevel,
+      error: topErr,
+      count: topCount,
+    } = await supabase
       .from("proposal_comments")
       .select(INITIATIVE_SELECT, { count: "exact" })
       .eq("initiative_id", initiativeId)
@@ -451,7 +455,9 @@ export const initiativeCommentRepository = {
       const parsed = DB_INITIATIVE_COMMENT_SCHEMA.safeParse(r);
       if (!parsed.success || !parsed.data.parent_comment_id) continue;
       const list = byParent.get(parsed.data.parent_comment_id) ?? [];
-      list.push(toInitiativeDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now }));
+      list.push(
+        toInitiativeDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now }),
+      );
       byParent.set(parsed.data.parent_comment_id, list);
     }
 
@@ -460,7 +466,10 @@ export const initiativeCommentRepository = {
       .flatMap((row: z.infer<typeof DB_INITIATIVE_COMMENT_SCHEMA>) => {
         const parsed = DB_INITIATIVE_COMMENT_SCHEMA.safeParse(row);
         if (!parsed.success) return [];
-        const top = toInitiativeDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now });
+        const top = toInitiativeDomain(parsed.data, {
+          currentUserId: options.currentUserId ?? null,
+          now,
+        });
         return [top, ...(byParent.get(top.id) ?? [])];
       });
 
@@ -471,7 +480,9 @@ export const initiativeCommentRepository = {
     };
   },
 
-  async createForInitiative(input: CreateInitiativeCommentDTO): Promise<ProposalResult<InitiativeComment>> {
+  async createForInitiative(
+    input: CreateInitiativeCommentDTO,
+  ): Promise<ProposalResult<InitiativeComment>> {
     const authorId = await resolveAuthenticatedUserId();
     const trimmed = input.content.trim();
     if (trimmed.length < DB_DEFAULTS.COMMENT_MIN) {
@@ -543,7 +554,10 @@ export const initiativeCommentRepository = {
     }
     return {
       status: "success",
-      data: toInitiativeDomain(parsed.data, { currentUserId: input.currentUserId, now: Date.now() }),
+      data: toInitiativeDomain(parsed.data, {
+        currentUserId: input.currentUserId,
+        now: Date.now(),
+      }),
     };
   },
 

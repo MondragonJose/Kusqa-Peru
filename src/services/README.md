@@ -30,15 +30,13 @@
 
 ```typescript
 // En un componente (app.index.tsx):
-const missions = await getMissions();  // ← Service function
+const missions = await getMissions(); // ← Service function
 
 // Service (services/missions.ts):
 export async function getMissions() {
-  const { data, error } = await supabase
-    .from("missions")
-    .select("*");              // ← Query a BD
-  
-  return data.map(transformMissionRow);  // ← Transform a tipos de dominio
+  const { data, error } = await supabase.from("missions").select("*"); // ← Query a BD
+
+  return data.map(transformMissionRow); // ← Transform a tipos de dominio
 }
 ```
 
@@ -67,14 +65,14 @@ Las funciones `transformMissionRow()` mapean datos crudos de Supabase → tipos 
 
 ## Archivos Clave
 
-| Archivo | Propósito |
-|---------|-----------|
-| `src/lib/supabase.ts` | Cliente inicializado de Supabase |
-| `src/lib/env.ts` | Validación de env vars con Zod |
-| `src/services/missions.ts` | Lógica de negocio: getMissions, createMission, etc. |
-| `src/types/supabase.ts` | Tipos raw (MissionRow, ProfileRow, etc.) |
-| `src/types/domain.ts` | Tipos de dominio (Mission, Profile, etc.) |
-| `src/utils/debug-supabase.ts` | Herramienta para testing de conexión |
+| Archivo                       | Propósito                                           |
+| ----------------------------- | --------------------------------------------------- |
+| `src/lib/supabase.ts`         | Cliente inicializado de Supabase                    |
+| `src/lib/env.ts`              | Validación de env vars con Zod                      |
+| `src/services/missions.ts`    | Lógica de negocio: getMissions, createMission, etc. |
+| `src/types/supabase.ts`       | Tipos raw (MissionRow, ProfileRow, etc.)            |
+| `src/types/domain.ts`         | Tipos de dominio (Mission, Profile, etc.)           |
+| `src/utils/debug-supabase.ts` | Herramienta para testing de conexión                |
 
 ## Debugging
 
@@ -86,7 +84,7 @@ Importa en un componente temporalmente:
 import { debugSupabase } from "@/utils/debug-supabase";
 
 useEffect(() => {
-  debugSupabase();  // Ejecuta todos los tests
+  debugSupabase(); // Ejecuta todos los tests
 }, []);
 ```
 
@@ -113,29 +111,33 @@ Output esperado:
 ```typescript
 import { inspectTable } from "@/utils/debug-supabase";
 
-inspectTable("missions");  // Muestra estructura de tabla
+inspectTable("missions"); // Muestra estructura de tabla
 ```
 
 ## Próximos Pasos
 
 ### Phase 3a - Completar Services
+
 - [ ] Refactorizar `services/users.ts` para usar Supabase
 - [ ] Refactorizar `services/notifications.ts`
 - [ ] Refactorizar `services/gamification.ts`
 - [ ] Agregar manejo de errores consistente
 
 ### Phase 3b - Autenticación
+
 - [ ] Implementar `services/auth.ts` (login, signup, logout)
 - [ ] Configurar RLS (Row Level Security) en BD
 - [ ] Integrar con Redux/Context para auth state
 
 ### Phase 4 - React Query
+
 - [ ] Envolver services en React Query hooks
 - [ ] Caching automático
 - [ ] Refetch automático
 - [ ] Error/loading states
 
 ### Phase 5 - Real-time
+
 - [ ] Supabase Realtime para misiones en vivo
 - [ ] WebSockets para notificaciones
 - [ ] Actualización automática de UI
@@ -148,20 +150,18 @@ Todos los services siguen patrón consistente:
 export async function getMissions(): Promise<Mission[]> {
   try {
     console.log("[services/missions] Fetching...");
-    
-    const { data, error } = await supabase
-      .from("missions")
-      .select("*");
-    
+
+    const { data, error } = await supabase.from("missions").select("*");
+
     if (error) {
       console.error("[services/missions] Supabase error:", error);
       throw new Error(`Failed to fetch missions: ${error.message}`);
     }
-    
+
     return data.map(transformMissionRow);
   } catch (error) {
     console.error("[services/missions] Exception:", error);
-    throw error;  // Propagar al componente
+    throw error; // Propagar al componente
   }
 }
 ```
@@ -212,11 +212,11 @@ Cada service puede ser testeado en aislamiento usando Vitest:
 
 ```typescript
 // services/missions.test.ts
-import { describe, it, expect, vi } from 'vitest';
-import { getMissions } from './missions';
+import { describe, it, expect, vi } from "vitest";
+import { getMissions } from "./missions";
 
-describe('getMissions', () => {
-  it('should return array of missions', async () => {
+describe("getMissions", () => {
+  it("should return array of missions", async () => {
     const missions = await getMissions();
     expect(Array.isArray(missions)).toBe(true);
   });
@@ -226,12 +226,14 @@ describe('getMissions', () => {
 ## Próxima Revisión
 
 Después de verificar que:
+
 1. ✅ Conexión a Supabase funciona (usar `debugSupabase()`)
 2. ✅ `getMissions()` retorna datos reales
 3. ✅ Build compila sin errores
 4. ✅ App funciona igual pero con datos reales
 
 Pasar a:
+
 - Refactorizar otros services
 - Implementar auth
 - Configurar React Query

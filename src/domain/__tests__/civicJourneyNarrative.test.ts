@@ -243,7 +243,14 @@ describe("no score language", () => {
     }
   });
 
-  const FORBIDDEN = [/\bXP\b/i, /\bNivel\b/i, /\branking\b/i, /Top\s*%/i, /\bpuntaje\b/i, /\bnivel\s*\d+\b/i];
+  const FORBIDDEN = [
+    /\bXP\b/i,
+    /\bNivel\b/i,
+    /\branking\b/i,
+    /Top\s*%/i,
+    /\bpuntaje\b/i,
+    /\bnivel\s*\d+\b/i,
+  ];
 
   for (const re of FORBIDDEN) {
     it(`does not contain ${re.source}`, () => {

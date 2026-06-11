@@ -9,6 +9,7 @@ the call sites.
 ## Scope
 
 ### Additive type changes
+
 - `Mission` type gains `districtId?: string | null` (optional, additive).
   New writes should include it; legacy rows and mock data still
   typecheck.
@@ -16,6 +17,7 @@ the call sites.
   public profile can render the trust label without duplicating copy.
 
 ### Removed dead code
+
 - `entityAdapter.proposalToMission` — no external callers. The
   internal `adaptProposalToMission` helper is now private to the
   adapter and is the only path from `Proposal → Mission-shape`.
@@ -31,6 +33,7 @@ the call sites.
   `services/index.ts` is gone.
 
 ### Adapter consolidation
+
 - `missionResolver.adaptProposalToMission` was a near-duplicate of
   `entityAdapter.proposalToMission` with a diverged emoji map and
   different null-coercion policy. Phase 4C makes the resolver
@@ -38,16 +41,18 @@ the call sites.
   map and the `districtId` passthrough). The divergence is closed.
 
 ### `app.mision.$missionId.tsx` adopts `CivicEntity`
+
 - The route previously implemented a hand-rolled `entity =
-  isMissionEntity ? mission : proposal` union with **16 `as Mission`
+isMissionEntity ? mission : proposal` union with **16 `as Mission`
   casts**. Phase 4C types `entity` as `CivicEntity` and uses
   `missionToEntity` / `proposalToEntity` from the adapter. All 16
   casts are removed.
 
 ### `app.distrito.$slug.tsx` stops synthesizing the discriminator
+
 - The route manually injected `entityType: "mission"` on a plain
   `Mission` to feed `PublicMissionCard` (`{ ...m, entityType:
-  "mission" }`). Phase 4C replaces this with `missionToEntity(m)`,
+"mission" }`). Phase 4C replaces this with `missionToEntity(m)`,
   removing the type lie.
 
 ## Why we kept `CivicEntity`
@@ -70,13 +75,13 @@ the call sites.
 
 ## Bundle impact
 
-| Chunk | Before | After | Delta |
-|---|---|---|---|
-| `app.mision._missionId` | 49.00 kB | 49.00 kB | 0 (cast removal doesn't change bundle size) |
-| `app.distrito._slug` | 15.83 kB | ~15.7 kB | -0.1 kB (entity injection gone) |
-| `app.index` | 29.56 kB | 29.56 kB | 0 |
-| `app.propuesta._proposalId` | 50.94 kB | 50.94 kB | 0 |
-| `services/notifications.ts` | ~0.5 kB | removed | -0.5 kB |
+| Chunk                       | Before   | After    | Delta                                       |
+| --------------------------- | -------- | -------- | ------------------------------------------- |
+| `app.mision._missionId`     | 49.00 kB | 49.00 kB | 0 (cast removal doesn't change bundle size) |
+| `app.distrito._slug`        | 15.83 kB | ~15.7 kB | -0.1 kB (entity injection gone)             |
+| `app.index`                 | 29.56 kB | 29.56 kB | 0                                           |
+| `app.propuesta._proposalId` | 50.94 kB | 50.94 kB | 0                                           |
+| `services/notifications.ts` | ~0.5 kB  | removed  | -0.5 kB                                     |
 
 ## Verification
 

@@ -562,9 +562,7 @@ describe("deriveCivicJourney — provenance & precision", () => {
   it("marks completed_mission as event/exact", () => {
     const result = deriveCivicJourney(
       {
-        userMissions: [
-          mkUserMission({ status: "completed", completedAt: "2025-06-10T00:00:00Z" }),
-        ],
+        userMissions: [mkUserMission({ status: "completed", completedAt: "2025-06-10T00:00:00Z" })],
         supportedProposals: [],
         userProposals: [],
         userDistrict: "barranco",
@@ -611,9 +609,7 @@ describe("deriveCivicJourney — provenance & precision", () => {
       {
         userMissions: [],
         supportedProposals: [],
-        userProposals: [
-          mkUserProposal({ status: "active", convertedAt: "2025-07-01T00:00:00Z" }),
-        ],
+        userProposals: [mkUserProposal({ status: "active", convertedAt: "2025-07-01T00:00:00Z" })],
         userDistrict: "barranco",
       },
       new Date("2025-07-05T00:00:00Z").getTime(),
@@ -658,28 +654,26 @@ describe("deriveCivicJourney — prologue", () => {
 
 describe("deriveCivicJourney — partial data", () => {
   it("handles user_missions with no dates at all (prologue + no dormancy crash)", () => {
-    const result = deriveCivicJourney(
-      {
-        userMissions: [
-          mkUserMission({
-            joinedAt: null,
-            completedAt: null,
-            mission: {
-              id: "m1",
-              title: "Misión sin fecha",
-              district: "barranco",
-              region: "costa",
-              category: "Comunidad",
-              startDate: null,
-              endDate: null,
-            },
-          }),
-        ],
-        supportedProposals: [],
-        userProposals: [],
-        userDistrict: "barranco",
-      },
-    );
+    const result = deriveCivicJourney({
+      userMissions: [
+        mkUserMission({
+          joinedAt: null,
+          completedAt: null,
+          mission: {
+            id: "m1",
+            title: "Misión sin fecha",
+            district: "barranco",
+            region: "costa",
+            category: "Comunidad",
+            startDate: null,
+            endDate: null,
+          },
+        }),
+      ],
+      supportedProposals: [],
+      userProposals: [],
+      userDistrict: "barranco",
+    });
     expect(result.arc.prologue.length).toBeGreaterThan(0);
     expect(result.arc.beats.length).toBe(0);
     expect(result.arc.phase).toBe("explorando");
@@ -687,14 +681,12 @@ describe("deriveCivicJourney — partial data", () => {
   });
 
   it("handles empty arrays gracefully", () => {
-    const result = deriveCivicJourney(
-      {
-        userMissions: [],
-        supportedProposals: [],
-        userProposals: [],
-        userDistrict: "barranco",
-      },
-    );
+    const result = deriveCivicJourney({
+      userMissions: [],
+      supportedProposals: [],
+      userProposals: [],
+      userDistrict: "barranco",
+    });
     expect(result.arc.beats).toEqual([]);
     expect(result.arc.prologue).toEqual([]);
     expect(result.arc.milestones).toEqual([]);
@@ -735,9 +727,7 @@ describe("deriveCivicJourney — dormancy", () => {
           }),
         ],
         supportedProposals: [],
-        userProposals: [
-          mkUserProposal({ status: "pending", createdAt: "2025-04-15T00:00:00Z" }),
-        ],
+        userProposals: [mkUserProposal({ status: "pending", createdAt: "2025-04-15T00:00:00Z" })],
         userDistrict: "barranco",
       },
       new Date("2025-06-01T00:00:00Z").getTime(),
@@ -766,14 +756,12 @@ describe("deriveCivicJourney — dormancy", () => {
   });
 
   it("is not dormant when user has no activity at all (primer_paso)", () => {
-    const result = deriveCivicJourney(
-      {
-        userMissions: [],
-        supportedProposals: [],
-        userProposals: [],
-        userDistrict: "barranco",
-      },
-    );
+    const result = deriveCivicJourney({
+      userMissions: [],
+      supportedProposals: [],
+      userProposals: [],
+      userDistrict: "barranco",
+    });
     expect(result.arc.isDormant).toBe(false);
     expect(result.arc.phase).toBe("primer_paso");
   });

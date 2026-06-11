@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getFootprintMarkerStyle,
-  type FootprintMarkerStyle,
-} from "../useFootprintMarkerLayer";
+import { getFootprintMarkerStyle, type FootprintMarkerStyle } from "../useFootprintMarkerLayer";
 import { deriveCivicTrace, type CivicTraceInput } from "@/domain/civicTrace";
 import type { CivicTrace } from "@/domain/civicTrace";
 
@@ -159,10 +156,12 @@ describe("deriveCivicTrace → getFootprintMarkerStyle integration", () => {
   it("returns fresh vitality for recent completion", () => {
     const recent = new Date();
     recent.setDate(recent.getDate() - 5);
-    const trace = deriveCivicTrace(mkInput({
-      verifiedCount: 2,
-      completedAt: recent.toISOString(),
-    }));
+    const trace = deriveCivicTrace(
+      mkInput({
+        verifiedCount: 2,
+        completedAt: recent.toISOString(),
+      }),
+    );
     expect(trace).not.toBeNull();
     expect(trace!.vitality).toBe("fresh");
   });
@@ -170,10 +169,12 @@ describe("deriveCivicTrace → getFootprintMarkerStyle integration", () => {
   it("returns dormant vitality for old completion (90+ days)", () => {
     const old = new Date();
     old.setDate(old.getDate() - 120);
-    const trace = deriveCivicTrace(mkInput({
-      verifiedCount: 2,
-      completedAt: old.toISOString(),
-    }));
+    const trace = deriveCivicTrace(
+      mkInput({
+        verifiedCount: 2,
+        completedAt: old.toISOString(),
+      }),
+    );
     expect(trace).not.toBeNull();
     expect(trace!.vitality).toBe("dormant");
   });
@@ -181,10 +182,12 @@ describe("deriveCivicTrace → getFootprintMarkerStyle integration", () => {
   it("dormant traces get lower opacity via getFootprintMarkerStyle", () => {
     const old = new Date();
     old.setDate(old.getDate() - 120);
-    const trace = deriveCivicTrace(mkInput({
-      verifiedCount: 5,
-      completedAt: old.toISOString(),
-    }));
+    const trace = deriveCivicTrace(
+      mkInput({
+        verifiedCount: 5,
+        completedAt: old.toISOString(),
+      }),
+    );
     expect(trace).not.toBeNull();
     expect(trace!.strength).toBe("landmark");
     expect(trace!.vitality).toBe("dormant");

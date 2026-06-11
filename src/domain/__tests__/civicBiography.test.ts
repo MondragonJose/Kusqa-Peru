@@ -1,8 +1,13 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { deriveCivicBiography } from "../civicBiography";
-import type { CivicJourney, JourneyPhase } from "../civicJourney";
+import type { CivicJourney, JourneyArc, JourneyPhase, TerritorialFootprint } from "../civicJourney";
 
-function journey(overrides: Partial<CivicJourney> = {}): CivicJourney {
+function journey(
+  overrides: Partial<{
+    footprint: Partial<TerritorialFootprint>;
+    arc: Partial<JourneyArc>;
+  }> = {},
+): CivicJourney {
   return {
     footprint: {
       regions: ["costa"],
@@ -12,6 +17,7 @@ function journey(overrides: Partial<CivicJourney> = {}): CivicJourney {
       missionCount: 0,
       proposalCount: 0,
       districtCount: 1,
+      ...overrides.footprint,
     },
     arc: {
       phase: "primer_paso",
@@ -22,8 +28,8 @@ function journey(overrides: Partial<CivicJourney> = {}): CivicJourney {
       totalBeats: 0,
       totalMilestones: 0,
       isDormant: false,
+      ...overrides.arc,
     },
-    ...overrides,
   };
 }
 
@@ -45,7 +51,15 @@ describe("deriveCivicBiography", () => {
     const result = deriveCivicBiography({
       journey: journey({
         arc: { phase: "explorando", phaseLabel: "Explorando" },
-        footprint: { regions: ["costa"], districts: ["barranco"], categories: [], reach: "local", missionCount: 0, proposalCount: 0, districtCount: 1 },
+        footprint: {
+          regions: ["costa"],
+          districts: ["barranco"],
+          categories: [],
+          reach: "local",
+          missionCount: 0,
+          proposalCount: 0,
+          districtCount: 1,
+        },
       }),
       completedMissionCount: 0,
       supportedCount: 0,
@@ -59,7 +73,15 @@ describe("deriveCivicBiography", () => {
     const result = deriveCivicBiography({
       journey: journey({
         arc: { phase: "tejiendo_territorio", phaseLabel: "Tejiendo territorio" },
-        footprint: { regions: ["costa", "sierra"], districts: ["barranco", "cusco"], categories: [], reach: "regional", missionCount: 0, proposalCount: 0, districtCount: 2 },
+        footprint: {
+          regions: ["costa", "sierra"],
+          districts: ["barranco", "cusco"],
+          categories: [],
+          reach: "regional",
+          missionCount: 0,
+          proposalCount: 0,
+          districtCount: 2,
+        },
       }),
       completedMissionCount: 0,
       supportedCount: 0,

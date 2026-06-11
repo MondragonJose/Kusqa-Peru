@@ -152,9 +152,7 @@ describe("initiativeResolver", () => {
 
     it("falls back summary through description and title for proposals", async () => {
       mockMissionFindAll.mockResolvedValue([]);
-      mockProposalGetAll.mockResolvedValue([
-        makeProposal({ summary: null, description: null }),
-      ]);
+      mockProposalGetAll.mockResolvedValue([makeProposal({ summary: null, description: null })]);
 
       const [i] = await initiativeResolver.resolveAll();
       expect(i.summary).toBe("Taller de reciclaje");

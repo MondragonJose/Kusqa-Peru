@@ -13,18 +13,18 @@ import {
 
 const ALL_LIFECYCLES: InitiativeLifecycle[] = [
   "forming",
+  "gathering",
   "active",
-  "ending",
   "completed",
-  "archived",
+  "dormant",
 ];
 
 const ALL_RELATIONSHIPS: UserRelationship[] = [
   "visitor",
   "supporter",
   "participant",
-  "collaborator",
-  "organizer",
+  "co_steward",
+  "steward",
 ];
 
 function act(lifecycle: InitiativeLifecycle, relationship: UserRelationship): InitiativeAction[] {
@@ -50,12 +50,12 @@ describe("forming", () => {
     expect(sorted(act("forming", "supporter"))).toEqual(["comment", "share", "support"]);
   });
 
-  it("collaborator → comment, share", () => {
-    expect(sorted(act("forming", "collaborator"))).toEqual(["comment", "share"]);
+  it("co_steward → comment, share", () => {
+    expect(sorted(act("forming", "co_steward"))).toEqual(["comment", "share"]);
   });
 
-  it("organizer → edit, comment, share", () => {
-    expect(sorted(act("forming", "organizer"))).toEqual(["comment", "edit", "share"]);
+  it("steward → edit, comment, share", () => {
+    expect(sorted(act("forming", "steward"))).toEqual(["comment", "edit", "share"]);
   });
 
   it("participant → comment, share (edge case)", () => {
@@ -78,36 +78,12 @@ describe("active", () => {
     expect(sorted(act("active", "supporter"))).toEqual(["comment", "share"]);
   });
 
-  it("collaborator → comment, share", () => {
-    expect(sorted(act("active", "collaborator"))).toEqual(["comment", "share"]);
+  it("co_steward → comment, share", () => {
+    expect(sorted(act("active", "co_steward"))).toEqual(["comment", "share"]);
   });
 
-  it("organizer → edit, comment, share", () => {
-    expect(sorted(act("active", "organizer"))).toEqual(["comment", "edit", "share"]);
-  });
-});
-
-// ─── ENDING (same rules as ACTIVE) ─────────────────────────────────────────
-
-describe("ending", () => {
-  it("visitor → join, share, report", () => {
-    expect(sorted(act("ending", "visitor"))).toEqual(["join", "report", "share"]);
-  });
-
-  it("participant → comment, share", () => {
-    expect(sorted(act("ending", "participant"))).toEqual(["comment", "share"]);
-  });
-
-  it("supporter → comment, share", () => {
-    expect(sorted(act("ending", "supporter"))).toEqual(["comment", "share"]);
-  });
-
-  it("collaborator → comment, share", () => {
-    expect(sorted(act("ending", "collaborator"))).toEqual(["comment", "share"]);
-  });
-
-  it("organizer → edit, comment, share", () => {
-    expect(sorted(act("ending", "organizer"))).toEqual(["comment", "edit", "share"]);
+  it("steward → edit, comment, share", () => {
+    expect(sorted(act("active", "steward"))).toEqual(["comment", "edit", "share"]);
   });
 });
 
@@ -126,21 +102,21 @@ describe("completed", () => {
     expect(sorted(act("completed", "supporter"))).toEqual(["comment", "join", "share"]);
   });
 
-  it("collaborator → join (Ver resultados), comment, share", () => {
-    expect(sorted(act("completed", "collaborator"))).toEqual(["comment", "join", "share"]);
+  it("co_steward → join (Ver resultados), comment, share", () => {
+    expect(sorted(act("completed", "co_steward"))).toEqual(["comment", "join", "share"]);
   });
 
-  it("organizer → join (Ver resultados), edit, share", () => {
-    expect(sorted(act("completed", "organizer"))).toEqual(["edit", "join", "share"]);
+  it("steward → join (Ver resultados), edit, share", () => {
+    expect(sorted(act("completed", "steward"))).toEqual(["edit", "join", "share"]);
   });
 });
 
-// ─── ARCHIVED ───────────────────────────────────────────────────────────────
+// ─── DORMANT
 
-describe("archived", () => {
+describe("dormant", () => {
   it("all relationships return empty array", () => {
     for (const rel of ALL_RELATIONSHIPS) {
-      expect(act("archived", rel)).toEqual([]);
+      expect(act("dormant", rel)).toEqual([]);
     }
   });
 });
@@ -168,11 +144,11 @@ describe("exhaustive matrix", () => {
     }
   });
 
-  it("share is present for all non-archived combinations", () => {
+  it("share is present for all non-dormant combinations", () => {
     for (const lifecycle of ALL_LIFECYCLES) {
       for (const relationship of ALL_RELATIONSHIPS) {
         const result = act(lifecycle, relationship);
-        if (lifecycle === "archived") {
+        if (lifecycle === "dormant") {
           expect(result).not.toContain("share");
         } else {
           expect(result).toContain("share");
@@ -181,11 +157,11 @@ describe("exhaustive matrix", () => {
     }
   });
 
-  it("edit only appears for organizer", () => {
+  it("edit only appears for steward", () => {
     for (const lifecycle of ALL_LIFECYCLES) {
       for (const relationship of ALL_RELATIONSHIPS) {
         const result = act(lifecycle, relationship);
-        if (relationship === "organizer" && lifecycle !== "archived") {
+        if (relationship === "steward" && lifecycle !== "dormant") {
           expect(result).toContain("edit");
         } else {
           expect(result).not.toContain("edit");
@@ -198,7 +174,7 @@ describe("exhaustive matrix", () => {
     for (const lifecycle of ALL_LIFECYCLES) {
       for (const relationship of ALL_RELATIONSHIPS) {
         const result = act(lifecycle, relationship);
-        if (relationship === "visitor" && lifecycle !== "archived") {
+        if (relationship === "visitor" && lifecycle !== "dormant") {
           expect(result).toContain("report");
         } else {
           expect(result).not.toContain("report");
@@ -207,9 +183,9 @@ describe("exhaustive matrix", () => {
     }
   });
 
-  it("archived returns empty for every relationship", () => {
+  it("dormant returns empty for every relationship", () => {
     for (const relationship of ALL_RELATIONSHIPS) {
-      expect(act("archived", relationship)).toEqual([]);
+      expect(act("dormant", relationship)).toEqual([]);
     }
   });
 });
@@ -240,10 +216,7 @@ type SurfaceParity = {
 const SURFACES: SurfaceParity[] = [
   {
     name: "InitiativeCard (feed card) / app.index drawer",
-    possibleRelationships: (i) => [
-      "visitor",
-      ...(i.ownerId ? ["supporter" as const] : []),
-    ],
+    possibleRelationships: (i) => ["visitor", ...(i.ownerId ? ["supporter" as const] : [])],
     wiredActions: ["support", "join", "share"],
   },
   {
@@ -259,7 +232,7 @@ const SURFACES: SurfaceParity[] = [
   },
   {
     name: "Mission detail (app.mision.$missionId.tsx)",
-    possibleRelationships: (i) => [i.ownerId ? "organizer" : "visitor"],
+    possibleRelationships: (i) => [i.ownerId ? "steward" : "visitor"],
     wiredActions: ["join", "share", "report", "comment"],
   },
   {
@@ -278,8 +251,13 @@ describe("action parity — surface rendering vs canonical domain", () => {
     describe(surface.name, () => {
       // Build the set of (lifecycle, relationship) pairs this surface encounters
       const pairs: Array<{ lifecycle: InitiativeLifecycle; rel: UserRelationship }> = [];
-      for (const lifecycle of ["forming", "active", "ending", "completed"] as InitiativeLifecycle[]) {
-          for (const initiative of [{ ownerId: undefined }, { ownerId: "uid" }] as const) {
+      for (const lifecycle of [
+        "forming",
+        "gathering",
+        "active",
+        "completed",
+      ] as InitiativeLifecycle[]) {
+        for (const initiative of [{ ownerId: undefined }, { ownerId: "uid" }] as const) {
           for (const rel of surface.possibleRelationships(initiative)) {
             if (!pairs.some((p) => p.lifecycle === lifecycle && p.rel === rel)) {
               pairs.push({ lifecycle, rel });
@@ -287,8 +265,8 @@ describe("action parity — surface rendering vs canonical domain", () => {
           }
         }
       }
-      // archived: only visitor matters (all relationships return [])
-      pairs.push({ lifecycle: "archived" as const, rel: "visitor" as const });
+      // dormant: only visitor matters (all relationships return [])
+      pairs.push({ lifecycle: "dormant" as const, rel: "visitor" as const });
 
       for (const { lifecycle, rel } of pairs) {
         const label = `${lifecycle} / ${rel}`;
@@ -297,11 +275,14 @@ describe("action parity — surface rendering vs canonical domain", () => {
           const canonical = canon(lifecycle, rel);
           const missing = canonical.filter((a) => !surface.wiredActions.includes(a));
 
-          expect(missing, [
-            `Surface "${surface.name}" is MISSING handlers for: [${missing.join(", ")}]`,
-            `  canon returned: [${canonical.join(", ")}]`,
-            `  surface wires:  [${surface.wiredActions.join(", ")}]`,
-          ].join("\n")).toEqual([]);
+          expect(
+            missing,
+            [
+              `Surface "${surface.name}" is MISSING handlers for: [${missing.join(", ")}]`,
+              `  canon returned: [${canonical.join(", ")}]`,
+              `  surface wires:  [${surface.wiredActions.join(", ")}]`,
+            ].join("\n"),
+          ).toEqual([]);
         });
 
         it(`no dead-code handlers for ${label}`, () => {
@@ -310,18 +291,18 @@ describe("action parity — surface rendering vs canonical domain", () => {
 
           if (deadCode.length > 0) {
             // Non-blocking notification: handler exists but button hidden by canon
-            // eslint-disable-next-line no-console
+
             console.warn(
               `[parity note] ${surface.name} wires [${deadCode.join(", ")}] ` +
-              `but canon returns [${canonical.join(", ")}] for ${label} — ` +
-              `handler is dead code (button hidden by InitiativeActionBar)`,
+                `but canon returns [${canonical.join(", ")}] for ${label} — ` +
+                `handler is dead code (button hidden by InitiativeActionBar)`,
             );
           }
 
-          // Archived at visitor returns [], so all wired actions would be dead code — skip
-          if (lifecycle === "archived") return;
+          // Dormant at visitor returns [], so all wired actions would be dead code — skip
+          if (lifecycle === "dormant") return;
 
-          // For non-archived, at least the common actions should be present
+          // For non-dormant, at least the common actions should be present
           expect(canonical.length).toBeGreaterThan(0);
         });
       }
@@ -342,7 +323,9 @@ describe("action parity — surface rendering vs canonical domain", () => {
     });
 
     it("map popup, mission detail and proposal detail wire report", () => {
-      const withReport = SURFACES.filter((s) => s.wiredActions.includes("report")).map((s) => s.name);
+      const withReport = SURFACES.filter((s) => s.wiredActions.includes("report")).map(
+        (s) => s.name,
+      );
       expect(withReport.sort()).toEqual([
         "Map popup (useMissionMarkerLayer.tsx)",
         "Mission detail (app.mision.$missionId.tsx)",
@@ -408,9 +391,9 @@ describe("deriveRelationship(userId, initiative)", () => {
     expect(deriveRelationship(null, makeInitiative())).toBe("visitor");
   });
 
-  it("returns organizer when userId matches ownerId", () => {
+  it("returns steward when userId matches ownerId", () => {
     const initiative = makeInitiative({ ownerId: "user-1" });
-    expect(deriveRelationship("user-1", initiative)).toBe("organizer");
+    expect(deriveRelationship("user-1", initiative)).toBe("steward");
   });
 
   it("returns visitor when userId does not match ownerId", () => {
@@ -422,27 +405,27 @@ describe("deriveRelationship(userId, initiative)", () => {
     expect(deriveRelationship("user-1", makeInitiative())).toBe("visitor");
   });
 
-  it("returns organizer for all lifecycle stages when ownerId matches", () => {
+  it("returns steward for all lifecycle stages when ownerId matches", () => {
     const lifecycles: InitiativeLifecycle[] = [
       "forming",
+      "gathering",
       "active",
-      "ending",
       "completed",
-      "archived",
+      "dormant",
     ];
     for (const lifecycle of lifecycles) {
       const initiative = makeInitiative({ lifecycle, ownerId: "user-1" });
-      expect(deriveRelationship("user-1", initiative)).toBe("organizer");
+      expect(deriveRelationship("user-1", initiative)).toBe("steward");
     }
   });
 
   it("returns visitor for all lifecycle stages when userId does not match", () => {
     const lifecycles: InitiativeLifecycle[] = [
       "forming",
+      "gathering",
       "active",
-      "ending",
       "completed",
-      "archived",
+      "dormant",
     ];
     for (const lifecycle of lifecycles) {
       const initiative = makeInitiative({ lifecycle, ownerId: "user-1" });
@@ -453,8 +436,8 @@ describe("deriveRelationship(userId, initiative)", () => {
   it("works with both sourceTypes", () => {
     const mission = makeInitiative({ sourceType: "mission", ownerId: "u1" });
     const proposal = makeInitiative({ sourceType: "proposal", ownerId: "u1" });
-    expect(deriveRelationship("u1", mission)).toBe("organizer");
-    expect(deriveRelationship("u1", proposal)).toBe("organizer");
+    expect(deriveRelationship("u1", mission)).toBe("steward");
+    expect(deriveRelationship("u1", proposal)).toBe("steward");
     expect(deriveRelationship("u2", mission)).toBe("visitor");
     expect(deriveRelationship("u2", proposal)).toBe("visitor");
   });
@@ -467,10 +450,10 @@ describe("actionToLabel", () => {
 
   const ALL_LIFECYCLES: InitiativeLifecycle[] = [
     "forming",
+    "gathering",
     "active",
-    "ending",
     "completed",
-    "archived",
+    "dormant",
   ];
 
   const ALL_SOURCE_TYPES: ("mission" | "proposal")[] = ["mission", "proposal"];
@@ -527,18 +510,18 @@ describe("actionToLabel", () => {
   it("returns lifecycle-appropriate label for join", () => {
     expect(actionToLabel("join", "forming")).toBe("Unirme");
     expect(actionToLabel("join", "active")).toBe("Participar");
-    expect(actionToLabel("join", "ending")).toBe("Participar");
+    expect(actionToLabel("join", "gathering")).toBe("Participar");
     expect(actionToLabel("join", "completed")).toBe("Ver resultados");
-    expect(actionToLabel("join", "archived")).toBe("Participar");
+    expect(actionToLabel("join", "dormant")).toBe("Participar");
     // proposal with lifecycle=active → "Ver misión"
     expect(actionToLabel("join", "active", "proposal")).toBe("Ver misión");
     // completed overrides sourceType
     expect(actionToLabel("join", "completed", "proposal")).toBe("Ver resultados");
   });
 
-  it("returns 'Reactivar' for join when dormant is true and lifecycle is active/ending", () => {
+  it("returns 'Reactivar' for join when dormant is true and lifecycle is active/gathering", () => {
     expect(actionToLabel("join", "active", "mission", true)).toBe("Reactivar");
-    expect(actionToLabel("join", "ending", "mission", true)).toBe("Reactivar");
+    expect(actionToLabel("join", "gathering", "mission", true)).toBe("Reactivar");
     // forming with dormant still shows 'Unirme' (forming takes precedence over dormant)
     expect(actionToLabel("join", "forming", "mission", true)).toBe("Unirme");
     // completed with dormant still shows 'Ver resultados' (completed takes precedence)
@@ -624,8 +607,8 @@ describe("isDormant", () => {
       ...overrides,
     });
 
-  it("returns false when lifecycle is archived", () => {
-    expect(mk({ lifecycle: "archived" })).toBe(false);
+  it("returns false when lifecycle is dormant", () => {
+    expect(mk({ lifecycle: "dormant" })).toBe(false);
   });
 
   it("returns false when lifecycle is completed", () => {

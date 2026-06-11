@@ -15,8 +15,6 @@ export const CATEGORIES = [
   "Tecnología",
 ] as const;
 
-export type DbCategory = "environment" | "infrastructure" | "community" | "education" | "health";
-
 export interface CategoryMeta {
   label: string;
   emoji: string;
@@ -70,31 +68,6 @@ export const CATEGORY_META: Record<MissionCategory, CategoryMeta> = {
   },
 };
 
-export const CATEGORY_LABEL: Record<DbCategory, MissionCategory> = {
-  environment: "Medio ambiente",
-  infrastructure: "Tecnología",
-  community: "Comunidad",
-  education: "Educación",
-  health: "Salud",
-};
-
-export const CATEGORY_TO_DB: Record<MissionCategory, DbCategory> = {
-  "Medio ambiente": "environment",
-  Tecnología: "infrastructure",
-  Comunidad: "community",
-  Educación: "education",
-  Salud: "health",
-  "Arte & cultura": "community",
-};
-
-const DB_CATEGORY_EMOJI: Record<DbCategory, string> = {
-  environment: "🌱",
-  infrastructure: "🏗️",
-  community: "🤝",
-  education: "📚",
-  health: "❤️",
-};
-
 export function categoryEmoji(category: MissionCategory): string {
   return CATEGORY_META[category]?.emoji ?? "📌";
 }
@@ -109,16 +82,4 @@ export function categoryColor(category: MissionCategory): string {
 
 export function categoryGradient(category: MissionCategory): string {
   return CATEGORY_META[category]?.gradient ?? "";
-}
-
-export function categoryToDb(category: MissionCategory): DbCategory {
-  return CATEGORY_TO_DB[category] ?? "community";
-}
-
-export function dbToCategory(db: DbCategory | string): MissionCategory {
-  return CATEGORY_LABEL[db as DbCategory] ?? "Comunidad";
-}
-
-export function dbCategoryEmoji(db: DbCategory): string {
-  return DB_CATEGORY_EMOJI[db] ?? "📌";
 }

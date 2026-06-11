@@ -33,10 +33,10 @@ and the district timeline going forward.
 
 ## Migrations
 
-| File | Purpose |
-|---|---|
+| File                                     | Purpose                                                                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `20260607010000_create_civic_events.sql` | `civic_events` table + `civic_event_kind` enum + `append_civic_event` + `get_civic_events_for_profile` RPC + realtime publication. |
-| `20260607020000_public_profile_rpc.sql` | `get_public_profile` SECURITY DEFINER RPC returning the public-safe projection with counters and top districts. |
+| `20260607020000_public_profile_rpc.sql`  | `get_public_profile` SECURITY DEFINER RPC returning the public-safe projection with counters and top districts.                    |
 
 All operations are `CREATE IF NOT EXISTS` / `CREATE OR REPLACE` /
 `ADD COLUMN IF NOT EXISTS` — fully additive, fully idempotent.
@@ -61,10 +61,10 @@ All operations are `CREATE IF NOT EXISTS` / `CREATE OR REPLACE` /
 
 ## Bundle impact
 
-| Route / chunk | Size (gz, server build) | Note |
-|---|---|---|
-| `app.perfil._userId` | **19.46 kB** (raw) | New dedicated chunk, was absorbed in `app-*.js` shared (16.6 kB) before. |
-| Shared `app-*.js` | 16.63 kB | Unchanged (the 676 LOC profile was not in this chunk — it was in shared-`app` but the split didn't add much). |
+| Route / chunk        | Size (gz, server build) | Note                                                                                                          |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `app.perfil._userId` | **19.46 kB** (raw)      | New dedicated chunk, was absorbed in `app-*.js` shared (16.6 kB) before.                                      |
+| Shared `app-*.js`    | 16.63 kB                | Unchanged (the 676 LOC profile was not in this chunk — it was in shared-`app` but the split didn't add much). |
 
 The public profile is now properly code-split. The first-load cost
 of a `/app/perfil/$userId` visit is ~19 kB (raw) plus the shared

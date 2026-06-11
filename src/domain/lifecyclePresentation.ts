@@ -53,14 +53,14 @@ export function getLifecyclePresentation(lifecycle: InitiativeLifecycle): Lifecy
         tooltipTone: "Ocurriendo ahora",
         isHidden: false,
       };
-    case "ending":
+    case "gathering":
       return {
         containerClass: "ring-1 ring-amber-400/40",
         opacity: 0.9,
         animationClass: "animate-pulse",
         badge: "⏳",
         ctaLabel: "Participar",
-        tooltipTone: "Últimos días para unirse",
+        tooltipTone: "Reuniendo equipo",
         isHidden: false,
       };
     case "completed":
@@ -73,7 +73,7 @@ export function getLifecyclePresentation(lifecycle: InitiativeLifecycle): Lifecy
         tooltipTone: "Ruta completada",
         isHidden: false,
       };
-    case "archived":
+    case "dormant":
       return {
         containerClass: "hidden",
         opacity: 0,

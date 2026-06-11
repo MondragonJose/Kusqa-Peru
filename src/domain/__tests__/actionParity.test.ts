@@ -22,68 +22,59 @@ type BruteForceEntry = {
  * update BOTH getAvailableInitiativeActions AND this manifest.
  */
 const BRUTE_FORCE_MANIFEST: BruteForceEntry[] = [
-  // ── archived ──────────────────────────────────────────────────────────────
-  ...(["visitor", "supporter", "participant", "collaborator", "organizer"] as const).map(
+  // ── dormant ──────────────────────────────────────────────────────────────
+  ...(["visitor", "supporter", "participant", "co_steward", "steward"] as const).map(
     (relationship) => ({
-      lifecycle: "archived" as const,
+      lifecycle: "dormant" as const,
       relationship,
       expected: [] as InitiativeAction[],
     }),
   ),
 
-  // ── forming ──────────────────────────────────────────────────────────────
-  ...(["visitor"] as const).map((r) => ({
-    lifecycle: "forming" as const,
-    relationship: r,
-    expected: ["share", "support", "report"] as InitiativeAction[],
-  })),
-  ...(["supporter"] as const).map((r) => ({
-    lifecycle: "forming" as const,
-    relationship: r,
-    expected: ["share", "support", "comment"] as InitiativeAction[],
-  })),
-  ...(["collaborator", "participant"] as const).map((r) => ({
-    lifecycle: "forming" as const,
-    relationship: r,
-    expected: ["share", "comment"] as InitiativeAction[],
-  })),
-  {
-    lifecycle: "forming" as const,
-    relationship: "organizer" as const,
-    expected: ["share", "edit", "comment"] as InitiativeAction[],
-  },
+  // ── forming / gathering ─────────────────────────────────────────────────
+  ...(["visitor"] as const).flatMap((r) =>
+    (["forming", "gathering"] as const).map((lifecycle) => ({
+      lifecycle,
+      relationship: r,
+      expected: ["share", "support", "report"] as InitiativeAction[],
+    })),
+  ),
+  ...(["supporter"] as const).flatMap((r) =>
+    (["forming", "gathering"] as const).map((lifecycle) => ({
+      lifecycle,
+      relationship: r,
+      expected: ["share", "support", "comment"] as InitiativeAction[],
+    })),
+  ),
+  ...(["co_steward", "participant"] as const).flatMap((r) =>
+    (["forming", "gathering"] as const).map((lifecycle) => ({
+      lifecycle,
+      relationship: r,
+      expected: ["share", "comment"] as InitiativeAction[],
+    })),
+  ),
+  ...(["steward"] as const).flatMap((r) =>
+    (["forming", "gathering"] as const).map((lifecycle) => ({
+      lifecycle,
+      relationship: r,
+      expected: ["share", "edit", "comment"] as InitiativeAction[],
+    })),
+  ),
 
-  // ── active / ending ──────────────────────────────────────────────────────
+  // ── active ──────────────────────────────────────────────────────────────
   ...(["visitor"] as const).map((r) => ({
     lifecycle: "active" as const,
     relationship: r,
     expected: ["share", "join", "report"] as InitiativeAction[],
   })),
-  ...(["participant", "supporter", "collaborator"] as const).map((r) => ({
+  ...(["participant", "supporter", "co_steward"] as const).map((r) => ({
     lifecycle: "active" as const,
     relationship: r,
     expected: ["share", "comment"] as InitiativeAction[],
   })),
   {
     lifecycle: "active" as const,
-    relationship: "organizer" as const,
-    expected: ["share", "edit", "comment"] as InitiativeAction[],
-  },
-
-  // ending has the same action set as active
-  ...(["visitor"] as const).map((r) => ({
-    lifecycle: "ending" as const,
-    relationship: r,
-    expected: ["share", "join", "report"] as InitiativeAction[],
-  })),
-  ...(["participant", "supporter", "collaborator"] as const).map((r) => ({
-    lifecycle: "ending" as const,
-    relationship: r,
-    expected: ["share", "comment"] as InitiativeAction[],
-  })),
-  {
-    lifecycle: "ending" as const,
-    relationship: "organizer" as const,
+    relationship: "steward" as const,
     expected: ["share", "edit", "comment"] as InitiativeAction[],
   },
 
@@ -93,14 +84,14 @@ const BRUTE_FORCE_MANIFEST: BruteForceEntry[] = [
     relationship: r,
     expected: ["share", "join", "report"] as InitiativeAction[],
   })),
-  ...(["participant", "supporter", "collaborator"] as const).map((r) => ({
+  ...(["participant", "supporter", "co_steward"] as const).map((r) => ({
     lifecycle: "completed" as const,
     relationship: r,
     expected: ["share", "join", "comment"] as InitiativeAction[],
   })),
   {
     lifecycle: "completed" as const,
-    relationship: "organizer" as const,
+    relationship: "steward" as const,
     expected: ["share", "join", "edit"] as InitiativeAction[],
   },
 ];
@@ -118,17 +109,17 @@ describe("action parity — getAvailableInitiativeActions matches canonical mani
 describe("action parity — sourceType invariance (report excluded)", () => {
   const LIFECYCLES: InitiativeLifecycle[] = [
     "forming",
+    "gathering",
     "active",
-    "ending",
     "completed",
-    "archived",
+    "dormant",
   ];
   const RELATIONSHIPS: UserRelationship[] = [
     "visitor",
     "supporter",
     "participant",
-    "collaborator",
-    "organizer",
+    "co_steward",
+    "steward",
   ];
 
   for (const lifecycle of LIFECYCLES) {

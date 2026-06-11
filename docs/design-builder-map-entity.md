@@ -1,7 +1,7 @@
 # Design: `buildMapEntity()` — Technical Specification
 
 **Status:** Design · No implementation  
-**Date:** 2026-06-10  
+**Date:** 2026-06-10
 
 ---
 
@@ -38,11 +38,11 @@ export function buildMapEntity(
 
 ### Why discriminated union over overloads?
 
-| Approach | Problem |
-|----------|---------|
-| `buildMapEntity(mission: Mission)` | TS can't distinguish `Mission` from `Proposal` — both have `id`, `title`, `district`, `region` |
-| `buildMapEntity(source: Mission \| Proposal)` | Implementation must use duck-typing or `in` checks — fragile |
-| `buildMapEntity(input: { type: ... })` | **Explicit, type-safe.** Narrowing by `input.type` is exhaustively checked by the compiler. |
+| Approach                                      | Problem                                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `buildMapEntity(mission: Mission)`            | TS can't distinguish `Mission` from `Proposal` — both have `id`, `title`, `district`, `region` |
+| `buildMapEntity(source: Mission \| Proposal)` | Implementation must use duck-typing or `in` checks — fragile                                   |
+| `buildMapEntity(input: { type: ... })`        | **Explicit, type-safe.** Narrowing by `input.type` is exhaustively checked by the compiler.    |
 
 ### Supporting types
 
@@ -96,107 +96,109 @@ export type MissionCompat = {
 
 ### 2.1 Mission → InitiativeMapEntity
 
-| IME field | Source | Derivation | Risk |
-|-----------|--------|------------|------|
-| `id` | `mission.id` | Direct | None |
-| `prefixedId` | `mission.id` | `"mission_" + mission.id` | None |
-| `sourceType` | literal | `"mission"` | None |
-| `title` | `mission.title` | Direct | None |
-| `summary` | `mission.description` | Direct (IMO uses `summary` as the canonical field; `description` is the Mission name for it) | Low — semantic rename only |
-| `category` | `mission.category` | Direct | None |
-| `region` | `mission.region` | Direct | None |
-| `emoji` | `mission.emoji` | Direct | None |
-| **`lifecycle`** | `mission.lifecycleInfo.lifecycle` | `deriveLifecycleFromMission(mission.lifecycleInfo.lifecycle)` | None |
-| **`temporalAnchor`** | `mission.lifecycleInfo`, `mission.startDate`, `mission.endDate` | `computeMissionAnchor(mission.lifecycleInfo, mission.startDate, mission.endDate)` | None |
-| `participantsCount` | `mission.participants` | Direct | None |
-| **`supportersCount`** | — | `input.supportCount ?? 0` | **Risk: Missions don't have supporters.** Default 0. Enricher must backfill. |
-| **`vitalityScore`** | — | `undefined` (set by enricher) | None |
-| **`lastActivityAt`** | `mission.date` | Direct | None |
-| `location.district` | `mission.district` | Direct | None |
-| `location.districtId` | `mission.districtId ?? null` | Direct | None |
-| `location.region` | `mission.region` | Direct | None |
-| `location.coords` | `mission.coords` | Direct | None |
-| `xp` | `mission.xp` | Direct | None |
-| `spotsLeft` | `mission.spotsLeft` | Direct | None |
-| `difficulty` | `mission.difficulty` | Direct | None |
-| `impact` | `mission.impact` | Direct | None |
-| `organizer` | `mission.organizer` | Direct | None |
-| `description` | `mission.description` | Direct | None |
-| `startDate` | `mission.startDate` | Direct | None |
-| `endDate` | `mission.endDate` | Direct | None |
+| IME field             | Source                                                          | Derivation                                                                                   | Risk                                                                         |
+| --------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `id`                  | `mission.id`                                                    | Direct                                                                                       | None                                                                         |
+| `prefixedId`          | `mission.id`                                                    | `"mission_" + mission.id`                                                                    | None                                                                         |
+| `sourceType`          | literal                                                         | `"mission"`                                                                                  | None                                                                         |
+| `title`               | `mission.title`                                                 | Direct                                                                                       | None                                                                         |
+| `summary`             | `mission.description`                                           | Direct (IMO uses `summary` as the canonical field; `description` is the Mission name for it) | Low — semantic rename only                                                   |
+| `category`            | `mission.category`                                              | Direct                                                                                       | None                                                                         |
+| `region`              | `mission.region`                                                | Direct                                                                                       | None                                                                         |
+| `emoji`               | `mission.emoji`                                                 | Direct                                                                                       | None                                                                         |
+| **`lifecycle`**       | `mission.lifecycleInfo.lifecycle`                               | `deriveLifecycleFromMission(mission.lifecycleInfo.lifecycle)`                                | None                                                                         |
+| **`temporalAnchor`**  | `mission.lifecycleInfo`, `mission.startDate`, `mission.endDate` | `computeMissionAnchor(mission.lifecycleInfo, mission.startDate, mission.endDate)`            | None                                                                         |
+| `participantsCount`   | `mission.participants`                                          | Direct                                                                                       | None                                                                         |
+| **`supportersCount`** | —                                                               | `input.supportCount ?? 0`                                                                    | **Risk: Missions don't have supporters.** Default 0. Enricher must backfill. |
+| **`vitalityScore`**   | —                                                               | `undefined` (set by enricher)                                                                | None                                                                         |
+| **`lastActivityAt`**  | `mission.date`                                                  | Direct                                                                                       | None                                                                         |
+| `location.district`   | `mission.district`                                              | Direct                                                                                       | None                                                                         |
+| `location.districtId` | `mission.districtId ?? null`                                    | Direct                                                                                       | None                                                                         |
+| `location.region`     | `mission.region`                                                | Direct                                                                                       | None                                                                         |
+| `location.coords`     | `mission.coords`                                                | Direct                                                                                       | None                                                                         |
+| `xp`                  | `mission.xp`                                                    | Direct                                                                                       | None                                                                         |
+| `spotsLeft`           | `mission.spotsLeft`                                             | Direct                                                                                       | None                                                                         |
+| `difficulty`          | `mission.difficulty`                                            | Direct                                                                                       | None                                                                         |
+| `impact`              | `mission.impact`                                                | Direct                                                                                       | None                                                                         |
+| `organizer`           | `mission.organizer`                                             | Direct                                                                                       | None                                                                         |
+| `description`         | `mission.description`                                           | Direct                                                                                       | None                                                                         |
+| `startDate`           | `mission.startDate`                                             | Direct                                                                                       | None                                                                         |
+| `endDate`             | `mission.endDate`                                               | Direct                                                                                       | None                                                                         |
 
 **Total:** 26 fields, 22 direct, 4 derived. **Zero impossible fields.** All Layer B fields available.
 
 ### 2.2 Proposal → InitiativeMapEntity
 
-| IME field | Source | Derivation | Risk |
-|-----------|--------|------------|------|
-| `id` | `proposal.id` | Direct | None |
-| `prefixedId` | `proposal.id` | `"proposal_" + proposal.id` | None |
-| `sourceType` | literal | `"proposal"` | None |
-| `title` | `proposal.title` | Direct | None |
-| **`summary`** | `proposal.summary ?? proposal.description ?? proposal.title` | **Fallback chain** — summary → description → title | Low — summary may be null |
-| `category` | `proposal.category` | Direct | None |
-| `region` | `proposal.region` | Direct | None |
-| **`emoji`** | `proposal.category` | `categoryEmoji(proposal.category as MissionCategory)` | None — same pattern used by `initiativeResolver.ts` and `entityAdapter.ts` |
-| **`lifecycle`** | `proposal.status`, `proposal.convertedAt`, `proposal.completedAt` | `deriveLifecycleFromProposal(proposal.status, proposal.convertedAt, proposal.completedAt)` | None |
-| **`temporalAnchor`** | `proposal.status`, timestamps, `supportCount`, `teamSize` | `computeProposalAnchor(status, proposedDate, createdAt, convertedAt, completedAt, supportCount, getProposalThreshold(teamSize))` | **Risk: needs supportCount + threshold** — must come from caller or default to 0+threshold |
-| `participantsCount` | — | `0` (proposals have no participants) | Intrinsic |
-| **`supportersCount`** | `input.supportCount ?? 0` | Optional enrichment | None |
-| `vitalityScore` | — | `undefined` (set by enricher) | None |
-| **`lastActivityAt`** | `proposal.createdAt` | Direct | None |
-| `location.district` | `proposal.district` | Direct | None |
-| `location.districtId` | `proposal.districtId ?? null` | Direct | None |
-| `location.region` | `proposal.region` | Direct | None |
-| **`location.coords`** | `proposal.latitude`, `proposal.longitude` | `(latitude !== null && longitude !== null) ? { lat: Number(latitude), lng: Number(longitude) } : null` | Low — lat/lng may be null strings |
-| `xp` | — | `undefined` | Intrinsic |
-| `spotsLeft` | — | `undefined` | Intrinsic |
-| `difficulty` | — | `undefined` | Intrinsic |
-| `impact` | — | `undefined` | Intrinsic |
-| `organizer` | — | `undefined` | Intrinsic |
-| `description` | — | `undefined` | Intrinsic (use `summary` for display) |
-| `startDate` | — | `undefined` | Intrinsic |
-| `endDate` | — | `undefined` | Intrinsic |
+| IME field             | Source                                                            | Derivation                                                                                                                       | Risk                                                                                       |
+| --------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `id`                  | `proposal.id`                                                     | Direct                                                                                                                           | None                                                                                       |
+| `prefixedId`          | `proposal.id`                                                     | `"proposal_" + proposal.id`                                                                                                      | None                                                                                       |
+| `sourceType`          | literal                                                           | `"proposal"`                                                                                                                     | None                                                                                       |
+| `title`               | `proposal.title`                                                  | Direct                                                                                                                           | None                                                                                       |
+| **`summary`**         | `proposal.summary ?? proposal.description ?? proposal.title`      | **Fallback chain** — summary → description → title                                                                               | Low — summary may be null                                                                  |
+| `category`            | `proposal.category`                                               | Direct                                                                                                                           | None                                                                                       |
+| `region`              | `proposal.region`                                                 | Direct                                                                                                                           | None                                                                                       |
+| **`emoji`**           | `proposal.category`                                               | `categoryEmoji(proposal.category as MissionCategory)`                                                                            | None — same pattern used by `initiativeResolver.ts` and `entityAdapter.ts`                 |
+| **`lifecycle`**       | `proposal.status`, `proposal.convertedAt`, `proposal.completedAt` | `deriveLifecycleFromProposal(proposal.status, proposal.convertedAt, proposal.completedAt)`                                       | None                                                                                       |
+| **`temporalAnchor`**  | `proposal.status`, timestamps, `supportCount`, `teamSize`         | `computeProposalAnchor(status, proposedDate, createdAt, convertedAt, completedAt, supportCount, getProposalThreshold(teamSize))` | **Risk: needs supportCount + threshold** — must come from caller or default to 0+threshold |
+| `participantsCount`   | —                                                                 | `0` (proposals have no participants)                                                                                             | Intrinsic                                                                                  |
+| **`supportersCount`** | `input.supportCount ?? 0`                                         | Optional enrichment                                                                                                              | None                                                                                       |
+| `vitalityScore`       | —                                                                 | `undefined` (set by enricher)                                                                                                    | None                                                                                       |
+| **`lastActivityAt`**  | `proposal.createdAt`                                              | Direct                                                                                                                           | None                                                                                       |
+| `location.district`   | `proposal.district`                                               | Direct                                                                                                                           | None                                                                                       |
+| `location.districtId` | `proposal.districtId ?? null`                                     | Direct                                                                                                                           | None                                                                                       |
+| `location.region`     | `proposal.region`                                                 | Direct                                                                                                                           | None                                                                                       |
+| **`location.coords`** | `proposal.latitude`, `proposal.longitude`                         | `(latitude !== null && longitude !== null) ? { lat: Number(latitude), lng: Number(longitude) } : null`                           | Low — lat/lng may be null strings                                                          |
+| `xp`                  | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `spotsLeft`           | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `difficulty`          | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `impact`              | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `organizer`           | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `description`         | —                                                                 | `undefined`                                                                                                                      | Intrinsic (use `summary` for display)                                                      |
+| `startDate`           | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
+| `endDate`             | —                                                                 | `undefined`                                                                                                                      | Intrinsic                                                                                  |
 
 **Impossible fields:** 8 Layer B fields intrinsically unavailable. **Not a bug** — proposals have no XP, difficulty, impact, or organizer.
 
 **Risks:**
+
 1. `temporalAnchor` needs `supportCount` + `threshold`. The caller must compute these. If omitted, anchor defaults to "Buscando personas para empezar" (`supportCount=0`).
 2. `summary` fallback chain may produce title in worst case — acceptable for a map preview.
 3. `location.coords` requires string→number coercion (`Number(latitude)`). The resolver already does this.
 
 ### 2.3 Initiative → InitiativeMapEntity
 
-| IME field | Source | Derivation | Risk |
-|-----------|--------|------------|------|
-| `id` | `initiative.sourceId` | Direct | None |
-| `prefixedId` | `initiative.id` | Direct | None |
-| `sourceType` | `initiative.sourceType` | Direct | None |
-| `title` | `initiative.title` | Direct | None |
-| `summary` | `initiative.summary` | Direct | None |
-| `category` | `initiative.category` | Direct | None |
-| `region` | `initiative.region` | Direct | None |
-| `emoji` | `initiative.emoji` | Direct | None |
-| `lifecycle` | `initiative.lifecycle` | Direct | None |
-| `temporalAnchor` | `initiative.temporalAnchor` | Direct | None |
-| `participantsCount` | `initiative.participantsCount ?? 0` | Direct + default | None |
-| `supportersCount` | `initiative.supportersCount ?? 0` | Direct + default | None |
-| `vitalityScore` | `initiative.vitalityScore` | Direct | None |
-| **`lastActivityAt`** | — | **GAP: Initiative has no `lastActivityAt`** | **Need to add to Initiative type** |
-| `location.district` | `initiative.location?.district` | Direct | None |
-| `location.districtId` | `initiative.location?.districtId ?? null` | Direct | None |
-| `location.region` | `initiative.location?.region ?? initiative.region` | **Fallback to `initiative.region`** | Low — location may be undefined |
-| `location.coords` | `initiative.location?.coords ?? null` | Direct | None |
-| `xp` | `input.missionCompat?.xp` | Optional | Only present with missionCompat |
-| `spotsLeft` | `input.missionCompat?.spotsLeft` | Optional | Same |
-| `difficulty` | `input.missionCompat?.difficulty` | Optional | Same |
-| `impact` | `input.missionCompat?.impact` | Optional | Same |
-| `organizer` | `input.missionCompat?.organizer` | Optional | Same |
-| `description` | `input.missionCompat?.description` | Optional | Same |
-| `startDate` | `input.missionCompat?.startDate` | Optional | Same |
-| `endDate` | `input.missionCompat?.endDate` | Optional | Same |
+| IME field             | Source                                             | Derivation                                  | Risk                               |
+| --------------------- | -------------------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| `id`                  | `initiative.sourceId`                              | Direct                                      | None                               |
+| `prefixedId`          | `initiative.id`                                    | Direct                                      | None                               |
+| `sourceType`          | `initiative.sourceType`                            | Direct                                      | None                               |
+| `title`               | `initiative.title`                                 | Direct                                      | None                               |
+| `summary`             | `initiative.summary`                               | Direct                                      | None                               |
+| `category`            | `initiative.category`                              | Direct                                      | None                               |
+| `region`              | `initiative.region`                                | Direct                                      | None                               |
+| `emoji`               | `initiative.emoji`                                 | Direct                                      | None                               |
+| `lifecycle`           | `initiative.lifecycle`                             | Direct                                      | None                               |
+| `temporalAnchor`      | `initiative.temporalAnchor`                        | Direct                                      | None                               |
+| `participantsCount`   | `initiative.participantsCount ?? 0`                | Direct + default                            | None                               |
+| `supportersCount`     | `initiative.supportersCount ?? 0`                  | Direct + default                            | None                               |
+| `vitalityScore`       | `initiative.vitalityScore`                         | Direct                                      | None                               |
+| **`lastActivityAt`**  | —                                                  | **GAP: Initiative has no `lastActivityAt`** | **Need to add to Initiative type** |
+| `location.district`   | `initiative.location?.district`                    | Direct                                      | None                               |
+| `location.districtId` | `initiative.location?.districtId ?? null`          | Direct                                      | None                               |
+| `location.region`     | `initiative.location?.region ?? initiative.region` | **Fallback to `initiative.region`**         | Low — location may be undefined    |
+| `location.coords`     | `initiative.location?.coords ?? null`              | Direct                                      | None                               |
+| `xp`                  | `input.missionCompat?.xp`                          | Optional                                    | Only present with missionCompat    |
+| `spotsLeft`           | `input.missionCompat?.spotsLeft`                   | Optional                                    | Same                               |
+| `difficulty`          | `input.missionCompat?.difficulty`                  | Optional                                    | Same                               |
+| `impact`              | `input.missionCompat?.impact`                      | Optional                                    | Same                               |
+| `organizer`           | `input.missionCompat?.organizer`                   | Optional                                    | Same                               |
+| `description`         | `input.missionCompat?.description`                 | Optional                                    | Same                               |
+| `startDate`           | `input.missionCompat?.startDate`                   | Optional                                    | Same                               |
+| `endDate`             | `input.missionCompat?.endDate`                     | Optional                                    | Same                               |
 
 **Gap:** `lastActivityAt` must be added to the `Initiative` domain type. Currently:
+
 ```ts
 export type Initiative = {
   // ... existing fields
@@ -221,10 +223,10 @@ import type { MissionCategory, MissionDifficulty } from "@/types";
  * Route link for an InitiativeMapEntity.
  * Every spatial entity maps to exactly one detail page.
  */
-export function entityRoute(entity: {
-  sourceType: "mission" | "proposal";
-  id: string;
-}): { to: string; params: Record<string, string> } {
+export function entityRoute(entity: { sourceType: "mission" | "proposal"; id: string }): {
+  to: string;
+  params: Record<string, string>;
+} {
   if (entity.sourceType === "proposal") {
     return {
       to: "/app/propuesta/$proposalId",
@@ -358,19 +360,19 @@ const mission = {
 
 const entity = buildMapEntity({ type: "mission", mission });
 
-entity.id           // "abc-123"
-entity.prefixedId   // "mission_abc-123"
-entity.sourceType   // "mission"
-entity.lifecycle    // "active"
-entity.temporalAnchor.label  // "En curso"
-entity.participantsCount    // 12
-entity.supportersCount      // 0
-entity.xp                   // 540
-entity.spotsLeft            // 8
-entity.difficulty           // "media"
-entity.impact               // "Recuperar 2km de ribera"
-entity.organizer?.name      // "Camila"
-entity.lastActivityAt       // "2026-06-10T10:00:00Z"
+entity.id; // "abc-123"
+entity.prefixedId; // "mission_abc-123"
+entity.sourceType; // "mission"
+entity.lifecycle; // "active"
+entity.temporalAnchor.label; // "En curso"
+entity.participantsCount; // 12
+entity.supportersCount; // 0
+entity.xp; // 540
+entity.spotsLeft; // 8
+entity.difficulty; // "media"
+entity.impact; // "Recuperar 2km de ribera"
+entity.organizer?.name; // "Camila"
+entity.lastActivityAt; // "2026-06-10T10:00:00Z"
 ```
 
 ### 5.2 Standard Proposal
@@ -399,23 +401,23 @@ const proposal = {
 
 const entity = buildMapEntity({ type: "proposal", proposal });
 
-entity.id             // "def-456"
-entity.prefixedId     // "proposal_def-456"
-entity.sourceType     // "proposal"
-entity.lifecycle      // "forming"
-entity.temporalAnchor.label  // "Recién propuesta"
-entity.participantsCount    // 0
-entity.supportersCount      // 0
-entity.summary              // "Huerto comunitario en el centro"
-entity.emoji                // "🌱" (from categoryEmoji("Medio ambiente"))
-entity.xp                   // undefined
-entity.spotsLeft            // undefined
-entity.difficulty           // undefined
-entity.impact               // undefined
-entity.organizer            // undefined
-entity.description          // undefined
-entity.location.coords      // { lat: -13.3911, lng: -72.0475 }
-entity.location.district    // "Chinchero"
+entity.id; // "def-456"
+entity.prefixedId; // "proposal_def-456"
+entity.sourceType; // "proposal"
+entity.lifecycle; // "forming"
+entity.temporalAnchor.label; // "Recién propuesta"
+entity.participantsCount; // 0
+entity.supportersCount; // 0
+entity.summary; // "Huerto comunitario en el centro"
+entity.emoji; // "🌱" (from categoryEmoji("Medio ambiente"))
+entity.xp; // undefined
+entity.spotsLeft; // undefined
+entity.difficulty; // undefined
+entity.impact; // undefined
+entity.organizer; // undefined
+entity.description; // undefined
+entity.location.coords; // { lat: -13.3911, lng: -72.0475 }
+entity.location.district; // "Chinchero"
 ```
 
 ### 5.3 Proposal without coordinates
@@ -429,7 +431,7 @@ const proposalNoCoords = {
 
 const entity = buildMapEntity({ type: "proposal", proposal: proposalNoCoords });
 
-entity.location.coords  // null
+entity.location.coords; // null
 ```
 
 ### 5.4 Initiative with missionCompat
@@ -470,12 +472,12 @@ const compat: MissionCompat = {
 
 const entity = buildMapEntity({ type: "initiative", initiative, missionCompat: compat });
 
-entity.id           // "abc-123" (sourceId)
-entity.prefixedId   // "mission_abc-123" (initiative.id)
-entity.sourceType   // "mission"
-entity.xp           // 540 (from missionCompat)
-entity.xp === undefined  // false
-entity.organizer?.name   // "Camila"
+entity.id; // "abc-123" (sourceId)
+entity.prefixedId; // "mission_abc-123" (initiative.id)
+entity.sourceType; // "mission"
+entity.xp; // 540 (from missionCompat)
+entity.xp === undefined; // false
+entity.organizer?.name; // "Camila"
 ```
 
 ### 5.5 Initiative without missionCompat (proposal source)
@@ -492,7 +494,11 @@ const proposalInitiative = {
   lifecycle: "forming",
   participantsCount: 0,
   supportersCount: 5,
-  temporalAnchor: { label: "Recién propuesta", kind: "recent", referenceDate: "2026-06-08T14:30:00Z" },
+  temporalAnchor: {
+    label: "Recién propuesta",
+    kind: "recent",
+    referenceDate: "2026-06-08T14:30:00Z",
+  },
   emoji: "🌱",
   location: {
     district: "Chinchero",
@@ -505,11 +511,11 @@ const proposalInitiative = {
 
 const entity = buildMapEntity({ type: "initiative", initiative: proposalInitiative });
 
-entity.xp       // undefined
-entity.spotsLeft  // undefined
-entity.difficulty // undefined
-entity.impact     // undefined
-entity.organizer  // undefined
+entity.xp; // undefined
+entity.spotsLeft; // undefined
+entity.difficulty; // undefined
+entity.impact; // undefined
+entity.organizer; // undefined
 ```
 
 ### 5.6 Initiative — missionCompat ignored for proposals
@@ -520,11 +526,13 @@ entity.organizer  // undefined
 const entity = buildMapEntity({
   type: "initiative",
   initiative: proposalInitiative,
-  missionCompat: { /* ...any compat data... */ },
+  missionCompat: {
+    /* ...any compat data... */
+  },
 });
 
-entity.xp  // undefined (missionCompat is silently ignored for proposals)
-invariant("missionCompat is ignored for proposals")
+entity.xp; // undefined (missionCompat is silently ignored for proposals)
+invariant("missionCompat is ignored for proposals");
 ```
 
 ### 5.7 Edge: Mission with empty description
@@ -533,8 +541,8 @@ invariant("missionCompat is ignored for proposals")
 const missionNoDesc = { ...mission, description: "" };
 const entity = buildMapEntity({ type: "mission", mission: missionNoDesc });
 
-entity.summary  // ""
-entity.description  // "" (Layer B preserves original)
+entity.summary; // ""
+entity.description; // "" (Layer B preserves original)
 ```
 
 ### 5.8 Edge: Proposal with null summary and null description
@@ -543,7 +551,7 @@ entity.description  // "" (Layer B preserves original)
 const proposalMinimal = { ...proposal, summary: null, description: null };
 const entity = buildMapEntity({ type: "proposal", proposal: proposalMinimal });
 
-entity.summary  // proposal.title (fallback chain: summary → description → title)
+entity.summary; // proposal.title (fallback chain: summary → description → title)
 ```
 
 ### 5.9 Edge: Initiative with no location
@@ -552,20 +560,20 @@ entity.summary  // proposal.title (fallback chain: summary → description → t
 const initiativeNoLoc = { ...initiative, location: undefined };
 const entity = buildMapEntity({ type: "initiative", initiative: initiativeNoLoc });
 
-entity.location          // null
-entity.location.coords   // would error — use optional chaining
-invariant("location may be null; consumers must guard")
+entity.location; // null
+entity.location.coords; // would error — use optional chaining
+invariant("location may be null; consumers must guard");
 ```
 
 ### 5.10 Lifecycle coverage (all 5 states) — Mission
 
 ```ts
 const lifecycles: Array<{ lifecycle: MissionLifecycle; expected: InitiativeLifecycle }> = [
-  { lifecycle: "upcoming",     expected: "forming" },
-  { lifecycle: "active",       expected: "active" },
-  { lifecycle: "ending_soon",  expected: "ending" },
-  { lifecycle: "completed",    expected: "completed" },
-  { lifecycle: "archived",     expected: "archived" },
+  { lifecycle: "upcoming", expected: "forming" },
+  { lifecycle: "active", expected: "active" },
+  { lifecycle: "ending_soon", expected: "ending" },
+  { lifecycle: "completed", expected: "completed" },
+  { lifecycle: "archived", expected: "archived" },
 ];
 
 for (const { lifecycle, expected } of lifecycles) {
@@ -591,11 +599,11 @@ for (const { lifecycle, expected } of lifecycles) {
 
 ```ts
 const missionEntity = buildMapEntity({ type: "mission", mission });
-entityRoute(missionEntity)
+entityRoute(missionEntity);
 // → { to: "/app/mision/$missionId", params: { missionId: "abc-123" } }
 
 const proposalEntity = buildMapEntity({ type: "proposal", proposal });
-entityRoute(proposalEntity)
+entityRoute(proposalEntity);
 // → { to: "/app/propuesta/$proposalId", params: { proposalId: "def-456" } }
 ```
 
@@ -605,14 +613,14 @@ entityRoute(proposalEntity)
 
 These are NOT part of `buildMapEntity()`. They are derived by separate pure functions:
 
-| Concern | Function | File |
-|---------|----------|------|
-| Marker visual class, opacity, animation | `getLifecyclePresentation(lifecycle)` | `lifecyclePresentation.ts` |
-| CTA label in popup | `getLifecyclePresentation(lifecycle).ctaLabel` | `lifecyclePresentation.ts` |
-| Badge emoji overlay | `getLifecyclePresentation(lifecycle).badge` | `lifecyclePresentation.ts` |
-| Tooltip tone in popup | `getLifecyclePresentation(lifecycle).tooltipTone` | `lifecyclePresentation.ts` |
-| Available action set | `getAvailableInitiativeActions(context)` | `initiativeActions.ts` |
-| Action label | `actionToLabel(action, lifecycle, sourceType)` | `initiativeActions.ts` |
+| Concern                                 | Function                                          | File                       |
+| --------------------------------------- | ------------------------------------------------- | -------------------------- |
+| Marker visual class, opacity, animation | `getLifecyclePresentation(lifecycle)`             | `lifecyclePresentation.ts` |
+| CTA label in popup                      | `getLifecyclePresentation(lifecycle).ctaLabel`    | `lifecyclePresentation.ts` |
+| Badge emoji overlay                     | `getLifecyclePresentation(lifecycle).badge`       | `lifecyclePresentation.ts` |
+| Tooltip tone in popup                   | `getLifecyclePresentation(lifecycle).tooltipTone` | `lifecyclePresentation.ts` |
+| Available action set                    | `getAvailableInitiativeActions(context)`          | `initiativeActions.ts`     |
+| Action label                            | `actionToLabel(action, lifecycle, sourceType)`    | `initiativeActions.ts`     |
 
 `buildMapEntity()` provides the identity (`sourceType`, `lifecycle`) that these functions consume. It does NOT pull visual presentation into the entity.
 
@@ -622,19 +630,19 @@ These are NOT part of `buildMapEntity()`. They are derived by separate pure func
 
 ## 7. Risk: Semantic Loss Analysis
 
-| Scenario | Loss | Acceptable? |
-|----------|------|-------------|
-| Mission → IME | `distanceKm` dropped | **Yes** — never rendered on map |
-| Mission → IME | `status` dropped (superseded by `lifecycle`) | **Yes** |
-| Mission → IME | `lifecycleInfo` expanded to isJoinable/isCompletable/etc. | **Partial** — these flags are derivable from `lifecycle` but are not currently in `InitiativeLifecycle`. Consumers that check `isJoinable` must switch to `lifecycle === "forming" \|\| lifecycle === "active"` |
-| Proposal → IME | `teamSize` dropped | **Yes** — only used for spotsLeft on ProposalEntity; IME uses `spotsLeft` undefined for proposals |
-| Proposal → IME | `summary` → `summary` preserved | **None** |
-| Proposal → IME | `images` dropped | **Yes** — map doesn't render images |
-| Proposal → IME | `why` dropped | **Yes** — map doesn't render author voice |
-| Initiative → IME | `sourceId` → `id` | **None** — rename only |
-| Initiative → IME | `location?.locationLabel` dropped | **Yes** — not used by any map surface |
-| All → IME | `isJoinable` flag lost | **Low** — derives from `lifecycle === "forming" \|\| lifecycle === "active"` |
-| All → IME | `isVisible` flag lost | **None** — `lifecycle === "archived"` is the only hidden state, already present |
+| Scenario         | Loss                                                      | Acceptable?                                                                                                                                                                                                     |
+| ---------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mission → IME    | `distanceKm` dropped                                      | **Yes** — never rendered on map                                                                                                                                                                                 |
+| Mission → IME    | `status` dropped (superseded by `lifecycle`)              | **Yes**                                                                                                                                                                                                         |
+| Mission → IME    | `lifecycleInfo` expanded to isJoinable/isCompletable/etc. | **Partial** — these flags are derivable from `lifecycle` but are not currently in `InitiativeLifecycle`. Consumers that check `isJoinable` must switch to `lifecycle === "forming" \|\| lifecycle === "active"` |
+| Proposal → IME   | `teamSize` dropped                                        | **Yes** — only used for spotsLeft on ProposalEntity; IME uses `spotsLeft` undefined for proposals                                                                                                               |
+| Proposal → IME   | `summary` → `summary` preserved                           | **None**                                                                                                                                                                                                        |
+| Proposal → IME   | `images` dropped                                          | **Yes** — map doesn't render images                                                                                                                                                                             |
+| Proposal → IME   | `why` dropped                                             | **Yes** — map doesn't render author voice                                                                                                                                                                       |
+| Initiative → IME | `sourceId` → `id`                                         | **None** — rename only                                                                                                                                                                                          |
+| Initiative → IME | `location?.locationLabel` dropped                         | **Yes** — not used by any map surface                                                                                                                                                                           |
+| All → IME        | `isJoinable` flag lost                                    | **Low** — derives from `lifecycle === "forming" \|\| lifecycle === "active"`                                                                                                                                    |
+| All → IME        | `isVisible` flag lost                                     | **None** — `lifecycle === "archived"` is the only hidden state, already present                                                                                                                                 |
 
 ### Maximum semantic loss: **Low**
 
@@ -646,7 +654,7 @@ The `isJoinable`/`isCompletable` lifecycle flags are the only derivable informat
 // Before (CivicEntity)
 if (mission.lifecycleInfo.isJoinable) { ... }
 
-// After (InitiativeMapEntity)  
+// After (InitiativeMapEntity)
 if (entity.lifecycle === "forming" || entity.lifecycle === "active") { ... }
 ```
 
@@ -654,25 +662,25 @@ if (entity.lifecycle === "forming" || entity.lifecycle === "active") { ... }
 
 ## 8. Required Changes to Adjacent Modules
 
-| Module | Change | Reason |
-|--------|--------|--------|
-| `src/domain/initiative.ts` | Add `lastActivityAt: string` to `Initiative` type | Needed for ambient signal and vitality |
-| `src/services/initiativeResolver.ts` | Populate `lastActivityAt` from `mission.date` / `proposal.createdAt` | Enrichment |
-| `src/types/entity.ts` | No change (CivicEntity stays for PublicMissionCard) | Backward compat |
-| `src/services/entityAdapter.ts` | No change | Legacy adapter stays for non-map surfaces |
+| Module                               | Change                                                               | Reason                                    |
+| ------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------- |
+| `src/domain/initiative.ts`           | Add `lastActivityAt: string` to `Initiative` type                    | Needed for ambient signal and vitality    |
+| `src/services/initiativeResolver.ts` | Populate `lastActivityAt` from `mission.date` / `proposal.createdAt` | Enrichment                                |
+| `src/types/entity.ts`                | No change (CivicEntity stays for PublicMissionCard)                  | Backward compat                           |
+| `src/services/entityAdapter.ts`      | No change                                                            | Legacy adapter stays for non-map surfaces |
 
 ---
 
 ## 9. Implementation Order
 
-| Step | File | Effort |
-|------|------|--------|
-| 1. Add `lastActivityAt` to `Initiative` | `src/domain/initiative.ts` | 2 min |
-| 2. Populate `lastActivityAt` in resolver | `src/services/initiativeResolver.ts` | 5 min |
-| 3. Create `InitiativeMapEntity` type | `src/domain/initiativeMapEntity.ts` | 15 min |
-| 4. Create `MissionCompat` type | Same file | 2 min |
-| 5. Create `buildMapEntity()` with 3-input discriminated union | Same file | 30 min |
-| 6. Create `entityRoute()` helper | Same file | 5 min |
-| 7. Create safe accessors (`getXp`, `getSpotsLeft`, etc.) | Same file | 5 min |
-| 8. Write invariant tests | `src/domain/__tests__/initiativeMapEntity.test.ts` | 30 min |
-| **Total** | | **~1.5h** |
+| Step                                                          | File                                               | Effort    |
+| ------------------------------------------------------------- | -------------------------------------------------- | --------- |
+| 1. Add `lastActivityAt` to `Initiative`                       | `src/domain/initiative.ts`                         | 2 min     |
+| 2. Populate `lastActivityAt` in resolver                      | `src/services/initiativeResolver.ts`               | 5 min     |
+| 3. Create `InitiativeMapEntity` type                          | `src/domain/initiativeMapEntity.ts`                | 15 min    |
+| 4. Create `MissionCompat` type                                | Same file                                          | 2 min     |
+| 5. Create `buildMapEntity()` with 3-input discriminated union | Same file                                          | 30 min    |
+| 6. Create `entityRoute()` helper                              | Same file                                          | 5 min     |
+| 7. Create safe accessors (`getXp`, `getSpotsLeft`, etc.)      | Same file                                          | 5 min     |
+| 8. Write invariant tests                                      | `src/domain/__tests__/initiativeMapEntity.test.ts` | 30 min    |
+| **Total**                                                     |                                                    | **~1.5h** |

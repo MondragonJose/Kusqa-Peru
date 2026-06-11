@@ -1,8 +1,5 @@
 import type { CivicTrace } from "@/domain/civicTrace";
-import {
-  traceToNarrative,
-  type CivicTraceNarrativeCtx,
-} from "@/domain/civicTraceNarrative";
+import { traceToNarrative, type CivicTraceNarrativeCtx } from "@/domain/civicTraceNarrative";
 import { regionChipBg } from "@/domain/regions";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -91,9 +88,7 @@ export function renderFootprintMarkers(options: FootprintMarkerOptions): void {
       iconAnchor: [style.iconSize / 2, style.iconSize / 2],
     });
 
-    const narrative = narrativeCtx
-      ? traceToNarrative(trace, narrativeCtx)
-      : trace.narrative;
+    const narrative = narrativeCtx ? traceToNarrative(trace, narrativeCtx) : trace.narrative;
 
     const popupHtml = `
       <div class="p-3 text-xs w-64 font-sans">

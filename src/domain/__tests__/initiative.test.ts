@@ -81,17 +81,29 @@ describe("computeMissionAnchor", () => {
 
   it('returns "Comienza en N días" when startDate is 20 days out', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("upcoming"), isoDate(20), null);
-    expect(anchor).toEqual({ label: "Comienza en 20 días", kind: "countdown", referenceDate: isoDate(20) });
+    expect(anchor).toEqual({
+      label: "Comienza en 20 días",
+      kind: "countdown",
+      referenceDate: isoDate(20),
+    });
   });
 
   it('returns "Comienza en 30 días" when startDate is 30 days out', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("upcoming"), isoDate(30), null);
-    expect(anchor).toEqual({ label: "Comienza en 30 días", kind: "countdown", referenceDate: isoDate(30) });
+    expect(anchor).toEqual({
+      label: "Comienza en 30 días",
+      kind: "countdown",
+      referenceDate: isoDate(30),
+    });
   });
 
   it('returns "Próximamente" when startDate is >30 days out', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("upcoming"), isoDate(45), null);
-    expect(anchor).toEqual({ label: "Próximamente", kind: "scheduled", referenceDate: isoDate(45) });
+    expect(anchor).toEqual({
+      label: "Próximamente",
+      kind: "scheduled",
+      referenceDate: isoDate(45),
+    });
   });
 
   it('returns indefinite "Próximamente" when startDate is null', () => {
@@ -130,7 +142,11 @@ describe("computeMissionAnchor", () => {
 
   it('returns "Termina en 5 días" when endDate is 5 days out', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("ending_soon"), null, isoDate(5));
-    expect(anchor).toEqual({ label: "Termina en 5 días", kind: "ending", referenceDate: isoDate(5) });
+    expect(anchor).toEqual({
+      label: "Termina en 5 días",
+      kind: "ending",
+      referenceDate: isoDate(5),
+    });
   });
 
   it('returns "Finalizando" when ending_soon and no endDate', () => {
@@ -148,12 +164,20 @@ describe("computeMissionAnchor", () => {
 
   it('returns "Finalizó esta semana" when endDate was 3 days ago', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("completed"), null, isoDate(-3));
-    expect(anchor).toEqual({ label: "Finalizó esta semana", kind: "recent", referenceDate: isoDate(-3) });
+    expect(anchor).toEqual({
+      label: "Finalizó esta semana",
+      kind: "recent",
+      referenceDate: isoDate(-3),
+    });
   });
 
   it('returns "Finalizó hace 2 semanas" when endDate was 10 days ago', () => {
     const anchor = computeMissionAnchor(lifecycleFixture("completed"), null, isoDate(-10));
-    expect(anchor).toEqual({ label: "Finalizó hace 2 semanas", kind: "recent", referenceDate: isoDate(-10) });
+    expect(anchor).toEqual({
+      label: "Finalizó hace 2 semanas",
+      kind: "recent",
+      referenceDate: isoDate(-10),
+    });
   });
 
   it('returns "Completada" when endDate was >14 days ago', () => {
@@ -214,17 +238,41 @@ describe("computeProposalAnchor", () => {
   });
 
   it('returns "Completada" when completedAt is old', () => {
-    const anchor = computeProposalAnchor("active", null, NOW.toISOString(), null, isoDate(-30), 0, 0);
+    const anchor = computeProposalAnchor(
+      "active",
+      null,
+      NOW.toISOString(),
+      null,
+      isoDate(-30),
+      0,
+      0,
+    );
     expect(anchor.label).toBe("Completada");
   });
 
   it('returns "Recién convertida en misión" when convertedAt is recent', () => {
-    const anchor = computeProposalAnchor("active", null, NOW.toISOString(), isoDate(-1), null, 0, 0);
+    const anchor = computeProposalAnchor(
+      "active",
+      null,
+      NOW.toISOString(),
+      isoDate(-1),
+      null,
+      0,
+      0,
+    );
     expect(anchor.label).toBe("Recién convertida en misión");
   });
 
   it('returns "Convertida en misión" when convertedAt is old', () => {
-    const anchor = computeProposalAnchor("active", null, NOW.toISOString(), isoDate(-30), null, 0, 0);
+    const anchor = computeProposalAnchor(
+      "active",
+      null,
+      NOW.toISOString(),
+      isoDate(-30),
+      null,
+      0,
+      0,
+    );
     expect(anchor.label).toBe("Convertida en misión");
   });
 
@@ -234,12 +282,28 @@ describe("computeProposalAnchor", () => {
   });
 
   it('returns "Recién propuesta" when pending with recent proposedDate', () => {
-    const anchor = computeProposalAnchor("pending", isoDate(0), NOW.toISOString(), null, null, 0, 5);
+    const anchor = computeProposalAnchor(
+      "pending",
+      isoDate(0),
+      NOW.toISOString(),
+      null,
+      null,
+      0,
+      5,
+    );
     expect(anchor.label).toBe("Recién propuesta");
   });
 
   it('returns "Buscando personas para empezar" when pending with old proposedDate', () => {
-    const anchor = computeProposalAnchor("pending", isoDate(-30), NOW.toISOString(), null, null, 0, 5);
+    const anchor = computeProposalAnchor(
+      "pending",
+      isoDate(-30),
+      NOW.toISOString(),
+      null,
+      null,
+      0,
+      5,
+    );
     expect(anchor.label).toBe("Buscando personas para empezar");
   });
 
@@ -278,22 +342,47 @@ describe("isDormant", () => {
   });
 
   it("returns false for archived initiatives", () => {
-    expect(isDormant({ lifecycle: "archived", temporalAnchor: { label: "", kind: "completed", referenceDate: null } })).toBe(false);
+    expect(
+      isDormant({
+        lifecycle: "archived",
+        temporalAnchor: { label: "", kind: "completed", referenceDate: null },
+      }),
+    ).toBe(false);
   });
 
   it("returns false for completed initiatives", () => {
-    expect(isDormant({ lifecycle: "completed", temporalAnchor: { label: "", kind: "completed", referenceDate: null } })).toBe(false);
+    expect(
+      isDormant({
+        lifecycle: "completed",
+        temporalAnchor: { label: "", kind: "completed", referenceDate: null },
+      }),
+    ).toBe(false);
   });
 
   it("returns false when referenceDate is null", () => {
-    expect(isDormant({ lifecycle: "forming", temporalAnchor: { label: "", kind: "indefinite", referenceDate: null } })).toBe(false);
+    expect(
+      isDormant({
+        lifecycle: "forming",
+        temporalAnchor: { label: "", kind: "indefinite", referenceDate: null },
+      }),
+    ).toBe(false);
   });
 
   it("returns false when referenceDate is recent (<60 days)", () => {
-    expect(isDormant({ lifecycle: "active", temporalAnchor: { label: "", kind: "active", referenceDate: isoDate(-30) } })).toBe(false);
+    expect(
+      isDormant({
+        lifecycle: "active",
+        temporalAnchor: { label: "", kind: "active", referenceDate: isoDate(-30) },
+      }),
+    ).toBe(false);
   });
 
   it("returns true when referenceDate is >60 days ago", () => {
-    expect(isDormant({ lifecycle: "active", temporalAnchor: { label: "", kind: "active", referenceDate: isoDate(-61) } })).toBe(true);
+    expect(
+      isDormant({
+        lifecycle: "active",
+        temporalAnchor: { label: "", kind: "active", referenceDate: isoDate(-61) },
+      }),
+    ).toBe(true);
   });
 });

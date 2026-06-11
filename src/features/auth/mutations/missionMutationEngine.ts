@@ -32,6 +32,7 @@ import {
   proposalKeys,
   proposalSupportKeys,
   proposalCoalitionKeys,
+  proposalCommentKeys,
 } from "@/lib/queryKeys";
 import type {
   Mission,
@@ -49,6 +50,8 @@ import type {
 export type WriteContext = {
   userId?: string;
   missionIds?: readonly string[];
+  /** Phase 5: proposal ids for unified initiative writes. */
+  proposalIds?: readonly string[];
 };
 
 export type InvalidateRequest = {
@@ -133,8 +136,8 @@ function keyHash(key: QueryKey): string {
 }
 
 export function mutationSignature(kind: MissionMutationKind, ctx: WriteContext): string {
-  const missionId = ctx.missionIds?.[0] ?? "_catalog_";
-  return `${kind}:${ctx.userId ?? "_anon_"}:${missionId}`;
+  const entityId = ctx.missionIds?.[0] ?? ctx.proposalIds?.[0] ?? "_catalog_";
+  return `${kind}:${ctx.userId ?? "_anon_"}:${entityId}`;
 }
 
 function missionLaneKey(ctx: WriteContext): string | null {
@@ -402,6 +405,54 @@ function rollbackKeys(kind: MissionMutationKind, ctx: WriteContext): QueryKey[] 
             evidenceKeys.completionState(ctx.userId, ctx.missionIds?.[0] ?? ""),
           ]
         : [];
+    case "supportInitiative": {
+      const keys: QueryKey[] = [];
+      const pid = ctx.proposalIds?.[0];
+      if (pid) {
+        keys.push(proposalSupportKeys.count(pid));
+        keys.push(proposalSupportKeys.byProposal(pid));
+        keys.push(proposalSupportKeys.supportersPreview(pid, 10));
+        keys.push(proposalKeys.detail(pid));
+      }
+      if (ctx.userId) keys.push(proposalSupportKeys.byUser(ctx.userId));
+      return keys;
+    }
+    case "joinInitiative":
+      return ctx.userId ? [userMissionKeys.all(ctx.userId)] : [];
+    case "commentInitiative": {
+      const ckeys: QueryKey[] = [];
+      const pid = ctx.proposalIds?.[0];
+      if (pid) {
+        ckeys.push(proposalCommentKeys.listAll(pid));
+        ckeys.push(proposalCommentKeys.count(pid));
+      }
+      return ckeys;
+    }
+    case "completeInitiative":
+      return ctx.userId
+        ? [
+            userMissionKeys.all(ctx.userId),
+            userMissionKeys.completed(ctx.userId),
+            userProgressKeys.territory("live"),
+            userKeys.current,
+            evidenceKeys.byMission(ctx.missionIds?.[0] ?? ""),
+            evidenceKeys.byUser(ctx.userId),
+            evidenceKeys.completionState(ctx.userId, ctx.missionIds?.[0] ?? ""),
+          ]
+        : [];
+    case "archiveInitiative": {
+      const akeys: QueryKey[] = [proposalKeys.all()];
+      const pid = ctx.proposalIds?.[0];
+      if (pid) akeys.push(proposalKeys.detail(pid));
+      if (ctx.userId) akeys.push(proposalKeys.userProposals(ctx.userId));
+      return akeys;
+    }
+    case "convertInitiative": {
+      const cvkeys: QueryKey[] = [proposalKeys.all()];
+      const pid = ctx.proposalIds?.[0];
+      if (pid) cvkeys.push(proposalKeys.detail(pid));
+      return cvkeys;
+    }
   }
 }
 

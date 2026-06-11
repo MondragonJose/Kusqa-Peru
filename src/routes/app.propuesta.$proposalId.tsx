@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useProposal } from "@/features/proposals";
 import { useSupportProposal } from "@/features/proposals/hooks/useSupportProposal";
@@ -9,6 +10,8 @@ import { useCurrentUserId } from "@/features/auth";
 import { canArchiveProposal } from "@/domain/proposalGovernance";
 import { moderationRepository } from "@/services/moderationRepository";
 import { proposalRepository } from "@/services/proposalRepository";
+import { isUnifiedWritesEnabled } from "@/features/initiative/mutations/initiativeMutationTypes";
+import { runMissionWrite } from "@/features/auth/mutations/missionMutationEngine";
 import { ProposalHero } from "@/features/proposals/components/ProposalHero";
 import { ProposalStickyCTA } from "@/features/proposals/components/ProposalStickyCTA";
 import { ProposalImagesCarousel } from "@/features/proposals/components/ProposalImagesCarousel";
@@ -31,6 +34,7 @@ export const Route = createFileRoute("/app/propuesta/$proposalId")({
 });
 
 function ProposalDetail() {
+  const queryClient = useQueryClient();
   const { proposalId } = useParams({ from: "/app/propuesta/$proposalId" });
   const { data: proposal, isLoading, isError, error } = useProposal(proposalId);
   const currentUserId = useCurrentUserId();
@@ -42,14 +46,30 @@ function ProposalDetail() {
     if (!proposal || archiving) return;
     setArchiving(true);
     try {
-      const result = await proposalRepository.updateProposal(proposal.id, { status: "rejected" });
-      if (result.status === "error") {
-        toast.error("No se pudo archivar", { description: result.error });
+      if (isUnifiedWritesEnabled()) {
+        await runMissionWrite(queryClient, {
+          kind: "archiveInitiative",
+          writeContext: { proposalIds: [proposal.id] },
+          steps: [
+            async () => {
+              const result = await proposalRepository.updateProposal(proposal.id, {
+                status: "rejected",
+              });
+              if (result.status === "error") throw new Error(result.error);
+            },
+          ],
+          invalidate: { proposalIds: [proposal.id] },
+        });
       } else {
-        toast.success("Propuesta archivada");
+        const result = await proposalRepository.updateProposal(proposal.id, {
+          status: "rejected",
+        });
+        if (result.status === "error") throw new Error(result.error);
       }
-    } catch {
-      toast.error("Error al archivar");
+      toast.success("Propuesta archivada");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error al archivar";
+      toast.error(msg);
     } finally {
       setArchiving(false);
     }

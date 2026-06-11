@@ -1,9 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { initiativeCommentKeys } from "@/lib/queryKeys";
 import { userRepository } from "@/services/userRepository";
-import {
-  initiativeCommentRepository,
-} from "@/services/proposalCommentRepository";
+import { initiativeCommentRepository } from "@/services/proposalCommentRepository";
 import type {
   CreateInitiativeCommentDTO,
   EditCommentDTO,
@@ -37,10 +35,7 @@ export function useInitiativeComments(
   });
 }
 
-export function useInitiativeCommentCount(
-  initiativeId: string,
-  initiativeType: InitiativeType,
-) {
+export function useInitiativeCommentCount(initiativeId: string, initiativeType: InitiativeType) {
   return useQuery({
     queryKey: initiativeCommentKeys.count(initiativeId, initiativeType),
     queryFn: () => initiativeCommentRepository.countByInitiative(initiativeId, initiativeType),
@@ -55,9 +50,7 @@ export function useCreateInitiativeComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      dto: CreateInitiativeCommentDTO,
-    ): Promise<ProposalResult<InitiativeComment>> => {
+    mutationFn: (dto: CreateInitiativeCommentDTO): Promise<ProposalResult<InitiativeComment>> => {
       return initiativeCommentRepository.createForInitiative(dto);
     },
     onSuccess: (result, dto) => {
@@ -77,9 +70,7 @@ export function useEditInitiativeComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      dto: EditCommentDTO,
-    ): Promise<ProposalResult<InitiativeComment>> => {
+    mutationFn: async (dto: EditCommentDTO): Promise<ProposalResult<InitiativeComment>> => {
       const currentUserId = await userRepository.getAuthenticatedUserId();
       if (!currentUserId) {
         return { status: "error", error: "Necesitas iniciar sesión para editar." };

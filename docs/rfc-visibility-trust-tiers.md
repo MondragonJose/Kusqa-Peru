@@ -3,7 +3,7 @@
 **Status:** Draft  
 **Author:** Architecture  
 **Date:** 2026-06-10  
-**Audience:** KUSQA engineering team  
+**Audience:** KUSQA engineering team
 
 ---
 
@@ -20,14 +20,14 @@ This creates two risks:
 
 ## 2. Principles
 
-| Principle | Implication |
-|-----------|-------------|
-| Community-first | Trust is earned through participation, not identity verification |
-| Youth-native | No ID upload, no age gates, no bureaucratic hurdles |
-| Transparent by default | All tiers add visibility — nothing is hidden from lower tiers |
-| Safe for minors | No private DMs, no real-name exposure, report always available |
+| Principle                | Implication                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Community-first          | Trust is earned through participation, not identity verification              |
+| Youth-native             | No ID upload, no age gates, no bureaucratic hurdles                           |
+| Transparent by default   | All tiers add visibility — nothing is hidden from lower tiers                 |
+| Safe for minors          | No private DMs, no real-name exposure, report always available                |
 | No private DM dependency | All coordination happens on-initiative (comments, timeline, shared resources) |
-| Calm coordination | Progression is invitation-based, not gamified |
+| Calm coordination        | Progression is invitation-based, not gamified                                 |
 
 ---
 
@@ -50,26 +50,26 @@ ORGANIZER
 
 ### 3.2 Per-tier visibility
 
-| Signal | PUBLIC | PARTICIPANT | COLLABORATOR | ORGANIZER |
-|--------|--------|-------------|--------------|-----------|
-| Title, description, category | ✅ | ✅ | ✅ | ✅ |
-| Region, district | ✅ | ✅ | ✅ | ✅ |
-| Emoji, cover | ✅ | ✅ | ✅ | ✅ |
-| Temporal anchor label | ✅ | ✅ | ✅ | ✅ |
-| Lifecycle badge | ✅ | ✅ | ✅ | ✅ |
-| Participant count | ✅ | ✅ | ✅ | ✅ |
-| **Organizer pseudonym** | ✅ | ✅ | ✅ | ✅ |
-| **Organizer real name** | ❌ | ❌ | ❌ | ✅ |
-| Participant list (pseudonyms) | ❌ | ✅ | ✅ | ✅ |
-| Activity timeline | ❌ | ✅ | ✅ | ✅ |
-| **All comments** | ✅* | ✅ | ✅ | ✅ |
-| **Coordination thread** | ❌ | ❌ | ✅ | ✅ |
-| Support count + avatars | ✅ | ✅ | ✅ | ✅ |
-| Collaboration resources | ❌ | ❌ | ✅ | ✅ |
-| Organizer contact handle | ❌ | ❌ | ✅ | ✅ |
-| Moderation panel | ❌ | ❌ | ❌ | ✅ |
-| Edit controls | ❌ | ❌ | ❌ | ✅ |
-| Role management | ❌ | ❌ | ❌ | ✅ |
+| Signal                        | PUBLIC | PARTICIPANT | COLLABORATOR | ORGANIZER |
+| ----------------------------- | ------ | ----------- | ------------ | --------- |
+| Title, description, category  | ✅     | ✅          | ✅           | ✅        |
+| Region, district              | ✅     | ✅          | ✅           | ✅        |
+| Emoji, cover                  | ✅     | ✅          | ✅           | ✅        |
+| Temporal anchor label         | ✅     | ✅          | ✅           | ✅        |
+| Lifecycle badge               | ✅     | ✅          | ✅           | ✅        |
+| Participant count             | ✅     | ✅          | ✅           | ✅        |
+| **Organizer pseudonym**       | ✅     | ✅          | ✅           | ✅        |
+| **Organizer real name**       | ❌     | ❌          | ❌           | ✅        |
+| Participant list (pseudonyms) | ❌     | ✅          | ✅           | ✅        |
+| Activity timeline             | ❌     | ✅          | ✅           | ✅        |
+| **All comments**              | ✅\*   | ✅          | ✅           | ✅        |
+| **Coordination thread**       | ❌     | ❌          | ✅           | ✅        |
+| Support count + avatars       | ✅     | ✅          | ✅           | ✅        |
+| Collaboration resources       | ❌     | ❌          | ✅           | ✅        |
+| Organizer contact handle      | ❌     | ❌          | ✅           | ✅        |
+| Moderation panel              | ❌     | ❌          | ❌           | ✅        |
+| Edit controls                 | ❌     | ❌          | ❌           | ✅        |
+| Role management               | ❌     | ❌          | ❌           | ✅        |
 
 \* Comments visible to PUBLIC are subject to a **safety delay** (see §5).
 
@@ -77,16 +77,16 @@ ORGANIZER
 
 Maps to `InitiativeAction` from `initiativeActions.ts`:
 
-| Action | PUBLIC | PARTICIPANT | COLLABORATOR | ORGANIZER |
-|--------|--------|-------------|--------------|-----------|
-| `support` | ✅ (forming) | — | — | — |
-| `join` | ✅ (active) | — | — | — |
-| `comment` | ❌ | ✅ | ✅ | ✅ |
-| `share` | ✅ | ✅ | ✅ | ✅ |
-| `edit` | ❌ | ❌ | ❌ | ✅ |
-| `report` | ✅ | ✅ | ✅ | ✅ |
-| Invite collaborator | ❌ | ❌ | ❌ | ✅ |
-| Remove content | ❌ | ❌ | ❌ | ✅ |
+| Action              | PUBLIC       | PARTICIPANT | COLLABORATOR | ORGANIZER |
+| ------------------- | ------------ | ----------- | ------------ | --------- |
+| `support`           | ✅ (forming) | —           | —            | —         |
+| `join`              | ✅ (active)  | —           | —            | —         |
+| `comment`           | ❌           | ✅          | ✅           | ✅        |
+| `share`             | ✅           | ✅          | ✅           | ✅        |
+| `edit`              | ❌           | ❌          | ❌           | ✅        |
+| `report`            | ✅           | ✅          | ✅           | ✅        |
+| Invite collaborator | ❌           | ❌          | ❌           | ✅        |
+| Remove content      | ❌           | ❌          | ❌           | ✅        |
 
 ---
 
@@ -109,11 +109,11 @@ visitor ──1-click──▶ PARTICIPANT
 
 ### 4.2 Triggers
 
-| Transition | Trigger | Condition | Reversible? |
-|-----------|---------|-----------|-------------|
-| PUBLIC → PARTICIPANT | Clicks "Apoyar" or "Unirme" | Must be authenticated | Yes (unsupport/leave) |
-| PARTICIPANT → COLLABORATOR | Organizer sends invitation | Participant must have ≥1 comment on the initiative | Yes (organizer revokes) |
-| * → ORGANIZER | Creates a new proposal or mission | Must be authenticated; no abuse history | N/A (own creation) |
+| Transition                 | Trigger                           | Condition                                          | Reversible?             |
+| -------------------------- | --------------------------------- | -------------------------------------------------- | ----------------------- |
+| PUBLIC → PARTICIPANT       | Clicks "Apoyar" or "Unirme"       | Must be authenticated                              | Yes (unsupport/leave)   |
+| PARTICIPANT → COLLABORATOR | Organizer sends invitation        | Participant must have ≥1 comment on the initiative | Yes (organizer revokes) |
+| \* → ORGANIZER             | Creates a new proposal or mission | Must be authenticated; no abuse history            | N/A (own creation)      |
 
 ### 4.3 Design rationale
 
@@ -157,13 +157,13 @@ visitor ──1-click──▶ PARTICIPANT
 
 How visibility and actions change at each lifecycle stage:
 
-| Lifecycle | PUBLIC | PARTICIPANT | COLLABORATOR | ORGANIZER |
-|-----------|--------|-------------|--------------|-----------|
-| **forming** | See, support, share, report | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
-| **active** | See, join*, share, report | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
-| **ending** | See, join (if spots), share, report | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
-| **completed** | See, share, report | Comment, share | Comment, share | Edit outcome, share |
-| **archived** | See, share, report | — | — | — |
+| Lifecycle     | PUBLIC                              | PARTICIPANT    | COLLABORATOR               | ORGANIZER                    |
+| ------------- | ----------------------------------- | -------------- | -------------------------- | ---------------------------- |
+| **forming**   | See, support, share, report         | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
+| **active**    | See, join\*, share, report          | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
+| **ending**    | See, join (if spots), share, report | Comment, share | Comment, share, coordinate | Edit, manage, comment, share |
+| **completed** | See, share, report                  | Comment, share | Comment, share             | Edit outcome, share          |
+| **archived**  | See, share, report                  | —              | —                          | —                            |
 
 \* Join available only if `max_participants > current_count`. Spots info is visible to PUBLIC.
 
@@ -310,23 +310,23 @@ create policy "public_can_read_safe_comments"
 
 ## 10. Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Organizer abuses role (removes participants unfairly) | Low | Medium | Platform steward escalation via `moderation_reports` |
-| Participants feel excluded from coordination | Medium | Low | Organizer can invite freely; no auto-promotion keeps quality high |
-| Safety delay frustrates legitimate commenters | Low | Low | Delay is 15 min, only for PUBLIC visibility; PARTICIPANT+ sees instantly |
-| Block creates coordination deadlock | Low | Medium | Block only prevents commenting on same initiative; user can leave and join different ones |
+| Risk                                                  | Likelihood | Impact | Mitigation                                                                                |
+| ----------------------------------------------------- | ---------- | ------ | ----------------------------------------------------------------------------------------- |
+| Organizer abuses role (removes participants unfairly) | Low        | Medium | Platform steward escalation via `moderation_reports`                                      |
+| Participants feel excluded from coordination          | Medium     | Low    | Organizer can invite freely; no auto-promotion keeps quality high                         |
+| Safety delay frustrates legitimate commenters         | Low        | Low    | Delay is 15 min, only for PUBLIC visibility; PARTICIPANT+ sees instantly                  |
+| Block creates coordination deadlock                   | Low        | Medium | Block only prevents commenting on same initiative; user can leave and join different ones |
 
 ---
 
 ## 11. Tradeoffs
 
-| Decision | For | Against |
-|----------|-----|---------|
-| Invitation-based collaboration | High trust, no spam | Slower growth of collaborator pool |
-| No auto-promotion | No gamification pressure | Organizer may forget to promote deserving participants |
-| Safety delay on PUBLIC comments | Protects minors | Delays legitimate public discourse |
-| Pseudonyms only below ORGANIZER | Privacy for minors | Reduced accountability |
+| Decision                        | For                      | Against                                                |
+| ------------------------------- | ------------------------ | ------------------------------------------------------ |
+| Invitation-based collaboration  | High trust, no spam      | Slower growth of collaborator pool                     |
+| No auto-promotion               | No gamification pressure | Organizer may forget to promote deserving participants |
+| Safety delay on PUBLIC comments | Protects minors          | Delays legitimate public discourse                     |
+| Pseudonyms only below ORGANIZER | Privacy for minors       | Reduced accountability                                 |
 
 ---
 
@@ -356,11 +356,11 @@ Week 3: Moderation (Phase 3)
 
 ## 13. Success Criteria
 
-| Criterion | Measurement |
-|-----------|-------------|
-| A minor can participate without exposing personal info | No real names leaked outside ORGANIZER tier |
-| Coordination happens without DMs | All coordination resources are on-initiative |
-| Trust progression is clear | Users can self-assess their tier from UI |
-| Abuse is reportable from any tier | Report button available in all surfaces |
-| Organizers can manage their space | Remove participant, promote to collaborator, dismiss collaborator |
-| Zero-downtime deployment | Each phase is additive, no migration requires backfill |
+| Criterion                                              | Measurement                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------------- |
+| A minor can participate without exposing personal info | No real names leaked outside ORGANIZER tier                       |
+| Coordination happens without DMs                       | All coordination resources are on-initiative                      |
+| Trust progression is clear                             | Users can self-assess their tier from UI                          |
+| Abuse is reportable from any tier                      | Report button available in all surfaces                           |
+| Organizers can manage their space                      | Remove participant, promote to collaborator, dismiss collaborator |
+| Zero-downtime deployment                               | Each phase is additive, no migration requires backfill            |

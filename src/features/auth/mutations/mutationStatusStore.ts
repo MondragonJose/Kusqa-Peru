@@ -7,7 +7,14 @@ export type MissionMutationKind =
   | "joinMission"
   | "completeMission"
   | "submitEvidence"
-  | "verifyEvidence";
+  | "verifyEvidence"
+  // Initiative unified writes (Phase 5)
+  | "supportInitiative"
+  | "joinInitiative"
+  | "commentInitiative"
+  | "completeInitiative"
+  | "archiveInitiative"
+  | "convertInitiative";
 
 export type MutationPhase = "idle" | "pending" | "success" | "error";
 
@@ -34,6 +41,12 @@ const KINDS: MissionMutationKind[] = [
   "completeMission",
   "submitEvidence",
   "verifyEvidence",
+  "supportInitiative",
+  "joinInitiative",
+  "commentInitiative",
+  "completeInitiative",
+  "archiveInitiative",
+  "convertInitiative",
 ];
 
 function createInitialKindState(): MutationKindState {
@@ -47,6 +60,12 @@ function createInitialByKind(): Record<MissionMutationKind, MutationKindState> {
     completeMission: createInitialKindState(),
     submitEvidence: createInitialKindState(),
     verifyEvidence: createInitialKindState(),
+    supportInitiative: createInitialKindState(),
+    joinInitiative: createInitialKindState(),
+    commentInitiative: createInitialKindState(),
+    completeInitiative: createInitialKindState(),
+    archiveInitiative: createInitialKindState(),
+    convertInitiative: createInitialKindState(),
   };
 }
 

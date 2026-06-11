@@ -113,8 +113,8 @@ curl -s -o /dev/null -w "%{http_code}" https://kusqa.app/api/health 2>/dev/null 
 
 ## Emergency Contacts
 
-| Service | Contact |
-|---------|---------|
-| Vercel | Dashboard → Support |
+| Service  | Contact                                  |
+| -------- | ---------------------------------------- |
+| Vercel   | Dashboard → Support                      |
 | Supabase | Dashboard → Support, status.supabase.com |
-| GitHub | github.com/contact |
+| GitHub   | github.com/contact                       |

@@ -6,22 +6,23 @@
 
 ### Tabla Completa: Cómo cada estado es visto por capa
 
-| Estado Real | Duración | useCurrentUser | React Query | Consumidor Típico | Riesgo |
-|---|---|---|---|---|---|
-| **App Boot (AuthProvider loading)** | 50-300ms | null | loading | "No autenticado" → redirige | 🔴 |
-| **Session restaurado (localStorage OK)** | ~100ms | null→User | loading→success | Transición segura | ✅ |
-| **Red OK, user query OK** | ~200ms | null→User | loading→success | Renderiza normal | ✅ |
-| **Red timeout (5s)** | 5000ms | null | error | "Permanente no auth" | 🔴 |
-| **Autenticado normal** | Forever | User | success | Renderiza app | ✅ |
-| **Logout triggers** | ~100ms | User→null | success | Redirige a / | ✅ |
-| **Token expira** | ~50ms | User | [re-query] | Podría ser null temporalmente | 🟡 |
-| **User profile update** | ~500ms | null→User | loading→success | Flicker posible | 🟡 |
+| Estado Real                              | Duración | useCurrentUser | React Query     | Consumidor Típico             | Riesgo |
+| ---------------------------------------- | -------- | -------------- | --------------- | ----------------------------- | ------ |
+| **App Boot (AuthProvider loading)**      | 50-300ms | null           | loading         | "No autenticado" → redirige   | 🔴     |
+| **Session restaurado (localStorage OK)** | ~100ms   | null→User      | loading→success | Transición segura             | ✅     |
+| **Red OK, user query OK**                | ~200ms   | null→User      | loading→success | Renderiza normal              | ✅     |
+| **Red timeout (5s)**                     | 5000ms   | null           | error           | "Permanente no auth"          | 🔴     |
+| **Autenticado normal**                   | Forever  | User           | success         | Renderiza app                 | ✅     |
+| **Logout triggers**                      | ~100ms   | User→null      | success         | Redirige a /                  | ✅     |
+| **Token expira**                         | ~50ms    | User           | [re-query]      | Podría ser null temporalmente | 🟡     |
+| **User profile update**                  | ~500ms   | null→User      | loading→success | Flicker posible               | 🟡     |
 
 ---
 
 ## Parte 2: Consumidores Mapeados Completamente
 
 ### AppShell.tsx (LÍNEAS 25-36)
+
 ```typescript
 const currentUser = useCurrentUser();
 
@@ -36,12 +37,14 @@ if (!currentUser) {
 ```
 
 **Análisis:**
+
 - ✓ Tiene fallback
 - ✗ Fallback no diferencia: ¿loading? ¿error? ¿no auth?
 - ✗ Si error permanente → usuario atrapado en spinner forever
 - **Riesgo:** MEDIO — Fallback existe pero UX pobre en error
 
 **Escenarios:**
+
 1. Red falla → null → spinner (correcto)
 2. Red falla ↔ 5s → retry: false → null forever → spinner forever (incorrecto)
 3. User no autenticado → null → spinner (debería ser redirigir a / en AppProvider)
@@ -49,6 +52,7 @@ if (!currentUser) {
 ---
 
 ### app.perfil.tsx (LÍNEA 241)
+
 ```typescript
 <p className="text-sm text-muted-foreground">
   {user.peopleImpacted.toLocaleString()}
@@ -56,6 +60,7 @@ if (!currentUser) {
 ```
 
 **Análisis:**
+
 - ✗ Acceso directo a `user` sin null check
 - ✗ Acceso directo a `user.peopleImpacted` — si undefined → crash
 - ✗ No hay tipo guard
@@ -63,6 +68,7 @@ if (!currentUser) {
 **Riesgo:** 🔴 CRÍTICO — Garantía de crash si `peopleImpacted` undefined
 
 **Escenarios:**
+
 1. Profile query retorna `{ ...user, peopleImpacted: undefined }` → crash
 2. Profile query en progreso → `user` null → crash
 3. Error en profile query → `user` null → crash
@@ -72,6 +78,7 @@ if (!currentUser) {
 ### app.index.tsx (LÍNEAS 290-410)
 
 #### ComponenteA: Hero section
+
 ```typescript
 const { progressPct } = useUserXpProgress();  // Uses currentUser internally
 return (
@@ -80,19 +87,24 @@ return (
   </div>
 );
 ```
+
 **Riesgo:** BAJO — Hook maneja internamente
 
 #### ComponenteB: Actividad en territorio
+
 ```typescript
 {userActivity.map(activity => (...))}
 ```
+
 **Riesgo:** LOW — Data-driven, no acceso a user
 
 #### ComponenteC: Cerca de ti
+
 ```typescript
 const nearbyMissions = useMissionsNearUser(currentUser);
 return <MissionCards missions={nearbyMissions} />;
 ```
+
 **Riesgo:** MEDIO — Si `currentUser=null`, hook podría retornar [] o error
 
 ---
@@ -108,11 +120,12 @@ useEffect(() => {
 }, [user]);
 
 const handleSubmit = (form) => {
-  mutate({ userId: user!.id, ...form });  // ← Non-null assertion dangerous
+  mutate({ userId: user!.id, ...form }); // ← Non-null assertion dangerous
 };
 ```
 
 **Análisis:**
+
 - ✓ Guard en useEffect
 - ✗ Non-null assertion (`user!.id`) — si user = null en submit → crash
 - ✗ State race: user es null durante transición
@@ -126,7 +139,7 @@ const handleSubmit = (form) => {
 ```typescript
 export function NotificationsPage() {
   const user = useCurrentUser();
-  
+
   return (
     <NotificationsList user={user} />
   );
@@ -138,6 +151,7 @@ function NotificationsList({ user }: { user: User | null }) {
 ```
 
 **Análisis:**
+
 - ✓ Prop passed
 - ✗ Componente hijo no maneja null explícitamente
 - ✗ Podría UI flicker durante transición
@@ -158,6 +172,7 @@ useCallback(() => {
 ```
 
 **Análisis:**
+
 - ✓ Guard presente
 - ✓ Callback defensive
 - ✓ Safe
@@ -173,12 +188,13 @@ const user = useCurrentUser();
 const missionId = useParams().missionId;
 
 useEffect(() => {
-  if (!user) return;  // Guard
+  if (!user) return; // Guard
   prefetchUserMissionState(missionId, user.id);
 }, [user, missionId]);
 ```
 
 **Análisis:**
+
 - ✓ Guard
 - ✓ Dependencies correcto
 
@@ -200,6 +216,7 @@ return (
 ```
 
 **Análisis:**
+
 - ✓ Optional chaining
 - ✓ Defensive
 
@@ -210,11 +227,12 @@ return (
 ## Parte 3: useCurrentUser() Internals
 
 ### Código Actual
+
 ```typescript
 export function useCurrentUser(): User | null {
   const { data: user } = useQuery({
     ...userCurrentQueryOptions(),
-    retry: false,  // ← PROBLEMA: Sin retry
+    retry: false, // ← PROBLEMA: Sin retry
   });
 
   return user ?? null;
@@ -293,42 +311,50 @@ T=200ms: AuthProvider loading=false, state="authenticated"
 
 ## Parte 5: Matriz de Riesgos por Consumidor
 
-| Consumidor | Riesgo | Causa | Mitigación |
-|---|---|---|---|
-| AppShell | MEDIO | No differencia error vs loading | Error boundary |
-| app.perfil.tsx (L241) | 🔴 CRÍTICO | Acceso sin guard | Type guard + optional chaining |
-| app.index.tsx | BAJO | Guards defensivos presentes | ✅ OK |
-| app.crear.tsx | MEDIO | Non-null assertion en submit | Null check antes |
-| app.notificaciones.tsx | MEDIO | No maneja null explícito | Componente defensivo |
-| app.mapa.tsx | BAJO | Guard + callback | ✅ OK |
-| app.mision.$misionId.tsx | BAJO | Guard presente | ✅ OK |
-| app.progreso.tsx | BAJO | Optional chaining | ✅ OK |
-| useCurrentUser hook | 🔴 CRÍTICO | No retry → error permanente | Retry: 1 mínimo |
+| Consumidor               | Riesgo     | Causa                           | Mitigación                     |
+| ------------------------ | ---------- | ------------------------------- | ------------------------------ |
+| AppShell                 | MEDIO      | No differencia error vs loading | Error boundary                 |
+| app.perfil.tsx (L241)    | 🔴 CRÍTICO | Acceso sin guard                | Type guard + optional chaining |
+| app.index.tsx            | BAJO       | Guards defensivos presentes     | ✅ OK                          |
+| app.crear.tsx            | MEDIO      | Non-null assertion en submit    | Null check antes               |
+| app.notificaciones.tsx   | MEDIO      | No maneja null explícito        | Componente defensivo           |
+| app.mapa.tsx             | BAJO       | Guard + callback                | ✅ OK                          |
+| app.mision.$misionId.tsx | BAJO       | Guard presente                  | ✅ OK                          |
+| app.progreso.tsx         | BAJO       | Optional chaining               | ✅ OK                          |
+| useCurrentUser hook      | 🔴 CRÍTICO | No retry → error permanente     | Retry: 1 mínimo                |
 
 ---
 
 ## Parte 6: Recomendaciones Inmediatas
 
 ### Parche 1: Agregar retry
+
 ```typescript
-retry: 1 as const  // En lugar de retry: false
+retry: 1 as const; // En lugar de retry: false
 ```
+
 **Impacto:** Tolera 1 fallo, intenta de nuevo  
 **Tiempo:** 5 minutos
 
 ### Parche 2: Error boundary en AppShell
+
 ```typescript
 <ErrorBoundary fallback={<ErrorState />}>
   <AppShell>...</AppShell>
 </ErrorBoundary>
 ```
+
 **Impacto:** Catch crashés no capturados  
 **Tiempo:** 15 minutos
 
 ### Parche 3: Fix app.perfil.tsx L241
+
 ```typescript
-{user?.peopleImpacted?.toLocaleString() ?? 'N/A'}
+{
+  user?.peopleImpacted?.toLocaleString() ?? "N/A";
+}
 ```
+
 **Impacto:** Elimina crash garantizado  
 **Tiempo:** 5 minutos
 

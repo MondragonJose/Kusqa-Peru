@@ -41,7 +41,11 @@ async function loadRoute() {
     useCurrentUser: () => ({ id: "u1", name: "Ana", district: "Cusco" }),
   }));
   vi.doMock("@/features/proposals/hooks/useSupportProposal", () => ({
-    useSupportProposal: () => ({ mutate: vi.fn(), isPending: false }),
+    useSupportProposal: () => ({
+      supportProposal: vi.fn(),
+      isSupported: () => true,
+      isSupporting: false,
+    }),
     useSupportCount: () => ({ data: 0 }),
   }));
   const mod = await import("../app.propuesta.$proposalId");
@@ -66,7 +70,11 @@ describe("app.propuesta.$proposalId", () => {
       useCurrentUser: () => ({ id: "u1", name: "Ana", district: "Cusco" }),
     }));
     vi.doMock("@/features/proposals/hooks/useSupportProposal", () => ({
-      useSupportProposal: () => ({ mutate: vi.fn(), isPending: false }),
+      useSupportProposal: () => ({
+        supportProposal: vi.fn(),
+        isSupported: () => true,
+        isSupporting: false,
+      }),
     }));
     const mod = await import("../app.propuesta.$proposalId");
     const Page = mod.Route.options.component as React.ComponentType;
@@ -102,7 +110,11 @@ describe("app.propuesta.$proposalId", () => {
       useCurrentUser: () => ({ id: "u1", name: "Ana", district: "Cusco" }),
     }));
     vi.doMock("@/features/proposals/hooks/useSupportProposal", () => ({
-      useSupportProposal: () => ({ mutate: vi.fn(), isPending: false }),
+      useSupportProposal: () => ({
+        supportProposal: vi.fn(),
+        isSupported: () => true,
+        isSupporting: false,
+      }),
     }));
     const mod = await import("../app.propuesta.$proposalId");
     const Page = mod.Route.options.component as React.ComponentType;

@@ -18,15 +18,18 @@ function iso(daysAgo: number, hour = 10): string {
   return d.toISOString();
 }
 
-function event(
-  overrides: Partial<TerritorialEvent> & { daysAgo?: number },
-): TerritorialEvent {
+function event(overrides: Partial<TerritorialEvent> & { daysAgo?: number }): TerritorialEvent {
   const age = overrides.daysAgo ?? 0;
   const ts = iso(age);
   return {
     id: overrides.id ?? `evt-${Math.random().toString(36).slice(2, 8)}`,
     type: overrides.type ?? "proposal.created",
-    actor: overrides.actor ?? { id: "user-1", username: "user1", firstName: "User", avatarUrl: null },
+    actor: overrides.actor ?? {
+      id: "user-1",
+      username: "user1",
+      firstName: "User",
+      avatarUrl: null,
+    },
     entityType: overrides.entityType ?? "proposal",
     entityId: overrides.entityId ?? "entity-1",
     entityTitle: overrides.entityTitle ?? "Test event",
@@ -49,7 +52,13 @@ function makeInitiative(overrides?: Partial<Initiative>): Initiative {
     lifecycle: "forming",
     temporalAnchor: { label: "Próximamente", kind: "scheduled", referenceDate: iso(0) },
     emoji: "🌊",
-    location: { district: "Miraflores", districtId: null, region: "costa", coords: null, locationLabel: null },
+    location: {
+      district: "Miraflores",
+      districtId: null,
+      region: "costa",
+      coords: null,
+      locationLabel: null,
+    },
     ...overrides,
   };
 }
@@ -77,10 +86,7 @@ describe("deriveAmbientCadence", () => {
   });
 
   it("returns steady pulse for 1-2 events in last 7 days", () => {
-    const events = [
-      event({ daysAgo: 1 }),
-      event({ daysAgo: 3 }),
-    ];
+    const events = [event({ daysAgo: 1 }), event({ daysAgo: 3 })];
     const c = deriveAmbientCadence(events);
     expect(c.pulse).toBe("steady");
     expect(c.eventsLast7d).toBe(2);
@@ -103,9 +109,9 @@ describe("deriveAmbientCadence", () => {
 
   it("only counts events within 7 and 30 day windows", () => {
     const events = [
-      event({ daysAgo: 2 }),   // within 7d
-      event({ daysAgo: 10 }),  // within 30d
-      event({ daysAgo: 50 }),  // outside both
+      event({ daysAgo: 2 }), // within 7d
+      event({ daysAgo: 10 }), // within 30d
+      event({ daysAgo: 50 }), // outside both
     ];
     const c = deriveAmbientCadence(events);
     expect(c.eventsLast7d).toBe(1);
@@ -133,11 +139,7 @@ describe("deriveAmbientCadence", () => {
   });
 
   it("sets lastActivityAt to the most recent event date", () => {
-    const events = [
-      event({ daysAgo: 10 }),
-      event({ daysAgo: 1 }),
-      event({ daysAgo: 5 }),
-    ];
+    const events = [event({ daysAgo: 10 }), event({ daysAgo: 1 }), event({ daysAgo: 5 })];
     const c = deriveAmbientCadence(events);
     expect(c.lastActivityAt).toBe(iso(1));
   });
@@ -195,9 +197,7 @@ describe("deriveAmbientSignal", () => {
   });
 
   it("returns hopeful mood when there are new proposals with low cadence", () => {
-    const events = [
-      event({ daysAgo: 1, type: "proposal.created" }),
-    ];
+    const events = [event({ daysAgo: 1, type: "proposal.created" })];
     const s = deriveAmbientSignal(events);
     expect(s.mood).toBe("hopeful");
   });
@@ -213,9 +213,7 @@ describe("deriveAmbientSignal", () => {
   });
 
   it("returns awakening when no events in 30d but events exist", () => {
-    const events = [
-      event({ daysAgo: 35, type: "mission.joined" }),
-    ];
+    const events = [event({ daysAgo: 35, type: "mission.joined" })];
     const s = deriveAmbientSignal(events);
     expect(s.mood).toBe("quiet");
   });
@@ -228,7 +226,10 @@ describe("deriveAmbientSignal", () => {
 
   it("computes energy from cadence when vitality score is not provided", () => {
     const events = Array.from({ length: 4 }, (_, i) =>
-      event({ daysAgo: i + 1, actor: { id: `user-${i}`, username: `u${i}`, firstName: "U", avatarUrl: null } }),
+      event({
+        daysAgo: i + 1,
+        actor: { id: `user-${i}`, username: `u${i}`, firstName: "U", avatarUrl: null },
+      }),
     );
     const s = deriveAmbientSignal(events);
     // 3+ events in 7d => +3+2, 3+ unique actors => +2, 1 type => +0
@@ -270,8 +271,12 @@ describe("deriveAmbientPulse", () => {
 describe("initiativesToAmbientEvents", () => {
   it("excludes initiatives without referenceDate", () => {
     const initiatives = [
-      makeInitiative({ temporalAnchor: { label: "Próximamente", kind: "scheduled", referenceDate: null } }),
-      makeInitiative({ temporalAnchor: { label: "Mañana", kind: "countdown", referenceDate: iso(0) } }),
+      makeInitiative({
+        temporalAnchor: { label: "Próximamente", kind: "scheduled", referenceDate: null },
+      }),
+      makeInitiative({
+        temporalAnchor: { label: "Mañana", kind: "countdown", referenceDate: iso(0) },
+      }),
     ];
     const events = initiativesToAmbientEvents(initiatives);
     expect(events).toHaveLength(1);
@@ -294,9 +299,11 @@ describe("initiativesToAmbientEvents", () => {
 
   it("uses temporalAnchor.referenceDate as createdAt", () => {
     const refDate = iso(0);
-    const initiatives = [makeInitiative({
-      temporalAnchor: { label: "Mañana", kind: "countdown", referenceDate: refDate },
-    })];
+    const initiatives = [
+      makeInitiative({
+        temporalAnchor: { label: "Mañana", kind: "countdown", referenceDate: refDate },
+      }),
+    ];
     const events = initiativesToAmbientEvents(initiatives);
     expect(events[0].createdAt).toBe(refDate);
   });

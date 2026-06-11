@@ -2,14 +2,14 @@
 
 ## 1. Auditoría operacional
 
-| Área | Antes | Phase B |
-|------|-------|---------|
-| Multi-device sync | Pins locales only | Supabase Realtime + debounced reconcile |
-| Evidencias | UI placeholder | `mission_evidence` + private bucket + upload pipeline |
-| Notificaciones | Mock samples | `user_notifications` + DB fan-out from `mission_events` |
-| Moderación | Ninguna | `moderation_reports` queue |
-| Observabilidad | `[kusqa:rpc]` DEV | `[kusqa:telemetry]` + Sentry/PostHog shims |
-| Admin | Manual SQL ad-hoc | `scripts/ops/verify_consistency.sql` + admin RPC |
+| Área              | Antes             | Phase B                                                 |
+| ----------------- | ----------------- | ------------------------------------------------------- |
+| Multi-device sync | Pins locales only | Supabase Realtime + debounced reconcile                 |
+| Evidencias        | UI placeholder    | `mission_evidence` + private bucket + upload pipeline   |
+| Notificaciones    | Mock samples      | `user_notifications` + DB fan-out from `mission_events` |
+| Moderación        | Ninguna           | `moderation_reports` queue                              |
+| Observabilidad    | `[kusqa:rpc]` DEV | `[kusqa:telemetry]` + Sentry/PostHog shims              |
+| Admin             | Manual SQL ad-hoc | `scripts/ops/verify_consistency.sql` + admin RPC        |
 
 ## 2. Riesgos reales
 
@@ -63,25 +63,25 @@
 
 ## 7. Observability
 
-| Signal | Where |
-|--------|-------|
-| RPC | `[kusqa:rpc]` |
-| Realtime | `[kusqa:telemetry] realtime.*` |
-| Uploads | `upload.start/success/failure` |
+| Signal       | Where                            |
+| ------------ | -------------------------------- |
+| RPC          | `[kusqa:rpc]`                    |
+| Realtime     | `[kusqa:telemetry] realtime.*`   |
+| Uploads      | `upload.start/success/failure`   |
 | DEV counters | `getOperationalMetricCounters()` |
 
 Enable: `VITE_TELEMETRY_ENABLED=true`, optional `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`
 
 ## 8. Rollout plan
 
-| Week | Action |
-|------|--------|
-| 1 | Apply `20260526120000`, `20260526120100` migrations |
-| 1 | Enable RLS policies (uncomment in migration / dashboard) |
-| 2 | Staging: realtime + evidence upload |
-| 2 | Run `scripts/ops/verify_consistency.sql` daily |
-| 3 | Production: realtime for beta users |
-| 4 | Wire `app.notificaciones` to `useLiveNotificationInbox` |
+| Week | Action                                                   |
+| ---- | -------------------------------------------------------- |
+| 1    | Apply `20260526120000`, `20260526120100` migrations      |
+| 1    | Enable RLS policies (uncomment in migration / dashboard) |
+| 2    | Staging: realtime + evidence upload                      |
+| 2    | Run `scripts/ops/verify_consistency.sql` daily           |
+| 3    | Production: realtime for beta users                      |
+| 4    | Wire `app.notificaciones` to `useLiveNotificationInbox`  |
 
 ## 9. Archivos nuevos (referencia)
 

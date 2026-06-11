@@ -22,20 +22,28 @@ KUSQA exists to lower the barrier for civic participation in Peru. Rather than w
 
 ## Technology Stack
 
-| Layer | Choice |
-|-------|--------|
-| **Framework** | React 19 + TypeScript |
-| **Routing** | TanStack Router (file-based, type-safe) |
-| **SSR / Deployment** | TanStack Start (Vite + Vercel) |
-| **Styling** | Tailwind CSS v4 + `tw-animate-css` |
-| **UI Primitives** | shadcn/ui (Radix + Lucide icons) |
-| **State / Server** | TanStack React Query |
-| **Map** | Leaflet + MarkerCluster + TopoJSON |
-| **Spatial** | PostGIS (Haversine queries, boundary intersection) |
-| **Backend** | Supabase (PostgreSQL, Auth, Realtime, Storage) |
-| **Validation** | Zod |
-| **Testing** | Vitest + Testing Library |
-| **Linting** | ESLint + Prettier + typescript-eslint |
+| Layer                | Choice                                                           |
+| -------------------- | ---------------------------------------------------------------- |
+| **Framework**        | React 19 + TypeScript                                            |
+| **Routing**          | TanStack Router (file-based, type-safe)                          |
+| **SSR / Deployment** | TanStack Start (Vite + Vercel)                                   |
+| **Styling**          | Tailwind CSS v4 + `tw-animate-css`                               |
+| **UI Primitives**    | shadcn/ui (Radix + Lucide icons)                                 |
+| **State / Server**   | TanStack React Query                                             |
+| **Map**              | Leaflet + MarkerCluster + TopoJSON                               |
+| **Spatial**          | PostGIS (Haversine queries, boundary intersection)               |
+| **Backend**          | Supabase (PostgreSQL, Auth, Realtime, Storage)                   |
+| **Validation**       | Zod                                                              |
+| **Testing**          | Vitest + Testing Library + Storybook + Playwright                     |
+| **Visual Catalog**   | Storybook 10 (`.storybook/`, stories in `__stories__/`)               |
+| **E2E + A11Y**       | Playwright + @axe-core/playwright (see `e2e/`)                       |
+| **Linting**          | ESLint + Prettier + typescript-eslint + eslint-plugin-boundaries |
+
+---
+
+## Product Philosophy
+
+See [PRODUCT-PHILOSOPHY.md](./PRODUCT-PHILOSOPHY.md) for tone guardrails, register reference, and what KUSQA is / is not. All UI copy must conform to these principles before merging. Architecture decisions are tracked in [DECISIONS.md](./DECISIONS.md).
 
 ---
 
@@ -116,9 +124,9 @@ Write operations go through **missionMutationEngine** (optimistic concurrency, d
 
 Copy `.env.example` to `.env` and configure. Required:
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
+| Variable                 | Description              |
+| ------------------------ | ------------------------ |
+| `VITE_SUPABASE_URL`      | Supabase project URL     |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
 
 Optional feature flags (all default `false`): `VITE_USE_LIVE_USER`, `VITE_USE_RPC_TRANSACTIONS`, `VITE_USE_REALTIME_SYNC`, `VITE_EVIDENCE_UPLOAD_ENABLED`, `VITE_TELEMETRY_ENABLED`.
@@ -151,6 +159,30 @@ npm run test:watch        # Watch mode
 npm run test:rpc          # RPC integration tests (requires Supabase env)
 ```
 
+### Storybook — Visual Contract
+
+```bash
+npm run storybook         # Dev server at http://localhost:6006
+npm run build-storybook   # Static build to storybook-static/
+```
+
+Stories live in `__stories__/` directories next to their components. Each story covers every `InitiativeLifecycle` state (forming, gathering, active, completed, dormant) to make visual drift visible. Design tokens are in `.storybook/design-tokens.css`.
+
+### E2E + Accessibility
+
+```bash
+npm run e2e               # Full E2E run (builds app + starts server)
+npm run e2e:dev            # Run against already-running dev server
+npm run e2e:ui             # Playwright UI mode
+```
+
+The critical civic flow test (`e2e/civic-flow.spec.ts`) covers:
+- Logged-out user views the initiative feed
+- Attempts to support → redirected to login
+- axe-core a11y audit on every public page (critical/serious violations = 0)
+
+Playwright config is in `playwright.config.ts`. Snapshots go to `playwright-report/`.
+
 ### Ops Scripts
 
 ```bash
@@ -165,34 +197,34 @@ npm run db:verify-rls     # Verify RLS policy coverage
 
 37 timestamped migrations in `supabase/migrations/` covering:
 
-| Phase | Tables / Features |
-|-------|-------------------|
-| Baseline | `profiles`, `missions`, `mission_participants`, `user_progress`, `proposals`, `proposal_supports` |
-| Phase B | `user_missions`, `mission_events`, `mission_evidence`, `user_notifications`, `moderation_reports`, storage buckets, realtime publication |
-| Proposals | Proposal enrichment, images, coalition system, collaborators, comments, lifecycle events |
-| Districts | `districts` table with spatial coordinates, FK columns on profiles/missions/proposals, aggregation RPCs |
-| Civic Events | `civic_events` table, event emission RPCs, triggers on proposals/supports/comments |
-| Spatial (Phases 12-13) | `region_metadata`, PostGIS geometry, boundary data, Haversine-based `find_nearby_*` and `find_territories_intersecting` RPCs |
-| Authority (Phase 16E) | RLS policy consistency fixes across all tables |
+| Phase                  | Tables / Features                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline               | `profiles`, `missions`, `mission_participants`, `user_progress`, `proposals`, `proposal_supports`                                        |
+| Phase B                | `user_missions`, `mission_events`, `mission_evidence`, `user_notifications`, `moderation_reports`, storage buckets, realtime publication |
+| Proposals              | Proposal enrichment, images, coalition system, collaborators, comments, lifecycle events                                                 |
+| Districts              | `districts` table with spatial coordinates, FK columns on profiles/missions/proposals, aggregation RPCs                                  |
+| Civic Events           | `civic_events` table, event emission RPCs, triggers on proposals/supports/comments                                                       |
+| Spatial (Phases 12-13) | `region_metadata`, PostGIS geometry, boundary data, Haversine-based `find_nearby_*` and `find_territories_intersecting` RPCs             |
+| Authority (Phase 16E)  | RLS policy consistency fixes across all tables                                                                                           |
 
 ---
 
 ## Current Status
 
-| Feature | Status |
-|---------|--------|
-| Auth (Google OAuth) | Live |
-| Mission catalog | Live (Supabase, RLS-scoped) |
-| Territorial map | Live (Leaflet + clustering + heatmap) |
-| Proposal creation | Live (with images, coalition support, comments) |
-| Districts & spatial queries | Live (with PostGIS spatial queries) |
-| Profile & progression | Live |
-| Civic events | Live (event-sourced activity feed) |
-| Badges system | Live (derived from participation data) |
-| Notifications | Live (Supabase Realtime) |
-| Evidence upload | Feature-flagged (VITE_EVIDENCE_UPLOAD_ENABLED) |
-| Realtime sync | Feature-flagged (VITE_USE_REALTIME_SYNC) |
-| Multi-device reconciliation | Debounced, pin-aware |
+| Feature                     | Status                                          |
+| --------------------------- | ----------------------------------------------- |
+| Auth (Google OAuth)         | Live                                            |
+| Mission catalog             | Live (Supabase, RLS-scoped)                     |
+| Territorial map             | Live (Leaflet + clustering + heatmap)           |
+| Proposal creation           | Live (with images, coalition support, comments) |
+| Districts & spatial queries | Live (with PostGIS spatial queries)             |
+| Profile & progression       | Live                                            |
+| Civic events                | Live (event-sourced activity feed)              |
+| Badges system               | Live (derived from participation data)          |
+| Notifications               | Live (Supabase Realtime)                        |
+| Evidence upload             | Feature-flagged (VITE_EVIDENCE_UPLOAD_ENABLED)  |
+| Realtime sync               | Feature-flagged (VITE_USE_REALTIME_SYNC)        |
+| Multi-device reconciliation | Debounced, pin-aware                            |
 
 ---
 

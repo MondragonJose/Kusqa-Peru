@@ -18,7 +18,7 @@ KUSQA **vive de la ficción**. Cada interacción te presencia datos inventados. 
 - ❌ **Usuarios simulados**
 - ❌ **Actividad fake en tiempo real**
 
-**Impacto emocional**: Sientes que algo está *casi bien*, pero tu instinto dice "esto es una demo". Es el uncanny valley de aplicaciones sociales.
+**Impacto emocional**: Sientes que algo está _casi bien_, pero tu instinto dice "esto es una demo". Es el uncanny valley de aplicaciones sociales.
 
 ---
 
@@ -38,12 +38,13 @@ const eventInterval = setInterval(() => {
   const avatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
   const districtObj = DISTRICTS[Math.floor(Math.random() * DISTRICTS.length)];
   const actionObj = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
-  
+
   setEvents((prev) => [newEvent, ...prev.slice(0, 5)]);
 }, 12000); // Cada 12 segundos — OBVIO QUE ES FAKE
 ```
 
 **Lo que ves**:
+
 - Cada 12 segundos **exactos** aparece un evento nuevo
 - El nombre es elegido al azar de `["Sayri", "Mateo", "Sofía", "Carlos", "Renzo", ...]`
 - El avatar es un emoji aleatorio sin correlación
@@ -51,6 +52,7 @@ const eventInterval = setInterval(() => {
 - El distrito es aleatorio de 7 opciones fijas
 
 **Por qué se siente fake**:
+
 1. **Ritmo mecánico**: Un evento cada 12s es demasiado predecible. La actividad real es caótica.
 2. **Pool limitado**: Ves a "Sayri" con "🦊" una vez, luego "Mateo" con "🌊" — no hay consistencia.
 3. **Avatar desconectado**: El emoji no guarda relación con la persona ni la acción.
@@ -58,6 +60,7 @@ const eventInterval = setInterval(() => {
 5. **Sin contexto temporal real**: "Hace unos instantes" es repetitivo, ignora zonas horarias, no hay sincronización.
 
 **Impacto emocional**:
+
 - 🧠 Tu cerebro detecta que **ninguno de estos eventos es real**.
 - 😤 Sientes que el producto te **subestima la inteligencia**.
 - 🚩 Pierdes confianza en cualquier métrica que vea: "¿Esta actividad también es inventada?".
@@ -66,6 +69,7 @@ const eventInterval = setInterval(() => {
 ### Propuesta concreta
 
 **Opción A: Desactivar hasta tener datos reales** (RECOMENDADO)
+
 ```tsx
 // En producción sin datos reales: NO muestres simulación
 export function CivicActivityFeed() {
@@ -75,6 +79,7 @@ export function CivicActivityFeed() {
 ```
 
 **Opción B: Si DEBES mostrar algo** (Placeholder honesto)
+
 ```tsx
 export function CivicActivityFeed() {
   return (
@@ -120,14 +125,15 @@ useEffect(() => {
 
 ```ts
 export const MOCK_COMMUNITY_PULSE: CommunityPulseData = {
-  totalActiveToday: 163,               // ← INVENTADO
-  activeDistrictsCount: 12,            // ← INVENTADO
-  recentImpactDescription: "5,490 horas de acción colectiva este mes en todo el Perú",  // ← INVENTADO
+  totalActiveToday: 163, // ← INVENTADO
+  activeDistrictsCount: 12, // ← INVENTADO
+  recentImpactDescription: "5,490 horas de acción colectiva este mes en todo el Perú", // ← INVENTADO
   districts: DISTRICT_ACTIVITIES,
 };
 ```
 
 **Números específicos que gritan "FAKE"**:
+
 - `163 activos hoy` — ¿De dónde? ¿Cuál es la fórmula?
 - `12 distritos` — Listad en hardcode
 - `5,490 horas` — Número muy preciso para ser falso
@@ -143,6 +149,7 @@ export const MOCK_COMMUNITY_PULSE: CommunityPulseData = {
 5. **Nombres de distritos genéricos**: Barranco, Urubamba, Iquitos, Trujillo... sí, existen, pero parece un cuestionario de geografía peruana.
 
 **Impacto emocional**:
+
 - 🎭 Sientes que mientes a usuarios cuando muestras estos números.
 - 😒 Si un usuario vive en Barranco, ve "28 activos" y piensa "Yo no conozco 27 personas aquí en KUSQA".
 - 📉 Primeras señales de que **el producto es una simulación, no un fenómeno real**.
@@ -150,6 +157,7 @@ export const MOCK_COMMUNITY_PULSE: CommunityPulseData = {
 ### Propuesta concreta
 
 **Opción A: Eliminar completamente**
+
 ```tsx
 // No mostres nada hasta tener datos reales
 export function CommunityPulse({ missions }: CommunityPulseProps) {
@@ -161,17 +169,18 @@ export function CommunityPulse({ missions }: CommunityPulseProps) {
 ```
 
 **Opción B: Mostrar lo que ES real**
+
 ```tsx
 export function CommunityPulse({ missions }: CommunityPulseProps) {
   // Calcular métricas REALES solo desde `missions`
   const totalParticipants = missions.reduce((acc, m) => acc + m.participants, 0);
   const uniqueDistricts = new Set(missions.map((m) => m.district)).size;
-  
+
   // Nunca mostres números hardcoded
   if (missions.length === 0) {
     return null; // No muestres fake pulse
   }
-  
+
   return (
     <div className="...">
       <h3>Misiones activas ahora: {missions.length}</h3>
@@ -187,21 +196,23 @@ export function CommunityPulse({ missions }: CommunityPulseProps) {
 **Archivo**: `src/features/community/components/CommunityPulse.tsx` (línea 46-56)
 
 Reemplaza:
+
 ```tsx
 const totalActiveToday = hasMissions
   ? missions.reduce((acc, m) => acc + m.participants, 0)
-  : MOCK_COMMUNITY_PULSE.totalActiveToday;  // ← ELIMINA ESTA LÍNEA
+  : MOCK_COMMUNITY_PULSE.totalActiveToday; // ← ELIMINA ESTA LÍNEA
 
 const activeDistrictsCount = hasMissions
   ? new Set(missions.map((m) => m.district)).size
-  : MOCK_COMMUNITY_PULSE.activeDistrictsCount;  // ← ELIMINA ESTA LÍNEA
+  : MOCK_COMMUNITY_PULSE.activeDistrictsCount; // ← ELIMINA ESTA LÍNEA
 
 const recentImpactDescription = hasMissions
   ? `${missions.length} misión${missions.length !== 1 ? "es" : ""} activa${missions.length !== 1 ? "s" : ""} en ${activeDistrictsCount} distrito${activeDistrictsCount !== 1 ? "s" : ""} del Perú`
-  : MOCK_COMMUNITY_PULSE.recentImpactDescription;  // ← ELIMINA ESTA LÍNEA
+  : MOCK_COMMUNITY_PULSE.recentImpactDescription; // ← ELIMINA ESTA LÍNEA
 ```
 
 Con:
+
 ```tsx
 if (!hasMissions) {
   return null; // No mostres fake data
@@ -226,39 +237,38 @@ export const SAMPLE_NOTIFICATIONS: CivicNotification[] = [
     id: "n1",
     type: "social",
     emoji: "🌱",
-    title: "Tu brigada en Barranco comenzó movimiento esta noche",  // ← Generado
-    body: "Andrés y 28 personas más están activas en el mural colectivo · Sáb 14 jun",  // ← Falso nombre
+    title: "Tu brigada en Barranco comenzó movimiento esta noche", // ← Generado
+    body: "Andrés y 28 personas más están activas en el mural colectivo · Sáb 14 jun", // ← Falso nombre
     timestamp: "hace 20 min",
     read: false,
     district: "Barranco, Lima",
     region: "costa",
-    actorName: "Andrés Vega",  // ← Nombre inventado, avatar genérico
+    actorName: "Andrés Vega", // ← Nombre inventado, avatar genérico
   },
   {
     id: "n2",
     type: "presencia",
     emoji: "🔥",
-    title: "Tu territorio está despierto",  // ← Copy poético pero vacío
-    body: "12 jóvenes dejan huella hoy en Barranco · 3 misiones en movimiento ahora mismo",  // ← Metrics sin sentido
+    title: "Tu territorio está despierto", // ← Copy poético pero vacío
+    body: "12 jóvenes dejan huella hoy en Barranco · 3 misiones en movimiento ahora mismo", // ← Metrics sin sentido
   },
-  ...
-  {
+  ...{
     id: "n12",
     type: "comunidad",
     emoji: "🌊",
-    title: "La costa despertó esta mañana",  // ← Narrativa épica artificial
-    body: "Brigadas en Lima, Trujillo y Chiclayo iniciaron actividades simultáneas · el litoral respira",  // ← Copy ChatGPT
+    title: "La costa despertó esta mañana", // ← Narrativa épica artificial
+    body: "Brigadas en Lima, Trujillo y Chiclayo iniciaron actividades simultáneas · el litoral respira", // ← Copy ChatGPT
   },
 ];
 ```
 
 **Lo que grita "FAKE"**:
 
-1. **Copy poético pero genérico**: 
+1. **Copy poético pero genérico**:
    - "Tu brigada en Barranco comenzó movimiento"
    - "el litoral respira"
    - "Tu territorio está despierto"
-   
+
    Esto es **copy de Slack/Spotify/Duolingo** (apps que venden aspiración). No es comunicación real.
 
 2. **Narrativa forzada**:
@@ -279,6 +289,7 @@ export const SAMPLE_NOTIFICATIONS: CivicNotification[] = [
    - No hay contexto de cuándo fue el último evento real.
 
 **Impacto emocional**:
+
 - 🤖 **Sientes que un bot escribió esto**. Es texto pulido pero sin alma.
 - 😒 Si compartiera KUSQA con amigos, este copy me haría ver mal: "¿Este es un juego de marketing?"
 - 💀 **Mata la credibilidad**. Un usuario abre notificaciones y siente publicidad disfrazada.
@@ -287,6 +298,7 @@ export const SAMPLE_NOTIFICATIONS: CivicNotification[] = [
 ### Propuesta concreta
 
 **Opción A: Desactivar notificaciones fake**
+
 ```tsx
 export const SAMPLE_NOTIFICATIONS: CivicNotification[] = [];
 // No muestres notificaciones hasta que tengas eventos reales
@@ -303,7 +315,7 @@ export async function generateRealNotifications(userId: string): Promise<CivicNo
   // Notificación: Misión en tu distrito
   const myDistrict = await getUserDistrict(userId);
   const nearbyMissions = await getMissionsByDistrict(myDistrict);
-  
+
   if (nearbyMissions.length > 0) {
     notifications.push({
       id: "n-nearby",
@@ -349,7 +361,7 @@ import type { CivicNotification } from "../types";
  * 1. Participantes reales en misiones
  * 2. Badgess desbloqueados por el usuario
  * 3. Eventos en el distrito del usuario
- * 
+ *
  * NO generamos notificaciones ficticias.
  */
 
@@ -367,11 +379,46 @@ export const SAMPLE_NOTIFICATIONS: CivicNotification[] = [];
 
 ```ts
 export const BADGES: Badge[] = [
-  { id: "1", name: "Primer paso", emoji: "🌅", region: "todas", earned: true, description: "Tu primera misión completada" },
-  { id: "2", name: "Vecino activo", emoji: "🏘️", region: "costa", earned: true, description: "5 misiones en tu distrito" },
-  { id: "3", name: "Sembrador", emoji: "🌱", region: "sierra", earned: true, description: "Plantaste tu primer árbol" },
-  { id: "4", name: "Pez del Itaya", emoji: "🐟", region: "selva", earned: false, description: "Misión en la Amazonía" },
-  { id: "5", name: "Mentor", emoji: "🎓", region: "todas", earned: true, description: "Enseñaste a 10 personas" },
+  {
+    id: "1",
+    name: "Primer paso",
+    emoji: "🌅",
+    region: "todas",
+    earned: true,
+    description: "Tu primera misión completada",
+  },
+  {
+    id: "2",
+    name: "Vecino activo",
+    emoji: "🏘️",
+    region: "costa",
+    earned: true,
+    description: "5 misiones en tu distrito",
+  },
+  {
+    id: "3",
+    name: "Sembrador",
+    emoji: "🌱",
+    region: "sierra",
+    earned: true,
+    description: "Plantaste tu primer árbol",
+  },
+  {
+    id: "4",
+    name: "Pez del Itaya",
+    emoji: "🐟",
+    region: "selva",
+    earned: false,
+    description: "Misión en la Amazonía",
+  },
+  {
+    id: "5",
+    name: "Mentor",
+    emoji: "🎓",
+    region: "todas",
+    earned: true,
+    description: "Enseñaste a 10 personas",
+  },
   // ...
 ];
 ```
@@ -386,18 +433,20 @@ export const BADGES: Badge[] = [
 2. **Narrativa simple pero vacía**:
    - "Enseñaste a 10 personas" — ¿Cuáles 10? ¿Nombres? ¿Contexto?
    - "Plantaste tu primer árbol" — Suena bonito, pero es placeholder text.
-   - Sin historias reales, sin verificación, sin *momento* específico.
+   - Sin historias reales, sin verificación, sin _momento_ específico.
 
 3. **Emojis sin personalidad**:
-   - 🌅 "Primer paso" — ¿Por qué amanecer? 
+   - 🌅 "Primer paso" — ¿Por qué amanecer?
    - 🏘️ "Vecino activo" — OK, es literal, pero sin alma.
    - 📣 "Voz del barrio" — ¿Es este un liderazgo verificado o aspiracional?
 
 4. **"Earned" es bool falso**:
+
    ```tsx
    earned: true,  // ← ¿Verificado cómo?
    earnedAt: undefined,  // ← Sin timestamp
    ```
+
    El badge podría ser mentira. No hay prueba.
 
 5. **Narrativas de "todas" las regiones**:
@@ -405,6 +454,7 @@ export const BADGES: Badge[] = [
    - Los badges nacionales se sienten genéricos.
 
 **Impacto emocional**:
+
 - 🎪 **Sientes que los badges son participation trophies**.
 - 😒 Si tuvieras 5 misiones y NO tuvieras "Vecino activo", sospecharías el sistema.
 - 💔 Sin historias reales, los badges son emojis vacíos.
@@ -426,10 +476,10 @@ export type CivicBadge = {
   unlockCondition: string;
   earned: boolean;
   earnedAt?: string;
-  
+
   // NUEVO: Evidencia verificable
   verifiedBy?: "system" | "community" | "evidence";
-  verificationNote?: string;  // e.g. "3 misiones en Barranco registradas"
+  verificationNote?: string; // e.g. "3 misiones en Barranco registradas"
   verificationDate?: string;
 };
 ```
@@ -438,8 +488,8 @@ export type CivicBadge = {
 
 ```tsx
 export function BadgeGrid({ badges }: { badges: CivicBadge[] }) {
-  const verified = badges.filter(b => b.earned && b.verifiedBy);
-  
+  const verified = badges.filter((b) => b.earned && b.verifiedBy);
+
   if (verified.length === 0) {
     return (
       <div className="text-center py-8">
@@ -450,9 +500,7 @@ export function BadgeGrid({ badges }: { badges: CivicBadge[] }) {
     );
   }
 
-  return (
-    <BadgeGrid badges={verified} />
-  );
+  return <BadgeGrid badges={verified} />;
 }
 ```
 
@@ -487,10 +535,11 @@ export function BadgeCard({ badge, index = 0, showNarrative = true }: BadgeCardP
 **Archivo**: `src/features/badges/types/index.ts` (línea 30)
 
 Agrega:
+
 ```ts
 export type CivicBadge = {
   // ... existing fields
-  
+
   // NUEVO
   verifiedBy?: "system" | "community" | "evidence";
   verificationNote?: string;
@@ -501,12 +550,15 @@ export type CivicBadge = {
 **Archivo**: `src/features/badges/components/BadgeCard.tsx` (línea 50)
 
 Agrega después de `{badge.earned && (...)}`:
+
 ```tsx
-{badge.earned && badge.verificationNote && (
-  <div className="text-[9px] text-muted-foreground/60 mt-1 italic">
-    ✓ {badge.verificationNote}
-  </div>
-)}
+{
+  badge.earned && badge.verificationNote && (
+    <div className="text-[9px] text-muted-foreground/60 mt-1 italic">
+      ✓ {badge.verificationNote}
+    </div>
+  );
+}
 ```
 
 ---
@@ -522,17 +574,17 @@ export const MISSIONS: Mission[] = [
   {
     id: "barranco-mural",
     title: "Mural colectivo en Barranco",
-    xp: 320,  // ← ¿De dónde?
+    xp: 320, // ← ¿De dónde?
     participants: 28,
     spotsLeft: 12,
-    impact: "24m² de mural · 6 cuadras renovadas",  // ← ¿Verificado?
+    impact: "24m² de mural · 6 cuadras renovadas", // ← ¿Verificado?
     difficulty: "Suave",
     // ...
   },
   {
     id: "cusco-reforesta",
     title: "Reforestación en el valle sagrado",
-    xp: 540,  // ← ¿Por qué más XP?
+    xp: 540, // ← ¿Por qué más XP?
     participants: 64,
     spotsLeft: 4,
     impact: "500 árboles · 1.2 ha restauradas",
@@ -547,7 +599,7 @@ export const MISSIONS: Mission[] = [
    - Mural: 320 XP
    - Reforestación: 540 XP
    - Limpieza río: 680 XP
-   
+
    ¿Por qué exactamente estos números? ¿Hay una fórmula o fue "se ve bien"?
 
 2. **Correlación confusa con dificultad**:
@@ -561,12 +613,13 @@ export const MISSIONS: Mission[] = [
    - "60 escolares formados" — ¿Test de conocimiento? ¿Solo asistencia?
 
 4. **Inconsistencia de progreso**:
+
    ```ts
    { level: 1, name: "Caminante", from: 0, to: 500 },          // 500 XP
    { level: 2, name: "Vecino", from: 500, to: 1500 },          // +1000 XP
    { level: 3, name: "Sembrador", from: 1500, to: 3500 },      // +2000 XP
    ```
-   
+
    Los requerimientos se duplican cada vez. ¿Por qué? ¿Es exponencial o justo "parece balanceado"?
 
 5. **El usuario nunca ve la fórmula**:
@@ -574,6 +627,7 @@ export const MISSIONS: Mission[] = [
    - ¿Hay bonus? ¿Streak? ¿Dificultad resuelta vs intentada?
 
 **Impacto emocional**:
+
 - 🎮 **Se siente como videojuego, no activismo**.
 - 😒 Los números parecen sacados de una gacha game.
 - 🚩 Si los XP son arbitrarios, ¿qué está basado en datos reales?
@@ -586,12 +640,12 @@ export const MISSIONS: Mission[] = [
 ```ts
 export type Mission = {
   // ... existing
-  
+
   // REEMPLAZAR arbitrario XP con datos verificables
   impactMetric: {
-    label: string;           // e.g. "Metros cuadrados pintados"
-    expectedValue: number;   // e.g. 24
-    unit: string;           // e.g. "m²"
+    label: string; // e.g. "Metros cuadrados pintados"
+    expectedValue: number; // e.g. 24
+    unit: string; // e.g. "m²"
     verificationMethod: "photos" | "gps" | "count" | "report";
   };
 };
@@ -609,12 +663,14 @@ export function MissionCard({ mission }: MissionCardProps) {
   return (
     <div>
       <h3>{mission.title}</h3>
-      
+
       {/* Mostrar por qué XP es X */}
       <div className="text-xs text-muted-foreground bg-secondary/30 rounded p-2 mt-3">
         <p className="font-semibold mb-1">Cómo se calcula el impacto:</p>
         <ul className="space-y-0.5">
-          <li>• {mission.impactMetric.expectedValue} {mission.impactMetric.unit}</li>
+          <li>
+            • {mission.impactMetric.expectedValue} {mission.impactMetric.unit}
+          </li>
           <li>• Verificado por: {mission.impactMetric.verificationMethod}</li>
           <li>• Suma a tu impacto territorial real</li>
         </ul>
@@ -631,14 +687,14 @@ export function MissionCard({ mission }: MissionCardProps) {
 export type Mission = {
   title: string;
   description: string;
-  
+
   // ELIMINA: xp: number;
-  
+
   // REEMPLAZA CON:
   impactClaim: {
-    what: string;           // "24 metros cuadrados de mural"
-    where: string;          // "6 cuadras en Barranco"
-    verified: boolean;      // Después de completar
+    what: string; // "24 metros cuadrados de mural"
+    where: string; // "6 cuadras en Barranco"
+    verified: boolean; // Después de completar
     verificationDate?: string;
   };
 };
@@ -649,6 +705,7 @@ export type Mission = {
 **Archivo**: `src/types/domain.ts` (si existe) o `src/types/index.ts`
 
 Agrega:
+
 ```ts
 export type ImpactMetric = {
   label: string;
@@ -667,6 +724,7 @@ export type Mission = {
 **Archivo**: `src/data/kusqa.ts` (línea 8)
 
 Actualiza misiones:
+
 ```ts
 {
   id: "barranco-mural",
@@ -697,9 +755,9 @@ El componente no existe explícitamente en el codebase listado, pero está refer
 
 ```ts
 const DISTRICT_ACTIVITIES = [
-  { id: "cusco-valle", name: "Urubamba (Valle Sagrado)", activeCount: 34, energyScore: 94 },  // #1
-  { id: "sjl", name: "San Juan de Lurigancho", activeCount: 45, energyScore: 92 },            // #2
-  { id: "barranco", name: "Barranco", activeCount: 28, energyScore: 88 },                   // #3
+  { id: "cusco-valle", name: "Urubamba (Valle Sagrado)", activeCount: 34, energyScore: 94 }, // #1
+  { id: "sjl", name: "San Juan de Lurigancho", activeCount: 45, energyScore: 92 }, // #2
+  { id: "barranco", name: "Barranco", activeCount: 28, energyScore: 88 }, // #3
   // ...
 ];
 ```
@@ -729,6 +787,7 @@ const DISTRICT_ACTIVITIES = [
    - Esto refuerza inequidad comunitaria.
 
 **Impacto emocional**:
+
 - 🏆 Si eres de un distrito "bajo ranking", te sientes no valorizado.
 - 🤝 KUSQA debería ser sobre comunidad, no competencia.
 - 🎪 Los rankings se sienten como gamificación superficial.
@@ -751,10 +810,10 @@ export function CommunityPulse() {
 ```ts
 export interface DistrictActivity {
   // ... existing
-  
+
   // En lugar de "energyScore" que compite:
   cooperativeMetric: {
-    missionsConnected: number;      // Cuántas misiones conectan con otros distritos
+    missionsConnected: number; // Cuántas misiones conectan con otros distritos
     supportingOtherDistricts: number; // "Reforestación en Cusco" apoyada por Lima
     crossDistrictCollaborations: number;
   };
@@ -768,7 +827,7 @@ export function CommunityPulse() {
   return (
     <div>
       <h3>Movimientos recientes</h3>
-      
+
       {/* En lugar de ranking, mostrar narrativa temporal */}
       <div className="space-y-2">
         <p>
@@ -781,7 +840,7 @@ export function CommunityPulse() {
           🛶 <strong>Amazonia</strong> documentó 10kg de microplásticos retirados
         </p>
       </div>
-      
+
       <p className="text-xs text-muted-foreground mt-4 italic">
         No hay competencia. Cada territorio tiene su propio ritmo.
       </p>
@@ -795,19 +854,21 @@ export function CommunityPulse() {
 **Archivo**: `src/features/community/components/CommunityPulse.tsx` (línea 154)
 
 Reemplaza:
+
 ```tsx
 // Sort districts by energyScore/activeCount to show the most active ones first
 const sortedDistricts = [...districts]
-  .sort((a, b) => b.energyScore - a.energyScore)  // ← RANKING NOCIVO
+  .sort((a, b) => b.energyScore - a.energyScore) // ← RANKING NOCIVO
   .slice(0, limit);
 ```
 
 Con:
+
 ```tsx
 // Mostrar distritos sin ranking competitivo
 const sortedDistricts = [...districts]
-  .filter(d => d.activeCount > 0)  // Solo con actividad real
-  .slice(0, limit);  // Primer N, no "los ganadores"
+  .filter((d) => d.activeCount > 0) // Solo con actividad real
+  .slice(0, limit); // Primer N, no "los ganadores"
 ```
 
 ---
@@ -819,7 +880,7 @@ const sortedDistricts = [...districts]
 **Ubicación**: `src/features/community/components/CivicTrustBadge.tsx`
 
 ```ts
-export type CivicTrustStatus = 
+export type CivicTrustStatus =
   | "semilla"      // Seed
   | "explorador"   // Explorer
   | "guardian"     // Guardian
@@ -869,6 +930,7 @@ const trustStatus = deriveCivicTrust({
    - Se ve bien, pero no significa nada sin definición clara.
 
 **Impacto emocional**:
+
 - 🎭 **Te sientes como un personaje de RPG, no un activista real**.
 - 😒 Si vieras a alguien con "Líder de impacto", no sabrías qué hizo realmente.
 - 💔 Las narrativas poéticas esconden falta de sistema real.
@@ -880,7 +942,7 @@ const trustStatus = deriveCivicTrust({
 
 ```tsx
 export function CivicTrustBadge() {
-  return null;  // O mostrar estado vacío honesto
+  return null; // O mostrar estado vacío honesto
 }
 ```
 
@@ -891,9 +953,11 @@ export function CivicProfileSummary({ user }: { user: User }) {
   return (
     <div className="space-y-2 text-sm">
       <p>✓ {user.missionsDone} misiones completadas</p>
-      <p>✓ Activo en {user.activeRegions.length} región{user.activeRegions.length !== 1 ? "es" : ""}</p>
+      <p>
+        ✓ Activo en {user.activeRegions.length} región{user.activeRegions.length !== 1 ? "es" : ""}
+      </p>
       <p>✓ Desde {new Date(user.joinedAt).toLocaleDateString("es-PE")}</p>
-      
+
       {/* Sin etiqueta de "Tejedor" — son hechos, no títulos */}
     </div>
   );
@@ -905,10 +969,10 @@ export function CivicProfileSummary({ user }: { user: User }) {
 ```ts
 export interface CivicRecognition {
   type: "peer_nomination" | "community_vote" | "impact_verified";
-  from?: string;              // Quién nominó
-  reason: string;             // Por qué exactamente
+  from?: string; // Quién nominó
+  reason: string; // Por qué exactamente
   date: string;
-  canVote?: boolean;          // Si el usuario puede confirmar
+  canVote?: boolean; // Si el usuario puede confirmar
 }
 
 export interface User {
@@ -926,12 +990,12 @@ Reemplaza toda la función `deriveCivicTrust` con:
 ```ts
 /**
  * DEPRECATED: Civic Trust Badges sin verificación comunitaria real.
- * 
+ *
  * Por ahora, mostrar solo historial de acciones verificadas.
  * Cuando implementemos votación comunitaria, reacticar este sistema.
  */
 export function deriveCivicTrust(profile: any) {
-  return null;  // No usemos etiquetas sin verificación
+  return null; // No usemos etiquetas sin verificación
 }
 ```
 
@@ -944,11 +1008,13 @@ export function deriveCivicTrust(profile: any) {
 **Ubicación**: Varios componentes (AppShell, Dashboard, etc.)
 
 **Lo que probablemente ves**:
+
 - Cargando... (spinner)
 - "No hay misiones aún" (genérico)
 - "Completa tu perfil" (instrucción vacía)
 
 **Lo que se siente fake**:
+
 1. **Mensajes corporativos**:
    - "Cargando..." — Demasiado técnico para UX.
    - "No hay datos disponibles" — Habla como banco, no comunidad.
@@ -961,6 +1027,7 @@ export function deriveCivicTrust(profile: any) {
    - Los empty states deberían ser invitaciones, no errores.
 
 **Impacto emocional**:
+
 - 😒 Sientes que el producto no te invita, te ordena.
 - 💀 Empty states matan momentum.
 
@@ -979,9 +1046,7 @@ export function EmptyMissions() {
       <p className="text-sm text-muted-foreground mb-4">
         Cuando explores misiones en tu barrio, sus historias aparecerán aquí.
       </p>
-      <button className="...">
-        Explorar misiones cerca
-      </button>
+      <button className="...">Explorar misiones cerca</button>
     </div>
   );
 }
@@ -996,17 +1061,20 @@ export function EmptyMissions() {
 **Ubicación**: Múltiples lugares (`kusqa.ts`, `sampleNotifications.ts`, componentes)
 
 **Copy poético que grita AI/Marketing**:
+
 - "El litoral respira"
 - "La sierra espera a sus guardianes"
 - "Tu territorio está despierto"
 - "Trae ropa que puedas manchar y muchas ganas de crear"
 
 **Lo que se siente fake**:
+
 1. **Demasiado liter, poco especifico**: No hay detalles que demuestren conocimiento real del territorio
 2. **Copy compartido**: Podría ser cualquier app de "impacto social"
 3. **Emociones forzadas**: "La sierra espera" es presión emocional artificial
 
 **Impacto emocional**:
+
 - 🤖 Sientes que marketers escribieron esto
 - 😒 No confías en el producto si te vende aspiración en lugar de realidad
 
@@ -1019,14 +1087,14 @@ export function EmptyMissions() {
   id: "barranco-mural",
   title: "Mural colectivo en Barranco",
   description: "Pintaremos un mural en la fachada de la Casa Alianza. Necesitamos 12-15 personas para 6 horas de trabajo. Trae ropa vieja.",  // ← Real, específico
-  
+
   // Reemplaza storytelling con datos:
   location: {
     address: "Casa Alianza, Av. Grau 1050, Barranco",
     coordinates: { lat: -12.1492, lng: -77.0222 },
     accessibility: "Acceso a nivel de calle",
   },
-  
+
   impact: {
     what: "1 fachada de 24m² renovada",
     howMeasured: "Foto antes/después + permiso municipal",
@@ -1049,11 +1117,12 @@ const AVATARS = ["🦊", "🦦", "🦉", "🦙", "🎨", "🌿", "🌊", "🛶",
 // En userRepository
 return {
   // ... user data
-  avatar: "🦙",  // ← Hardcoded llama para TODOS
+  avatar: "🦙", // ← Hardcoded llama para TODOS
 };
 ```
 
 **Lo que grita "FAKE"**:
+
 1. **Emojis genéricos sin elección**:
    - Los usuarios no eligieron su avatar
    - No hay conexión personal
@@ -1067,35 +1136,38 @@ return {
    - Sin consistencia = sin identidad real
 
 **Impacto emocional**:
+
 - 🤖 Te sientes como un número, no una persona
 - 😒 Los avatares no tienen significado
 
 ### Propuesta concreta
 
 **Opción A: Dejar que usuarios suban fotos reales**
+
 ```tsx
 export type UserProfile = {
   avatar: {
     type: "photo" | "initial" | "generated";
-    value: string;  // URL o inicia
+    value: string; // URL o inicia
   };
 };
 ```
 
 **Opción B: Usar iniciales + color**
+
 ```tsx
 export function UserAvatar({ user }: { user: User }) {
   const initials = user.name
     .split(" ")
     .slice(0, 2)
-    .map(n => n[0])
+    .map((n) => n[0])
     .join("")
     .toUpperCase();
-  
+
   const colorHash = hashColor(user.id);
-  
+
   return (
-    <div 
+    <div
       className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
       style={{ backgroundColor: colorHash }}
     >
@@ -1120,11 +1192,13 @@ timestamp: "Hace unos instantes",
 ```
 
 **Lo que grita "FAKE"**:
+
 1. **Nunca se actualiza en real time**: "Hace 20 min" será falso después de 5 minutos
 2. **Sin contexto de zona horaria**: ¿A qué hora del Perú?
 3. **Sin contexto de fecha**: Si fue "hace 3 días", ¿fue martes o viernes?
 
 **Impacto emocional**:
+
 - 😒 Los timestamps falsos destruyen sensación de "en vivo"
 
 ### Propuesta concreta
@@ -1134,12 +1208,12 @@ function formatTimestamp(date: Date, userTZ?: string): string {
   // En lugar de "hace 20 min", mostrar:
   // "Sáb 14 jun · 9:34 AM" (si es hoy)
   // "Jueves, 12 de junio" (si es pasada semana)
-  
+
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   const daysDiff = Math.floor(diff / (1000 * 60 * 60 * 24));
-  
+
   if (daysDiff === 0) {
     // Hoy: mostrar hora
     return date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
@@ -1181,13 +1255,15 @@ export const LEVELS: Level[] = [
    - Si cumplo 1500 XP en una misión de código en Lima, ¿soy "Vecino"? ¿Qué tiene que ver?
 
 3. **Narrativas del componente demasiado genéricas**:
+
    ```ts
-   narrative: "Recorres las primeras rutas del territorio"
+   narrative: "Recorres las primeras rutas del territorio";
    ```
-   
+
    Sin detalles específicos de qué ruta, dónde, con quién.
 
 **Impacto emocional**:
+
 - 🎮 Sientes que juegas un RPG, no que impactas comunidad real
 
 ### Propuesta concreta

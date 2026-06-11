@@ -11,7 +11,11 @@ import {
   useEditInitiativeComment,
   useInitiativeComments,
 } from "@/features/initiativeWall/hooks/useInitiativeComments";
-import { DB_DEFAULTS, type InitiativeComment, type InitiativeType } from "@/services/proposalContract";
+import {
+  DB_DEFAULTS,
+  type InitiativeComment,
+  type InitiativeType,
+} from "@/services/proposalContract";
 import { formatRelativeDate } from "@/utils/date";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +26,9 @@ interface InitiativeWallProps {
 
 export function InitiativeWall({ initiativeId, initiativeType }: InitiativeWallProps) {
   const userId = useCurrentUserId();
-  const { data, isLoading, isError } = useInitiativeComments(initiativeId, initiativeType, { page: 0 });
+  const { data, isLoading, isError } = useInitiativeComments(initiativeId, initiativeType, {
+    page: 0,
+  });
   const { mutate: createComment, isPending: isCreating } = useCreateInitiativeComment();
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<InitiativeComment | null>(null);

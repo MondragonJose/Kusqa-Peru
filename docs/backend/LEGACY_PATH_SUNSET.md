@@ -2,10 +2,10 @@
 
 ## Current state
 
-| Path | Trigger | Backend |
-|------|---------|---------|
-| RPC | `VITE_USE_RPC_TRANSACTIONS=true` | `join_mission_transaction` / `complete_mission_transaction` |
-| Legacy | flag `false` (default) | direct `user_missions` insert/update |
+| Path   | Trigger                          | Backend                                                     |
+| ------ | -------------------------------- | ----------------------------------------------------------- |
+| RPC    | `VITE_USE_RPC_TRANSACTIONS=true` | `join_mission_transaction` / `complete_mission_transaction` |
+| Legacy | flag `false` (default)           | direct `user_missions` insert/update                        |
 
 ## Dependencies
 
@@ -36,11 +36,11 @@
 
 ## Risk matrix
 
-| Risk | Mitigation |
-|------|------------|
-| RPC not deployed | Feature flag rollback to legacy |
+| Risk                     | Mitigation                                                             |
+| ------------------------ | ---------------------------------------------------------------------- |
+| RPC not deployed         | Feature flag rollback to legacy                                        |
 | XP mismatch UI vs server | Optimistic uses catalog `mission.xp`; server uses `missions.xp_reward` |
-| RLS blocks RPC | `SECURITY DEFINER` + `auth.uid()` checks |
+| RLS blocks RPC           | `SECURITY DEFINER` + `auth.uid()` checks                               |
 
 ## Coverage required before Stage 3
 

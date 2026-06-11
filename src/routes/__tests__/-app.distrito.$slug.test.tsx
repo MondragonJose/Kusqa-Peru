@@ -14,22 +14,6 @@ const mockDistrict = {
   sortOrder: 1,
 };
 
-const mockStats = {
-  districtId: "d1",
-  slug: "cusco",
-  displayName: "Cusco",
-  region: "costa" as const,
-  department: "Cusco",
-  missionCount: 5,
-  upcomingMissionCount: 2,
-  completedMissionCount: 3,
-  proposalCount: 3,
-  activeProposalCount: 1,
-  uniqueSupporterCount: 20,
-  acceptedCollaboratorCount: 0,
-  lastActivityAt: "2026-06-07T10:00:00Z",
-};
-
 const mockIntelligence = {
   missionCount: 5,
   completedMissionCount: 3,

@@ -101,7 +101,15 @@ function buildBiography(params: {
   supportedCount: number;
   proposalCount: number;
 }): string {
-  const { phase, regions, districtCount, categories, completedMissionCount, supportedCount, proposalCount } = params;
+  const {
+    phase,
+    regions,
+    districtCount,
+    categories,
+    completedMissionCount,
+    supportedCount,
+    proposalCount,
+  } = params;
   const sentences: string[] = [];
 
   const role = PHASE_ROLE[phase];
@@ -121,9 +129,14 @@ function buildBiography(params: {
   }
 
   const participations: string[] = [];
-  if (completedMissionCount > 0) participations.push(`${completedMissionCount} misión${completedMissionCount !== 1 ? "es" : ""}`);
-  if (proposalCount > 0) participations.push(`${proposalCount} propuesta${proposalCount !== 1 ? "s" : ""}`);
-  if (supportedCount > 0) participations.push(`${supportedCount} iniciativa${supportedCount !== 1 ? "s" : ""} apoyadas`);
+  if (completedMissionCount > 0)
+    participations.push(
+      `${completedMissionCount} misión${completedMissionCount !== 1 ? "es" : ""}`,
+    );
+  if (proposalCount > 0)
+    participations.push(`${proposalCount} propuesta${proposalCount !== 1 ? "s" : ""}`);
+  if (supportedCount > 0)
+    participations.push(`${supportedCount} iniciativa${supportedCount !== 1 ? "s" : ""} apoyadas`);
 
   if (participations.length > 0) {
     const joined = participations.join(", ");
@@ -151,9 +164,7 @@ export function deriveCivicBiography(params: {
   });
 
   // Build the role-like adjectives (e.g., "costero-andina")
-  const roleAdjectives = footprint.regions
-    .map((r) => REGION_ADJ[r])
-    .filter(Boolean);
+  const roleAdjectives = footprint.regions.map((r) => REGION_ADJ[r]).filter(Boolean);
 
   const biography = buildBiography({
     phase: arc.phase,

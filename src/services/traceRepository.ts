@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { spatialRepository } from "@/services/spatialRepository";
-import { dbToCategory } from "@/domain/categories";
+import { type MissionCategory } from "@/domain/categories";
 import type { CivicTraceInput } from "@/domain/civicTrace";
 
 export type BBox = {
@@ -95,7 +95,7 @@ export const traceRepository = {
         districtSlug: districtGeo?.slug ?? row.district.toLowerCase().trim(),
         district: row.district,
         region: districtGeo?.region ?? "costa",
-        category: dbToCategory(row.category),
+        category: row.category as MissionCategory,
         coords:
           row.latitude != null && row.longitude != null
             ? { lat: row.latitude, lng: row.longitude }

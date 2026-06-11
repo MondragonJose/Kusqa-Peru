@@ -4,7 +4,12 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beatToNarrative, phaseToHeadline } from "../civicJourneyNarrative";
 import { deriveCivicJourney } from "../civicJourney";
-import type { NarrativeBeat, JourneyArc, TerritorialFootprint, CivicJourneyInput } from "../civicJourney";
+import type {
+  NarrativeBeat,
+  JourneyArc,
+  TerritorialFootprint,
+  CivicJourneyInput,
+} from "../civicJourney";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -77,7 +82,12 @@ describe("invariant — sin score language en narrativas", () => {
       narrativeTexts.push(
         phaseToHeadline(
           arc({ phase: p }),
-          footprint({ districts: ["a", "b"], districtCount: 2, regions: ["costa", "sierra"], missionCount: 3 }),
+          footprint({
+            districts: ["a", "b"],
+            districtCount: 2,
+            regions: ["costa", "sierra"],
+            missionCount: 3,
+          }),
         ),
       );
     }
@@ -183,10 +193,10 @@ describe("invariant — pureza de imports en civicJourney", () => {
           .split("\n")
           .filter((line) => pattern.test(line))
           .map((l) => l.trim());
-        expect(offendingLines, [
-          `${fileName} imports ${label}:`,
-          ...offendingLines.map((l) => `  → ${l}`),
-        ].join("\n")).toEqual([]);
+        expect(
+          offendingLines,
+          [`${fileName} imports ${label}:`, ...offendingLines.map((l) => `  → ${l}`)].join("\n"),
+        ).toEqual([]);
       });
     }
   }

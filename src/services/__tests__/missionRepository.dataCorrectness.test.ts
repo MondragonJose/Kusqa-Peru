@@ -134,9 +134,7 @@ describe("Phase 0 data correctness (guard)", () => {
       name: "Comunidad KUSQA",
       avatar: "🦙",
     });
-    expect(missions[0].organizer).not.toEqual(
-      expect.objectContaining({ name: "Kusqa" }),
-    );
+    expect(missions[0].organizer).not.toEqual(expect.objectContaining({ name: "Kusqa" }));
   });
 
   // ── 4. Difficulty ────────────────────────────────────────────────────────
@@ -170,14 +168,20 @@ describe("Phase 0 data correctness (guard)", () => {
 
   it("never fabricates impact — null when no verified evidence exists", async () => {
     const missions = await resolveAllWith([makeMissionRow()], {
-      impact: { data: [{ evidence_count: 0, latest_caption: null, latest_description: null }], error: null },
+      impact: {
+        data: [{ evidence_count: 0, latest_caption: null, latest_description: null }],
+        error: null,
+      },
     });
     expect(missions[0].impact).toBeNull();
   });
 
   it("never uses description.slice for impact", async () => {
     const missions = await resolveAllWith([makeMissionRow({ description: "A".repeat(200) })], {
-      impact: { data: [{ evidence_count: 0, latest_caption: null, latest_description: null }], error: null },
+      impact: {
+        data: [{ evidence_count: 0, latest_caption: null, latest_description: null }],
+        error: null,
+      },
     });
     // Must not be a truncated slice of description
     expect(missions[0].impact).not.toBe("A".repeat(80));
@@ -187,7 +191,13 @@ describe("Phase 0 data correctness (guard)", () => {
   it("returns evidence caption as impact when verified evidence exists", async () => {
     const missions = await resolveAllWith([makeMissionRow()], {
       impact: {
-        data: [{ evidence_count: 3, latest_caption: "Recolectamos 50 kg de residuos", latest_description: null }],
+        data: [
+          {
+            evidence_count: 3,
+            latest_caption: "Recolectamos 50 kg de residuos",
+            latest_description: null,
+          },
+        ],
         error: null,
       },
     });
@@ -355,7 +365,7 @@ describe("Phase 0 data correctness (guard)", () => {
       expect(source).not.toContain("🦙");
     });
 
-    it('does not contain DEFAULT_DIFFICULTY', () => {
+    it("does not contain DEFAULT_DIFFICULTY", () => {
       expect(source).not.toContain("DEFAULT_DIFFICULTY");
     });
 
@@ -364,7 +374,7 @@ describe("Phase 0 data correctness (guard)", () => {
       expect(source).not.toContain(".slice(0,80)");
     });
 
-    it('does not use created_at as a display date fallback', () => {
+    it("does not use created_at as a display date fallback", () => {
       // created_at is allowed for ordering (`.order("created_at", ...)`)
       // and Zod schema validation, but must NOT appear as a value used
       // in date resolution. Every occurrence in the source must be one
@@ -374,12 +384,12 @@ describe("Phase 0 data correctness (guard)", () => {
       //   - order("created_at", ...)
       const lines = source.split("\n").filter((l) => l.includes("created_at"));
       const bad = lines.filter(
-        (l) => !l.includes('created_at: z.string()') && !l.includes('.order("created_at"'),
+        (l) => !l.includes("created_at: z.string()") && !l.includes('.order("created_at"'),
       );
       expect(bad).toHaveLength(0);
     });
 
-    it('does not fabricate distanceKm as 0', () => {
+    it("does not fabricate distanceKm as 0", () => {
       // distanceKm must be null when absent, never 0
       expect(source).not.toMatch(/distanceKm\s*[=:]\s*0/);
     });

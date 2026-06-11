@@ -8,9 +8,7 @@ vi.doMock("@/services/_resolveAuth", () => ({
   resolveAuthenticatedUserId: () => Promise.resolve("00000000-0000-4000-a000-000000000001"),
 }));
 
-const { initiativeCommentRepository } = await import(
-  "@/services/proposalCommentRepository"
-);
+const { initiativeCommentRepository } = await import("@/services/proposalCommentRepository");
 
 const MISSION_ID = "00000000-0000-4000-a000-000000000010";
 const PROP_ID = "00000000-0000-4000-a000-000000000020";
@@ -26,10 +24,7 @@ describe("initiativeCommentRepository", () => {
         error: null,
       });
 
-      const count = await initiativeCommentRepository.countByInitiative(
-        MISSION_ID,
-        "mission",
-      );
+      const count = await initiativeCommentRepository.countByInitiative(MISSION_ID, "mission");
 
       expect(count).toBe(0);
       expect(mock.queue.fromCalls).toContain("proposal_comments");
@@ -41,10 +36,7 @@ describe("initiativeCommentRepository", () => {
         error: { message: "connection error" },
       });
 
-      const count = await initiativeCommentRepository.countByInitiative(
-        PROP_ID,
-        "proposal",
-      );
+      const count = await initiativeCommentRepository.countByInitiative(PROP_ID, "proposal");
 
       expect(count).toBe(0);
     });
@@ -151,10 +143,7 @@ describe("initiativeCommentRepository", () => {
         error: null,
       });
 
-      const result = await initiativeCommentRepository.listByInitiative(
-        MISSION_ID,
-        "mission",
-      );
+      const result = await initiativeCommentRepository.listByInitiative(MISSION_ID, "mission");
 
       expect(result.comments).toHaveLength(0);
       expect(result.total).toBe(0);
@@ -169,10 +158,7 @@ describe("initiativeCommentRepository", () => {
         error: null,
       });
 
-      const result = await initiativeCommentRepository.softDeleteComment(
-        COMMENT_ID,
-        AUTHOR_ID,
-      );
+      const result = await initiativeCommentRepository.softDeleteComment(COMMENT_ID, AUTHOR_ID);
 
       expect(result.status).toBe("success");
     });
