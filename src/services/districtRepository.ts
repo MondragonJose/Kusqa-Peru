@@ -50,6 +50,7 @@ export type DistrictStats = {
   uniqueSupporterCount: number;
   acceptedCollaboratorCount: number;
   lastActivityAt: string | null;
+  endorsementCount?: number;
 };
 
 export type DistrictActivity = {
@@ -202,6 +203,7 @@ function zeroedStats(
     uniqueSupporterCount: 0,
     acceptedCollaboratorCount: 0,
     lastActivityAt: null,
+    endorsementCount: 0,
   };
 }
 
@@ -234,10 +236,35 @@ export const districtRepository = {
   },
 
   /**
+   * Count initiative_endorsements for initiatives in the given district.
+   * Uses the FK relationship initiative_endorsements.initiative_id → initiatives.id.
+   * Returns 0 on any error.
+   */
+  async getDistrictEndorsementCount(districtId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from("initiative_endorsements")
+      .select("id")
+      .filter("initiative.district_id", "eq", districtId);
+
+    if (error || !data) return 0;
+    return data.length;
+  },
+
+  /**
    * Read the district_stats view for a given district.
    * Returns zeroed defaults on any error — the UI must always render.
    */
   async getDistrictStats(districtId: string): Promise<DistrictStats> {
+    const [stats, endorsementCount] = await Promise.all([
+      this._getDistrictStats(districtId),
+      this.getDistrictEndorsementCount(districtId),
+    ]);
+
+    return { ...stats, endorsementCount };
+  },
+
+  /** Internal: raw district_stats view read without endorsement decoration. */
+  async _getDistrictStats(districtId: string): Promise<DistrictStats> {
     const { data, error } = await supabase
       .from("district_stats")
       .select("*")
@@ -266,6 +293,7 @@ export const districtRepository = {
    * Lightweight: ~13 columns, ~200 rows.
    */
   async getAllDistrictStats(): Promise<DistrictStats[]> {
+    // Uses direct read — no endorsement decoration (too expensive for all districts).
     const { data, error } = await supabase.from("district_stats").select("*");
 
     if (error) {
@@ -288,8 +316,9 @@ export const districtRepository = {
    * Merges district_stats with two lightweight recent-count queries.
    */
   async getDistrictIntelligence(districtId: string): Promise<TerritorialImpactSummary> {
+    // Uses _getDistrictStats (no endorsement decoration) — vitality engine unchanged.
     const [stats, recentProposalCount, recentCompletionCount] = await Promise.all([
-      this.getDistrictStats(districtId),
+      this._getDistrictStats(districtId),
       this.getRecentProposalCount(districtId),
       this.getRecentCompletionCount(districtId),
     ]);

@@ -31,6 +31,12 @@ const DISTRICT_FEED_ROOT = "district-feed" as const;
 const PUBLIC_PROFILES_ROOT = "public-profiles" as const;
 const CIVIC_EVENTS_ROOT = "civic-events" as const;
 const SPATIAL_ROOT = "spatial" as const;
+const INSTITUTIONS_ROOT = "institutions" as const;
+
+export const institutionKeys = {
+  root: [INSTITUTIONS_ROOT] as const,
+  bySlug: (slug: string) => [INSTITUTIONS_ROOT, "slug", slug] as const,
+};
 
 export const missionKeys = {
   all: [MISSIONS_ROOT] as const,

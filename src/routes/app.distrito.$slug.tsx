@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { lazy, Suspense, useMemo } from "react";
-import { ArrowLeft, MapPin, Loader2, AlertCircle, Sparkles, Compass, Users } from "lucide-react";
+import { ArrowLeft, MapPin, Loader2, AlertCircle, Sparkles, Compass, Users, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,9 +13,11 @@ import {
   useDistrictActivity,
   useDistrictFeed,
   useDistrictIntelligence,
+  useDistrictStats,
   useDistrictTopSupporters,
   useSpatialContext,
 } from "@/features/districts/hooks";
+import { isMunicipalCollabEnabled } from "@/lib/operationalFeature";
 import {
   classifyDistrictActivity,
   DISTRICT_ACTIVITY_COPY,
@@ -69,6 +71,9 @@ function DistrictPage() {
   const { data: feed, isLoading: feedLoading } = useDistrictFeed(slug);
   const { data: activity } = useDistrictActivity(district?.id ?? "", 12);
   const { data: topSupporters } = useDistrictTopSupporters(district?.id ?? "", 8);
+  const { data: districtStats } = useDistrictStats(
+    isMunicipalCollabEnabled() ? district?.id ?? "" : "",
+  );
   const currentUserId = useCurrentUserId();
 
   if (districtLoading) {
@@ -520,6 +525,22 @@ function DistrictPage() {
           >
             <DistrictActivityFeed events={territorialEvents} currentUserId={currentUserId} />
           </Suspense>
+        )}
+
+        {/* Collaborations (Phase 3) — secondary, flag-gated */}
+        {isMunicipalCollabEnabled() && districtStats && districtStats.endorsementCount != null && districtStats.endorsementCount > 0 && (
+          <section
+            className="rounded-lg border border-border/30 bg-muted/30 p-4 space-y-2"
+            aria-label="Colaboraciones institucionales"
+          >
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="font-semibold uppercase tracking-wider">Colaboraciones institucionales</span>
+            </div>
+            <p className="text-sm text-foreground/80">
+              {districtStats.endorsementCount} aval{districtStats.endorsementCount !== 1 ? "es" : ""} institucional{districtStats.endorsementCount !== 1 ? "es" : ""} registrado{districtStats.endorsementCount !== 1 ? "s" : ""} en este distrito.
+            </p>
+          </section>
         )}
 
         {/* District meta footer */}

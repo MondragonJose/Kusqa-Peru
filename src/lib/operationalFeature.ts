@@ -23,3 +23,7 @@ export function isEvidenceUploadEnabled(): boolean {
 export function isInitiativeReadModelEnabled(): boolean {
   return envFlag(import.meta.env.VITE_USE_INITIATIVE_READ_MODEL);
 }
+
+export function isMunicipalCollabEnabled(): boolean {
+  return envFlag(import.meta.env.VITE_MUNICIPAL_COLLAB);
+}

@@ -30,6 +30,8 @@ import type { MissionCategory } from "@/domain/categories";
 import { categoryEmoji } from "@/domain/categories";
 import { getProposalThreshold } from "@/domain/proposalLifecycle";
 import { buildMapEntity, type InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import { endorsementRepository } from "@/services/endorsementRepository";
+import { isMunicipalCollabEnabled } from "@/lib/operationalFeature";
 
 // ─── Mappers ────────────────────────────────────────────────────────────────
 
@@ -139,6 +141,30 @@ async function enrichInitiative(initiative: Initiative): Promise<Initiative> {
   return initiative;
 }
 
+// ─── Endorsement hydration (Phase 3) ─────────────────────────────────────────
+
+function extractSourceId(initiativeId: string): string {
+  if (initiativeId.startsWith("mission_")) return initiativeId.slice(8);
+  if (initiativeId.startsWith("proposal_")) return initiativeId.slice(9);
+  return initiativeId;
+}
+
+async function hydrateEndorsements(initiatives: Initiative[]): Promise<void> {
+  if (!isMunicipalCollabEnabled()) return;
+  if (initiatives.length === 0) return;
+
+  const ids = initiatives.map((i) => extractSourceId(i.id));
+  const endorsementMap = await endorsementRepository.listByInitiativeIds(ids);
+
+  for (const initiative of initiatives) {
+    const sourceId = extractSourceId(initiative.id);
+    const endorsements = endorsementMap.get(sourceId);
+    if (endorsements && endorsements.length > 0) {
+      initiative.endorsements = endorsements;
+    }
+  }
+}
+
 // ─── Filters ────────────────────────────────────────────────────────────────
 
 export type InitiativeFilter = {
@@ -212,12 +238,16 @@ async function resolveById(initiativeId: string): Promise<Initiative | null> {
 async function resolveWithEnrichment(initiativeId: string): Promise<Initiative | null> {
   const base = await resolveById(initiativeId);
   if (!base) return null;
-  return enrichInitiative(base);
+  const enriched = await enrichInitiative(base);
+  await hydrateEndorsements([enriched]);
+  return enriched;
 }
 
 async function resolveAllWithEnrichment(filters?: InitiativeFilter): Promise<Initiative[]> {
   const base = await resolveAll(filters);
-  return Promise.all(base.map(enrichInitiative));
+  const enriched = await Promise.all(base.map(enrichInitiative));
+  await hydrateEndorsements(enriched);
+  return enriched;
 }
 
 async function resolveMapEntities(filters?: InitiativeFilter): Promise<InitiativeMapEntity[]> {

@@ -261,6 +261,41 @@ export function makeMissionRow(overrides: Partial<MissionRow> = {}): MissionRow 
   });
 }
 
+// ---- Institution (RPC output) ----------------------------------------
+
+export const institutionRpcSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  kind: z.string(),
+  district_id: z.string().uuid(),
+  verified: z.boolean(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  website: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export type InstitutionRpc = z.infer<typeof institutionRpcSchema>;
+
+export function makeInstitutionRpc(overrides: Partial<InstitutionRpc> = {}): InstitutionRpc {
+  return institutionRpcSchema.parse({
+    id: "77777777-7777-7777-7777-777777777777",
+    slug: "municipalidad-cusco",
+    name: "Municipalidad Provincial del Cusco",
+    description: "Gobierno local de la provincia del Cusco",
+    kind: "municipality",
+    district_id: "33333333-3333-3333-3333-333333333333",
+    verified: true,
+    email: "contacto@cusco.gob.pe",
+    phone: "+51842567901",
+    website: "https://www.cusco.gob.pe",
+    created_at: "2026-06-01T12:00:00Z",
+    ...overrides,
+  });
+}
+
 // ---- User notification row --------------------------------------------
 
 export const userNotificationRowSchema = z.object({

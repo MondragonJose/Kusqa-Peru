@@ -98,9 +98,11 @@ function makeTerritorialEvent(
       ? "proposal"
       : type.startsWith("mission")
         ? "mission"
-        : type.startsWith("district")
-          ? "district"
-          : "profile",
+        : type.startsWith("institution")
+          ? "institution"
+          : type.startsWith("district")
+            ? "district"
+            : "profile",
     entityId,
     entityTitle: null,
     districtId: null,
@@ -218,6 +220,7 @@ describe("territorialEventToInitiative", () => {
     "mission.completed",
     "mission.evidence_submitted",
     "mission.evidence_verified",
+    "institution.endorsed",
     "district.first_movement",
     "community.trust_changed",
     "community.profile_milestone",
@@ -514,6 +517,7 @@ describe("summarizeInitiativeEvents", () => {
       },
       { type: "MissionStateUpdated", missionId: "m", actorId: "u", timestamp: ts() },
       { type: "MissionCompleted", missionId: "m", userId: "u", evidenceId: "ev", timestamp: ts() },
+      { type: "InstitutionEndorsed", institutionId: "i", timestamp: ts() },
       { type: "DistrictFirstMovement", districtId: "d", timestamp: ts() },
       { type: "CommunityTrustChanged", profileId: "p", timestamp: ts() },
       { type: "CommunityProfileMilestone", profileId: "p", milestone: "m", timestamp: ts() },

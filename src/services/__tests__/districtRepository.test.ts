@@ -63,6 +63,7 @@ describe("districtRepository", () => {
       expect(stats.missionCount).toBe(0);
       expect(stats.activeProposalCount).toBe(0);
       expect(stats.uniqueSupporterCount).toBe(0);
+      expect(stats.endorsementCount).toBe(0);
     });
 
     it("returns parsed stats when the table read succeeds", async () => {
@@ -79,6 +80,24 @@ describe("districtRepository", () => {
       expect(stats.missionCount).toBe(5);
       expect(stats.activeProposalCount).toBe(4);
       expect(stats.lastActivityAt).toBe("2026-06-01T00:00:00Z");
+      expect(stats.endorsementCount).toBe(0);
+    });
+  });
+
+  describe("getDistrictEndorsementCount", () => {
+    it("returns 0 when the table query errors", async () => {
+      const count = await districtRepository.getDistrictEndorsementCount("cusco-cusco");
+      expect(count).toBe(0);
+    });
+
+    it("returns count when the table query succeeds", async () => {
+      mock.queue.tableResponse("initiative_endorsements", {
+        data: [{ id: "1" }, { id: "2" }, { id: "3" }],
+        error: null,
+      });
+
+      const count = await districtRepository.getDistrictEndorsementCount("cusco-cusco");
+      expect(count).toBe(3);
     });
   });
 

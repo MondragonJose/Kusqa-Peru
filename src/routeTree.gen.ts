@@ -21,6 +21,7 @@ import { Route as AppCrearRouteImport } from './routes/app.crear'
 import { Route as AppPropuestaProposalIdRouteImport } from './routes/app.propuesta.$proposalId'
 import { Route as AppPerfilUserIdRouteImport } from './routes/app.perfil.$userId'
 import { Route as AppMisionMissionIdRouteImport } from './routes/app.mision.$missionId'
+import { Route as AppInstitucionSlugRouteImport } from './routes/app.institucion.$slug'
 import { Route as AppDistritoSlugRouteImport } from './routes/app.distrito.$slug'
 
 const AppRoute = AppRouteImport.update({
@@ -83,6 +84,11 @@ const AppMisionMissionIdRoute = AppMisionMissionIdRouteImport.update({
   path: '/mision/$missionId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstitucionSlugRoute = AppInstitucionSlugRouteImport.update({
+  id: '/institucion/$slug',
+  path: '/institucion/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDistritoSlugRoute = AppDistritoSlugRouteImport.update({
   id: '/distrito/$slug',
   path: '/distrito/$slug',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/distrito/$slug': typeof AppDistritoSlugRoute
+  '/app/institucion/$slug': typeof AppInstitucionSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
   '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/app': typeof AppIndexRoute
   '/app/distrito/$slug': typeof AppDistritoSlugRoute
+  '/app/institucion/$slug': typeof AppInstitucionSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
   '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/app/': typeof AppIndexRoute
   '/app/distrito/$slug': typeof AppDistritoSlugRoute
+  '/app/institucion/$slug': typeof AppInstitucionSlugRoute
   '/app/mision/$missionId': typeof AppMisionMissionIdRoute
   '/app/perfil/$userId': typeof AppPerfilUserIdRoute
   '/app/propuesta/$proposalId': typeof AppPropuestaProposalIdRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app/'
     | '/app/distrito/$slug'
+    | '/app/institucion/$slug'
     | '/app/mision/$missionId'
     | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app'
     | '/app/distrito/$slug'
+    | '/app/institucion/$slug'
     | '/app/mision/$missionId'
     | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/app/'
     | '/app/distrito/$slug'
+    | '/app/institucion/$slug'
     | '/app/mision/$missionId'
     | '/app/perfil/$userId'
     | '/app/propuesta/$proposalId'
@@ -273,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMisionMissionIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/institucion/$slug': {
+      id: '/app/institucion/$slug'
+      path: '/institucion/$slug'
+      fullPath: '/app/institucion/$slug'
+      preLoaderRoute: typeof AppInstitucionSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/distrito/$slug': {
       id: '/app/distrito/$slug'
       path: '/distrito/$slug'
@@ -303,6 +322,7 @@ interface AppRouteChildren {
   AppProgresoRoute: typeof AppProgresoRoute
   AppIndexRoute: typeof AppIndexRoute
   AppDistritoSlugRoute: typeof AppDistritoSlugRoute
+  AppInstitucionSlugRoute: typeof AppInstitucionSlugRoute
   AppMisionMissionIdRoute: typeof AppMisionMissionIdRoute
   AppPropuestaProposalIdRoute: typeof AppPropuestaProposalIdRoute
 }
@@ -315,6 +335,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgresoRoute: AppProgresoRoute,
   AppIndexRoute: AppIndexRoute,
   AppDistritoSlugRoute: AppDistritoSlugRoute,
+  AppInstitucionSlugRoute: AppInstitucionSlugRoute,
   AppMisionMissionIdRoute: AppMisionMissionIdRoute,
   AppPropuestaProposalIdRoute: AppPropuestaProposalIdRoute,
 }

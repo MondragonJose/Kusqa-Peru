@@ -28,6 +28,7 @@ export type TerritorialEventType =
   | "mission.completed"
   | "mission.evidence_submitted"
   | "mission.evidence_verified"
+  | "institution.endorsed"
   | "district.first_movement"
   | "community.trust_changed"
   | "community.profile_milestone";
@@ -38,7 +39,8 @@ export type TerritorialEntityType =
   | "comment"
   | "district"
   | "profile"
-  | "evidence";
+  | "evidence"
+  | "institution";
 
 export type TerritorialActor = {
   id: string;
@@ -88,6 +90,7 @@ export const TERRITORIAL_EVENT_COPY: Record<
   "mission.completed": { title: "Completó una misión", icon: "check" },
   "mission.evidence_submitted": { title: "Envió evidencia", icon: "comment" },
   "mission.evidence_verified": { title: "Evidencia verificada", icon: "shield" },
+  "institution.endorsed": { title: "Institución respaldó la iniciativa", icon: "shield" },
   "district.first_movement": { title: "Primer movimiento en el distrito", icon: "spark" },
   "community.trust_changed": { title: "Avanzó en confianza", icon: "shield" },
   "community.profile_milestone": { title: "Alcanzó un hito", icon: "spark" },
@@ -107,6 +110,7 @@ export const TERRITORIAL_EVENT_VERB: Record<TerritorialEventType, string> = {
   "mission.completed": "completó",
   "mission.evidence_submitted": "envió evidencia",
   "mission.evidence_verified": "verificó evidencia",
+  "institution.endorsed": "respaldó",
   "district.first_movement": "inició movimiento",
   "community.trust_changed": "mejoró confianza",
   "community.profile_milestone": "nuevo hito",

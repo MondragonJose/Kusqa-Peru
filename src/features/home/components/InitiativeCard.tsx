@@ -12,6 +12,8 @@ import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/
 import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
+import { isMunicipalCollabEnabled } from "@/lib/operationalFeature";
+import { EndorsementBadge } from "@/features/institutions";
 
 const REGION_ACCENT: Record<string, string> = {
   costa: "from-coast/30 to-sun/20 border-coast/40",
@@ -150,29 +152,34 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
           </div>
         </div>
 
-        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {district}
-            </span>
-            <span className="flex items-center gap-1">{initiative.temporalAnchor.label}</span>
-          </div>
-          {isMission && initiative.participantsCount != null && (
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {initiative.participantsCount} participantes
-            </span>
-          )}
-          {isProposal && supportCount > 0 && (
-            <span className="flex items-center gap-1">
-              <Heart className="h-3 w-3 text-violet-500" />
-              <span className="text-violet-600 dark:text-violet-400">
-                {supportCount} apoyo{supportCount !== 1 ? "s" : ""}
+          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                {district}
               </span>
-            </span>
-          )}
-        </div>
+              <span className="flex items-center gap-1">{initiative.temporalAnchor.label}</span>
+            </div>
+            {isMunicipalCollabEnabled() && initiative.endorsements && initiative.endorsements.length > 0 && (
+              <div className="mt-0.5">
+                <EndorsementBadge endorsements={initiative.endorsements} variant="compact" />
+              </div>
+            )}
+            {isMission && initiative.participantsCount != null && (
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {initiative.participantsCount} participantes
+              </span>
+            )}
+            {isProposal && supportCount > 0 && (
+              <span className="flex items-center gap-1">
+                <Heart className="h-3 w-3 text-violet-500" />
+                <span className="text-violet-600 dark:text-violet-400">
+                  {supportCount} apoyo{supportCount !== 1 ? "s" : ""}
+                </span>
+              </span>
+            )}
+          </div>
 
         {isProposal && (
           <div className="mt-1">

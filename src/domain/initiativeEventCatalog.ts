@@ -144,6 +144,14 @@ export type InitiativeMissionCompleted = {
   timestamp: string;
 };
 
+// ─── Institution events (Phase 3) ─────────────────────────────────────────
+
+export type InitiativeInstitutionEndorsed = {
+  type: "InstitutionEndorsed";
+  institutionId: string;
+  timestamp: string;
+};
+
 // ─── Community / territory events ──────────────────────────────────────────
 
 export type InitiativeDistrictFirstMovement = {
@@ -184,6 +192,7 @@ export type InitiativeEvent =
   | InitiativeEvidenceFlagged
   | InitiativeMissionStateUpdated
   | InitiativeMissionCompleted
+  | InitiativeInstitutionEndorsed
   | InitiativeDistrictFirstMovement
   | InitiativeCommunityTrustChanged
   | InitiativeCommunityProfileMilestone;

@@ -24,6 +24,17 @@ vi.mock("@/services/proposalRepository", () => ({
   },
 }));
 
+const mockEndorsementListByInitiativeIds = vi.fn();
+vi.mock("@/services/endorsementRepository", () => ({
+  endorsementRepository: {
+    listByInitiativeIds: mockEndorsementListByInitiativeIds,
+  },
+}));
+
+vi.mock("@/lib/operationalFeature", () => ({
+  isMunicipalCollabEnabled: vi.fn(() => false),
+}));
+
 const { initiativeResolver } = await import("../initiativeResolver");
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -276,6 +287,90 @@ describe("initiativeResolver", () => {
 
       const result = await initiativeResolver.resolveById("unknown");
       expect(result).toBeNull();
+    });
+  });
+
+  describe("enrichment with endorsements", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("does not attach endorsements when flag is off (default)", async () => {
+      const { isMunicipalCollabEnabled } = await import("@/lib/operationalFeature");
+      vi.mocked(isMunicipalCollabEnabled).mockReturnValue(false);
+
+      mockMissionFindAll.mockResolvedValue([makeMission()]);
+      mockProposalGetAll.mockResolvedValue([]);
+
+      const [result] = await initiativeResolver.resolveAllWithEnrichment();
+
+      expect(result.endorsements).toBeUndefined();
+      expect(mockEndorsementListByInitiativeIds).not.toHaveBeenCalled();
+      expect(result.title).toBe("Limpieza de playa");
+    });
+
+    it("attaches endorsements when flag is on", async () => {
+      const { isMunicipalCollabEnabled } = await import("@/lib/operationalFeature");
+      vi.mocked(isMunicipalCollabEnabled).mockReturnValue(true);
+
+      const endorsementMap = new Map<string, { id: string; initiativeId: string; institutionId: string; relation: "supporter"; createdAt: string }[]>();
+      endorsementMap.set("mission-uuid-1", [
+        {
+          id: "end-1",
+          initiativeId: "mission-uuid-1",
+          institutionId: "inst-uuid-1",
+          relation: "supporter",
+          createdAt: "2026-06-10T12:00:00Z",
+        },
+      ]);
+      mockEndorsementListByInitiativeIds.mockResolvedValue(endorsementMap);
+
+      mockMissionFindAll.mockResolvedValue([makeMission()]);
+      mockProposalGetAll.mockResolvedValue([]);
+
+      const [result] = await initiativeResolver.resolveAllWithEnrichment();
+
+      expect(result.endorsements).toBeDefined();
+      expect(result.endorsements).toHaveLength(1);
+      expect(result.endorsements![0].relation).toBe("supporter");
+      expect(result.endorsements![0].institutionId).toBe("inst-uuid-1");
+
+      // Non-destructive: other fields unchanged
+      expect(result.title).toBe("Limpieza de playa");
+      expect(result.sourceType).toBe("mission");
+      expect(result.category).toBe("Medio ambiente");
+    });
+
+    it("attaches endorsements for single resolveWithEnrichment when flag is on", async () => {
+      const { isMunicipalCollabEnabled } = await import("@/lib/operationalFeature");
+      vi.mocked(isMunicipalCollabEnabled).mockReturnValue(true);
+
+      const endorsementMap = new Map<string, any[]>();
+      endorsementMap.set("mission-uuid-1", [
+        {
+          id: "end-1",
+          initiativeId: "mission-uuid-1",
+          institutionId: "inst-uuid-1",
+          relation: "origin",
+          createdAt: "2026-06-10T12:00:00Z",
+        },
+      ]);
+      mockEndorsementListByInitiativeIds.mockResolvedValue(endorsementMap);
+
+      mockMissionFindById.mockResolvedValue(makeMission());
+      mockMissionFindAll.mockResolvedValue([]);
+      mockProposalGetAll.mockResolvedValue([]);
+
+      const result = await initiativeResolver.resolveWithEnrichment("mission_mission-uuid-1");
+
+      expect(result).not.toBeNull();
+      expect(result!.endorsements).toBeDefined();
+      expect(result!.endorsements).toHaveLength(1);
+      expect(result!.endorsements![0].relation).toBe("origin");
+
+      // Non-destructive proof
+      expect(result!.title).toBe("Limpieza de playa");
+      expect(result!.sourceType).toBe("mission");
     });
   });
 });

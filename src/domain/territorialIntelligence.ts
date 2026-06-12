@@ -541,6 +541,7 @@ export function summarizeInitiativeEvents(
       case "MissionCompleted":
         missions.add(ev.missionId);
         break;
+      case "InstitutionEndorsed":
       case "DistrictFirstMovement":
       case "CommunityTrustChanged":
       case "CommunityProfileMilestone":

@@ -123,6 +123,16 @@ export type InitiativeLocation = {
   locationLabel: string | null;
 };
 
+// ─── Endorsement — institution link (Phase 3) ─────────────────────────────
+
+export type InitiativeEndorsement = {
+  id: string;
+  initiativeId: string;
+  institutionId: string;
+  relation: "supporter" | "collaborator" | "origin";
+  createdAt: string;
+};
+
 // ─── Initiative — the ONE type ────────────────────────────────────────────
 
 export type Initiative = {
@@ -150,6 +160,8 @@ export type Initiative = {
   vitalityScore?: number;
 
   ownerId?: string;
+
+  endorsements?: InitiativeEndorsement[];
 };
 
 // ─── Dormancy detection ───────────────────────────────────────────────────
