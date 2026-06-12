@@ -6,9 +6,7 @@ test.describe("Critical civic flow — logged-out → view → attempt action �
     await page.goto("/");
     await expect(page.locator("body")).toBeVisible();
 
-    const results = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const results = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
 
     expect(
       results.violations.filter((v) => v.impact === "critical" || v.impact === "serious"),
@@ -28,11 +26,21 @@ test.describe("Critical civic flow — logged-out → view → attempt action �
     if (await card.isVisible({ timeout: 3000 }).catch(() => false)) {
       await expect(card).toBeVisible();
       // Card should have a title or emoji
-      await expect(card.locator("h3, [class*=title]").first()).toBeVisible({ timeout: 3000 }).catch(() => {});
+      await expect(card.locator("h3, [class*=title]").first())
+        .toBeVisible({ timeout: 3000 })
+        .catch(() => {});
     } else {
       // Empty state is also acceptable
-      await expect(empty.first()).toBeVisible({ timeout: 5000 }).catch(() => {});
-      test.skip(!(await empty.first().isVisible().catch(() => false)), "No cards or empty state found");
+      await expect(empty.first())
+        .toBeVisible({ timeout: 5000 })
+        .catch(() => {});
+      test.skip(
+        !(await empty
+          .first()
+          .isVisible()
+          .catch(() => false)),
+        "No cards or empty state found",
+      );
     }
   });
 
@@ -47,10 +55,14 @@ test.describe("Critical civic flow — logged-out → view → attempt action �
       await supportBtn.click();
 
       // Should redirect to login page or show auth modal
-      await page.waitForURL(/login|auth|signin|iniciar-sesion/i, { timeout: 10000 }).catch(() => {});
+      await page
+        .waitForURL(/login|auth|signin|iniciar-sesion/i, { timeout: 10000 })
+        .catch(() => {});
       const onLoginPage = page.url().match(/login|auth|signin/i);
       if (onLoginPage) {
-        await expect(page.getByRole("heading, [class*=title]").first()).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole("heading, [class*=title]").first()).toBeVisible({
+          timeout: 5000,
+        });
       }
     } else {
       // If no support button, check the login page directly
@@ -64,9 +76,7 @@ test.describe("Critical civic flow — logged-out → view → attempt action �
     await page.goto("/app");
     await page.waitForLoadState("networkidle");
 
-    const results = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const results = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
 
     const critical = results.violations.filter(
       (v) => v.impact === "critical" || v.impact === "serious",
@@ -84,9 +94,7 @@ test.describe("Accessibility — key public pages", () => {
       await page.goto(url);
       await page.waitForLoadState("networkidle");
 
-      const results = await new AxeBuilder({ page })
-        .disableRules(["color-contrast"])
-        .analyze();
+      const results = await new AxeBuilder({ page }).disableRules(["color-contrast"]).analyze();
 
       const critical = results.violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",

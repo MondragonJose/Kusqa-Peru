@@ -12,9 +12,7 @@ const preview: Preview = {
     },
     a11y: {
       config: {
-        rules: [
-          { id: "color-contrast", enabled: false },
-        ],
+        rules: [{ id: "color-contrast", enabled: false }],
       },
     },
   },
