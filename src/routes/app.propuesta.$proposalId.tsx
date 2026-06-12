@@ -114,6 +114,11 @@ function ProposalDetail() {
 
   const handleActionBar = (action: InitiativeAction) => {
     if (!proposal) return;
+    const authRequired: InitiativeAction[] = ["support", "join", "report", "edit"];
+    if (!currentUserId && authRequired.includes(action)) {
+      toast.info("Inicia sesión para realizar esta acción");
+      return;
+    }
     switch (action) {
       case "support":
         handleSupport();
@@ -190,7 +195,7 @@ function ProposalDetail() {
           <ProposalTabs proposal={proposal} />
           <ConversionCta proposalId={proposal.id} />
           <ProposalLifecycleTimeline proposalId={proposal.id} />
-          {currentUserId && initiativeForBar && (
+          {initiativeForBar && (
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/20">
               <InitiativeActionBar
                 initiative={initiativeForBar}
@@ -203,12 +208,12 @@ function ProposalDetail() {
                 maxVisible={2}
                 onAction={handleActionBar}
                 onEdit={
-                  canArchiveProposal(proposal.userId, currentUserId, proposal.status)
+                  currentUserId && canArchiveProposal(proposal.userId, currentUserId, proposal.status)
                     ? handleArchive
                     : undefined
                 }
                 labelOverrides={
-                  canArchiveProposal(proposal.userId, currentUserId, proposal.status)
+                  currentUserId && canArchiveProposal(proposal.userId, currentUserId, proposal.status)
                     ? { edit: "Archivar" }
                     : undefined
                 }

@@ -88,7 +88,22 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
         <div className="h-1.5 w-full bg-gradient-to-r from-violet-400 to-violet-600 opacity-50" />
       )}
 
-      <div className="flex flex-col flex-1 p-5 gap-3">
+      <div
+        onClick={() => {
+          const route = getInitiativeDetailRoute(initiative);
+          navigate(route);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            const route = getInitiativeDetailRoute(initiative);
+            navigate(route);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        className="flex flex-col flex-1 p-5 gap-3 cursor-pointer"
+      >
         <div className="flex items-start gap-3">
           <div
             className={`h-12 w-12 rounded-xl grid place-items-center text-2xl shrink-0 shadow-soft ${
@@ -198,13 +213,15 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               </span>
             )}
           </div>
-          <InitiativeActionBar
-            initiative={initiative}
-            relationship={relationship}
-            variant="compact"
-            maxVisible={1}
-            onAction={handleAction}
-          />
+          <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <InitiativeActionBar
+              initiative={initiative}
+              relationship={relationship}
+              variant="compact"
+              maxVisible={1}
+              onAction={handleAction}
+            />
+          </div>
         </div>
       </div>
     </motion.div>

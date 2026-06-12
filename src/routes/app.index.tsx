@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { MapPin, Sparkles, ArrowRight, Users, Compass, CompassIcon, RefreshCw } from "lucide-react";
 import { Drawer } from "vaul";
 import { REGION_META } from "@/constants/gamification";
-import { districtSlugify } from "@/utils/districtSlug";
+
 import { TerritorialFootprint } from "@/components/TerritorialFootprint";
 import { KusqaButton } from "@/components/ui/kusqa-button";
 import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions";
@@ -30,6 +30,7 @@ function Dashboard() {
   const [selectedEntity, setSelectedEntity] = useState<Initiative | null>(null);
   const focusTriggerRef = useRef<HTMLElement | null>(null);
   const drawerHandleRef = useRef<HTMLDivElement>(null);
+  const pendingFocusRestoreRef = useRef(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { supportProposal, isSupported, isSupporting } = useSupportProposal();
@@ -362,24 +363,19 @@ function Dashboard() {
                   <div
                     key={item.id}
                     onClick={() => {
-                      if (typeof document !== "undefined") {
-                        const active = document.activeElement as HTMLElement | null;
-                        if (active && active !== document.body) {
-                          focusTriggerRef.current = active;
-                          active.blur();
-                        }
-                      }
-                      setSelectedEntity(item);
+                      const route = getInitiativeDetailRoute(item);
+                      navigate(route);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setSelectedEntity(item);
+                        const route = getInitiativeDetailRoute(item);
+                        navigate(route);
                       }
                     }}
                     role="button"
                     tabIndex={0}
-                    className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left cursor-pointer"
+                    className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left cursor-pointer group"
                   >
                     <div
                       className={`h-10 w-10 rounded-xl grid place-items-center text-lg shrink-0 border ${
@@ -401,14 +397,7 @@ function Dashboard() {
                       </div>
                       <div className="text-[10px] sm:text-[11px] text-muted-foreground/70 mt-0.5 font-medium flex flex-wrap items-center gap-1">
                         <MapPin className="h-3 w-3 opacity-60" />{" "}
-                        <Link
-                          to="/app/distrito/$slug"
-                          params={{ slug: districtSlugify(district) }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="truncate hover:underline hover:text-accent transition-colors"
-                        >
-                          {district}
-                        </Link>
+                        <span className="truncate">{district}</span>
                         <span className="opacity-45">•</span>
                         <span className="truncate">{anchorLabel}</span>
                         {isMissionEntity && (
@@ -426,6 +415,36 @@ function Dashboard() {
                           </>
                         )}
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          if (typeof document !== "undefined") {
+                            const active = document.activeElement as HTMLElement | null;
+                            if (active && active !== document.body) {
+                              focusTriggerRef.current = active;
+                              active.blur();
+                            }
+                          }
+                          setSelectedEntity(item);
+                        }}
+                        className="shrink-0 p-1.5 rounded-lg text-muted-foreground/40 hover:text-foreground hover:bg-secondary/50 transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-accent self-start mt-0.5"
+                        aria-label="Vista rápida"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 );
@@ -464,10 +483,7 @@ function Dashboard() {
           onOpenChange={(open) => {
             if (!open) {
               setSelectedEntity(null);
-              requestAnimationFrame(() => {
-                focusTriggerRef.current?.focus();
-                focusTriggerRef.current = null;
-              });
+              pendingFocusRestoreRef.current = true;
             }
           }}
           snapPoints={["38%", "85vh"]}
@@ -476,6 +492,18 @@ function Dashboard() {
             <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
             <Drawer.Content
               className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
+              onAnimationEnd={() => {
+                if (pendingFocusRestoreRef.current) {
+                  pendingFocusRestoreRef.current = false;
+                  const trigger = focusTriggerRef.current;
+                  if (trigger) {
+                    trigger.focus();
+                    focusTriggerRef.current = null;
+                  } else {
+                    (document.body as HTMLElement).focus();
+                  }
+                }
+              }}
               onOpenAutoFocus={(e) => {
                 e.preventDefault();
                 requestAnimationFrame(() => {

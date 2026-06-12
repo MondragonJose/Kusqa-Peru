@@ -90,9 +90,9 @@ select
   m.longitude,
   coalesce(
     (select p.user_id from public.proposals p where p.id = m.source_proposal_id),
-    m.organizer_id
+    m.created_by 
   ),
-  m.organizer_id,
+  m.created_by,
   m.start_date,
   m.end_date,
   m.max_participants,
@@ -106,7 +106,7 @@ select
   m.end_date,
   m.source_proposal_id,
   m.created_at,
-  coalesce(m.updated_at, m.created_at)
+  m.created_at -- Corregido: m.updated_at no existe, usamos m.created_at como base
 from public.missions m
 where not exists (
   select 1 from public.initiatives i where i.id = m.id
@@ -196,7 +196,22 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_region text;
+  v_owner_id uuid;
 begin
+  -- Resolve subqueries into variables to avoid 'missing FROM-clause' errors in VALUES
+  v_region := coalesce(
+    (select region from public.proposals where id = new.source_proposal_id),
+    (select region from public.districts where id = new.district_id),
+    'sierra'
+  );
+
+  v_owner_id := coalesce(
+    (select user_id from public.proposals where id = new.source_proposal_id),
+    new.created_by 
+  );
+
   insert into public.initiatives (
     id, kind,
     title, description, category, district, district_id, region,
@@ -210,17 +225,10 @@ begin
   ) values (
     new.id, 'mission'::initiative_kind,
     new.title, new.description, new.category, new.district, new.district_id,
-    coalesce(
-      (select region from public.proposals where id = new.source_proposal_id),
-      (select region from public.districts where id = new.district_id),
-      'sierra'
-    ),
+    v_region,
     new.latitude, new.longitude,
-    coalesce(
-      (select p.user_id from public.proposals p where p.id = new.source_proposal_id),
-      new.organizer_id
-    ),
-    new.organizer_id,
+    v_owner_id,
+    new.created_by,
     new.start_date, new.end_date,
     new.max_participants, new.xp_reward, new.current_progress,
     case
@@ -230,7 +238,7 @@ begin
     end,
     new.end_date,
     new.source_proposal_id,
-    new.created_at, new.updated_at
+    new.created_at, now() -- Corregido: usamos now() para reflejar cuándo ocurrió el UPSERT en la tabla initiatives
   )
   on conflict (id) do update set
     title               = excluded.title,
@@ -296,5 +304,17 @@ create trigger trg_delete_mission_initiative
 -- 6) Notify PostgREST to reload schema cache
 --    Resolves 400 on embed profiles!initiative_comments_user_id_fkey(...)
 -- ===========================================================================
+
+notify pgrst, 'reload schema';
+
+-- also
+alter table public.profiles add column if not exists full_name text;
+
+-- Poblarla desde el metadata de auth (opcional pero recomendable)
+update public.profiles p
+set full_name = u.raw_user_meta_data->>'full_name'
+from auth.users u
+where u.id = p.id
+  and p.full_name is null;
 
 notify pgrst, 'reload schema';

@@ -104,7 +104,7 @@ export function ConversationThread({ proposalId }: ConversationThreadProps) {
         </form>
       ) : (
         <p className="text-sm text-muted-foreground rounded-md border border-dashed p-3">
-          Inicia sesión para sumarte a la conversación.
+          Inicia sesión para participar en la conversación.
         </p>
       )}
 
@@ -123,7 +123,12 @@ export function ConversationThread({ proposalId }: ConversationThreadProps) {
         </div>
       )}
 
-      {isError && (
+      {!userId && isError && (
+        <p className="text-sm text-muted-foreground rounded-md border border-dashed p-3">
+          Inicia sesión para participar en la conversación.
+        </p>
+      )}
+      {userId && isError && (
         <p className="text-sm text-destructive">
           No se pudo cargar la conversación. Intenta de nuevo en unos minutos.
         </p>
