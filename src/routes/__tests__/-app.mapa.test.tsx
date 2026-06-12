@@ -189,7 +189,7 @@ describe("app.mapa — selection logic", () => {
     expect(screen.getByText("Taller de reciclaje comunitario")).toBeInTheDocument();
   });
 
-  it("defaults to first entity (mission) in selectedMissionId when no selection is made", async () => {
+  it("defaults to null selectedMissionId when no selection is made", async () => {
     setupMocks();
     const Page = await loadMapPage();
     renderWithProviders(<Page />, {
@@ -198,7 +198,7 @@ describe("app.mapa — selection logic", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId("selected-mission-id").textContent).toBe("mission-1");
+      expect(screen.getByTestId("selected-mission-id").textContent).toBe("null");
     });
   });
 

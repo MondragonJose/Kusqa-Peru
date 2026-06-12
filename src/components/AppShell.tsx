@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Compass, Map, Plus, Trophy, Bell, User, Sparkles, Search, LogIn } from "lucide-react";
-import { useCurrentUser, useUserXpProgress, useOAuthLogin } from "@/features/auth";
+import { useCurrentUser, useOAuthLogin } from "@/features/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { HeaderBellBadge } from "./HeaderBellBadge";
@@ -20,7 +20,7 @@ const NAV: NavItem[] = [
   { to: "/app/mapa", label: "Mapa", labelMobile: "Mapa", icon: Map },
   {
     to: "/app/crear",
-    label: "Crear proyecto",
+    label: "Crear propuesta",
     labelMobile: "Crear",
     icon: Plus,
     requiresAuth: true,
@@ -37,7 +37,7 @@ export function AppShell({ children, isAnonymous = false }: AppShellProps) {
   const state = useRouterState();
   const path = state.location.pathname;
   const currentUser = useCurrentUser();
-  const { progressPct } = useUserXpProgress();
+
   const { loginWithGoogle } = useOAuthLogin();
 
   // Anonymous mode: show minimal shell without user data
@@ -102,14 +102,8 @@ export function AppShell({ children, isAnonymous = false }: AppShellProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">{currentUser.name}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  Nivel {currentUser.level} · {currentUser.xp.toLocaleString()} XP
-                </div>
               </div>
               <Sparkles className="h-4 w-4 text-accent" />
-            </div>
-            <div className="mt-3 h-1.5 rounded-full bg-secondary overflow-hidden">
-              <div className="h-full bg-gradient-sunrise" style={{ width: `${progressPct}%` }} />
             </div>
           </Link>
         ) : isAnonymous ? (
@@ -130,7 +124,7 @@ export function AppShell({ children, isAnonymous = false }: AppShellProps) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0 pb-20 lg:pb-8 lg:ml-72 flex flex-col overflow-hidden">
+      <main className="flex-1 min-w-0 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 lg:ml-72 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex-shrink-0 sticky top-0 z-20 glass border-b border-border/60 px-5 lg:px-10 py-3 flex items-center gap-3">
           <Link to="/app" className="lg:hidden flex items-center gap-2">

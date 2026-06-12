@@ -14,7 +14,6 @@ export const Route = createFileRoute("/app/notificaciones")({
 const NOTIFICATION_TYPE_MAP: Record<string, { type: CivicNotificationType; emoji: string }> = {
   mission_joined: { type: "misión", emoji: "📍" },
   mission_completed: { type: "misión", emoji: "✅" },
-  xp_granted: { type: "logro", emoji: "✨" },
   evidence_received: { type: "presencia", emoji: "📷" },
   moderation_update: { type: "comunidad", emoji: "🔍" },
   community_pulse: { type: "comunidad", emoji: "💚" },

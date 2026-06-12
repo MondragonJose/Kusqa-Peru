@@ -8,8 +8,6 @@ import { useProfileMissionTimeline } from "@/features/auth/hooks/useUserMissions
 import {
   useProgression,
   StageCard,
-  KusqaMomentsModal,
-  type KusqaMomentData,
 } from "@/features/progression";
 import { BadgeCard, CIVIC_BADGES, type CivicBadge } from "@/features/badges";
 import { CivicTrustBadge, deriveCivicTrust } from "@/features/community";
@@ -25,7 +23,7 @@ import {
   getProposalPhaseCopy,
   getProposalThreshold,
 } from "@/domain/proposalLifecycle";
-import { MapPin, Sparkles, Heart, Map, Clock, ArrowRight, X, Download } from "lucide-react";
+import { MapPin, Sparkles, Heart, Map, Clock, ArrowRight, X, Download, Pencil } from "lucide-react";
 import { computeProposalAnchor } from "@/domain/proposalLifecycle";
 import { deriveCivicJourney, type CivicJourneyInput } from "@/domain/civicJourney";
 import { deriveCivicBiography } from "@/domain/civicBiography";
@@ -93,13 +91,12 @@ export function Profile() {
   });
   const { data: ownProposals = [] } = useCurrentUserProposals();
 
-  const [momentOpen, setMomentOpen] = useState(false);
-  const [activeMoment, _setActiveMoment] = useState<KusqaMomentData | null>(null);
   const [storyOpen, setStoryOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [districtEditOpen, setDistrictEditOpen] = useState(false);
   const [districtInput, setDistrictInput] = useState("");
   const [isUpdatingDistrict, setIsUpdatingDistrict] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const {
     suggestions,
@@ -170,7 +167,7 @@ export function Profile() {
 
   const handleSaveDistrict = async () => {
     if (!districtInput.trim()) {
-      alert("Por favor ingresa un distrito válido");
+      toast.error("Por favor ingresa un distrito válido");
       return;
     }
 
@@ -263,15 +260,18 @@ export function Profile() {
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1.5 font-medium">
                 <span>{user.handle}</span>
                 <span className="text-border/80">•</span>
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 group">
                   <MapPin className="h-3.5 w-3.5 text-primary/70" /> {user.district}
+                  <button
+                    onClick={() => { setDistrictInput(user.district); setDistrictEditOpen(true); }}
+                    className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-accent"
+                    title="Cambiar distrito"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
                 </span>
               </div>
 
-              {/* Bio / Interests */}
-              <div className="mt-3 text-sm text-muted-foreground/80 leading-relaxed max-w-2xl">
-                A pie por mi territorio, conectando con mi gente y construyendo comunidad.
-              </div>
             </div>
 
             <div className="flex gap-2 pb-1 z-10 w-full sm:w-auto">
@@ -281,20 +281,34 @@ export function Profile() {
               >
                 <MapPin className="h-4 w-4" /> Explorar territorio
               </Link>
-              <button
-                onClick={() => handleExport("json")}
-                className="rounded-xl border border-border/60 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
-                title="Exportar acta cívica (JSON)"
-              >
-                <Download className="h-4 w-4" /> JSON
-              </button>
-              <button
-                onClick={() => handleExport("csv")}
-                className="rounded-xl border border-border/60 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
-                title="Exportar acta cívica (CSV)"
-              >
-                <Download className="h-4 w-4" /> CSV
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setExportOpen(!exportOpen)}
+                  className="rounded-xl border border-border/60 px-3 py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all flex items-center gap-1.5"
+                  title="Exportar acta cívica"
+                >
+                  <Download className="h-4 w-4" /> Exportar
+                </button>
+                {exportOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] rounded-xl border border-border/60 bg-card shadow-lg overflow-hidden">
+                      <button
+                        onClick={() => { handleExport("json"); setExportOpen(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                      >
+                        <Download className="h-3.5 w-3.5" /> JSON
+                      </button>
+                      <button
+                        onClick={() => { handleExport("csv"); setExportOpen(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors border-t border-border/40"
+                      >
+                        <Download className="h-3.5 w-3.5" /> CSV
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -493,7 +507,7 @@ export function Profile() {
                 })}
                 {supportedIds.length > 5 && (
                   <p className="text-[10px] text-muted-foreground text-center pt-1">
-                    +{supportedIds.length - 5} iniciativa{supportedIds.length - 5 !== 1 ? "s" : ""}{" "}
+                    +{supportedIds.length - 5} propuesta{supportedIds.length - 5 !== 1 ? "s" : ""} {" "}
                     más
                   </p>
                 )}
@@ -506,7 +520,7 @@ export function Profile() {
           {/* Own Proposals with Lifecycle */}
           <div className="p-5 border-t border-border/40">
             <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-              Tus iniciativas
+              Tus propuestas
             </div>
             {ownProposals.length > 0 ? (
               <div className="space-y-2">
@@ -661,10 +675,10 @@ export function Profile() {
               <div className="rounded-3xl bg-muted/30 border border-dashed border-border p-8 text-center">
                 <div className="text-4xl mb-3">🗺️</div>
                 <p className="text-sm text-muted-foreground font-medium">
-                  Aún no has iniciado una ruta.
+                  Aún no has iniciado una misión.
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
-                  Encuentra tu primera ruta en el mapa.
+                  Encuentra tu primera misión en el mapa.
                 </p>
                 <Link
                   to="/app/mapa"
@@ -729,9 +743,7 @@ export function Profile() {
                   {userBadges.filter((b) => b.earned).length} desbloqueadas
                 </span>
               </div>
-              <button className="text-[10px] uppercase font-bold text-primary flex items-center gap-0.5 hover:underline">
-                Ver más <ArrowRight className="h-3 w-3" />
-              </button>
+
             </div>
 
             {/* Quick view of the top 3-4 badges */}
@@ -751,13 +763,6 @@ export function Profile() {
           </section>
         </div>
       </div>
-
-      {/* Cinematic celebration layer modal */}
-      <KusqaMomentsModal
-        isOpen={momentOpen}
-        onClose={() => setMomentOpen(false)}
-        moment={activeMoment}
-      />
 
       {/* Cinematic mission story overlay */}
       <MissionStoryModal

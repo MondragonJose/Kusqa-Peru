@@ -699,7 +699,7 @@ export function MapView({
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/90 z-10 backdrop-blur-sm p-6 text-center">
             <div className="text-5xl mb-4">🗺️</div>
             <h3 className="font-display font-black text-lg text-foreground mb-2">
-              Atlas Territorial
+              Mapa
             </h3>
             <p className="text-sm text-muted-foreground max-w-xs mb-4">
               Explora el mapa para descubrir misiones activas en todo el Perú.

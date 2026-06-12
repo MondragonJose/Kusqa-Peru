@@ -161,8 +161,8 @@ export const CIVIC_ROUTE: ProgressionStage[] = [
   {
     level: 7,
     name: "Líder KUSQA",
-    terrain: "La cumbre · Legado nacional",
-    region: "cumbre",
+    terrain: "Legado nacional",
+    region: "selva",
     icon: "🏔️",
     narrative:
       "Has caminado el Perú. Has sembrado en la costa, construido en la sierra, navegado la selva. Ya no eres solo un participante: eres parte de la memoria viva de un movimiento que transformó comunidades.",

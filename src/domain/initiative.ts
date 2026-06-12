@@ -161,6 +161,8 @@ export type Initiative = {
 
   ownerId?: string;
 
+  teamSize?: number;
+
   endorsements?: InitiativeEndorsement[];
 };
 

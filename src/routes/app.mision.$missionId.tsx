@@ -503,7 +503,7 @@ function MissionDetail() {
   const theme = REGION_THEMES[initiative.region] || REGION_THEMES.sierra;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-24 lg:pb-12">
+    <div className="max-w-5xl mx-auto space-y-6 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-12">
       <Link
         to="/app/mapa"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-semibold"
@@ -513,7 +513,7 @@ function MissionDetail() {
 
       {/* Mobile sticky CTA — delegates to InitiativeActionBar */}
       {initiative && (
-        <div className="lg:hidden fixed bottom-20 left-4 right-4 z-30">
+        <div className="lg:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-30">
           <InitiativeActionBar
             variant="compact"
             initiative={initiative}
@@ -581,7 +581,7 @@ function MissionDetail() {
               {initiative && (
                 <InitiativeActionBar
                   initiative={initiative}
-                  relationship={initiative.ownerId ? "steward" : "visitor"}
+                  relationship={relationship}
                   variant="row"
                   onAction={handleActionBar}
                 />
@@ -623,7 +623,7 @@ function MissionDetail() {
         <div className="space-y-6">
           <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6 space-y-3">
             <h2 className="font-display font-black text-xl text-foreground">
-              {isMissionEntity ? "La Misión Territorial" : "Sobre esta iniciativa"}
+              {isMissionEntity ? "La Misión Territorial" : "Sobre esta propuesta"}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
               {initiative.summary}
@@ -694,53 +694,6 @@ function MissionDetail() {
             </section>
           )}
 
-          {/* Expedition timeline stages */}
-          <section className="rounded-3xl bg-card border border-border/80 p-6">
-            <h2 className="font-display font-black text-xl mb-5 text-foreground flex items-center gap-2">
-              <Compass className="h-5 w-5 text-accent" /> Itinerario sugerido
-            </h2>
-            <div className="space-y-4">
-              {[
-                {
-                  t: "7:00 · Punto de encuentro y desayuno",
-                  b: "Reunión comunitaria en la plaza para dialogar con vecinos y coordinar tareas.",
-                },
-                {
-                  t: "8:00 · Taller y saberes ancestrales",
-                  b: "Conversamos con artesanos y mayores locales para entender el patrimonio histórico.",
-                },
-                {
-                  t: "9:00 · Siembra cívica y acción",
-                  b: "Manos a la obra. Reforestación o pintado colectivo de murales en equipos.",
-                },
-                {
-                  t: "14:00 · Reflexión y entrega de XP",
-                  b: "Compartimos almuerzo andino, cerramos la bitácora y se acreditan los XP territoriales.",
-                },
-              ].map((s, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`h-8 w-8 rounded-xl ${meta.gradient} text-white grid place-items-center text-xs font-black shrink-0 border border-white/10`}
-                    >
-                      {i + 1}
-                    </div>
-                    {i < 3 && <div className="w-px flex-1 bg-border mt-1" />}
-                  </div>
-                  <div className="pb-4">
-                    <div className="font-bold text-sm text-foreground">{s.t}</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium leading-relaxed">
-                      {s.b}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground/60 mt-4 italic">
-              Los horarios son referenciales — la ruta final se coordina con el grupo.
-            </p>
-          </section>
-
           {/* Participants group — honest count display, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">
             <h2 className="font-display font-black text-xl mb-4 text-foreground">
@@ -751,12 +704,12 @@ function MissionDetail() {
                 <Users className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">
                   {initiative.participantsCount} persona
-                  {initiative.participantsCount !== 1 ? "s" : ""} en esta ruta
+                  {initiative.participantsCount !== 1 ? "s" : ""} en esta misión
                 </span>
               </div>
             ) : (
               <div className="text-sm text-muted-foreground font-medium bg-secondary/30 rounded-2xl p-4 text-center">
-                Sé el primero en unirte a esta ruta.
+                Sé el primero en unirte a esta misión.
               </div>
             )}
           </section>
@@ -764,7 +717,7 @@ function MissionDetail() {
           {/* Connected Misiones Similares / Otras rutas cercanas */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl text-foreground flex items-center gap-2 pl-1">
-              <Sparkles className="h-5 w-5 text-accent" /> Otras rutas cercanas en {meta.name}
+              <Sparkles className="h-5 w-5 text-accent" /> Otras misiones cercanas en {meta.name}
             </h2>
 
             {similarMissions.length > 0 ? (
@@ -816,7 +769,7 @@ function MissionDetail() {
                 className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6 text-center`}
               >
                 <p className="text-sm text-muted-foreground font-medium">
-                  Sé el pionero de esta ruta en {meta.name}. El territorio se activa con quienes se
+                  Sé el pionero de esta misión en {meta.name}. El territorio se activa con quienes se
                   suman.
                 </p>
               </div>
@@ -833,7 +786,7 @@ function MissionDetail() {
             {isMissionEntity && (
               <div className={`rounded-2xl p-4 border ${theme.bgLight} ${theme.border}`}>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                  Tiempo de la ruta
+                  Tiempo de la misión
                 </div>
                 <div className="text-sm font-semibold text-foreground">
                   {initiative.temporalAnchor.label}
@@ -870,7 +823,7 @@ function MissionDetail() {
                 ) : (
                   <>
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
-                      <Upload className="h-4 w-4 text-accent" /> En ruta
+                      <Upload className="h-4 w-4 text-accent" /> En misión
                     </div>
 
                     {/* Evidence submission form — replaces legacy prompt() */}
@@ -906,7 +859,7 @@ function MissionDetail() {
                         placeholder={
                           evidenceType === "photo"
                             ? "Describe lo que muestra la foto (opcional)"
-                            : "Describe tu acción en esta ruta"
+                            : "Describe tu acción en esta misión"
                         }
                         rows={2}
                         className="w-full rounded-xl border border-border/40 bg-surface px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-accent/40 resize-none"

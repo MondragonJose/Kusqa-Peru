@@ -7,6 +7,7 @@ import type { InitiativeAction } from "@/domain/initiativeActions";
 import { deriveRelationship } from "@/domain/initiativeActions";
 import { getLifecyclePresentation } from "@/domain/lifecyclePresentation";
 import { regionGradient, regionLabel, type Region } from "@/domain/regions";
+import { getProposalThreshold } from "@/domain/proposalLifecycle";
 import { useCurrentUserId } from "@/features/auth";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
 import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
@@ -125,7 +126,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               <span className="text-[10px] text-muted-foreground">{initiative.category}</span>
               {isProposal && (
                 <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-bold">
-                  Semilla cívica
+                  Propuesta
                 </span>
               )}
               {isMission && initiative.lifecycle === "active" && (
@@ -191,7 +192,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
             <div className="w-full h-1.5 rounded-full bg-violet-100 dark:bg-violet-900/30 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600 transition-all duration-500"
-                style={{ width: `${Math.min(100, (supportCount / Math.max(1, 5)) * 100)}%` }}
+                style={{ width: `${Math.min(100, (supportCount / Math.max(1, getProposalThreshold(initiative.teamSize ?? 5))) * 100)}%` }}
               />
             </div>
             <p className="mt-1 text-[9px] text-violet-500 dark:text-violet-400 font-medium">

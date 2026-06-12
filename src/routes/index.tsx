@@ -257,8 +257,7 @@ function Landing(): JSX.Element {
 
     regions.forEach((region) => {
       const pool = byRegion[region];
-      const shuffled = pool.sort(() => Math.random() - 0.5);
-      selected.push(...shuffled.slice(0, 2));
+      selected.push(...[...pool].slice(0, 2));
     });
 
     if (selected.length > 6) {
@@ -269,15 +268,14 @@ function Landing(): JSX.Element {
           diverse.push(regionSelected[0]);
         }
       });
-      const extras = selected.filter((i) => !diverse.includes(i)).sort(() => Math.random() - 0.5);
+      const extras = selected.filter((i) => !diverse.includes(i));
       diverse.push(...extras.slice(0, 6 - diverse.length));
       return diverse;
     }
 
     if (selected.length < 6) {
-      const remaining = initiatives.filter((i) => !selected.includes(i));
-      const shuffled = remaining.sort(() => Math.random() - 0.5);
-      selected.push(...shuffled.slice(0, 6 - selected.length));
+      const pool = initiatives.filter((i) => !selected.includes(i));
+      selected.push(...[...pool].slice(0, 6 - selected.length));
     }
 
     return selected.slice(0, 6);
@@ -316,20 +314,7 @@ function Landing(): JSX.Element {
               </a>
             </nav>
 
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={loginWithGoogle}
-                className="hidden sm:inline-flex text-sm text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
-              >
-                Ingresar
-              </button>
-              <button
-                onClick={loginWithGoogle}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-sunrise text-white px-4 py-2 text-sm font-semibold hover:opacity-90 transition-smooth shadow-soft"
-              >
-                Únete <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <div className="ml-auto" />
           </div>
         </div>
       </header>
@@ -388,24 +373,24 @@ function Landing(): JSX.Element {
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
                 <span className="relative z-10 truncate">
                   {initiatives.length > 0
-                    ? `Movimiento vivo · ${initiatives.length} ${initiatives.length === 1 ? "ruta activa" : "rutas activas"}`
-                    : "Iniciativas nacen desde cada territorio"}
+                    ? `Movimiento vivo · ${initiatives.length} ${initiatives.length === 1 ? "propuesta activa" : "propuestas activas"}`
+                    : "Propuestas nacen desde cada territorio"}
                 </span>
               </motion.div>
 
               <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-[4.5rem] leading-[1.1] sm:leading-[1.0] lg:leading-[0.95] tracking-tight">
-                Crea proyectos cívicos
+                Crea propuestas cívicas
                 <br />
                 <span className="text-gradient-aurora">en tu distrito.</span>
               </h1>
 
               <p className="mt-3 sm:mt-4 lg:mt-6 text-sm sm:text-base lg:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                KUSQA conecta jóvenes que quieren transformar su entorno. Cada proyecto que creas
+                KUSQA conecta jóvenes que quieren transformar su entorno. Cada propuesta que creas
                 deja una huella real en tu comunidad.
               </p>
 
               <p className="mt-2 sm:mt-3 lg:mt-3 text-xs sm:text-sm lg:text-base text-muted-foreground/80 max-w-lg leading-relaxed italic">
-                Explora misiones activas o crea tu propio proyecto en todo el Perú.
+                Explora misiones activas o crea tu propia propuesta en todo el Perú.
               </p>
 
               <div className="mt-6 lg:mt-9 flex flex-wrap items-center gap-2 lg:gap-3">
@@ -420,13 +405,13 @@ function Landing(): JSX.Element {
                   onClick={loginWithGoogle}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 backdrop-blur px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold hover:bg-surface transition-smooth"
                 >
-                  Crear proyecto
+                  Crear propuesta
                   <ArrowRight className="h-3 lg:h-4 w-3 lg:w-4" />
                 </button>
               </div>
 
               {/* Mini stats row — derived from real Supabase data */}
-              <div className="hidden sm:flex mt-8 lg:mt-12 flex-wrap gap-x-6 lg:gap-x-10 gap-y-3">
+              <div className="flex mt-8 lg:mt-12 flex-wrap gap-x-6 lg:gap-x-10 gap-y-3">
                 {(() => {
                   const s = deriveInitiativeStats(initiatives);
                   return [
@@ -526,7 +511,7 @@ function Landing(): JSX.Element {
 
       {/* ── CIVIC OBSERVATORY ── */}
       {stats.some((s) => s.value > 0) && (
-        <section className="px-5 lg:px-8 py-20 relative overflow-hidden">
+        <section className="px-5 lg:px-8 py-10 lg:py-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-sunrise opacity-85" />
           <div className="absolute inset-0 bg-mesh opacity-15" />
 
@@ -570,22 +555,16 @@ function Landing(): JSX.Element {
               viewport={{ once: true }}
               className="mt-14 text-center"
             >
-              <p className="text-white/60 text-sm mb-4">
+              <p className="text-white/60 text-sm">
                 ¿Quieres ser parte de estas estadísticas?
               </p>
-              <button
-                onClick={loginWithGoogle}
-                className="inline-flex items-center gap-2 rounded-xl bg-white text-foreground px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-card"
-              >
-                Crea tu cuenta gratis <ArrowRight className="h-3.5 w-3.5" />
-              </button>
             </motion.div>
           </div>
         </section>
       )}
 
       {/* ── EL MOVIMIENTO ── */}
-      <section id="movimiento" className="px-5 lg:px-8 py-24">
+      <section id="movimiento" className="px-5 lg:px-8 py-10 lg:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -709,7 +688,7 @@ function Landing(): JSX.Element {
       </section>
 
       {/* ── ARCHIVO DE EXPEDICIONES ── */}
-      <section id="expediciones" className="px-5 lg:px-8 py-24 bg-surface/40">
+      <section id="expediciones" className="px-5 lg:px-8 py-10 lg:py-20 bg-surface/40">
         <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -754,7 +733,7 @@ function Landing(): JSX.Element {
                 viewport={{ once: true }}
                 className="text-muted-foreground text-base max-w-xl mb-8 leading-relaxed"
               >
-                Cada iniciativa empieza con alguien que mira su barrio y dice: aquí algo puede
+                Cada propuesta empieza con alguien que mira su barrio y dice: aquí algo puede
                 cambiar. Las primeras misiones nacen así — de vecinos que deciden ser el primer
                 paso. ¿Y si ese alguien fueras tú?
               </motion.p>
@@ -768,16 +747,10 @@ function Landing(): JSX.Element {
                 <h3 className="font-display font-semibold text-lg mb-2">
                   No hay expediciones todavía — la primera puede ser tuya
                 </h3>
-                <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed mb-6">
+                <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
                   El mapa está vacío porque nadie ha dado el primer paso en tu región. ¿Te animas a
                   crear la primera misión?
                 </p>
-                <button
-                  onClick={loginWithGoogle}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-6 py-3 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-glow"
-                >
-                  Crear primera misión <ArrowRight className="h-4 w-4" />
-                </button>
               </motion.div>
             </>
           )}
@@ -795,18 +768,12 @@ function Landing(): JSX.Element {
               Únete a jóvenes de todo el Perú que están transformando sus barrios, distritos y
               regiones. Tu participación importa. Es gratis.
             </p>
-            <button
-              onClick={loginWithGoogle}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-8 py-3.5 font-semibold hover:scale-[1.02] transition-smooth shadow-glow"
-            >
-              Comenzar mi expedición <ArrowRight className="h-4 w-4" />
-            </button>
           </motion.div>
         </div>
       </section>
 
       {/* ── QHAPAQ ÑAN PROGRESSION ── */}
-      <section id="territorio" className="px-5 lg:px-8 py-24 relative overflow-hidden">
+      <section id="territorio" className="px-5 lg:px-8 py-10 lg:py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-sunrise opacity-90" />
         <div className="absolute inset-0 bg-mesh opacity-15" />
         <div className="relative mx-auto max-w-7xl text-white">
@@ -891,53 +858,12 @@ function Landing(): JSX.Element {
                 Cada misión que completes te acerca a ser un Líder Kusqa reconocido en tu región.
               </div>
             </div>
-            <button
-              onClick={loginWithGoogle}
-              className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-sun text-foreground px-5 py-2.5 text-sm font-semibold hover:scale-[1.02] transition-smooth shadow-card whitespace-nowrap"
-            >
-              Empezar gratis <ArrowRight className="h-3.5 w-3.5" />
-            </button>
           </motion.div>
         </div>
       </section>
 
-      {/* ── VOCES DEL TERRITORIO ── */}
-      <section id="voces" className="px-5 lg:px-8 py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center max-w-2xl mx-auto">
-            <div className="text-xs uppercase tracking-widest text-accent font-semibold">
-              Voces del territorio
-            </div>
-            <h2 className="font-display font-bold text-4xl lg:text-5xl mt-3">
-              Jóvenes construyendo el Perú que sueñan.
-            </h2>
-          </div>
-          <div className="mt-12">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="rounded-2xl glass p-10 text-center shadow-soft max-w-lg mx-auto"
-            >
-              <div className="text-4xl mb-4">📢</div>
-              <p className="text-foreground leading-relaxed text-lg">
-                "Las primeras voces están escribiendo su historia — la tuya puede ser la próxima."
-              </p>
-              <div className="mt-6 pt-6 border-t border-border/50">
-                <button
-                  onClick={loginWithGoogle}
-                  className="inline-flex items-center gap-2 text-sm text-accent font-semibold hover:gap-3 transition-all"
-                >
-                  Comparte tu historia <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
       {/* ── FINAL CTA ── */}
-      <section id="comienza" className="px-5 lg:px-8 pb-24">
+      <section id="comienza" className="px-5 lg:px-8 pb-10 lg:pb-20">
         <div className="mx-auto max-w-7xl">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-sunrise p-10 lg:p-16 text-center text-white shadow-lift">
             <div className="absolute inset-0 bg-mesh opacity-30" />
@@ -1007,15 +933,6 @@ function Landing(): JSX.Element {
               </a>
               <a href="#expediciones" className="hover:text-foreground transition-colors">
                 Expediciones
-              </a>
-              <a href="#voces" className="hover:text-foreground transition-colors">
-                Voces
-              </a>
-              <a href="#movimiento" className="hover:text-foreground transition-colors">
-                Aliados
-              </a>
-              <a href="#comienza" className="hover:text-foreground transition-colors">
-                Contacto
               </a>
             </nav>
           </div>

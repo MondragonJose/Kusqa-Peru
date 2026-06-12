@@ -3,7 +3,7 @@
  *
  * Inspired by the Qhapaq Ñan — the Great Inca Trail that once unified
  * the continent. This route maps civic progress through Peru's three
- * great natural landscapes: Coast → Sierra → Selva → Cumbre.
+ * great natural landscapes: Coast → Sierra → Selva.
  *
  * The trail is sacred, exploratory, and territorial — not arcade-like.
  */
@@ -28,8 +28,7 @@ function getStageStatus(stage: ProgressionStage, userXp: number): StageStatus {
 const LANDSCAPE_ZONES = [
   { label: "🌊 Costa", color: "#C4962A", textColor: "text-amber-700", from: 0, to: 0.28 },
   { label: "⛰️ Sierra", color: "#C47A2A", textColor: "text-orange-800", from: 0.29, to: 0.57 },
-  { label: "🌿 Selva", color: "#2D7A4A", textColor: "text-emerald-700", from: 0.58, to: 0.86 },
-  { label: "🏔️ Cumbre", color: "#C4962A", textColor: "text-amber-600", from: 0.87, to: 1 },
+  { label: "🌿 Selva", color: "#2D7A4A", textColor: "text-emerald-700", from: 0.58, to: 1 },
 ];
 
 // y-offsets for each of the 7 stage nodes on the organic trail

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Archive } from "lucide-react";
 import { ReportModal } from "@/features/moderation/components/ReportModal";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
@@ -175,7 +175,7 @@ function ProposalDetail() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-background pb-32 lg:pb-12"
+      className="min-h-screen bg-background pb-[calc(8rem+env(safe-area-inset-bottom,0px))] lg:pb-12"
     >
       <div className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border/40">
         <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 sm:px-6 h-12">
@@ -223,17 +223,17 @@ function ProposalDetail() {
                 variant="compact"
                 maxVisible={2}
                 onAction={handleActionBar}
-                onEdit={
-                  currentUserId && canArchiveProposal(proposal.userId, currentUserId, proposal.status)
-                    ? handleArchive
-                    : undefined
-                }
-                labelOverrides={
-                  currentUserId && canArchiveProposal(proposal.userId, currentUserId, proposal.status)
-                    ? { edit: "Archivar" }
-                    : undefined
-                }
               />
+              {currentUserId && canArchiveProposal(proposal.userId, currentUserId, proposal.status) && (
+                <button
+                  onClick={handleArchive}
+                  disabled={archiving}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-muted-foreground bg-secondary/40 hover:bg-secondary/80 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Archive className="h-3.5 w-3.5" />
+                  Archivar
+                </button>
+              )}
             </div>
           )}
         </div>

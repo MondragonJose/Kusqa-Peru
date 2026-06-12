@@ -74,7 +74,7 @@ export function ColdStartMemoryHero({ district, memory }: ColdStartMemoryHeroPro
             </Link>
           </KusqaButton>
           <KusqaButton variant="secondary" asChild>
-            <Link to="/app/crear">Crear proyecto</Link>
+            <Link to="/app/crear">Crear propuesta</Link>
           </KusqaButton>
         </div>
       </div>

@@ -81,6 +81,11 @@ function SidebarItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-foreground truncate">{item.title}</span>
+          {isProposal && (
+            <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/40">
+              Propuesta
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1 mt-0.5">
           <MapPin className="h-2.5 w-2.5 text-muted-foreground/60 shrink-0" />

@@ -137,7 +137,7 @@ function Dashboard() {
                   </Link>
                 </KusqaButton>
                 <KusqaButton variant="secondary" asChild>
-                  <Link to="/app/crear">Crear proyecto</Link>
+                  <Link to="/app/crear">Crear propuesta</Link>
                 </KusqaButton>
               </div>
             </div>
@@ -382,7 +382,7 @@ function Dashboard() {
               <Sparkles className="h-5 w-5 text-accent" /> En movimiento
             </h2>
             <span className="text-[10px] text-muted-foreground shrink-0">
-              {feedItems.length} iniciativa{feedItems.length !== 1 ? "s" : ""} activa
+              {feedItems.length} propuesta{feedItems.length !== 1 ? "s" : ""} activa
               {feedItems.length !== 1 ? "s" : ""}
             </span>
           </div>
@@ -426,7 +426,7 @@ function Dashboard() {
                         {item.title}
                         {isProposalEntity && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-bold shrink-0">
-                            Semilla cívica
+                            Propuesta
                           </span>
                         )}
                       </div>
@@ -463,7 +463,7 @@ function Dashboard() {
                           }
                           setSelectedEntity(item);
                         }}
-                        className="shrink-0 p-1.5 rounded-lg text-muted-foreground/40 hover:text-foreground hover:bg-secondary/50 transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-accent self-start mt-0.5"
+                        className="shrink-0 p-1.5 rounded-lg text-muted-foreground/40 hover:text-foreground hover:bg-secondary/50 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-accent self-start mt-0.5"
                         aria-label="Vista rápida"
                       >
                         <svg
@@ -491,7 +491,7 @@ function Dashboard() {
                   Tu territorio está en calma
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
-                  Aún no hay iniciativas activas en tu zona.
+                  Aún no hay propuestas activas en tu zona.
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <Link
@@ -655,7 +655,7 @@ function Dashboard() {
                             ) : (
                               <>
                                 <Users className="h-3.5 w-3.5" />
-                                <span>{participants} personas en esta ruta</span>
+                                <span>{participants} personas en esta misión</span>
                               </>
                             )}
                           </div>

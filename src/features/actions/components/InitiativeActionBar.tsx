@@ -99,6 +99,20 @@ export function InitiativeActionBar({
     const disabled = !handler;
 
     if (variant === "compact") {
+      if (isPrimary(action)) {
+        return (
+          <button
+            key={action}
+            onClick={handler}
+            disabled={disabled}
+            title={disabled ? "No disponible" : undefined}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent text-white px-3 py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        );
+      }
       return (
         <button
           key={action}

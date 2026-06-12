@@ -12,7 +12,7 @@ export const Route = createFileRoute("/app/progreso")({
 
 function Progress() {
   const user = useCurrentUser();
-  const { currentStage, nextStage, xpToNextStage } = useProgression();
+  const { currentStage } = useProgression();
   const { data: timeline } = useProfileMissionTimeline();
   const completedMissions = timeline?.missions ?? [];
 
@@ -54,23 +54,7 @@ function Progress() {
             </h1>
             <p className="text-white/85 mt-3 max-w-lg text-sm lg:text-base leading-relaxed">
               {currentStage.narrative}
-              {nextStage && (
-                <span className="block mt-3 text-white/70 text-xs bg-black/10 backdrop-blur-sm px-3.5 py-2.5 rounded-xl border border-white/5 max-w-md">
-                  Te faltan{" "}
-                  <strong className="text-sun font-bold">
-                    {xpToNextStage.toLocaleString()} XP
-                  </strong>{" "}
-                  para llegar a <strong className="text-white font-bold">{nextStage.name}</strong> (
-                  {nextStage.region === "cumbre"
-                    ? "Cima Nacional"
-                    : `Región ${nextStage.region.charAt(0).toUpperCase() + nextStage.region.slice(1)}`}
-                  ).
-                </span>
-              )}
             </p>
-
-            {/* Progress bar */}
-            {/* P0 FIX: Eliminada sección de XP - sistema de gamificación eliminado */}
           </div>
 
           {/* Stats de participación - sin ranking ni racha */}

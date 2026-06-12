@@ -440,7 +440,7 @@ function DistrictPage() {
               <MapPin className="h-8 w-8 mx-auto text-muted-foreground" />
               <div className="space-y-1">
                 <h2 className="text-base font-display font-semibold">
-                  Todavía no hay rutas activas en este distrito.
+                  Todavía no hay misiones activas en este distrito.
                 </h2>
                 <p className="text-sm text-muted-foreground">Sé quien inicie la primera.</p>
               </div>

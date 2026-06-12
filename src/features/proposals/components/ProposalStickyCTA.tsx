@@ -93,7 +93,7 @@ export function ProposalStickyCTA({ proposal }: ProposalStickyCTAProps) {
         : undefined;
 
   return (
-    <div className="fixed bottom-[80px] left-0 right-0 z-30 px-4 pb-3 pt-2 bg-gradient-to-t from-background via-background/95 to-background/0 lg:static lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:mt-6">
+    <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 px-4 pb-3 pt-2 bg-gradient-to-t from-background via-background/95 to-background/0 lg:static lg:bg-transparent lg:px-0 lg:pt-0 lg:pb-0 lg:mt-6">
       <div className="max-w-3xl mx-auto">
         <InitiativeActionBar
           initiative={initiative}

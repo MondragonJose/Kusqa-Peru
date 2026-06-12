@@ -110,6 +110,7 @@ function proposalToInitiative(proposal: Proposal): Initiative {
     temporalAnchor,
     emoji: categoryEmoji(proposal.category as MissionCategory),
     location,
+    teamSize: proposal.teamSize,
   };
 }
 

@@ -456,8 +456,7 @@ function CreateProject() {
                 <div>
                   <h3 className="font-display font-bold text-xl">¿Dónde ocurrirá la acción?</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Busca el distrito. Identificaremos la región geográfica para tu insignia
-                    territorial.
+                    Busca el distrito. Identificaremos la región geográfica de tu propuesta.
                   </p>
                 </div>
 
@@ -545,9 +544,6 @@ function CreateProject() {
 
             {step === 3 && (
               <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">
-                  Paso 3
-                </div>
                 <h2 className="font-display font-bold text-3xl mt-2">¿Cuántos seremos?</h2>
                 <p className="text-muted-foreground mt-2">
                   Define el tamaño del equipo para esta propuesta.
@@ -588,9 +584,6 @@ function CreateProject() {
 
             {step === 4 && (
               <div>
-                <div className="text-xs uppercase tracking-widest text-accent font-semibold">
-                  Paso 4
-                </div>
                 <h2 className="font-display font-bold text-3xl mt-2">Detalles finales</h2>
                 <p className="text-muted-foreground mt-2">Cuenta más sobre tu propuesta.</p>
 

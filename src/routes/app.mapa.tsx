@@ -85,13 +85,8 @@ function MapPage() {
   useEffect(() => {
     if (filteredMissions.length === 0) {
       setSelectedId(null);
-      return;
     }
-    const selectionValid = selectedId !== null && filteredMissions.some((m) => m.id === selectedId);
-    if (!selectionValid) {
-      setSelectedId(filteredMissions[0].id);
-    }
-  }, [filteredMissions, selectedId]);
+  }, [filteredMissions]);
 
   const handleSelectMission = useCallback((id: string) => {
     setSelectedId(id);
@@ -181,7 +176,7 @@ function MapPage() {
       {/* Header section — compact on mobile, full on desktop */}
       <div className="flex items-center justify-between gap-2 lg:gap-4">
         <h1 className="font-display font-bold text-lg lg:text-3xl tracking-tight text-foreground">
-          Atlas Territorial
+          Mapa
         </h1>
         <div className="flex items-center gap-2">
           {userLocationLoading ? (
@@ -206,7 +201,7 @@ function MapPage() {
       </div>
 
       {/* Filters — compact row on mobile, full panel on desktop */}
-      <div className="flex items-center gap-2 lg:gap-3">
+      <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
@@ -233,8 +228,8 @@ function MapPage() {
           ))}
         </select>
 
-        {/* District buttons — desktop only */}
-        <div className="hidden lg:flex gap-2 overflow-x-auto no-scrollbar">
+        {/* District buttons */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => updateFilters({ district: "todas", region: "todas" })}
             className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer shrink-0 ${
@@ -266,7 +261,7 @@ function MapPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 lg:gap-4 items-stretch">
         {/* Desktop sidebar — entity list */}
         {!isMobile && (
-          <div className="hidden lg:block min-h-[640px]">
+          <div className="hidden lg:block min-h-[640px] lg:min-h-0">
             <MapSidebar
               entities={filteredMissions}
               selectedId={selectedId}
@@ -304,7 +299,7 @@ function MapPage() {
         )}
 
         {/* Dynamic Leaflet Map */}
-        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[640px] w-full">
+        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[calc(100dvh-12rem)] w-full">
           <MapView
             missions={filteredMissions}
             selectedMissionId={activeEntity?.id || null}
