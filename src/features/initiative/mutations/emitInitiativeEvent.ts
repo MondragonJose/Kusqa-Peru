@@ -35,6 +35,7 @@ function extractActor(event: InitiativeEvent): string {
       return event.actorId;
     case "MissionCompleted":
       return event.userId;
+    case "InstitutionEndorsed":
     case "DistrictFirstMovement":
     case "CommunityTrustChanged":
     case "CommunityProfileMilestone":
@@ -66,6 +67,8 @@ function extractEntity(event: InitiativeEvent): string | null {
       return event.evidenceId;
     case "MissionCompleted":
       return event.missionId;
+    case "InstitutionEndorsed":
+      return event.institutionId;
     case "DistrictFirstMovement":
       return event.districtId;
     case "CommunityTrustChanged":
