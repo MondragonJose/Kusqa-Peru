@@ -29,6 +29,7 @@ export type TerritorialEventType =
   | "mission.evidence_submitted"
   | "mission.evidence_verified"
   | "institution.endorsed"
+  | "initiative.continued"
   | "district.first_movement"
   | "community.trust_changed"
   | "community.profile_milestone";
@@ -94,6 +95,7 @@ export const TERRITORIAL_EVENT_COPY: Record<
   "district.first_movement": { title: "Primer movimiento en el distrito", icon: "spark" },
   "community.trust_changed": { title: "Avanzó en confianza", icon: "shield" },
   "community.profile_milestone": { title: "Alcanzó un hito", icon: "spark" },
+  "initiative.continued": { title: "Continuó una iniciativa", icon: "flag" },
 };
 
 /** Short verb for inline feed items (e.g. "apoyó", "comentó", "completó"). */
@@ -114,6 +116,7 @@ export const TERRITORIAL_EVENT_VERB: Record<TerritorialEventType, string> = {
   "district.first_movement": "inició movimiento",
   "community.trust_changed": "mejoró confianza",
   "community.profile_milestone": "nuevo hito",
+  "initiative.continued": "continuó",
 };
 
 // ─── Adapter: CivicProfileEvent → TerritorialEvent ──────────────────────

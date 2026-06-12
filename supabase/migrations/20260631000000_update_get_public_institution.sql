@@ -10,13 +10,17 @@
 --   Replace get_public_institution to include `verified` (boolean projection
 --   of verification_state = 'verified') in the return table.
 --
--- IDEMPOTENT: Yes (OR REPLACE).
+-- IDEMPOTENT: Yes (DROP + CREATE).
 -- REVERSIBLE:  Re-run without the verified column (previous migration version).
 -- NO frozen files are altered.
 -- ===========================================================================
 
 set search_path = public;
 
+-- 1. Eliminar la función existente para permitir el cambio en el RETURNS TABLE
+DROP FUNCTION IF EXISTS public.get_public_institution(text);
+
+-- 2. Crear la nueva función
 create or replace function public.get_public_institution(p_slug text)
 returns table (
   id              uuid,
@@ -62,3 +66,7 @@ $$;
 comment on function public.get_public_institution is
   'Returns public-safe institution data by slug, including verified boolean '
   '(projected from verification_state). Grants unchanged: anon + authenticated can execute.';
+
+-- 3. Restaurar los permisos perdidos al hacer el DROP
+REVOKE ALL ON FUNCTION public.get_public_institution(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_public_institution(text) TO anon, authenticated;

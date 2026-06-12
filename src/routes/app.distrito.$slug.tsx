@@ -17,7 +17,7 @@ import {
   useDistrictTopSupporters,
   useSpatialContext,
 } from "@/features/districts/hooks";
-import { isMunicipalCollabEnabled } from "@/lib/operationalFeature";
+import { isMunicipalCollabEnabled, isLivingTerritoryEnabled } from "@/lib/operationalFeature";
 import {
   classifyDistrictActivity,
   DISTRICT_ACTIVITY_COPY,
@@ -34,12 +34,16 @@ import { useCoordinationNarratives } from "@/features/coordination/hooks/useCoor
 import { useCurrentUserId } from "@/features/auth";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
 import { deriveLifecycleFromMission, computeMissionAnchor } from "@/domain/missionLifecycle";
+import { proposalToInitiative } from "@/services/initiativeResolver";
 import type { Initiative } from "@/domain/initiative";
 import { formatRelativeDate } from "@/utils/date";
 import { districtActivityToTerritorial } from "@/domain/territorialEvent";
 import type { DistrictActivity } from "@/services/districtRepository";
 import { DistrictPulseCard } from "@/components/DistrictPulseCard";
+import { CivicMemorySection } from "@/features/districts/components/CivicMemorySection";
+import { CivicMemoryEmptyState } from "@/features/districts/components/CivicMemoryEmptyState";
 import { buildDistrictPulse } from "@/services/activityFeedResolver";
+import { buildDistrictMemory } from "@/services/districtMemoryResolver";
 import { deriveAmbientPulse } from "@/domain/ambient";
 import { useAmbientCadence } from "@/hooks/useAmbientCadence";
 import type { AmbientPulseCadence } from "@/domain/ambient";
@@ -164,7 +168,7 @@ function DistrictPage() {
   // Phase 14: coordination narratives
   const coordinationNarratives = useCoordinationNarratives(slug, district.id, summary, undefined);
 
-  // Build Initiative objects from feed missions for InitiativeCard
+  // Build Initiative objects from feed missions for InitiativeCard + memory
   const initiativeMissions = useMemo(() => {
     if (!feed || feed.recentMissions.length === 0) return [];
     return feed.recentMissions.map((m) => {
@@ -191,6 +195,24 @@ function DistrictPage() {
       } satisfies Initiative;
     });
   }, [feed]);
+
+  // All initiatives (missions + proposals) for the memory projection,
+  // including completed/dormant entries that contribute to themes and milestones
+  const allInitiatives = useMemo(() => {
+    if (!feed) return initiativeMissions;
+    const proposals: Initiative[] = feed.allProposals.map(proposalToInitiative);
+    return [...initiativeMissions, ...proposals];
+  }, [feed, initiativeMissions]);
+
+  const completedDormantInitiatives = useMemo(() => {
+    return allInitiatives.filter((i) => i.lifecycle === "completed" || i.lifecycle === "dormant");
+  }, [allInitiatives]);
+
+  const districtMemory = useMemo(() => {
+    if (!isLivingTerritoryEnabled()) return null;
+    if (territorialEvents.length === 0 && allInitiatives.length === 0) return null;
+    return buildDistrictMemory(territorialEvents, allInitiatives);
+  }, [territorialEvents, allInitiatives]);
 
   return (
     <motion.div
@@ -261,7 +283,7 @@ function DistrictPage() {
         {/* Territorial narrative — unified civic memory, spatial, and coordination context */}
         <section
           className="rounded-lg border border-border/40 bg-card/40 p-4 sm:p-5"
-          aria-label="Memoria cívica"
+          aria-label="Vitalidad cívica"
         >
           <div className="flex items-start gap-3">
             <Sparkles className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -299,6 +321,14 @@ function DistrictPage() {
             </div>
           </div>
         </section>
+
+        {/* Phase 4A: Living Territory — civic memory section (flag-gated) */}
+        {isLivingTerritoryEnabled() && districtMemory && (
+          <CivicMemorySection
+            memory={districtMemory}
+            completedDormantInitiatives={completedDormantInitiatives}
+          />
+        )}
 
         {/* Stats grid */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label="Resumen territorial">
@@ -395,25 +425,32 @@ function DistrictPage() {
           </section>
         )}
 
-        {/* First movement empty state */}
+        {/* First movement empty state — reframed by Living Territory when flag-on */}
         {firstMovement && (
-          <section
-            className="rounded-lg border-2 border-dashed border-border/60 bg-card/30 p-5 sm:p-6 text-center space-y-3"
-            aria-label="Primer movimiento"
-          >
-            <MapPin className="h-8 w-8 mx-auto text-muted-foreground" />
-            <div className="space-y-1">
-              <h2 className="text-base font-display font-semibold">
-                Todavía no hay rutas activas en este distrito.
-              </h2>
-              <p className="text-sm text-muted-foreground">Sé quien inicie la primera.</p>
-            </div>
-            <Button asChild>
-              <Link to="/app/crear" search={{ district: district.displayName }}>
-                Crear la primera propuesta
-              </Link>
-            </Button>
-          </section>
+          isLivingTerritoryEnabled() ? (
+            <CivicMemoryEmptyState
+              districtName={district.displayName}
+              memory={districtMemory}
+            />
+          ) : (
+            <section
+              className="rounded-lg border-2 border-dashed border-border/60 bg-card/30 p-5 sm:p-6 text-center space-y-3"
+              aria-label="Primer movimiento"
+            >
+              <MapPin className="h-8 w-8 mx-auto text-muted-foreground" />
+              <div className="space-y-1">
+                <h2 className="text-base font-display font-semibold">
+                  Todavía no hay rutas activas en este distrito.
+                </h2>
+                <p className="text-sm text-muted-foreground">Sé quien inicie la primera.</p>
+              </div>
+              <Button asChild>
+                <Link to="/app/crear" search={{ district: district.displayName }}>
+                  Crear la primera propuesta
+                </Link>
+              </Button>
+            </section>
+          )
         )}
 
         {/* Active proposals */}
@@ -432,7 +469,9 @@ function DistrictPage() {
           ) : !feed || feed.activeProposals.length === 0 ? (
             !firstMovement && (
               <p className="text-sm text-muted-foreground rounded-md border border-dashed p-4">
-                No hay propuestas activas en este distrito todavía.
+                {isLivingTerritoryEnabled()
+                  ? "No hay propuestas activas ahora. La historia de este distrito sigue escribiéndose — las ideas siempre encuentran su momento."
+                  : "No hay propuestas activas en este distrito todavía."}
               </p>
             )
           ) : (
@@ -480,7 +519,9 @@ function DistrictPage() {
           ) : !feed || feed.recentMissions.length === 0 ? (
             !firstMovement && (
               <p className="text-sm text-muted-foreground rounded-md border border-dashed p-4">
-                Aún no hay misiones en este distrito.
+                {isLivingTerritoryEnabled()
+                  ? "Aún no hay misiones en este momento. Cada ciclo de acción comienza con una propuesta que alguien se anima a convertir en realidad."
+                  : "Aún no hay misiones en este distrito."}
               </p>
             )
           ) : (

@@ -29,6 +29,9 @@ import { InitiativeActionBar } from "@/features/actions/components/InitiativeAct
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
+import { CivicAfterglow } from "@/features/initiative/components/CivicAfterglow";
+import { ContinueAffordance } from "@/features/initiative/components/ContinueAffordance";
+import { isLivingTerritoryEnabled } from "@/lib/operationalFeature";
 
 export const Route = createFileRoute("/app/propuesta/$proposalId")({
   component: ProposalDetail,
@@ -195,6 +198,19 @@ function ProposalDetail() {
           <ProposalTabs proposal={proposal} />
           <ConversionCta proposalId={proposal.id} />
           <ProposalLifecycleTimeline proposalId={proposal.id} />
+          {initiativeForBar && isLivingTerritoryEnabled() && (
+            <div className="pt-1">
+              <CivicAfterglow
+                initiative={initiativeForBar}
+                districtName={proposal.district}
+              />
+            </div>
+          )}
+          {initiativeForBar && isLivingTerritoryEnabled() && (
+            <div className="pt-1">
+              <ContinueAffordance initiative={initiativeForBar} kind="proposal" />
+            </div>
+          )}
           {initiativeForBar && (
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/20">
               <InitiativeActionBar

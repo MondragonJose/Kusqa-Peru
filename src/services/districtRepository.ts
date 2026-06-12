@@ -83,6 +83,7 @@ export type DistrictTopSupporter = {
 export type DistrictFeed = {
   activeProposals: Proposal[];
   recentMissions: Mission[];
+  allProposals: Proposal[];
 };
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────
@@ -374,13 +375,13 @@ export const districtRepository = {
   async getDistrictFeed(districtSlug: string): Promise<DistrictFeed> {
     const district = await this.getDistrictBySlug(districtSlug);
     if (!district) {
-      return { activeProposals: [], recentMissions: [] };
+      return { activeProposals: [], recentMissions: [], allProposals: [] };
     }
 
     const [proposals, missions] = await Promise.all([
-      proposalRepository.getAllProposals({ districtId: district.id }, { limit: 20, offset: 0 }),
+      proposalRepository.getAllProposals({ districtId: district.id }, { limit: 50, offset: 0 }),
       missionRepository.findByDistrict(district.displayName, district.slug, district.id, {
-        limit: 10,
+        limit: 50,
         offset: 0,
       }),
     ]);
@@ -388,6 +389,7 @@ export const districtRepository = {
     return {
       activeProposals: proposals.filter((p) => p.status === "pending" || p.status === "active"),
       recentMissions: missions,
+      allProposals: proposals,
     };
   },
 

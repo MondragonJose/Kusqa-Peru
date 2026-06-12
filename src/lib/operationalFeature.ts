@@ -27,3 +27,7 @@ export function isInitiativeReadModelEnabled(): boolean {
 export function isMunicipalCollabEnabled(): boolean {
   return envFlag(import.meta.env.VITE_MUNICIPAL_COLLAB);
 }
+
+export function isLivingTerritoryEnabled(): boolean {
+  return envFlag(import.meta.env.VITE_LIVING_TERRITORY);
+}

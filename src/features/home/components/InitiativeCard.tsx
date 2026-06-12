@@ -12,7 +12,7 @@ import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/
 import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
-import { isMunicipalCollabEnabled } from "@/lib/operationalFeature";
+import { isMunicipalCollabEnabled, isLivingTerritoryEnabled } from "@/lib/operationalFeature";
 import { EndorsementBadge } from "@/features/institutions";
 
 const REGION_ACCENT: Record<string, string> = {
@@ -140,9 +140,14 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                   Próxima
                 </span>
               )}
-              {isMission && initiative.lifecycle === "completed" && (
+              {isMission && initiative.lifecycle === "completed" && !isLivingTerritoryEnabled() && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-stone-50 dark:bg-stone-950/30 text-[8px] font-bold text-stone-500 dark:text-stone-400 border border-stone-100 dark:border-stone-900/30">
                   Finalizada
+                </span>
+              )}
+              {isMission && initiative.lifecycle === "completed" && isLivingTerritoryEnabled() && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-[8px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
+                  Memoria viva
                 </span>
               )}
             </div>

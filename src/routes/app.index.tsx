@@ -21,6 +21,9 @@ import { InitiativeActionBar } from "@/features/actions/components/InitiativeAct
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
 import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
+import { useLandingMemory } from "@/features/initiative/hooks/useLandingMemory";
+import { isLivingTerritoryEnabled } from "@/lib/operationalFeature";
+import { ColdStartMemoryHero } from "@/features/home/components/ColdStartMemoryHero";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -38,6 +41,7 @@ function Dashboard() {
 
   const { data: timeline, isLoading: timelineLoading } = useProfileMissionTimeline();
   const { data: initiatives = [], isLoading } = useLandingInitiatives();
+  const landingMemory = useLandingMemory(initiatives);
 
   const handleRefreshMissions = () => {
     if (import.meta.env.DEV) {
@@ -77,7 +81,9 @@ function Dashboard() {
 
         {/* P0 FIX: Hero reducido - CTA dominante, estadísticas movidas a sección secundaria */}
         {/* P0 FIX: Skeleton hero estable para first paint */}
-        {isLoading ? (
+        {isLivingTerritoryEnabled() && !isLoading && feedItems.length === 0 && landingMemory ? (
+          <ColdStartMemoryHero district={landingMemory.district} memory={landingMemory.memory} />
+        ) : isLoading ? (
           <section className="relative overflow-hidden rounded-2xl bg-stone-950 text-white p-6 sm:p-8 shadow-2xl border border-white/10">
             <div className="absolute inset-0 bg-mesh opacity-15 pointer-events-none" />
             <div className="relative space-y-4 sm:space-y-6">
@@ -285,7 +291,36 @@ function Dashboard() {
 
         {/* Ambient Signal — territory-wide mood from current entities */}
         <section className="rounded-lg border border-border/40 bg-card/40 p-4 sm:p-5">
-          {ambientSignal ? (
+          {landingMemory ? (
+            <div className="flex items-start gap-3">
+              <span className="text-lg mt-0.5 shrink-0">📖</span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Memoria del distrito
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/60">
+                    {landingMemory.district.displayName}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {landingMemory.memory.narrative}
+                </p>
+                {landingMemory.memory.themes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {landingMemory.memory.themes.slice(0, 3).map((t) => (
+                      <span
+                        key={t.category}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 text-[10px] text-muted-foreground font-medium"
+                      >
+                        {t.category}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : ambientSignal ? (
             <div className="flex items-start gap-3">
               <span className="text-lg mt-0.5 shrink-0">
                 {ambientSignal.mood === "quiet" && "🌙"}

@@ -53,6 +53,9 @@ import type { CivicTrace, CivicTraceInput } from "@/domain/civicTrace";
 import { traceToNarrative } from "@/domain/civicTraceNarrative";
 import type { CivicTraceNarrativeCtx } from "@/domain/civicTraceNarrative";
 import { InitiativeWall } from "@/features/initiativeWall";
+import { CivicAfterglow } from "@/features/initiative/components/CivicAfterglow";
+import { ContinueAffordance } from "@/features/initiative/components/ContinueAffordance";
+import { isLivingTerritoryEnabled } from "@/lib/operationalFeature";
 
 export const Route = createFileRoute("/app/mision/$missionId")({
   component: MissionDetail,
@@ -977,6 +980,18 @@ function MissionDetail() {
                 </div>
               </div>
             )}
+
+            <CivicAfterglow
+              initiative={initiative}
+              districtName={initiative.location?.district}
+              evidenceCount={
+                initiative.lifecycle === "completed" && huellaTrace
+                  ? huellaTrace.verifiedCount
+                  : undefined
+              }
+            />
+
+            <ContinueAffordance initiative={initiative} kind="mission" />
 
             <div className="h-px bg-border/60" />
 

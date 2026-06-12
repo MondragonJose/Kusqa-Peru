@@ -282,3 +282,8 @@ export const initiativeResolver = {
   resolveAllWithEnrichment,
   resolveMapEntities,
 };
+
+// Export mappers so downstream consumers (e.g. memory projection)
+// can convert raw missions/proposals to the Initiative shape without
+// duplicating the lifecycle-derivation logic.
+export { missionToInitiative, proposalToInitiative };

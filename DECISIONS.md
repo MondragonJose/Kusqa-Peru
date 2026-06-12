@@ -123,3 +123,13 @@ Decisions are recorded as single-paragraph entries. Each entry includes the date
 **Decision:** Phase 3 assumes `VITE_USE_INITIATIVE_READ_MODEL=true` as the canonical runtime read path. This means `initiativeResolver.ts` (and only the resolver) is the single projection boundary through which all Initiative-shaped data flows. The resolver reads from legacy `"missions"` + `"proposals"`; it does NOT read from `public.initiatives` during Phase 3. A future phase will swap the resolver's source to `public.initiatives` directly, at which point the legacy-table triggers become the reverse-sync mechanism, and the resolver becomes a thin pass-through. `VITE_USE_UNIFIED_WRITES=false` remains unchanged — write path migration is independent.
 
 **Rationale:** The resolver is the existing projection boundary; swapping its source (legacy tables → `public.initiatives`) is a single-file change inside `src/services/`, invisible to all consumers. Feature code already depends on the `Initiative` shape and the resolver's interface. Keeping the flag default `false` avoids coupling Phase 3 uptake to the source swap. This entry resolves audit debt 2.1 by stating unambiguously that the resolver is the canonical entrance, regardless of which underlying table it queries.
+
+---
+
+## 2026-06-12: Phase 4 (Living Territory) memory is a read projection — no new table or store
+
+**Context:** Phase 4 makes the territory "remember" user history, but the codebase already stores every relevant fact in `civic_events` (unified event catalog) and the Initiative lifecycle (states in `initiatives`). Any new "memory" table or service would duplicate existing domain data and fragment the projection pipeline.
+
+**Decision:** `VITE_LIVING_TERRITORY=false` (default off) gates the read projection. Memory is derived entirely by reading from `civic_events` (the single `InitiativeEvent` catalog) and Initiative lifecycle states — no new DB table, no new store, no new domain aggregate. The `src/lib/operationalFeature.ts` accessor `isLivingTerritoryEnabled()` is the sole flag surface. No migration, schema, or service file is created in this unit.
+
+**Rationale:** Locking this decision first prevents any later unit from inventing a separate memory database. Derivation over duplication applies vertically (across phases) just as it does within a phase. The flag exists so Phase 4 UI can be developed incrementally without impacting production data paths.
