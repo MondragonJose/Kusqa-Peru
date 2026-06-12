@@ -445,7 +445,7 @@ function Landing(): JSX.Element {
 
           {/* Floating expedition cards */}
           {featuredMissions.length > 0 ? (
-            <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 max-w-5xl">
+            <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 max-w-5xl">
               {featuredMissions.slice(0, 3).map((initiative, i) => (
                 <motion.div
                   key={initiative.id}
@@ -453,10 +453,10 @@ function Landing(): JSX.Element {
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ scale: 1.02, y: -4 }}
                   transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
-                  className="glass-strong rounded-2xl p-4 lg:p-5 shadow-card hover:shadow-lift transition-smooth cursor-pointer"
+                  className="glass-strong rounded-2xl p-3 lg:p-5 shadow-card hover:shadow-lift transition-smooth cursor-pointer"
                 >
                   <div
-                    className={`h-20 lg:h-28 rounded-xl bg-gradient-to-br ${regionGradient(initiative.region as Region)} grid place-items-center text-3xl lg:text-5xl mb-3 lg:mb-4`}
+                    className={`h-16 lg:h-28 rounded-xl bg-gradient-to-br ${regionGradient(initiative.region as Region)} grid place-items-center text-3xl lg:text-5xl mb-2 lg:mb-4`}
                   >
                     {initiative.emoji}
                   </div>
@@ -471,7 +471,7 @@ function Landing(): JSX.Element {
                   <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">
                     {initiative.title}
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
                       {initiative.lifecycle === "active"
                         ? "En curso"
@@ -858,6 +858,47 @@ function Landing(): JSX.Element {
                 Cada misión que completes te acerca a ser un Líder Kusqa reconocido en tu región.
               </div>
             </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── VOCES DEL TERRITORIO ── */}
+      <section id="voces" className="px-5 lg:px-8 py-10 lg:py-20 bg-surface/40">
+        <div className="mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-2">
+              Voces del territorio
+            </div>
+            <h2 className="font-display font-bold text-4xl lg:text-5xl leading-tight">
+              Quienes ya están
+              <br />
+              caminando el Perú.
+            </h2>
+            <p className="mt-4 text-muted-foreground text-lg max-w-2xl leading-relaxed">
+              Los testimonios de jóvenes que convirtieron su barrio en su primera misión se
+              publicarán aquí. Cada historia es una semilla para quien busca su propia ruta.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-3xl glass-strong border border-border/60 p-10 text-center shadow-soft"
+          >
+            <div className="text-3xl mb-4">📢</div>
+            <h3 className="font-display font-bold text-xl mb-2">
+              Aún no hay voces publicadas
+            </h3>
+            <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
+              Cuando los jóvenes empiecen a compartir sus experiencias en el territorio,
+              sus relatos aparecerán aquí. La primera historia está por escribirse.
+            </p>
           </motion.div>
         </div>
       </section>

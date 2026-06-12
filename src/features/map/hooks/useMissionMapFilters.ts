@@ -113,6 +113,13 @@ export function useMissionMapFilters(
         hiddenReason = `difficulty filter (entity.difficulty=${entity.difficulty}, filter=${filters.difficulty})`;
       }
 
+      if (!hiddenReason) {
+        const coords = entity.location?.coords;
+        if (!coords || !isValidLatLng(coords.lat, coords.lng)) {
+          hiddenReason = `missing or invalid coords`;
+        }
+      }
+
       if (!hiddenReason && filters.searchQuery) {
         const query = filters.searchQuery.toLowerCase().trim();
         const titleMatch = entity.title.toLowerCase().includes(query);

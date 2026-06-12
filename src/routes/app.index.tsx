@@ -146,7 +146,7 @@ function Dashboard() {
 
         {/* Tu huella en el territorio — footprint section */}
         <section className="relative rounded-2xl bg-card border border-border/80 p-5 sm:p-7">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-center lg:justify-center gap-4 sm:gap-6">
             <div className="shrink-0">
               {timelineLoading ? (
                 <div className="w-[120px] h-[180px] bg-secondary/50 rounded-xl animate-pulse" />

@@ -46,7 +46,7 @@ export function StageCard({ stage, status, userXp, index = 0 }: StageCardProps) 
             Nivel {stage.level} · {stage.terrain}
           </div>
           <div
-            className={`font-display font-bold text-lg mt-0.5 ${status === "locked" ? "text-muted-foreground" : ""}`}
+            className={`font-display font-bold text-lg mt-0.5 truncate ${status === "locked" ? "text-muted-foreground" : ""}`}
           >
             {stage.name}
           </div>

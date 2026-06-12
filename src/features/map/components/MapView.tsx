@@ -550,10 +550,22 @@ export function MapView({
     });
 
     if (import.meta.env.DEV) {
+      const noCoordCount = missions.length - missionsWithCoords.length;
       console.log("[KUSQA MAP TRACE] Fit bounds to entities:", {
-        count: missionsWithCoords.length,
+        inputTotal: missions.length,
+        withCoords: missionsWithCoords.length,
+        noCoords: noCoordCount,
+        pinesEnMapa: missionsWithCoords.length,
         isFirstFit,
       });
+      if (noCoordCount > 0) {
+        console.log(
+          "[KUSQA MAP TRACE] Entidades sin coordenadas (no tendrán pin):",
+          missions
+            .filter((m) => !m.location?.coords || !isValidLatLng(m.location.coords.lat, m.location.coords.lng))
+            .map((m) => ({ id: m.id, title: m.title })),
+        );
+      }
     }
   }, [missions, leafletLoaded, LInstance, selectedMissionId]);
 
@@ -780,7 +792,7 @@ export function MapView({
             </div>
 
             {/* Bottom Left - Zoom Controls */}
-            <div className="absolute bottom-4 left-4 z-10 pointer-events-auto">
+            <div className="absolute bottom-4 left-4 z-[1001] pointer-events-auto">
               <MapControls
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}

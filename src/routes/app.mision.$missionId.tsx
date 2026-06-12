@@ -630,16 +630,23 @@ function MissionDetail() {
             </p>
           </section>
 
-          {/* Why this matters — only meaningful for real missions. Proposals
-              have their own "Por qué" in the proposal detail view. */}
-          {isMissionEntity && mission?.impact && (
+          {/* Why this matters — always visible so the page never feels hollow.
+              Proposals have their own "Por qué" in the proposal detail view. */}
+          {isMissionEntity && (
             <section className={`rounded-3xl ${theme.bgLight} border ${theme.border} p-6`}>
               <h2 className="font-display font-black text-xl mb-3 text-foreground flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-accent" /> Por qué esta misión importa
               </h2>
-              <p className="text-sm sm:text-base text-foreground/90 leading-relaxed font-medium">
-                {mission!.impact}
-              </p>
+              {mission?.impact ? (
+                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed font-medium">
+                  {mission.impact}
+                </p>
+              ) : (
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium italic">
+                  El impacto de esta misión se definirá con quienes participen. Cada acción
+                  territorial deja una huella imborrable.
+                </p>
+              )}
             </section>
           )}
 
@@ -949,6 +956,17 @@ function MissionDetail() {
             <div className="h-px bg-border/60" />
 
             <div className="space-y-3 text-xs">
+              {/* Date range */}
+              {mission!.startDate && (
+                <div className="flex justify-between font-medium">
+                  <span className="text-muted-foreground">Fecha</span>
+                  <span className="font-bold text-foreground text-right">
+                    {formatRelativeDate(mission!.startDate)}
+                    {mission!.endDate && <> – {formatRelativeDate(mission!.endDate)}</>}
+                  </span>
+                </div>
+              )}
+              {/* Difficulty */}
               <div className="flex justify-between font-medium">
                 <span className="text-muted-foreground">Dificultad</span>
                 <span className="font-bold flex items-center gap-1">
@@ -957,25 +975,41 @@ function MissionDetail() {
                     const DiffIcon = dm?.icon ?? ShieldCheck;
                     return <DiffIcon className={`h-4 w-4 ${dm?.color ?? "text-foreground"}`} />;
                   })()}
-                  <span className="text-foreground">{mission!.difficulty || "N/A"}</span>
+                  <span className="text-foreground">{mission!.difficulty || "Por definir"}</span>
                 </span>
               </div>
+              {/* Spots */}
               <div className="flex justify-between font-medium">
-                <span className="text-muted-foreground">Cupos libres</span>
-                <span className="font-bold text-accent">{mission!.spotsLeft ?? 0}</span>
-              </div>
-              <div className="flex justify-between font-medium">
-                <span className="text-muted-foreground">Organizador</span>
-                <span className="font-bold text-foreground">
-                  {mission!.organizer?.name || "N/A"}
+                <span className="text-muted-foreground">Cupos</span>
+                <span className="font-bold text-accent">
+                  {mission!.spotsLeft != null
+                    ? `${mission!.spotsLeft} libre${mission!.spotsLeft !== 1 ? "s" : ""}`
+                    : "Sin límite"}
                 </span>
               </div>
-              <div className="flex justify-between font-medium">
-                <span className="text-muted-foreground">Impacto</span>
-                <span className="font-bold text-stone-700 dark:text-stone-300 text-right">
-                  {mission!.impact || "N/A"}
-                </span>
-              </div>
+              {/* Distance */}
+              {mission!.distanceKm != null && (
+                <div className="flex justify-between font-medium">
+                  <span className="text-muted-foreground">Distancia</span>
+                  <span className="font-bold text-foreground">
+                    {mission!.distanceKm} km
+                    {mission!.distanceKm > 0
+                      ? mission!.distanceKm >= 10
+                        ? " · Travesía"
+                        : " · Local"
+                      : ""}
+                  </span>
+                </div>
+              )}
+              {/* Organizer — only when available */}
+              {mission!.organizer?.name && (
+                <div className="flex justify-between font-medium pt-3 border-t border-border/40">
+                  <span className="text-muted-foreground">Organizador</span>
+                  <span className="font-bold text-foreground text-right">
+                    {mission!.organizer.name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </aside>

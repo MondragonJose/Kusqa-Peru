@@ -82,13 +82,13 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
       transition={{ duration: 0.5, delay: index * 0.07 }}
       className={`relative flex flex-col rounded-2xl border bg-gradient-to-br ${
         isProposal
-          ? "border-violet-200 dark:border-violet-900/30 border-dashed bg-violet-50/30 dark:bg-violet-950/10"
+          ? "border-violet-200 dark:border-violet-900/30 border-dashed bg-violet-50/40 dark:bg-violet-950/10"
           : `${accentClass} glass-strong`
       } shadow-soft hover:shadow-card transition-smooth group overflow-hidden`}
     >
       {isMission && <div className={`h-1.5 w-full ${bandClass}`} />}
       {isProposal && (
-        <div className="h-1.5 w-full bg-gradient-to-r from-violet-400 to-violet-600 opacity-50" />
+        <div className="h-1.5 w-full bg-gradient-to-r from-violet-400 to-violet-600" />
       )}
 
       <div
@@ -125,8 +125,8 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">{initiative.category}</span>
               {isProposal && (
-                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-bold">
-                  Propuesta
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-bold">
+                  🌱 Propuesta
                 </span>
               )}
               {isMission && initiative.lifecycle === "active" && (
@@ -221,8 +221,8 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                 </span>
               ))}
             {isProposal && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-semibold">
-                En apoyo
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30 font-semibold">
+                <Heart className="h-3 w-3" /> En apoyo
               </span>
             )}
           </div>

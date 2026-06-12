@@ -201,7 +201,9 @@ function MapPage() {
       </div>
 
       {/* Filters — compact row on mobile, full panel on desktop */}
-      <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
+      <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-4">
+        <div className="hidden lg:block" />
+        <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
@@ -255,6 +257,7 @@ function MapPage() {
             </button>
           ))}
         </div>
+      </div>
       </div>
 
       {/* Main Map Layout: sidebar + map + detail panel (desktop), map-only (mobile) */}

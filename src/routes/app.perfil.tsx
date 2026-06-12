@@ -217,7 +217,7 @@ export function Profile() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-24 lg:pb-12">
+    <div className="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-24 lg:pb-12 px-5 sm:px-6">
       {/* Cover / Profile Card */}
       <section className="relative rounded-3xl overflow-hidden shadow-sm bg-card border border-border">
         {/* Banner with user region's gradient */}
@@ -235,7 +235,7 @@ export function Profile() {
               {user.avatar}
             </div>
 
-            <div className="flex-1 min-w-[240px] pb-1">
+            <div className="flex-1 min-w-0 pb-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">
                   {user.name}
@@ -258,10 +258,11 @@ export function Profile() {
                 />
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1.5 font-medium">
-                <span>{user.handle}</span>
-                <span className="text-border/80">•</span>
-                <span className="inline-flex items-center gap-1 group">
-                  <MapPin className="h-3.5 w-3.5 text-primary/70" /> {user.district}
+                <span className="truncate">{user.handle}</span>
+                <span className="text-border/80 shrink-0">•</span>
+                <span className="inline-flex items-center gap-1 group min-w-0">
+                  <MapPin className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                  <span className="truncate">{user.district}</span>
                   <button
                     onClick={() => { setDistrictInput(user.district); setDistrictEditOpen(true); }}
                     className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-accent"
@@ -274,7 +275,7 @@ export function Profile() {
 
             </div>
 
-            <div className="flex gap-2 pb-1 z-10 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 pb-1 z-10 w-full sm:w-auto">
               <Link
                 to="/app/mapa"
                 className="flex-1 sm:flex-initial rounded-xl bg-primary text-white border border-transparent px-4 py-3 text-xs font-bold shadow-sm hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-1.5"
@@ -292,7 +293,7 @@ export function Profile() {
                 {exportOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] rounded-xl border border-border/60 bg-card shadow-lg overflow-hidden">
+                    <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1 z-50 min-w-[140px] rounded-xl border border-border/60 bg-card shadow-lg overflow-hidden">
                       <button
                         onClick={() => { handleExport("json"); setExportOpen(false); }}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
@@ -321,10 +322,10 @@ export function Profile() {
               <p className="font-display font-black text-xl sm:text-2xl text-foreground leading-tight">
                 {bio.headline}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl break-words">
                 {bio.territorialIdentity}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed break-words">
                 {bio.participationIdentity}
               </p>
             </div>
@@ -747,9 +748,9 @@ export function Profile() {
             </div>
 
             {/* Quick view of the top 3-4 badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-4 lg:gap-5">
               {userBadges.slice(0, 4).map((badge, idx) => (
-                <div key={badge.id} className="min-w-0">
+                <div key={badge.id}>
                   <BadgeCard badge={badge} index={idx} showNarrative={false} />
                 </div>
               ))}

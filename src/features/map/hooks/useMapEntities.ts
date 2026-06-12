@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { initiativeResolver } from "@/services/initiativeResolver";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
 
-const STALE_MS = 60_000;
-const GC_MS = 300_000;
+const STALE_MS = 15_000;
+const GC_MS = 120_000;
 
 const MAP_ENTITIES_KEY = ["map-entities"] as const;
 
