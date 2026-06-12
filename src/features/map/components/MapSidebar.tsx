@@ -1,9 +1,14 @@
 import { useMemo } from "react";
 import { MapPin, Sparkles, Users, Shield } from "lucide-react";
 import { REGION_META } from "@/constants/gamification";
-import { projectMapSidebarItem, type SidebarItemProjection } from "../projections/mapEntityProjection";
+import {
+  projectMapSidebarItem,
+  type SidebarItemProjection,
+} from "../projections/mapEntityProjection";
 import type { InitiativeMapEntity } from "@/domain/initiativeMapEntity";
+import type { InitiativeAction } from "@/domain/initiativeActions";
 import { MapDetailPanel } from "./MapDetailPanel";
+import { MapPeekCard } from "./MapPeekCard";
 import { getDifficultyMeta } from "@/domain/difficulty";
 
 export type MapSidebarProps = {
@@ -16,6 +21,10 @@ export type MapSidebarProps = {
   /** When set, renders MapDetailPanel embedded instead of the entity list */
   detailEntity?: InitiativeMapEntity | null;
   onCloseDetail?: () => void;
+  /** When set, renders a compact peek card instead of the entity list */
+  peekEntity?: InitiativeMapEntity | null;
+  onViewDetail?: () => void;
+  onPeekAction?: (action: InitiativeAction) => void;
   onSupport?: (proposalId: string) => void;
   onJoin?: (missionId: string) => void;
 };
@@ -79,7 +88,9 @@ function SidebarItem({
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           {item.temporalLabel && (
-            <span className="text-[8px] font-medium text-accent truncate">{item.temporalLabel}</span>
+            <span className="text-[8px] font-medium text-accent truncate">
+              {item.temporalLabel}
+            </span>
           )}
         </div>
       </div>
@@ -116,6 +127,9 @@ export function MapSidebar({
   isLoading,
   detailEntity,
   onCloseDetail,
+  peekEntity,
+  onViewDetail,
+  onPeekAction,
   onSupport,
   onJoin,
 }: MapSidebarProps) {
@@ -128,6 +142,18 @@ export function MapSidebar({
         onClose={onCloseDetail ?? (() => {})}
         onSupport={onSupport}
         onJoin={onJoin}
+      />
+    );
+  }
+
+  if (peekEntity) {
+    return (
+      <MapPeekCard
+        entity={peekEntity}
+        variant="sidebar"
+        onClose={onCloseDetail ?? (() => {})}
+        onViewDetail={onViewDetail ?? (() => {})}
+        onPrimaryAction={onPeekAction ?? (() => {})}
       />
     );
   }
@@ -146,7 +172,9 @@ export function MapSidebar({
     return (
       <div className="h-full bg-card border border-border/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
         <div className="text-3xl mb-3">🔍</div>
-        <p className="text-xs font-semibold text-muted-foreground">Ninguna iniciativa coincide con los filtros</p>
+        <p className="text-xs font-semibold text-muted-foreground">
+          Ninguna iniciativa coincide con los filtros
+        </p>
         <p className="text-[10px] text-muted-foreground/60 mt-1">Prueba con otros criterios</p>
       </div>
     );
@@ -155,7 +183,9 @@ export function MapSidebar({
   return (
     <div className="h-full bg-card border border-border/40 rounded-2xl flex flex-col overflow-hidden">
       <div className="px-3 py-2.5 border-b border-border/20 flex items-center justify-between shrink-0">
-        <span className="text-xs font-bold text-foreground">{items.length} iniciativa{items.length !== 1 ? "s" : ""}</span>
+        <span className="text-xs font-bold text-foreground">
+          {items.length} iniciativa{items.length !== 1 ? "s" : ""}
+        </span>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {items.map((item) => (

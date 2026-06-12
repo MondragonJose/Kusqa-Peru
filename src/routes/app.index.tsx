@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MapPin, Sparkles, ArrowRight, Users, Compass, CompassIcon, RefreshCw } from "lucide-react";
 import { Drawer } from "vaul";
 import { REGION_META } from "@/constants/gamification";
@@ -20,6 +20,7 @@ import { getInitiativeDetailRoute } from "@/domain/initiativeRoute";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
 import { useSupportProposal, useSupportCount } from "@/features/proposals/hooks/useSupportProposal";
+import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -27,9 +28,11 @@ export const Route = createFileRoute("/app/")({
 
 function Dashboard() {
   const [selectedEntity, setSelectedEntity] = useState<Initiative | null>(null);
+  const focusTriggerRef = useRef<HTMLElement | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { supportProposal, isSupported, isSupporting } = useSupportProposal();
+  const { handleJoin } = useJoinInitiativeAction();
 
   const { data: timeline, isLoading: timelineLoading } = useProfileMissionTimeline();
   const { data: initiatives = [], isLoading } = useLandingInitiatives();
@@ -357,7 +360,16 @@ function Dashboard() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedEntity(item)}
+                    onClick={() => {
+                      if (typeof document !== "undefined") {
+                        const active = document.activeElement as HTMLElement | null;
+                        if (active && active !== document.body) {
+                          focusTriggerRef.current = active;
+                          active.blur();
+                        }
+                      }
+                      setSelectedEntity(item);
+                    }}
                     className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left"
                   >
                     <div
@@ -441,13 +453,24 @@ function Dashboard() {
         <Drawer.Root
           open={selectedEntity !== null}
           onOpenChange={(open) => {
-            if (!open) setSelectedEntity(null);
+            if (!open) {
+              setSelectedEntity(null);
+              requestAnimationFrame(() => {
+                focusTriggerRef.current?.focus();
+                focusTriggerRef.current = null;
+              });
+            }
           }}
           snapPoints={["38%", "85vh"]}
         >
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
-            <Drawer.Content className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift">
+            <Drawer.Content
+              className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
+              onOpenAutoFocus={(e) => {
+                e.preventDefault();
+              }}
+            >
               <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
                 <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
 
@@ -506,6 +529,10 @@ function Dashboard() {
                                     }
                                     break;
                                   case "join":
+                                    handleJoin(selectedEntity.sourceId, {
+                                      lifecycle: selectedEntity.lifecycle,
+                                    });
+                                    break;
                                   case "edit":
                                   case "report": {
                                     const route = getInitiativeDetailRoute(selectedEntity);

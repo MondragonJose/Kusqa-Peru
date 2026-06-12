@@ -98,220 +98,66 @@ function toDomain(
 const PAGE_SIZE_DEFAULT = 20;
 const PAGE_SIZE_MAX = 50;
 
+/**
+ * @deprecated Use `initiativeCommentRepository` instead.
+ * All methods now delegate to `initiative_comments` via
+ * `initiativeCommentRepository` with `initiativeType: 'proposal'`.
+ * This wrapper exists only to preserve the `ProposalComment` return
+ * type for existing consumers. Remove when all callers migrate to
+ * `initiativeCommentRepository` + `InitiativeComment`.
+ */
 export const proposalCommentRepository = {
   async count(proposalId: string): Promise<number> {
-    const { count, error } = await supabase
-      .from("proposal_comments")
-      .select("*", { count: "exact", head: true })
-      .eq("proposal_id", proposalId)
-      .is("deleted_at", null);
-
-    if (error) {
-      console.error("[KUSQA COMMENT TRACE] Error counting comments:", error);
-      return 0;
-    }
-    return count ?? 0;
+    return initiativeCommentRepository.countByInitiative(proposalId, "proposal");
   },
-  /**
-   * List comments for a proposal, paginated, threaded (1 level only).
-   * Returns top-level comments in created_at ASC order with their
-   * replies attached (also in created_at ASC).
-   *
-   * For the "Conversación" tab we keep it simple: 1 page of latest
-   * comments + their 1-level replies. No deep threading.
-   */
+
   async list(
     proposalId: string,
     options: { page?: number; pageSize?: number; currentUserId?: string | null } = {},
   ): Promise<ListCommentsResult> {
-    const page = Math.max(0, options.page ?? 0);
-    const pageSize = Math.min(PAGE_SIZE_MAX, Math.max(1, options.pageSize ?? PAGE_SIZE_DEFAULT));
-    const now = Date.now();
-
-    // Two-step fetch to keep queries bounded and RLS-friendly:
-    //  1) latest top-level comments (page)
-    //  2) replies whose parent is in page 1
-    const offset = page * pageSize;
-    const {
-      data: topLevel,
-      error: topErr,
-      count: topCount,
-    } = await supabase
-      .from("proposal_comments")
-      .select(
-        `
-        id, proposal_id, user_id, parent_comment_id, content,
-        created_at, updated_at, deleted_at,
-        profiles:user_id ( username, full_name, avatar_url )
-        `,
-        { count: "exact" },
-      )
-      .eq("proposal_id", proposalId)
-      .is("parent_comment_id", null)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: true })
-      .range(offset, offset + pageSize - 1);
-
-    if (topErr) {
-      throw new Error(`Failed to load comments: ${topErr.message}`);
-    }
-
-    const topIds = (topLevel ?? []).map((r: any) => (r as { id: string }).id);
-    let replies: unknown[] = [];
-    if (topIds.length > 0) {
-      const { data, error } = await supabase
-        .from("proposal_comments")
-        .select(
-          `
-          id, proposal_id, user_id, parent_comment_id, content,
-          created_at, updated_at, deleted_at,
-          profiles:user_id ( username, full_name, avatar_url )
-          `,
-        )
-        .eq("proposal_id", proposalId)
-        .in("parent_comment_id", topIds)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
-      if (error) {
-        throw new Error(`Failed to load replies: ${error.message}`);
-      }
-      replies = data ?? [];
-    }
-
-    const flatReplies = replies.map(flattenComment);
-    const byParent = new Map<string, ProposalComment[]>();
-    for (const r of flatReplies) {
-      const parsed = DB_COMMENT_SCHEMA.safeParse(r);
-      if (!parsed.success || !parsed.data.parent_comment_id) continue;
-      const list = byParent.get(parsed.data.parent_comment_id) ?? [];
-      list.push(toDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now }));
-      byParent.set(parsed.data.parent_comment_id, list);
-    }
-
-    const comments: ProposalComment[] = (topLevel ?? [])
-      .map(flattenComment)
-      .flatMap((row: unknown) => {
-        const parsed = DB_COMMENT_SCHEMA.safeParse(row);
-        if (!parsed.success) return [];
-        const top = toDomain(parsed.data, { currentUserId: options.currentUserId ?? null, now });
-        return [top, ...(byParent.get(top.id) ?? [])];
-      });
-
+    const result = await initiativeCommentRepository.listByInitiative(
+      proposalId,
+      "proposal",
+      options,
+    );
     return {
-      comments,
-      total: topCount ?? comments.length,
-      hasMore: (topCount ?? 0) > offset + topIds.length,
+      comments: result.comments.map(toProposalComment),
+      total: result.total,
+      hasMore: result.hasMore,
     };
   },
 
-  /**
-   * Post a new comment or reply. Caller is the author.
-   */
   async create(input: CreateCommentDTO): Promise<ProposalResult<ProposalComment>> {
-    const authorId = await resolveAuthenticatedUserId();
-    const trimmed = input.content.trim();
-    if (trimmed.length < DB_DEFAULTS.COMMENT_MIN) {
-      return { status: "error", error: "El comentario no puede estar vacío." };
+    const result = await initiativeCommentRepository.createForInitiative({
+      initiativeId: input.proposalId,
+      initiativeType: "proposal",
+      content: input.content,
+      parentCommentId: input.parentCommentId ?? null,
+    });
+    if (result.status === "success") {
+      return { status: "success", data: toProposalComment(result.data) };
     }
-    if (trimmed.length > DB_DEFAULTS.COMMENT_MAX) {
-      return {
-        status: "error",
-        error: `El comentario no puede superar ${DB_DEFAULTS.COMMENT_MAX} caracteres.`,
-      };
+    if (result.status === "partial_success") {
+      return { status: "partial_success", data: toProposalComment(result.data), warnings: result.warnings };
     }
-
-    const { data, error } = await supabase
-      .from("proposal_comments")
-      .insert({
-        proposal_id: input.proposalId,
-        user_id: authorId,
-        parent_comment_id: input.parentCommentId ?? null,
-        content: trimmed,
-      })
-      .select(
-        `
-        id, proposal_id, user_id, parent_comment_id, content,
-        created_at, updated_at, deleted_at,
-        profiles:user_id ( username, full_name, avatar_url )
-        `,
-      )
-      .single();
-
-    if (error) {
-      return { status: "error", error: `No se pudo publicar el comentario: ${error.message}` };
-    }
-    const flattened = flattenComment(data);
-    const parsed = DB_COMMENT_SCHEMA.safeParse(flattened);
-    if (!parsed.success) {
-      return { status: "error", error: "Respuesta inesperada del servidor." };
-    }
-    return {
-      status: "success",
-      data: toDomain(parsed.data, { currentUserId: authorId, now: Date.now() }),
-    };
+    return result;
   },
 
-  /**
-   * Edit an existing comment (author-only, within 24h, not deleted).
-   */
   async edit(
     input: EditCommentDTO & { currentUserId: string },
   ): Promise<ProposalResult<ProposalComment>> {
-    const trimmed = input.content.trim();
-    if (trimmed.length < DB_DEFAULTS.COMMENT_MIN) {
-      return { status: "error", error: "El comentario no puede estar vacío." };
+    const result = await initiativeCommentRepository.editComment(input);
+    if (result.status === "success") {
+      return { status: "success", data: toProposalComment(result.data) };
     }
-    if (trimmed.length > DB_DEFAULTS.COMMENT_MAX) {
-      return {
-        status: "error",
-        error: `El comentario no puede superar ${DB_DEFAULTS.COMMENT_MAX} caracteres.`,
-      };
+    if (result.status === "partial_success") {
+      return { status: "partial_success", data: toProposalComment(result.data), warnings: result.warnings };
     }
-
-    const { data, error } = await supabase
-      .from("proposal_comments")
-      .update({ content: trimmed, updated_at: new Date().toISOString() })
-      .eq("id", input.commentId)
-      .eq("user_id", input.currentUserId)
-      .is("deleted_at", null)
-      .select(
-        `
-        id, proposal_id, user_id, parent_comment_id, content,
-        created_at, updated_at, deleted_at,
-        profiles:user_id ( username, full_name, avatar_url )
-        `,
-      )
-      .single();
-
-    if (error) {
-      return { status: "error", error: `No se pudo editar el comentario: ${error.message}` };
-    }
-    const flattened = flattenComment(data);
-    const parsed = DB_COMMENT_SCHEMA.safeParse(flattened);
-    if (!parsed.success) {
-      return { status: "error", error: "Respuesta inesperada del servidor." };
-    }
-    return {
-      status: "success",
-      data: toDomain(parsed.data, { currentUserId: input.currentUserId, now: Date.now() }),
-    };
+    return result;
   },
 
-  /**
-   * Soft-delete a comment. Author-only.
-   */
   async softDelete(commentId: string, currentUserId: string): Promise<ProposalResult<true>> {
-    const { error } = await supabase
-      .from("proposal_comments")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", commentId)
-      .eq("user_id", currentUserId)
-      .is("deleted_at", null);
-
-    if (error) {
-      return { status: "error", error: `No se pudo eliminar el comentario: ${error.message}` };
-    }
-    return { status: "success", data: true };
+    return initiativeCommentRepository.softDeleteComment(commentId, currentUserId);
   },
 };
 
@@ -575,6 +421,25 @@ export const initiativeCommentRepository = {
     return { status: "success", data: true };
   },
 };
+
+// ─── Helper: map InitiativeComment → ProposalComment (legacy compat) ───────
+
+function toProposalComment(c: InitiativeComment): ProposalComment {
+  return {
+    id: c.id,
+    proposalId: c.initiativeId,
+    authorId: c.authorId,
+    authorUsername: c.authorUsername,
+    authorFirstName: c.authorFirstName,
+    authorAvatarUrl: c.authorAvatarUrl,
+    parentCommentId: c.parentCommentId,
+    content: c.content,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    isEditable: c.isEditable,
+    isDeleted: c.isDeleted,
+  };
+}
 
 // ─── Helper: flatten Supabase join shapes ──────────────────────────────────
 

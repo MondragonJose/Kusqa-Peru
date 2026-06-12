@@ -19,7 +19,7 @@ const PARENT_ID = "00000000-0000-4000-a000-000000000200";
 describe("initiativeCommentRepository", () => {
   describe("countByInitiative", () => {
     it("returns count for a mission initiative", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: null,
         error: null,
       });
@@ -27,11 +27,11 @@ describe("initiativeCommentRepository", () => {
       const count = await initiativeCommentRepository.countByInitiative(MISSION_ID, "mission");
 
       expect(count).toBe(0);
-      expect(mock.queue.fromCalls).toContain("proposal_comments");
+      expect(mock.queue.fromCalls).toContain("initiative_comments");
     });
 
     it("returns 0 on supabase error", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: null,
         error: { message: "connection error" },
       });
@@ -44,7 +44,7 @@ describe("initiativeCommentRepository", () => {
 
   describe("createForInitiative", () => {
     it("creates a comment for a mission", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: {
           id: COMMENT_ID,
           initiative_id: MISSION_ID,
@@ -80,7 +80,7 @@ describe("initiativeCommentRepository", () => {
     });
 
     it("creates a reply comment", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: {
           id: "00000000-0000-4000-a000-000000000101",
           initiative_id: PROP_ID,
@@ -138,7 +138,7 @@ describe("initiativeCommentRepository", () => {
 
   describe("listByInitiative", () => {
     it("returns empty list when no root comments exist", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: [],
         error: null,
       });
@@ -153,7 +153,7 @@ describe("initiativeCommentRepository", () => {
 
   describe("softDeleteComment", () => {
     it("soft-deletes a comment", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: null,
         error: null,
       });
@@ -166,7 +166,7 @@ describe("initiativeCommentRepository", () => {
 
   describe("editComment", () => {
     it("edits a comment", async () => {
-      mock.queue.tableResponse("proposal_comments", {
+      mock.queue.tableResponse("initiative_comments", {
         data: {
           id: COMMENT_ID,
           initiative_id: MISSION_ID,

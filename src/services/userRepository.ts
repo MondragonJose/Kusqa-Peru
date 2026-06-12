@@ -48,7 +48,7 @@ function parseUserProgressRow(row: DbUserProgress): DbUserProgress {
 
 // P0 FIX: inferRegionFromDistrict consolidado en src/domain/territorial.ts (fuente de verdad única)
 
-function mapProfileToUser(profile: DbProfile, progress: DbUserProgress | null): User {
+function mapProfileToUser(profile: DbProfile, progress: UserTerritoryProgress | null): User {
   const handle = profile.username.startsWith("@") ? profile.username : `@${profile.username}`;
 
   return {
@@ -59,10 +59,10 @@ function mapProfileToUser(profile: DbProfile, progress: DbUserProgress | null): 
     avatar: "🦙",
     xp: profile.experience_points ?? 0,
     level: profile.level ?? 1,
-    rank: progress?.community_points ?? 0,
+    rank: progress?.communityPoints ?? 0,
     streak: 0,
-    missionsDone: progress?.total_missions_completed ?? 0,
-    peopleImpacted: progress?.community_points ?? undefined,
+    missionsDone: progress?.totalMissionsCompleted ?? 0,
+    peopleImpacted: progress?.communityPoints ?? undefined,
   };
 }
 
@@ -71,7 +71,7 @@ function mapProgressRow(row: DbUserProgress): UserTerritoryProgress {
     userId: row.user_id,
     communityPoints: row.community_points,
     totalMissionsCompleted: row.total_missions_completed,
-    lastActivityAt: row.last_activity_at,
+    lastActivityAt: row.last_activity_at ?? new Date().toISOString(),
   };
 }
 

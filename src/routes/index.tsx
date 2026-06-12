@@ -17,7 +17,8 @@ import { useRef, useEffect, useMemo, useState } from "react";
 import { JSX } from "react/jsx-runtime";
 import { useLandingInitiatives } from "@/features/initiatives/hooks/useLandingInitiatives";
 import { deriveInitiativeStats } from "@/domain/initiativeStats";
-import { regionGradient, type Region } from "@/domain/regions";
+import { regionGradient, type Region, REGION_META } from "@/domain/regions";
+import { CIVIC_ROUTE } from "@/features/progression/constants/civicRoute";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
 import { useOAuthLogin } from "@/features/auth";
 import { useAuthState } from "@/features/auth";
@@ -412,7 +413,8 @@ function Landing(): JSX.Element {
                   to="/app/mapa"
                   className="group inline-flex items-center gap-2 rounded-xl bg-gradient-sunrise text-white px-4 lg:px-6 py-2.5 lg:py-3.5 text-xs lg:text-base font-semibold shadow-glow hover:scale-[1.02] active:scale-95 transition-smooth"
                 >
-                  Explorar mapa <MapPin className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
+                  Explorar mapa{" "}
+                  <MapPin className="h-3 lg:h-4 w-3 lg:w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <button
                   onClick={loginWithGoogle}
@@ -486,7 +488,11 @@ function Landing(): JSX.Element {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
-                      {initiative.lifecycle === "active" ? "En curso" : initiative.lifecycle === "forming" ? "Próxima" : initiative.lifecycle}
+                      {initiative.lifecycle === "active"
+                        ? "En curso"
+                        : initiative.lifecycle === "forming"
+                          ? "Próxima"
+                          : initiative.lifecycle}
                     </span>
                     <Link
                       to="/app/mapa"
@@ -510,7 +516,8 @@ function Landing(): JSX.Element {
                 Las primeras expediciones están naciendo
               </h3>
               <p className="text-sm text-muted-foreground/80 leading-relaxed">
-                Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El mapa se llena cuando tú decides dar el primer paso.
+                Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El
+                mapa se llena cuando tú decides dar el primer paso.
               </p>
             </motion.div>
           )}
@@ -762,7 +769,8 @@ function Landing(): JSX.Element {
                   No hay expediciones todavía — la primera puede ser tuya
                 </h3>
                 <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed mb-6">
-                  El mapa está vacío porque nadie ha dado el primer paso en tu región. ¿Te animas a crear la primera misión?
+                  El mapa está vacío porque nadie ha dado el primer paso en tu región. ¿Te animas a
+                  crear la primera misión?
                 </p>
                 <button
                   onClick={loginWithGoogle}
@@ -798,48 +806,68 @@ function Landing(): JSX.Element {
       </section>
 
       {/* ── QHAPAQ ÑAN PROGRESSION ── */}
-      <section id="territorio" className="px-5 lg:px-8 py-24 relative">
-        <div className="absolute inset-0 bg-gradient-andes opacity-80" />
-        <div className="absolute inset-0 bg-mesh opacity-20" />
+      <section id="territorio" className="px-5 lg:px-8 py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-sunrise opacity-90" />
+        <div className="absolute inset-0 bg-mesh opacity-15" />
         <div className="relative mx-auto max-w-7xl text-white">
           <div className="max-w-2xl">
-            <div className="text-xs uppercase tracking-widest text-sun font-semibold">
+            <div className="text-xs uppercase tracking-widest text-white/70 font-semibold">
               Ruta de crecimiento
             </div>
             <h2 className="font-display font-bold text-4xl lg:text-5xl mt-3 leading-tight">
               De vecino activo a líder Kusqa.
             </h2>
-            <p className="mt-5 text-white/70 text-lg leading-relaxed">
-              Cada misión impulsa una ruta inspirada en los caminos ancestrales que atraviesan
-              la costa, los Andes y la Amazonía. El progreso real se construye en el territorio.
+            <p className="mt-5 text-white/80 text-lg leading-relaxed">
+              Cada misión impulsa una ruta inspirada en los caminos ancestrales que atraviesan la
+              costa, los Andes y la Amazonía. El progreso real se construye en el territorio.
             </p>
           </div>
 
-          {/* Vertical timeline */}
-          <div className="mt-14 mx-auto max-w-lg relative">
-            {/* Connecting line */}
-            <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-white/10" />
-            <div className="space-y-8">
-              {[
-                { lvl: 1, name: "Caminante", emoji: "🚶" },
-                { lvl: 2, name: "Vecino", emoji: "🏘️" },
-                { lvl: 3, name: "Sembrador", emoji: "🌱" },
-                { lvl: 4, name: "Guía", emoji: "⛰️" },
-                { lvl: 5, name: "Tejedor", emoji: "🤲" },
-                { lvl: 6, name: "Curaca", emoji: "🗿" },
-                { lvl: 7, name: "Líder Kusqa", emoji: "🏆" },
-              ].map((s, i) => {
-                const region = ["costa", "sierra", "selva"][i % 3] as Region;
+          {/* Horizontal continuous path */}
+          <div className="mt-14 relative">
+            {/* Connecting trail line */}
+            <div className="absolute top-[30px] left-12 right-12 h-px bg-white/20 hidden lg:block" />
+            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar lg:overflow-visible lg:justify-center">
+              {CIVIC_ROUTE.map((stage) => {
+                const regionMeta =
+                  REGION_META[stage.region as keyof typeof REGION_META] ?? REGION_META.costa;
                 return (
-                  <div key={s.lvl} className="relative flex items-start gap-4">
-                    <div className={`relative z-10 h-11 w-11 shrink-0 rounded-full ${regionGradient(region)} grid place-items-center text-xl shadow-lg`}>
-                      {s.emoji}
-                    </div>
-                    <div className="pt-1.5">
-                      <div className="text-[10px] uppercase tracking-widest text-white/50">
-                        Nivel {s.lvl}
+                  <div key={stage.level} className="snap-start shrink-0 w-[210px] lg:w-[170px]">
+                    {/* Stage icon node */}
+                    <div className="flex items-center justify-center mb-3">
+                      <div
+                        className={`h-[60px] w-[60px] rounded-full ${stage.gradientClass} grid place-items-center text-2xl shadow-lg z-10 ring-4 ring-white/20`}
+                      >
+                        {stage.icon}
                       </div>
-                      <div className="font-semibold text-sm text-white">{s.name}</div>
+                    </div>
+                    {/* Stage card */}
+                    <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/15 p-4 shadow-card min-h-[200px]">
+                      <div className="text-[9px] uppercase tracking-widest text-white/50 font-bold">
+                        {regionMeta.name} · Nivel {stage.level}
+                      </div>
+                      <div className="font-display font-bold text-white text-sm mt-0.5">
+                        {stage.name}
+                      </div>
+                      <div className="text-[10px] text-white/60 mt-0.5 leading-tight">
+                        {stage.terrain}
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        <div className="flex items-start gap-1.5">
+                          <Sparkles className="h-3 w-3 text-white/50 mt-0.5 shrink-0" />
+                          <div className="text-[9.5px] text-white/70 leading-snug line-clamp-3">
+                            {stage.narrative}
+                          </div>
+                        </div>
+                      </div>
+                      {stage.milestones.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <div className="text-[9px] text-white/40 font-medium flex items-center gap-1">
+                            <span className="text-white/60">→</span>
+                            {stage.milestones[0].label}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

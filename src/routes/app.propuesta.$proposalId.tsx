@@ -27,6 +27,7 @@ import type { InitiativeAction } from "@/domain/initiativeActions";
 import { deriveRelationship } from "@/domain/initiativeActions";
 import { InitiativeActionBar } from "@/features/actions/components/InitiativeActionBar";
 import { shareInitiative } from "@/features/actions/shareInitiative";
+import { useJoinInitiativeAction } from "@/features/actions/useJoinInitiativeAction";
 import { categoryEmoji, type MissionCategory } from "@/domain/categories";
 
 export const Route = createFileRoute("/app/propuesta/$proposalId")({
@@ -39,6 +40,7 @@ function ProposalDetail() {
   const { data: proposal, isLoading, isError, error } = useProposal(proposalId);
   const currentUserId = useCurrentUserId();
   const { supportProposal, isSupported, isSupporting } = useSupportProposal();
+  const { handleJoin } = useJoinInitiativeAction();
   const [archiving, setArchiving] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
@@ -115,6 +117,10 @@ function ProposalDetail() {
     switch (action) {
       case "support":
         handleSupport();
+        break;
+      case "join":
+        if (!initiativeForBar) return;
+        handleJoin(initiativeForBar.sourceId, { lifecycle: initiativeForBar.lifecycle });
         break;
       case "share":
         shareInitiative(proposal.title, window.location.href);
