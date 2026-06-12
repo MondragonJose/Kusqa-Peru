@@ -393,7 +393,7 @@ export function Profile() {
                   return (
                     <span
                       key={category}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 border border-border/30 text-xs font-medium"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full bg-secondary/50 border border-border/30 text-xs font-medium"
                     >
                       <span>{emoji}</span>
                       <span>{category}</span>
@@ -432,7 +432,7 @@ export function Profile() {
                 return sorted.slice(0, 4).map(([district, count]: [string, number]) => (
                   <span
                     key={district}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-full bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 text-xs font-medium"
                   >
                     <MapPin className="h-3 w-3" />
                     <span>{district}</span>
@@ -582,7 +582,7 @@ export function Profile() {
             <p className="text-sm text-muted-foreground pl-1">Tu bitácora de expediciones.</p>
 
             {journey.arc.beats.length > 0 ? (
-              <div className="relative pl-6 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8">
+              <div className="relative pl-9 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8 overflow-hidden">
                 {journey.arc.beats
                   .sort((a, b) => {
                     const ta = new Date(a.timestamp).getTime();
@@ -735,9 +735,11 @@ export function Profile() {
             </div>
 
             {/* Quick view of the top 3-4 badges */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {userBadges.slice(0, 4).map((badge, idx) => (
-                <BadgeCard key={badge.id} badge={badge} index={idx} showNarrative={false} />
+                <div key={badge.id} className="min-w-0">
+                  <BadgeCard badge={badge} index={idx} showNarrative={false} />
+                </div>
               ))}
             </div>
 

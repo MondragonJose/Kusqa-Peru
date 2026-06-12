@@ -73,7 +73,7 @@ export function MapPeekCard({
 
   if (variant === "floating") {
     return (
-      <div className="absolute bottom-3 left-3 right-3 z-[1000] animate-in slide-in-from-bottom-2 duration-200">
+      <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-xs z-[1000] animate-in slide-in-from-bottom-2 duration-200">
         <div className="bg-card border border-border/40 rounded-2xl shadow-lift p-4 relative">
           {card}
         </div>

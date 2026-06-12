@@ -29,6 +29,7 @@ export const Route = createFileRoute("/app/")({
 function Dashboard() {
   const [selectedEntity, setSelectedEntity] = useState<Initiative | null>(null);
   const focusTriggerRef = useRef<HTMLElement | null>(null);
+  const drawerHandleRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { supportProposal, isSupported, isSupporting } = useSupportProposal();
@@ -339,7 +340,7 @@ function Dashboard() {
         {/* Progress movido a página /app/progreso, Community Pulse eliminado */}
 
         {/* En movimiento — unified feed, simplified */}
-        <section className="space-y-2">
+        <section className="space-y-2" inert={selectedEntity !== null ? true : undefined}>
           <div className="flex items-baseline justify-between gap-2 pl-1">
             <h2 className="font-display font-black text-lg sm:text-xl tracking-tight text-foreground flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-accent" /> En movimiento
@@ -358,7 +359,7 @@ function Dashboard() {
                 const participants = item.participantsCount ?? 0;
                 const anchorLabel = item.temporalAnchor.label;
                 return (
-                  <button
+                  <div
                     key={item.id}
                     onClick={() => {
                       if (typeof document !== "undefined") {
@@ -370,7 +371,15 @@ function Dashboard() {
                       }
                       setSelectedEntity(item);
                     }}
-                    className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedEntity(item);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-secondary/30 transition-colors w-full text-left cursor-pointer"
                   >
                     <div
                       className={`h-10 w-10 rounded-xl grid place-items-center text-lg shrink-0 border ${
@@ -418,7 +427,7 @@ function Dashboard() {
                         )}
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })
             ) : (
@@ -469,10 +478,17 @@ function Dashboard() {
               className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
               onOpenAutoFocus={(e) => {
                 e.preventDefault();
+                requestAnimationFrame(() => {
+                  drawerHandleRef.current?.focus();
+                });
               }}
             >
               <div className="p-0 bg-card rounded-t-[32px] flex-1 overflow-y-auto">
-                <div className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5" />
+                <div
+                  ref={drawerHandleRef}
+                  tabIndex={-1}
+                  className="mx-auto w-12 h-1.5 rounded-full bg-border/80 mb-3 shrink-0 mt-5 outline-none"
+                />
 
                 {selectedEntity && (
                   <Drawer.Title className="sr-only">{selectedEntity.title}</Drawer.Title>

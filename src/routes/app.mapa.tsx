@@ -113,8 +113,10 @@ function MapPage() {
       : null;
 
   const handleViewDetail = useCallback(() => {
-    setDetailOpen(true);
-  }, []);
+    if (!activeEntity) return;
+    const route = getInitiativeDetailRoute(activeEntity);
+    navigate(route);
+  }, [activeEntity, navigate]);
 
   const handleDismissPeek = useCallback(() => {
     setSelectedId(null);
@@ -282,13 +284,10 @@ function MapPage() {
               onHover={setHoveredId}
               isLoading={isLoading}
               detailEntity={detailOpen ? activeEntity : null}
-              peekEntity={peekEntity}
               onCloseDetail={() => {
                 setSelectedId(null);
                 setDetailOpen(false);
               }}
-              onViewDetail={handleViewDetail}
-              onPeekAction={handlePeekAction}
               onSupport={(proposalId) => {
                 if (!currentUser) {
                   toast.error("Debes iniciar sesión para apoyar");
@@ -321,7 +320,7 @@ function MapPage() {
             selectionPaddingTopLeft={isMobile ? [0, 0] : [280, 30]}
             selectionPaddingBottomRight={isMobile ? [0, 0] : [0, 0]}
           />
-          {isMobile && peekEntity && (
+          {peekEntity && (
             <MapPeekCard
               entity={peekEntity}
               variant="floating"
