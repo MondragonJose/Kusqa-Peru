@@ -16,7 +16,8 @@ export type InitiativeLifecycle =
   | "gathering"  // recruiting — threshold met, building coalition
   | "active"     // execution — mission in progress
   | "completed"  // done — finished successfully
-  | "dormant";   // archived / rejected / inactive
+  | "archived"   // terminal — proposal rejected/archived, visible but attenuated
+  | "dormant";   // truly inactive — hidden from feed/map
 
 // ─── Temporal anchor ──────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ export function computeTemporalAnchor(
       }
       return { label: "Completada", kind: "completed", referenceDate: dateAnchor };
     }
+    case "archived":
     case "dormant":
       return { label: "Archivada", kind: "completed", referenceDate: null };
   }
@@ -173,7 +175,7 @@ export function isDormant(input: {
   temporalAnchor?: TemporalAnchor;
 }): boolean {
   const { lifecycle, temporalAnchor } = input;
-  if (lifecycle === "completed" || lifecycle === "dormant") return false;
+  if (lifecycle === "completed" || lifecycle === "archived" || lifecycle === "dormant") return false;
   const ref = temporalAnchor?.referenceDate;
   if (!ref) return false;
   const days = daysSince(ref);

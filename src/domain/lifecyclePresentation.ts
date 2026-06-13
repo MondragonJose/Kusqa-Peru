@@ -73,6 +73,16 @@ export function getLifecyclePresentation(lifecycle: InitiativeLifecycle): Lifecy
         tooltipTone: "Ruta completada",
         isHidden: false,
       };
+    case "archived":
+      return {
+        containerClass: "opacity-60 grayscale-[30%]",
+        opacity: 0.6,
+        animationClass: null,
+        badge: "🗄️",
+        ctaLabel: "Ver",
+        tooltipTone: "Archivada",
+        isHidden: false,
+      };
     case "dormant":
       return {
         containerClass: "hidden",

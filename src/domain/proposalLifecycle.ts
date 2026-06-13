@@ -160,7 +160,7 @@ export function mapProposalPhaseToLifecycle(phase: ProposalPhase): InitiativeLif
     case "completed":
       return "completed";
     case "archived":
-      return "dormant";
+      return "archived";
   }
 }
 

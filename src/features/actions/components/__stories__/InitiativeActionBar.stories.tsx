@@ -4,7 +4,7 @@ import { makeInitiative, LIFECYCLE_META } from "./initiativeFixtures";
 import type { InitiativeLifecycle } from "@/domain/initiative";
 import type { UserRelationship } from "@/domain/initiativeActions";
 
-const LIFECYCLES: InitiativeLifecycle[] = ["forming", "gathering", "active", "completed", "dormant"];
+const LIFECYCLES: InitiativeLifecycle[] = ["forming", "gathering", "active", "completed", "archived", "dormant"];
 const RELATIONSHIPS: UserRelationship[] = ["visitor", "supporter", "participant", "co_steward", "steward"];
 
 const meta = {

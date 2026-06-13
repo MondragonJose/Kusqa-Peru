@@ -3,7 +3,7 @@ import { InitiativeCard } from "../InitiativeCard";
 import { makeInitiative, LIFECYCLE_META } from "@/features/actions/components/__stories__/initiativeFixtures";
 import type { InitiativeLifecycle } from "@/domain/initiative";
 
-const LIFECYCLES: InitiativeLifecycle[] = ["forming", "gathering", "active", "completed", "dormant"];
+const LIFECYCLES: InitiativeLifecycle[] = ["forming", "gathering", "active", "completed", "archived", "dormant"];
 
 const meta = {
   title: "Features/Home/InitiativeCard",

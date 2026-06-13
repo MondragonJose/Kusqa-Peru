@@ -102,8 +102,8 @@ function SidebarItem({
 
       <div className="flex flex-col items-end gap-0.5 shrink-0">
         {item.xp != null && (
-          <span className="text-[9px] font-bold text-amber-500 dark:text-amber-400 flex items-center gap-0.5">
-            <Sparkles className="h-2.5 w-2.5" />+{item.xp}
+          <span className="text-[7px] text-muted-foreground/30 font-normal">
+            +{item.xp} XP
           </span>
         )}
         {item.spotsLeft != null && (

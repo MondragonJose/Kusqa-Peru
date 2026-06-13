@@ -62,7 +62,7 @@ export function ProposalHero({ proposal }: ProposalHeroProps) {
               </Badge>
             </div>
 
-            <h1 className="font-display font-semibold text-2xl sm:text-3xl leading-tight text-foreground">
+            <h1 className="font-display font-semibold text-2xl sm:text-3xl leading-tight break-words text-foreground">
               {proposal.title}
             </h1>
           </div>

@@ -70,6 +70,16 @@ export const LIFECYCLE_META: Record<InitiativeLifecycle, {
       participantsCount: 28,
     },
   },
+  archived: {
+    label: "Archived — rejected/archived",
+    overrides: {
+      lifecycle: "archived",
+      sourceType: "proposal",
+      sourceId: "proposal-archived",
+      emoji: "🗄️",
+      temporalAnchor: { label: "Archivada", kind: "completed", referenceDate: null },
+    },
+  },
   dormant: {
     label: "Dormant — inactive",
     overrides: {

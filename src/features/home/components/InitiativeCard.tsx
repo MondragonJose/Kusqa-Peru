@@ -151,6 +151,16 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                   Memoria viva
                 </span>
               )}
+              {initiative.lifecycle === "archived" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800/30 text-[8px] font-bold text-stone-400 dark:text-stone-500 border border-stone-200 dark:border-stone-700/30">
+                  🗄️ Archivada
+                </span>
+              )}
+              {initiative.lifecycle === "forming" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-[8px] font-bold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30">
+                  Por realizarse
+                </span>
+              )}
             </div>
             <h3 className="font-display font-semibold text-sm leading-snug text-foreground group-hover:text-accent transition-colors line-clamp-2">
               {initiative.title}
@@ -204,10 +214,9 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
         <div className="mt-auto flex items-center justify-between pt-1">
           <div className="flex items-center gap-1.5">
             {isMission && xp != null && (
-              <>
-                <Zap className="h-3.5 w-3.5 text-accent" />
-                <span className="text-xs font-bold text-accent">+{xp} XP</span>
-              </>
+              <span className="text-[9px] text-muted-foreground/40 font-medium">
+                +{xp} XP
+              </span>
             )}
             {isMission &&
               spotsLeft != null &&

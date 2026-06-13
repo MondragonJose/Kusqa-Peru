@@ -454,8 +454,13 @@ function MissionDetail() {
           <ArrowLeft className="h-4 w-4" /> Volver al inicio
         </Link>
         <section className="rounded-3xl bg-card border border-border/80 p-6 sm:p-8 space-y-4">
-          <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
-            {copy.label}
+          <div className="flex flex-wrap gap-2">
+            <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
+              Propuesta
+            </div>
+            <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-full bg-secondary text-muted-foreground">
+              {copy.label}
+            </div>
           </div>
           <h1 className="font-display font-black text-2xl sm:text-3xl leading-tight">
             {proposal!.title}
@@ -546,6 +551,9 @@ function MissionDetail() {
             <div className="mt-4 flex flex-wrap gap-2">
               <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-black bg-black/35 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
                 {meta.name} · {initiative.category}
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-black bg-white/20 backdrop-blur px-3.5 py-1 rounded-md border border-white/15">
+                {isMissionEntity ? "Misión" : "Propuesta"}
               </div>
               <div
                 className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-black px-3.5 py-1 rounded-md border ${
@@ -651,11 +659,11 @@ function MissionDetail() {
           )}
 
           {/* Evidence feed — contributions from participants */}
-          {evidenceList.length > 0 && (
-            <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6">
-              <h2 className="font-display font-black text-xl mb-4 text-foreground flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-accent" /> Contribuciones
-              </h2>
+          <section className="rounded-3xl bg-card border border-border/80 p-5 sm:p-6">
+            <h2 className="font-display font-black text-xl mb-4 text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-accent" /> Contribuciones
+            </h2>
+            {evidenceList.length > 0 ? (
               <div className="space-y-3">
                 {evidenceList.slice(0, 5).map((ev: Evidence) => (
                   <div
@@ -698,8 +706,13 @@ function MissionDetail() {
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground leading-relaxed font-medium italic">
+                Aún no hay contribuciones registradas. Si participaste en esta misión, comparte tu
+                experiencia para dejar constancia de tu paso por el territorio.
+              </p>
+            )}
+          </section>
 
           {/* Participants group — honest count display, no fake avatars */}
           <section className="rounded-3xl bg-card border border-border/80 p-6">

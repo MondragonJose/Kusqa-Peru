@@ -271,6 +271,10 @@ export function Profile() {
                     <Pencil className="h-3 w-3" />
                   </button>
                 </span>
+                <span className="text-border/80 shrink-0">•</span>
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                  🧭 Nivel {currentStage.level} · {currentStage.name}
+                </span>
               </div>
 
             </div>

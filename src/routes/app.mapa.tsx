@@ -200,71 +200,99 @@ function MapPage() {
         </div>
       </div>
 
-      {/* Filters — compact row on mobile, full panel on desktop */}
-      <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-4">
-        <div className="hidden lg:block" />
-        <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
-          <input
-            type="text"
-            value={filters.searchQuery}
-            onChange={(e) => updateFilters({ searchQuery: e.target.value })}
-            placeholder="Buscar distrito..."
-            className="w-full bg-secondary/40 border border-border/30 rounded-full pl-9 pr-3 py-2 lg:py-2.5 text-xs lg:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
-          />
-        </div>
+      {/* Main content: two-column grid on desktop */}
+      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-4 lg:items-start">
+        {/* Left column: filters + map */}
+        <div className="space-y-3 lg:space-y-5">
+          {/* Filters row */}
+          <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={filters.searchQuery}
+                onChange={(e) => updateFilters({ searchQuery: e.target.value })}
+                placeholder="Buscar distrito..."
+                className="w-full bg-secondary/40 border border-border/30 rounded-full pl-9 pr-3 py-2 lg:py-2.5 text-xs lg:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/30 transition-all"
+              />
+            </div>
 
-        {/* Category select */}
-        <select
-          value={filters.category}
-          onChange={(e) => updateFilters({ category: e.target.value as MissionCategory | "todas" })}
-          className="bg-secondary/40 border border-border/30 rounded-full px-3 py-2 lg:px-4 lg:py-2.5 text-xs lg:text-sm font-medium text-foreground focus:outline-none focus:border-accent/40 appearance-none"
-        >
-          <option value="todas">Todas</option>
-          {availableCategories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-
-        {/* District buttons */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => updateFilters({ district: "todas", region: "todas" })}
-            className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer shrink-0 ${
-              filters.district === "todas"
-                ? "bg-foreground text-background border-foreground shadow-sm"
-                : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
-            }`}
-          >
-            Todo el Perú
-          </button>
-          {availableDistricts.slice(0, 5).map(({ district, count }) => (
-            <button
-              key={district}
-              onClick={() => updateFilters({ district })}
-              className={`px-3 py-2 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 shrink-0 ${
-                filters.district === district
-                  ? "bg-foreground text-background border-foreground shadow-sm"
-                  : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
-              }`}
+            {/* Category select */}
+            <select
+              value={filters.category}
+              onChange={(e) => updateFilters({ category: e.target.value as MissionCategory | "todas" })}
+              className="bg-secondary/40 border border-border/30 rounded-full px-3 py-2 lg:px-4 lg:py-2.5 text-xs lg:text-sm font-medium text-foreground focus:outline-none focus:border-accent/40 appearance-none"
             >
-              <span>{district}</span>
-              <span className="text-[8px] opacity-60">({count})</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      </div>
+              <option value="todas">Todas</option>
+              {availableCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
 
-      {/* Main Map Layout: sidebar + map + detail panel (desktop), map-only (mobile) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-3 lg:gap-4 items-stretch">
-        {/* Desktop sidebar — entity list */}
+            {/* District buttons */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => updateFilters({ district: "todas", region: "todas" })}
+                className={`px-4 py-2 rounded-full text-xs font-bold border transition-smooth whitespace-nowrap cursor-pointer shrink-0 ${
+                  filters.district === "todas"
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                }`}
+              >
+                Todo el Perú
+              </button>
+              {availableDistricts.slice(0, 5).map(({ district, count }) => (
+                <button
+                  key={district}
+                  onClick={() => updateFilters({ district })}
+                  className={`px-3 py-2 rounded-full text-[10px] font-bold border transition-smooth whitespace-nowrap cursor-pointer flex items-center gap-1 shrink-0 ${
+                    filters.district === district
+                      ? "bg-foreground text-background border-foreground shadow-sm"
+                      : "bg-secondary/45 border-border/30 text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                  }`}
+                >
+                  <span>{district}</span>
+                  <span className="text-[8px] opacity-60">({count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Map */}
+          <div className="relative min-h-[calc(100dvh-180px)] lg:h-[calc(100dvh-12rem)] w-full">
+            <MapView
+              missions={filteredMissions}
+              selectedMissionId={activeEntity?.id || null}
+              onSelectMission={handleSelectMission}
+              userCoords={userCoords}
+              userLocationLoading={userLocationLoading}
+              onRequestUserLocation={requestUserLocation}
+              districtWarmth={districtWarmth}
+              showHuellas={showHuellas}
+              onToggleHuellas={() => setShowHuellas((v) => !v)}
+              selectedHuellaId={selectedHuellaId}
+              onSelectHuella={setSelectedHuellaId}
+              selectionPaddingTopLeft={isMobile ? [0, 0] : [280, 30]}
+              selectionPaddingBottomRight={isMobile ? [0, 0] : [0, 0]}
+            />
+            {peekEntity && (
+              <MapPeekCard
+                entity={peekEntity}
+                variant="floating"
+                onClose={handleDismissPeek}
+                onViewDetail={handleViewDetail}
+                onPrimaryAction={handlePeekAction}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Right column: sidebar (desktop only) */}
         {!isMobile && (
-          <div className="hidden lg:block min-h-[640px] lg:min-h-0">
+          <div className="hidden lg:block lg:sticky lg:top-4">
             <MapSidebar
               entities={filteredMissions}
               selectedId={selectedId}
@@ -300,34 +328,6 @@ function MapPage() {
             />
           </div>
         )}
-
-        {/* Dynamic Leaflet Map */}
-        <div className="relative min-h-[calc(100dvh-180px)] lg:h-[calc(100dvh-12rem)] w-full">
-          <MapView
-            missions={filteredMissions}
-            selectedMissionId={activeEntity?.id || null}
-            onSelectMission={handleSelectMission}
-            userCoords={userCoords}
-            userLocationLoading={userLocationLoading}
-            onRequestUserLocation={requestUserLocation}
-            districtWarmth={districtWarmth}
-            showHuellas={showHuellas}
-            onToggleHuellas={() => setShowHuellas((v) => !v)}
-            selectedHuellaId={selectedHuellaId}
-            onSelectHuella={setSelectedHuellaId}
-            selectionPaddingTopLeft={isMobile ? [0, 0] : [280, 30]}
-            selectionPaddingBottomRight={isMobile ? [0, 0] : [0, 0]}
-          />
-          {peekEntity && (
-            <MapPeekCard
-              entity={peekEntity}
-              variant="floating"
-              onClose={handleDismissPeek}
-              onViewDetail={handleViewDetail}
-              onPrimaryAction={handlePeekAction}
-            />
-          )}
-        </div>
       </div>
 
       {/* MOBILE-ONLY: Vaul Bottom Sheet Drawer — territorial destination preview */}
@@ -459,9 +459,8 @@ function MapPage() {
                         {activeEntity.summary}
                       </p>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {[
-                          { l: "Puntos XP", v: `+${activeEntity.xp ?? 0}` },
                           { l: "Cupos libres", v: activeEntity.spotsLeft ?? "—" },
                           { l: "Dificultad", v: activeEntity.difficulty ?? "—" },
                         ].map((s, idx) => (
@@ -476,6 +475,11 @@ function MapPage() {
                           </div>
                         ))}
                       </div>
+                      {activeEntity.xp != null && (
+                        <p className="text-[9px] text-muted-foreground/40 text-center mt-2">
+                          +{activeEntity.xp} XP en esta iniciativa
+                        </p>
+                      )}
 
                       <div className="rounded-xl bg-accent/5 border border-accent/15 p-4 text-sm">
                         <div className="text-accent font-bold uppercase tracking-wider text-[8px] mb-1">

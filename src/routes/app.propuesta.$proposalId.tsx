@@ -186,7 +186,7 @@ function ProposalDetail() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <span className="text-sm font-semibold text-muted-foreground truncate">Propuesta</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Propuesta</span>
         </div>
       </div>
 

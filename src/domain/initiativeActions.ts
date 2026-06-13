@@ -103,7 +103,7 @@ export function actionToIcon(action: InitiativeAction): string {
 export function getAvailableInitiativeActions(context: ActionContext): InitiativeAction[] {
   const { lifecycle, relationship } = context;
 
-  if (lifecycle === "dormant") return [];
+  if (lifecycle === "dormant" || lifecycle === "archived") return [];
 
   const actions: InitiativeAction[] = ["share"];
 
