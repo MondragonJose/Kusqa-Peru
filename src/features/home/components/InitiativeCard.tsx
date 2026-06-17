@@ -105,15 +105,13 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
         }}
         role="button"
         tabIndex={0}
-        // Reducido p-5 gap-3 a p-3 gap-2 para propuestas
-        className={`flex flex-col flex-1 cursor-pointer ${isProposal ? "p-3 gap-2" : "p-5 gap-3"}`}
+        className={`flex flex-col flex-1 cursor-pointer ${isProposal ? "p-3 gap3" : "p-5 gap-3"}`}
       >
         <div className="flex items-start gap-3">
           <div
-            // Reducido h-12 w-12 text-2xl a h-9 w-9 text-lg para propuestas
             className={`rounded-xl grid place-items-center shrink-0 shadow-soft ${
               isProposal
-                ? "h-9 w-9 text-lg bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700/30"
+                ? "h-12 w-12 text-lg bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700/30"
                 : `h-12 w-12 text-2xl ${bandClass}`
             }`}
           >
@@ -127,7 +125,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">{initiative.category}</span>
               {isProposal && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-medium">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-medium text-xs ">
                   🌱 Propuesta
                 </span>
               )}
