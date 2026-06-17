@@ -81,8 +81,8 @@ export function PublicProfileHeader({ profile, isOwnProfile }: PublicProfileHead
           {(profile.district || regionMeta) && (
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               {profile.district && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 truncate min-w-0">
+                  <MapPin className="h-3 w-3 shrink-0" />
                   {profile.district}
                 </span>
               )}

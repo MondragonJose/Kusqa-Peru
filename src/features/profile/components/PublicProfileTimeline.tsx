@@ -69,11 +69,11 @@ export function PublicProfileTimeline({ events }: PublicProfileTimelineProps) {
             const inner = (
               <div className="flex items-start gap-2">
                 <Icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0 space-y-0.5">
+                <div className="flex-1 min-w-0 space-y-0 space-y-0.5">
                   <p className="text-xs leading-snug">
                     {copy?.title ?? e.kind}
                     {districtLabel && (
-                      <span className="text-muted-foreground"> · {districtLabel}</span>
+                      <span className="text-muted-foreground truncate"> · {districtLabel}</span>
                     )}
                   </p>
                   <p className="text-[10px] text-muted-foreground">

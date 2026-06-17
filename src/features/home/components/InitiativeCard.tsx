@@ -125,7 +125,7 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">{initiative.category}</span>
               {isProposal && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-bold">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/30 font-medium">
                   🌱 Propuesta
                 </span>
               )}

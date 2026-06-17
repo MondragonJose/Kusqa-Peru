@@ -41,7 +41,7 @@ export function ProposalTabs({ proposal }: ProposalTabsProps) {
         <ProposalCivicIntent proposal={proposal} />
       </TabsContent>
 
-      <TabsContent value="what" className="space-y-4 pt-3">
+      <TabsContent value="what" className="space-y-4 pt-3 overflow-hidden">
         <section className="space-y-3">
           <h3 className="text-sm font-medium">Lo que se hará</h3>
           {proposal.description ? (

@@ -87,7 +87,7 @@ function StatCounter({
         {suffix}
       </div>
       {/* AQUÍ ESTÁ EL CAMBIO: text-white/90 en lugar de text-muted-foreground */}
-      <div className="text-sm text-white/90 max-w-[130px] leading-snug">{label}</div>
+      <div className="text-sm text-white/90 max-w-full leading-snug">{label}</div>
     </div>
   );
 }

@@ -31,7 +31,7 @@ export function PublicProfileTerritory({ profile }: PublicProfileTerritoryProps)
               params={{ slug: d.slug }}
               className="flex items-center justify-between gap-2 text-xs rounded-lg p-2 hover:bg-secondary/30 transition-colors"
             >
-              <span className="flex items-center gap-1 font-medium text-foreground truncate">
+              <span className="flex items-center gap-1 font-medium text-foreground truncate min-w-0">
                 <MapPin className="h-3 w-3 text-muted-foreground" />
                 {d.displayName}
               </span>
