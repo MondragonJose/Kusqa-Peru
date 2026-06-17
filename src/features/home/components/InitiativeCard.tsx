@@ -105,20 +105,22 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
         }}
         role="button"
         tabIndex={0}
-        className="flex flex-col flex-1 p-5 gap-3 cursor-pointer"
+        // Reducido p-5 gap-3 a p-3 gap-2 para propuestas
+        className={`flex flex-col flex-1 cursor-pointer ${isProposal ? "p-3 gap-2" : "p-5 gap-3"}`}
       >
         <div className="flex items-start gap-3">
           <div
-            className={`h-12 w-12 rounded-xl grid place-items-center text-2xl shrink-0 shadow-soft ${
+            // Reducido h-12 w-12 text-2xl a h-9 w-9 text-lg para propuestas
+            className={`rounded-xl grid place-items-center shrink-0 shadow-soft ${
               isProposal
-                ? "bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700/30"
-                : `${bandClass}`
+                ? "h-9 w-9 text-lg bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-700/30"
+                : `h-12 w-12 text-2xl ${bandClass}`
             }`}
           >
             {isProposal ? "🌱" : initiative.emoji}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 {regionLabel(initiative.region as Region)}
               </span>
@@ -162,50 +164,52 @@ export function InitiativeCard({ initiative, index = 0, xp, spotsLeft }: Initiat
                 </span>
               )}
             </div>
-            <h3 className="font-display font-semibold text-sm leading-snug text-foreground group-hover:text-accent transition-colors line-clamp-2">
+            {/* Título más pequeño para propuestas */}
+            <h3 className={`font-display font-semibold ${isProposal ? "text-xs" : "text-sm"} leading-snug text-foreground group-hover:text-accent transition-colors line-clamp-2`}>
               {initiative.title}
             </h3>
           </div>
         </div>
 
-          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {district}
-              </span>
-              <span className="flex items-center gap-1">{initiative.temporalAnchor.label}</span>
-            </div>
-            {isMunicipalCollabEnabled() && initiative.endorsements && initiative.endorsements.length > 0 && (
-              <div className="mt-0.5">
-                <EndorsementBadge endorsements={initiative.endorsements} variant="compact" />
-              </div>
-            )}
-            {isMission && initiative.participantsCount != null && (
-              <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {initiative.participantsCount} participantes
-              </span>
-            )}
-            {isProposal && supportCount > 0 && (
-              <span className="flex items-center gap-1">
-                <Heart className="h-3 w-3 text-violet-500" />
-                <span className="text-violet-600 dark:text-violet-400">
-                  {supportCount} apoyo{supportCount !== 1 ? "s" : ""}
-                </span>
-              </span>
-            )}
+        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {district}
+            </span>
+            <span className="flex items-center gap-1">{initiative.temporalAnchor.label}</span>
           </div>
+          {isMunicipalCollabEnabled() && initiative.endorsements && initiative.endorsements.length > 0 && (
+            <div className="mt-0.5">
+              <EndorsementBadge endorsements={initiative.endorsements} variant="compact" />
+            </div>
+          )}
+          {isMission && initiative.participantsCount != null && (
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {initiative.participantsCount} participantes
+            </span>
+          )}
+          {isProposal && supportCount > 0 && (
+            <span className="flex items-center gap-1">
+              <Heart className="h-3 w-3 text-violet-500" />
+              <span className="text-violet-600 dark:text-violet-400">
+                {supportCount} apoyo{supportCount !== 1 ? "s" : ""}
+              </span>
+            </span>
+          )}
+        </div>
 
         {isProposal && (
-          <div className="mt-1">
-            <div className="w-full h-1.5 rounded-full bg-violet-100 dark:bg-violet-900/30 overflow-hidden">
+          // Márgenes y altura reducida (mt-0.5, h-1) para barra de progreso
+          <div className="mt-0.5">
+            <div className="w-full h-1 rounded-full bg-violet-100 dark:bg-violet-900/30 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600 transition-all duration-500"
                 style={{ width: `${Math.min(100, (supportCount / Math.max(1, getProposalThreshold(initiative.teamSize ?? 5))) * 100)}%` }}
               />
             </div>
-            <p className="mt-1 text-[9px] text-violet-500 dark:text-violet-400 font-medium">
+            <p className="mt-0.5 text-[9px] text-violet-500 dark:text-violet-400 font-medium">
               Buscando apoyo de la comunidad
             </p>
           </div>

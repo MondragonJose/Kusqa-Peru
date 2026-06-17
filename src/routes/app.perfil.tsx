@@ -75,7 +75,7 @@ function computeStreak(userMissions: UserMission[]): number {
 }
 
 export function Profile() {
-  const user = useCurrentUser()!;
+  const user = useCurrentUser();
   const { currentStage } = useProgression();
   const queryClient = useQueryClient();
 
@@ -107,6 +107,14 @@ export function Profile() {
     fetcher: getPlaceSuggestions,
     delay: 400,
   });
+
+  if (!user) {
+    return (
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 py-20 text-center">
+        <p className="text-muted-foreground">Cargando perfil...</p>
+      </div>
+    );
+  }
 
   const journey = useMemo(() => {
     const input: CivicJourneyInput = {
@@ -237,13 +245,13 @@ export function Profile() {
 
             <div className="flex-1 min-w-0 pb-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight">
+                <h1 className="font-display font-black text-2xl sm:text-3xl text-foreground tracking-tight min-w-0 break-words">
                   {user.name}
                 </h1>
                 <span
-                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${regionBadgeStyle(user.region as Region)}`}
+                  className={`inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border leading-none ${regionBadgeStyle(user.region as Region)}`}
                 >
-                  {REGION_META[user.region as Region].emoji}{" "}
+                  {REGION_META[user.region as Region].emoji}
                   {REGION_META[user.region as Region].name}
                 </span>
 
@@ -320,7 +328,7 @@ export function Profile() {
           {/* Identity Narrative — biography derived from participation events */}
           <div className="border-t border-border/60 pt-6 relative">
             <div
-              className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region].gradient}`}
+              className={`absolute -top-px left-0 right-0 h-[3px] rounded-full ${REGION_META[user.region]?.gradient || "bg-gradient-coast"}`}
             />
             <div className="space-y-3">
               <p className="font-display font-black text-xl sm:text-2xl text-foreground leading-tight">

@@ -10,14 +10,13 @@ import {
   Mountain,
   Waves,
   Trees,
-  ChevronRight,
   Star,
 } from "lucide-react";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { JSX } from "react/jsx-runtime";
 import { useLandingInitiatives } from "@/features/initiatives/hooks/useLandingInitiatives";
 import { deriveInitiativeStats } from "@/domain/initiativeStats";
-import { regionGradient, type Region, REGION_META } from "@/domain/regions";
+import { REGION_META } from "@/domain/regions";
 import { CIVIC_ROUTE } from "@/features/progression/constants/civicRoute";
 import { InitiativeCard } from "@/features/home/components/InitiativeCard";
 import { useOAuthLogin } from "@/features/auth";
@@ -96,15 +95,7 @@ function StatCounter({
 // Peru SVG territorial outline — decorative, SSR-safe
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PeruTerritoryDecoration({
-  costaCount = 0,
-  sierraCount = 0,
-  selvaCount = 0,
-}: {
-  costaCount?: number;
-  sierraCount?: number;
-  selvaCount?: number;
-}) {
+function PeruTerritoryDecoration() {
   return (
     <div className="relative w-full max-w-[340px] mx-auto select-none pointer-events-none">
       {/* Background glow blobs */}
@@ -168,21 +159,21 @@ function PeruTerritoryDecoration({
         </defs>
       </svg>
 
-      {/* Region floating labels — qualitative, no zero counts */}
+      {/* Region floating labels — territorial presence markers */}
       <div className="absolute top-[22%] left-[10%] bg-gradient-coast text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow">
-        Costa · 🌊 {costaCount > 0 ? `${costaCount} misiones` : "territorio activo"}
+        Costa · activa
       </div>
       <div
         className="absolute top-[48%] right-[5%] bg-gradient-andes text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
         style={{ animationDelay: "2s" }}
       >
-        Sierra · ⛰️ {sierraCount > 0 ? `${sierraCount} misiones` : "territorio activo"}
+        Sierra · activa
       </div>
       <div
         className="absolute bottom-[20%] left-[8%] bg-gradient-jungle text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-soft animate-float-slow"
         style={{ animationDelay: "1s" }}
       >
-        Selva · 🌿 {selvaCount > 0 ? `${selvaCount} misiones` : "territorio activo"}
+        Selva · activa
       </div>
     </div>
   );
@@ -435,77 +426,32 @@ function Landing(): JSX.Element {
               transition={{ duration: 0.9, delay: 0.3 }}
               className="hidden lg:block"
             >
-              <PeruTerritoryDecoration
-                costaCount={missionsByRegion["costa"] || 0}
-                sierraCount={missionsByRegion["sierra"] || 0}
-                selvaCount={missionsByRegion["selva"] || 0}
-              />
+              <PeruTerritoryDecoration />
             </motion.div>
           </div>
 
-          {/* Floating expedition cards */}
-          {featuredMissions.length > 0 ? (
-            <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 max-w-5xl">
-              {featuredMissions.slice(0, 3).map((initiative, i) => (
-                <motion.div
-                  key={initiative.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
-                  className="glass-strong rounded-2xl p-3 lg:p-5 shadow-card hover:shadow-lift transition-smooth cursor-pointer"
-                >
-                  <div
-                    className={`h-16 lg:h-28 rounded-xl bg-gradient-to-br ${regionGradient(initiative.region as Region)} grid place-items-center text-3xl lg:text-5xl mb-2 lg:mb-4`}
-                  >
-                    {initiative.emoji}
-                  </div>
-                  <div className="flex items-center gap-1 text-[8px] lg:text-xs text-muted-foreground mb-2">
-                    <span className="text-[7px] lg:text-[9px] uppercase tracking-widest font-semibold text-accent">
-                      {initiative.region}
-                    </span>
-                    <span>·</span>
-                    <MapPin className="h-2.5 lg:h-3 w-2.5 lg:w-3" />{" "}
-                    <span className="truncate">{initiative.location?.district ?? ""}</span>
-                  </div>
-                  <div className="font-display font-semibold text-sm lg:text-base mb-2 lg:mb-0">
-                    {initiative.title}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-[8px] lg:text-xs px-2 py-1 rounded-full bg-secondary font-medium">
-                      {initiative.lifecycle === "active"
-                        ? "En curso"
-                        : initiative.lifecycle === "forming"
-                          ? "Próxima"
-                          : initiative.lifecycle}
-                    </span>
-                    <Link
-                      to="/app/mapa"
-                      className="text-[8px] lg:text-xs text-accent font-semibold hover:gap-2 flex items-center gap-1 transition-all"
-                    >
-                      Ver más <ChevronRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-12 lg:mt-16 max-w-md mx-auto text-center"
-            >
-              <div className="text-2xl mb-3">🏔️</div>
-              <h3 className="font-medium text-base text-muted-foreground mb-2">
-                Las primeras expediciones están naciendo
-              </h3>
-              <p className="text-sm text-muted-foreground/80 leading-relaxed">
-                Jóvenes en todo el Perú están creando las primeras misiones en sus distritos. El
-                mapa se llena cuando tú decides dar el primer paso.
-              </p>
-            </motion.div>
-          )}
+          {/* Territorial activity indicators — personas actuando en cada territorio */}
+          <div className="mt-12 lg:mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 max-w-5xl">
+            {[
+              { key: "costa", emoji: "🌊", gradient: "bg-gradient-coast", phrase: "Personas organizadas desde la costa" },
+              { key: "sierra", emoji: "⛰️", gradient: "bg-gradient-andes", phrase: "Jóvenes construyendo cambio en los Andes" },
+              { key: "selva", emoji: "🌿", gradient: "bg-gradient-jungle", phrase: "Comunidades tejiendo futuro en la Amazonía" },
+            ].map((region, i) => (
+              <motion.div
+                key={region.key}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 + i * 0.12 }}
+                className={`rounded-2xl ${region.gradient} p-5 lg:p-6 shadow-card text-white`}
+              >
+                <div className="text-4xl mb-3">{region.emoji}</div>
+                <div className="font-display font-bold text-lg lg:text-xl capitalize">
+                  {region.key}
+                </div>
+                <div className="text-sm text-white/80 mt-3 leading-relaxed">{region.phrase}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
