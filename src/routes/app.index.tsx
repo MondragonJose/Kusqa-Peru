@@ -521,12 +521,12 @@ function Dashboard() {
               pendingFocusRestoreRef.current = true;
             }
           }}
-          snapPoints={["38%", "85vh"]}
+          snapPoints={["38%", "calc(100vh - 6.5rem)"]}
         >
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
             <Drawer.Content
-              className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
+              className="bg-card flex flex-col rounded-t-[32px] max-h-[calc(100vh-6.5rem)] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
               onAnimationEnd={() => {
                 if (pendingFocusRestoreRef.current) {
                   pendingFocusRestoreRef.current = false;

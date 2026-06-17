@@ -22,7 +22,7 @@ export function ProposalTabs({ proposal }: ProposalTabsProps) {
 
   return (
     <Tabs defaultValue="why" className="w-full">
-      <TabsList className="grid grid-cols-4 w-full">
+      <TabsList className="grid grid-cols-4 w-full overflow-x-auto no-scrollbar lg:overflow-x-visible">
         <TabsTrigger value="why" className="text-xs sm:text-sm">
           Por qué
         </TabsTrigger>

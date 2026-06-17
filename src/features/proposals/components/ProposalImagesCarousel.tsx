@@ -42,7 +42,7 @@ export function ProposalImagesCarousel({ proposal }: ProposalImagesCarouselProps
               type="button"
               onClick={goPrev}
               aria-label="Imagen anterior"
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -50,7 +50,7 @@ export function ProposalImagesCarousel({ proposal }: ProposalImagesCarouselProps
               type="button"
               onClick={goNext}
               aria-label="Imagen siguiente"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/40 text-white grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100"
             >
               <ChevronRight className="h-5 w-5" />
             </button>

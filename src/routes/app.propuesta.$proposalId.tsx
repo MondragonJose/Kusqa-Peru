@@ -175,7 +175,7 @@ function ProposalDetail() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-background pb-[calc(8rem+env(safe-area-inset-bottom,0px))] lg:pb-12"
+      className="min-h-screen bg-background pb-[calc(11rem+env(safe-area-inset-bottom,0px))] lg:pb-12"
     >
       <div className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border/40">
         <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 sm:px-6 h-12">

@@ -205,7 +205,7 @@ function MapPage() {
         {/* Left column: filters + map */}
         <div className="space-y-3 lg:space-y-5">
           {/* Filters row */}
-          <div className="flex items-center gap-2 lg:gap-3 flex-wrap">
+          <div className="flex items-center gap-2 lg:gap-3 flex-wrap lg:h-auto">
             {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 lg:h-4 lg:w-4 text-muted-foreground" />
@@ -262,7 +262,7 @@ function MapPage() {
           </div>
 
           {/* Map */}
-          <div className="relative min-h-[calc(100dvh-180px)] lg:h-[calc(100dvh-12rem)] w-full">
+          <div className="relative h-[calc(100dvh-14rem)] lg:h-[calc(100dvh-12rem)] w-full min-h-[360px] lg:min-h-[480px]">
             <MapView
               missions={filteredMissions}
               selectedMissionId={activeEntity?.id || null}
@@ -344,12 +344,12 @@ function MapPage() {
               });
             }
           }}
-          snapPoints={["25%", "85vh"]}
+          snapPoints={["25%", "calc(100vh - 6.5rem)"]}
         >
           <Drawer.Portal>
             <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-xs" />
             <Drawer.Content
-              className="bg-card flex flex-col rounded-t-[32px] max-h-[85vh] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
+              className="bg-card flex flex-col rounded-t-[32px] max-h-[calc(100vh-6.5rem)] fixed bottom-0 left-0 right-0 z-50 outline-none border-t border-border/40 shadow-lift"
               onOpenAutoFocus={(e) => {
                 e.preventDefault();
                 requestAnimationFrame(() => {

@@ -508,7 +508,7 @@ function MissionDetail() {
   const theme = REGION_THEMES[initiative.region] || REGION_THEMES.sierra;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-12">
+    <div className="max-w-5xl mx-auto space-y-6 pb-[calc(11rem+env(safe-area-inset-bottom,0px))] lg:pb-12">
       <Link
         to="/app/mapa"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-semibold"
@@ -518,7 +518,7 @@ function MissionDetail() {
 
       {/* Mobile sticky CTA — delegates to InitiativeActionBar */}
       {initiative && (
-        <div className="lg:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-30">
+        <div className="lg:hidden fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))] left-4 right-4 z-30">
           <InitiativeActionBar
             variant="compact"
             initiative={initiative}
