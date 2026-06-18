@@ -669,7 +669,7 @@ export function Profile() {
                           <div className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                             {beat.title}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2 overflow-hidden">
                             {beatToNarrative(beat)}
                           </div>
                           <div className="text-[10px] text-muted-foreground/60 mt-2 font-medium">
