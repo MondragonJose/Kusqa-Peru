@@ -238,7 +238,7 @@ export function Profile() {
 
         {/* User Info Section */}
         <div className="px-5 sm:px-6 lg:px-10 pb-6 pt-0 relative">
-          <div className="flex flex-wrap gap-4 sm:gap-5 items-end -mt-12 sm:-mt-14 lg:-mt-16 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-center sm:items-end text-center sm:text-left -mt-12 sm:-mt-14 lg:-mt-16 mb-6">            
             <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-gradient-sunrise grid place-items-center text-4xl sm:text-5xl shadow-glow border-4 border-card z-10">
               {user.avatar}
             </div>
@@ -609,7 +609,7 @@ export function Profile() {
             <p className="text-sm text-muted-foreground pl-1">Tu bitácora de expediciones.</p>
 
             {journey.arc.beats.length > 0 ? (
-              <div className="relative pl-9 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-4 space-y-8 overflow-hidden">
+              <div className="relative pl-7 sm:pl-9 border-l-2 border-dashed border-stone-300 dark:border-stone-850 ml-2 sm:ml-4 space-y-6 sm:space-y-8 overflow-hidden">
                 {journey.arc.beats
                   .sort((a, b) => {
                     const ta = new Date(a.timestamp).getTime();
@@ -622,7 +622,7 @@ export function Profile() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className="relative"
+                      className="relative group"
                     >
                       {/* Timeline Node Icon */}
                       <button
@@ -630,7 +630,7 @@ export function Profile() {
                           if (beat.sourceType === "mission" && beat.sourceId)
                             handleOpenMissionStory(beat.sourceId);
                         }}
-                        className={`absolute -left-[35px] top-0.5 h-[18px] w-[18px] rounded-full border-4 border-card bg-sky-500 ring-2 ring-stone-250 dark:ring-stone-850 flex items-center justify-center cursor-pointer hover:scale-125 transition-transform text-[9px]`}
+                        className="absolute -left-[27px] sm:-left-[35px] top-1 sm:top-0.5 h-[16px] w-[16px] sm:h-[18px] sm:w-[18px] rounded-full border-4 border-card bg-sky-500 ring-2 ring-stone-250 dark:ring-stone-850 flex items-center justify-center cursor-pointer hover:scale-125 transition-transform text-[8px] sm:text-[9px]"
                         title={
                           beat.sourceType === "mission"
                             ? "Ver Bitácora de la Misión"
@@ -648,7 +648,7 @@ export function Profile() {
                           if (beat.sourceType === "mission" && beat.sourceId)
                             handleOpenMissionStory(beat.sourceId);
                         }}
-                        className={`rounded-3xl bg-card border border-border/80 p-5 flex gap-4 transition-all duration-300 relative group ${
+                        className={`rrounded-2xl sm:rounded-3xl bg-card border border-border/80 p-5 flex gap-3 sm:gap-4 transition-all duration-300 relative group ${
                           beat.sourceType === "mission"
                             ? "hover:shadow-soft hover:border-accent/40 dark:hover:border-accent/30 cursor-pointer"
                             : ""
@@ -660,7 +660,7 @@ export function Profile() {
                         }
                       >
                         <div
-                          className={`h-14 w-14 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 grid place-items-center text-2xl shrink-0 border border-sky-200 dark:border-sky-800/30 group-hover:scale-105 transition-transform duration-300 shadow-sm`}
+                          className={`h-10 w-10 sm:h-14 sm:w-14 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 grid place-items-center text-2xl shrink-0 border border-sky-200 dark:border-sky-800/30 group-hover:scale-105 transition-transform duration-300 shadow-sm`}
                         >
                           {beat.emoji}
                         </div>
