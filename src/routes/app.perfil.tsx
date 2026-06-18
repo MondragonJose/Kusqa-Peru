@@ -591,7 +591,7 @@ export function Profile() {
       {/* Main Grid: Journey Status & Badges */}
       <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
         {/* Left Side: Journey Stage Detail & History */}
-        <div className="space-y-8">
+        <div className="space-y-8 min-w-0">
           {/* Current Stage Card */}
           <section className="space-y-4">
             <h2 className="font-display font-black text-xl tracking-tight text-foreground flex items-center gap-2 pl-1">
